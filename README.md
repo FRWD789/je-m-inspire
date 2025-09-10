@@ -15,11 +15,12 @@ A full-stack project with **Laravel** backend and **React + TypeScript** fronten
 - Git version 2.47.1.windows.2
 
 ##  Project Structure
-
+```
 my-project/
 ├─ backend/ # Laravel backend
 ├─ frontend/ # React + TypeScript frontend
 └─ .github/ # CI/CD workflows
+```
 ##  Environment Setup
 
 
