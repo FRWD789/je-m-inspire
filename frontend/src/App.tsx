@@ -9,6 +9,7 @@ function App() {
      <div>
       Je M'inspire
       Anwar Oukrid
+      Tommy Lariviere
      </div>
     </>
   )
