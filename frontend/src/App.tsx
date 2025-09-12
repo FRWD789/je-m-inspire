@@ -7,7 +7,9 @@ function App() {
   return (
     <>
      <div>
-      Anwar ourkid  
+        Bright Ogbeiwi (MrCreeperman147)
+        maher ben hdibi
+        Anwar Oukrid
      </div>
     </>
   )
