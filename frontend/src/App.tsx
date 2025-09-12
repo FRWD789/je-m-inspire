@@ -8,8 +8,9 @@ function App() {
     <>
      <div>
         Bright Ogbeiwi (MrCreeperman147)
-        maher ben hdibi
-        Anwar Oukrid
+        Tommy Lariviere
+        Anwar 
+        Maher
      </div>
     </>
   )
