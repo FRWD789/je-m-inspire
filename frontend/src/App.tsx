@@ -10,6 +10,7 @@ function App() {
       Je M'inspire
       Anwar Oukrid
       Tommy Lariviere
+      Bright Ogbeiwi (MrCreeperman147)
      </div>
     </>
   )
