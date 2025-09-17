@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\EventResource;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
@@ -12,7 +14,8 @@ class EventController extends Controller
      */
     public function index()
     {
-        //
+        return  EventResource::collection(Event::all());
+
     }
 
     /**
@@ -28,15 +31,37 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name'             => 'required|string|max:255',
+            'description'      => 'nullable|string',
+            'start_date'       => 'required|date',
+            'end_date'         => 'required|date|after_or_equal:start_date',
+            'base_price'       => 'required|numeric|min:0',
+            'capacity'         => 'required|integer|min:1',
+            'max_places'       => 'required|integer|min:1',
+            'available_places' => 'required|integer|min:0',
+            'level'            => 'nullable|string|max:50',
+            'priority'         => 'nullable|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $event = Event::create($validator->validated());
+        return new EventResource($event);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Event $event)
+    public function show($id)
     {
-        //
+        $event = Event::find($id);
+        if (!$event) {
+            return response()->json(['message' => 'Event not found'], 404);
+        }
+        return new EventResource($event);
     }
 
     /**
@@ -50,16 +75,48 @@ class EventController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Event $event)
+    public function update(Request $request, $id)
     {
-        //
+        $event = Event::find($id);
+        if (!$event) {
+            return response()->json(['message' => 'Event not found'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name'             => 'sometimes|required|string|max:255',
+            'description'      => 'nullable|string',
+            'start_date'       => 'sometimes|required|date',
+            'end_date'         => 'sometimes|required|date|after_or_equal:start_date',
+            'base_price'       => 'sometimes|required|numeric|min:0',
+            'capacity'         => 'sometimes|required|integer|min:1',
+            'max_places'       => 'sometimes|required|integer|min:1',
+            'available_places' => 'sometimes|required|integer|min:0',
+            'level'            => 'nullable|string|max:50',
+            'priority'         => 'nullable|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $event->update($validator->validated());
+        return new EventResource($event);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Event $event)
+    public function destroy($id)
     {
-        //
+        $event = Event::find($id);
+        if (!$event) {
+            return response()->json(['message' => 'Event not found'], 404);
+        }
+
+        $event->delete();
+
+        return response()->json([
+            'message' => 'Event deleted successfully'
+        ], 200);
     }
 }
