@@ -19,11 +19,19 @@ class JwtMiddleware
     {
 
         try{
-            JWTAuth::parseToken()->authenticate();
+            $token = JWTAuth::parseToken();
+            $payload = $token->getPayload();  
+            if ($payload->get('type') !== 'access') {
+                    return response()->json(['error' => 'Invalid token type'], 401);
+                }
+            $user = JWTAuth::parseToken()->authenticate();
+  
+         
         }catch(Exception $e){
             return response()->json(['error' => 'Unauthorized'], 401);
 
         }
+        $request->merge(['user' => $user]);
         return $next($request);
     }
 }

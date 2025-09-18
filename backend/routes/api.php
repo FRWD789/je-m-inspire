@@ -8,14 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return response()->json(['message' => 'Hello world!']);
-})->middleware(JwtMiddleware::class);
+})->middleware('auth.jwt');
 
 Route::post('/refresh', [AuthController::class, 'refresh']);
 // Route::get('/user', function (Request $request) {
 //     return new UserResource($request->user());  //le mdp et token ne sont pas envoyé (voir resource)
 // })->middleware('auth:sanctum');
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login'])->withoutMiddleware(JwtMiddleware::class);;
+Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/login', [AuthController::class, 'login']);
 // Route::middleware('auth:sanctum')->group(function () {
 //     Route::get('/events', [EventController::class, 'index'])->name('events.index');      // lister tous
 //     Route::get('/event/{id}', [EventController::class, 'show'])->name('events.show');    // détail
