@@ -8,11 +8,3 @@ use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
     return new UserResource($request->user());  //le mdp et token ne sont pas envoyé (voir resource)
 })->middleware('auth:sanctum');
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/events', [EventController::class, 'index'])->name('events.index');      // lister tous
-    Route::get('/event/{id}', [EventController::class, 'show'])->name('events.show');    // détail
-    Route::post('/event', [EventController::class, 'store'])->name('events.store');      // créer
-    Route::put('/event/{id}', [EventController::class, 'update'])->name('events.update');// modifier
-    Route::delete('/event/{id}', [EventController::class, 'destroy']);
-});

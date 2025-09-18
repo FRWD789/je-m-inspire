@@ -14,8 +14,13 @@ class EventController extends Controller
      */
     public function index()
     {
+<<<<<<< HEAD
         return  EventResource::collection(Event::all());
 
+=======
+        $events = Event::all();
+        return EventResource::collection($events);
+>>>>>>> 4d8113ed069d18e88867e4163b78dec42ab59f7d
     }
 
     /**
@@ -53,14 +58,18 @@ class EventController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Afficher un seul evenement selon son id
      */
-    public function show($id)
+   public function show($id)
     {
         $event = Event::find($id);
+
         if (!$event) {
-            return response()->json(['message' => 'Event not found'], 404);
+            return response()->json([
+                'message' => 'Event not found'
+            ], 404);
         }
+
         return new EventResource($event);
     }
 
