@@ -18,8 +18,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/login', [AuthController::class, 'login']);
 // Route::middleware('auth:sanctum')->group(function () {
-//     Route::get('/events', [EventController::class, 'index'])->name('events.index');      // lister tous
-//     Route::get('/event/{id}', [EventController::class, 'show'])->name('events.show');    // détail
-//     Route::post('/event', [EventController::class, 'store'])->name('events.store');      // créer
-//     Route::put('/event/{id}', [EventController::class, 'update'])->name('events.update');// modifier
+    Route::get('/events', [EventController::class, 'index'])->name('events.index');      // lister tous
+    Route::get('/event/{id}', [EventController::class, 'show'])->name('events.show');    // détail
+    Route::post('/event', [EventController::class, 'store'])->name('events.store');      // créer
+    Route::put('/event/{id}', [EventController::class, 'update'])->name('events.update');// modifier
 // });
