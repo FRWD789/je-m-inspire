@@ -14,9 +14,9 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
 
-    
+
     public function register(Request $request){
-       
+
         try {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -38,7 +38,7 @@ class AuthController extends Controller
 
     try {
         $accessToken = JWTAuth::fromUser($user);
-        $refreshToken = JWTAuth::fromUser($user, ['exp' => 60]); 
+        $refreshToken = JWTAuth::fromUser($user, ['exp' => 60]);
     } catch (JWTException $e) {
         return response()->json(['error' => 'Could not create token'], 500);
 
@@ -64,38 +64,30 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-      
-
-
         try {
-            if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) 
-            {
-
+            if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) {
                 return response()->json(['error' => 'Invalid credentials'], 401);
-            
             }
-            $refreshToken =  $this->generateRefreshToken(JWTAuth::user());
 
-                    
+            $refreshToken = $this->generateRefreshToken(JWTAuth::user());
+
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
 
         return response()->json([
-            'token' => JWTAuth::setToken($accessToken)->getPayload(),
-            'expires_in' => JWTAuth::factory()->getTTL()*60,
-            "refresh_token"=> JWTAuth::setToken($refreshToken)->getPayload(),
- 
+            'token' => $accessToken,
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            'refresh_token' => $refreshToken,
         ])->cookie(
-                        'refresh_token',        // cookie name
-                        $refreshToken,          // cookie value (JWT string)
-                        7*24*60,                // minutes → 7 days
-                        '/',                   // path → defaults to "/"
-                        null,                   // domain → defaults to current domain
-                        false,                  // secure → ❌ (so works on HTTP localhost)
-                        true                   // httpOnly → ❌ (so frontend JS can read it)
-                );
-
+            'refresh_token',
+            $refreshToken,
+            7*24*60,
+            '/',
+            null,
+            false,
+            true
+        );
     }
 
 
@@ -128,9 +120,9 @@ class AuthController extends Controller
         if (empty($refreshToken)) {
             return response()->json(['error' => 'No refresh token provided',"refreshToken"=>$refreshToken], 401);
         }
-        
 
-    
+
+
          try {
             $payload = JWTAuth::setToken($refreshToken)->getPayload();
 
@@ -146,7 +138,7 @@ class AuthController extends Controller
             }
             $user = User::findOrFail($userId);
 
-   
+
             Cache::forget("refresh_token:$jti");
             $newRefreshToken = $this->generateRefreshToken($user);
             $newAccessToken  = $this->generateAccessToken($user);
@@ -162,10 +154,10 @@ class AuthController extends Controller
                 7*24*60,
                 '/',
                 null,
-                false,   //secure // for dev env 
+                false,   //secure // for dev env
                 true    // httpOnly
             );
-        
+
 
         } catch (JWTException $e) {
             return response()->json(['error' => 'Invalid refresh token'], 401);
