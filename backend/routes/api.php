@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\OperationController;
+use App\Http\Controllers\TypeOperationController;
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
@@ -15,11 +17,43 @@ Route::post('/refresh', [AuthController::class, 'refresh']);
 //     return new UserResource($request->user());  //le mdp et token ne sont pas envoyé (voir resource)
 // })->middleware('auth:sanctum');
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/login', [AuthController::class, 'login']);
-// Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/events', [EventController::class, 'index'])->name('events.index');      // lister tous
-    Route::get('/event/{id}', [EventController::class, 'show'])->name('events.show');    // détail
-    Route::post('/event', [EventController::class, 'store'])->name('events.store');      // créer
-    Route::put('/event/{id}', [EventController::class, 'update'])->name('events.update');// modifier
-// });
+
+
+use App\Http\Controllers\RoleController;
+
+// Routes publiques pour les rôles (lecture seule)
+Route::get('/roles', [RoleController::class, 'index']); // Liste tous les rôles
+Route::get('/roles/{id}', [RoleController::class, 'show']); // Détail d'un rôle
+
+// Routes protégées pour la gestion des rôles (admin uniquement)
+Route::middleware(['auth:api', 'role:admin'])->group(function () {
+    Route::post('/roles', [RoleController::class, 'store']); // Créer un rôle
+    Route::put('/roles/{id}', [RoleController::class, 'update']); // Modifier un rôle
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy']); // Supprimer un rôle
+});
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/me', [AuthController::class, 'me']); // Ajoute cette ligne
+    Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+// Routes publiques - Consulter les événements
+Route::get('/events', [EventController::class, 'index']);
+
+// Routes protégées
+Route::middleware('auth:api')->group(function () {
+    // Route spécifique AVANT les routes avec paramètres
+    Route::get('/events/my', [EventController::class, 'myEvents']);
+
+    Route::post('/events', [EventController::class, 'store']);
+    Route::get('/events/{id}', [EventController::class, 'show']);
+    Route::put('/events/{id}', [EventController::class, 'update']);
+    Route::delete('/events/{id}', [EventController::class, 'destroy']);
+
+    // Opérations
+    Route::get('/operations', [OperationController::class, 'index']);
+    Route::get('/operations/{id}', [OperationController::class, 'show']);
+});
+
+// Types d'opérations
+Route::get('/type-operations', [TypeOperationController::class, 'index']);
