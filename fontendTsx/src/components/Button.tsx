@@ -1,0 +1,22 @@
+import { Loader2 } from 'lucide-react';
+import React from 'react'
+
+type ButtonProps = {
+  type?: "button" | "submit" | "reset";
+  isLoading?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  className?: string;
+};
+export default function Button({type="button",isLoading=false,disabled=false,children,className}:ButtonProps) {
+  return (
+     <button
+      type={type}
+      disabled={disabled}
+      className={`flex items-center justify-center gap-2 rounded-[4px] px-[8px] py-[6px] bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed transition ${className}`}
+    >
+      {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+      {children}
+    </button>
+  )
+}
