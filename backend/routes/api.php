@@ -6,11 +6,11 @@ use App\Http\Middleware\JwtMiddleware;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-Route::get('/', function () {
+Route::get('/user', function () {
     return response()->json(['message' => 'Hello world!']);
 })->middleware('auth.jwt');
 
-Route::post('/refresh', [AuthController::class, 'refresh']);
+Route::get('/refresh', [AuthController::class, 'refresh']);
 // Route::get('/user', function (Request $request) {
 //     return new UserResource($request->user());  //le mdp et token ne sont pas envoyé (voir resource)
 // })->middleware('auth:sanctum');

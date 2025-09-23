@@ -23,40 +23,46 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
         ]);
+
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+        $accessToken = $this->generateAccessToken($user);
+        $refreshToken = $this->generateRefreshToken($user);
+        return response()->json([
+            'token' => $accessToken,
+            'user' => $user,
+        ], 201)->cookie(
+                        'refresh_token',        // cookie name
+                        $refreshToken,          // cookie value (JWT string)
+                        7*24*60,                // minutes → 7 days
+                        '/',                   // path → defaults to "/"
+                        null,                   //domain → defaults to current domain
+                        false,                  //secure → ❌ (so works on HTTP localhost)
+                        true                   // httpOnly → ❌ (so frontend JS can read it)
+                );
+
+
     } catch (ValidationException $e) {
         return response()->json([
             'status' => 'error',
             'errors' => $e->errors(),
         ], 422);
-    }
-
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-    ]);
-
-    try {
-        $accessToken = JWTAuth::fromUser($user);
-        $refreshToken = JWTAuth::fromUser($user, ['exp' => 60]); 
-    } catch (JWTException $e) {
+    }   catch (JWTException $e) {
         return response()->json(['error' => 'Could not create token'], 500);
 
+    }catch (\Throwable $e) {
+            return response()->json(['error' => 'Server error'], 500);
     }
 
-    return response()->json([
-        'token' => $accessToken,
-        'user' => $user,
-    ], 201)->cookie(
-                        'refresh_token',        // cookie name
-                        $refreshToken,          // cookie value (JWT string)
-                        7*24*60,                // minutes → 7 days
-                        '/',                   // path → defaults to "/"
-                        null,                   // domain → defaults to current domain
-                        false,                  // secure → ❌ (so works on HTTP localhost)
-                        false                   // httpOnly → ❌ (so frontend JS can read it)
-                );
 
+   
+  
+
+   
 
 
     }
@@ -75,27 +81,29 @@ class AuthController extends Controller
             
             }
             $refreshToken =  $this->generateRefreshToken(JWTAuth::user());
+            return response()->json([
+            'token' => $accessToken,
+            'expires_in' => JWTAuth::factory()->getTTL()*60,
+            "refresh_token"=> JWTAuth::setToken($refreshToken)->getPayload(),
+ 
+        ])
+        ->cookie(
+                        'refresh_token',        // cookie name
+                        $refreshToken,          // cookie value (JWT string)
+                        7*24*60,                // minutes → 7 days
+                        '/',                   // path → defaults to "/"
+                        null,                   //domain → defaults to current domain
+                        false,                  //secure → ❌ (so works on HTTP localhost)
+                        true                   // httpOnly → ❌ (so frontend JS can read it)
+                );
+
 
                     
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
 
-        return response()->json([
-            'token' => JWTAuth::setToken($accessToken)->getPayload(),
-            'expires_in' => JWTAuth::factory()->getTTL()*60,
-            "refresh_token"=> JWTAuth::setToken($refreshToken)->getPayload(),
- 
-        ])->cookie(
-                        'refresh_token',        // cookie name
-                        $refreshToken,          // cookie value (JWT string)
-                        7*24*60,                // minutes → 7 days
-                        '/',                   // path → defaults to "/"
-                        null,                   // domain → defaults to current domain
-                        false,                  // secure → ❌ (so works on HTTP localhost)
-                        true                   // httpOnly → ❌ (so frontend JS can read it)
-                );
-
+        
     }
 
 
@@ -121,8 +129,9 @@ class AuthController extends Controller
         }
 
 
-     public function refresh(Request $request)
+    public function refresh(Request $request)
     {
+        
         $refreshToken = $request->cookie('refresh_token');
 
         if (empty($refreshToken)) {
