@@ -1,15 +1,16 @@
-import React, { useState } from 'react'
-import InputWithLabel from '../components/InputWithLabel'
-import Button from '../components/Button'
-import { useAuth } from '../context/AuthContext'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { registerSchema, type RegisterInput } from '../schema/auth'
-import { AxiosError } from 'axios'
+import React, { useState } from "react"
+import InputWithLabel from "../components/InputWithLabel"
+import Button from "../components/Button"
+import { useAuth } from "../context/AuthContext"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { registerSchema, type RegisterInput } from "../schema/auth"
+import { AxiosError } from "axios"
 
-function Register() {
+export default function Register() {
   const { register_user } = useAuth()
- const [serverError, setServerError] = useState<string | null>(null)
+  const [serverError, setServerError] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
@@ -17,31 +18,30 @@ function Register() {
     formState: { errors, isSubmitting, isValid },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    mode: 'onChange', // validate on input change
+    mode: "onChange",
   })
 
   const onSubmit = async (data: RegisterInput) => {
+    setServerError(null)
     try {
-      const userData: RegisterInput = {
+      await register_user({
         email: data.email,
-        name: data.name, // <-- use data.name instead of email
+        name: data.name,
         password: data.password,
         password_confirmation: data.password_confirmation,
-      }
-
-      await register_user(userData)
-      console.log('User added successfully')
-    } catch (error) {
-        if(error instanceof AxiosError){
-                if(error?.status === 422){
-                    setError('email', { message: 'Cet email est déjà utilisé.' })
-                    setServerError('Un compte existe déjà avec cette adresse e-mail.')
-                }
-        }else{
-             setServerError('Échec de connexion. Veuillez réessayer.')
-
+      })
+      console.log("User registered successfully")
+    } catch (error: any) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 422) {
+          setError("email", { message: "Cet email est déjà utilisé." })
+          setServerError("Un compte existe déjà avec cette adresse e-mail.")
+        } else {
+          setServerError("Échec de l'inscription. Veuillez réessayer.")
         }
-      
+      } else {
+        setServerError("Échec de l'inscription. Veuillez réessayer.")
+      }
     }
   }
 
@@ -74,6 +74,7 @@ function Register() {
                 label="Email"
                 register={register}
                 name="email"
+                required
               />
               <InputWithLabel
                 errors={errors}
@@ -81,6 +82,7 @@ function Register() {
                 label="Nom"
                 register={register}
                 name="name"
+                required
               />
               <InputWithLabel
                 errors={errors}
@@ -88,6 +90,7 @@ function Register() {
                 label="Mot de Passe"
                 register={register}
                 name="password"
+                required
               />
               <InputWithLabel
                 errors={errors}
@@ -95,17 +98,19 @@ function Register() {
                 label="Confirmer le Mot de Passe"
                 register={register}
                 name="password_confirmation"
+                required
               />
             </div>
 
             <Button
               type="submit"
-              disabled={!isValid}
+              disabled={!isValid || isSubmitting}
               isLoading={isSubmitting}
             >
               Créer le compte
             </Button>
-              {/* Error Section */}
+
+            {/* Server Error */}
             {serverError && (
               <p className="text-red-600 text-sm font-medium text-center">
                 {serverError}
@@ -126,5 +131,3 @@ function Register() {
     </section>
   )
 }
-
-export default Register

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import authService from '../service/authService';
 import type { LoginCredentials, RegisterCredentials } from '../types/auth';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -26,7 +27,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
-     const [user, setUser] = useState<User | null>(null);
+    const navigate = useNavigate()
+    const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
            const didRun = useRef(false);
     useEffect(() => {
@@ -34,6 +36,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
      
         const initAuth = async () => {
             console.log("im here")
+
             
           if (didRun.current) return; // persist across renders
             didRun.current = true;
@@ -42,7 +45,8 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
             const data = await authService.refresh();
             console.log("token",data)
             setAccessToken(data);
-            console.log(accessToken)
+            navigate("/")
+            
           
         } catch {
             setAccessToken(null);

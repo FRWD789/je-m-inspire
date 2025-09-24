@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { LoginCredentials, RegisterCredentials } from "../types/auth";
+import type { LoginCredentials, RegisterCredentials, ResetPasswordData } from "../types/auth";
 import { api, privateApi } from "../api/api";
 
 
@@ -30,6 +30,18 @@ const authService = {
     const response = await api.get("/refresh");
     return response.data.access_token;
   },
+
+  // forgot password
+  forgotPassword : async (email: string) => {
+  const res = await api.post("/forgot-password", { email });
+  return res.data;
+  },
+
+  // reset password
+  resetPassword : async (data: ResetPasswordData) => {
+  const res = await api.post("/reset-password", data);
+  return res.data;
+}
 
 
 };

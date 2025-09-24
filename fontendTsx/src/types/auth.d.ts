@@ -21,3 +21,10 @@ export interface RegisterCredentials {
   password: string;
   password_confirmation:string
 }
+
+export interface ResetPasswordData {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};

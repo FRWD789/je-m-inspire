@@ -15,56 +15,37 @@ class AuthController extends Controller
 {
 
     
-    public function register(Request $request){
-       
-        try {
+ public function register(Request $request)
+{
+    try {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-        $accessToken = $this->generateAccessToken($user);
-        $refreshToken = $this->generateRefreshToken($user);
+
+        // Send verification email
+        $user->sendEmailVerificationNotification();
+
         return response()->json([
-            'token' => $accessToken,
-            'user' => $user,
-        ], 201)->cookie(
-                        'refresh_token',        // cookie name
-                        $refreshToken,          // cookie value (JWT string)
-                        7*24*60,                // minutes → 7 days
-                        '/',                   // path → defaults to "/"
-                        null,                   //domain → defaults to current domain
-                        false,                  //secure → ❌ (so works on HTTP localhost)
-                        true                   // httpOnly → ❌ (so frontend JS can read it)
-                );
+            'message' => 'User registered successfully. Please verify your email before logging in.',
+           
+        ], 201);
 
-
-    } catch (ValidationException $e) {
-        return response()->json([
-            'status' => 'error',
-            'errors' => $e->errors(),
-        ], 422);
-    }   catch (JWTException $e) {
-        return response()->json(['error' => 'Could not create token'], 500);
-
-    }catch (\Throwable $e) {
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
             return response()->json(['error' => 'Server error'], 500);
-    }
-
-
-   
-  
-
-   
-
-
+        }
     }
     public function login(Request $request)
     {
@@ -80,6 +61,13 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Invalid credentials'], 401);
             
             }
+            $user = JWTAuth::user();
+
+            if (!JWTAuth::user()->hasVerifiedEmail()) {
+                JWTAuth::user()->sendEmailVerificationNotification();
+                return response()->json(['error' => 'Please verify your email before logging in.',"user"=>$user], 403);
+            }
+
             $refreshToken =  $this->generateRefreshToken(JWTAuth::user());
             return response()->json([
             'token' => $accessToken,

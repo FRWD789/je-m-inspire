@@ -6,9 +6,13 @@ import InputWithLabel from '../components/InputWithLabel'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import type { LoginCredentials } from '../types/auth'
+import { useNavigate, Link } from 'react-router-dom'
+// import { toast } from 'react-toastify'
+// import 'react-toastify/dist/ReactToastify.css'
 
 function Login() {
   const { login } = useAuth()
+  const navigate = useNavigate()
 
   const {
     register,
@@ -16,70 +20,93 @@ function Login() {
     formState: { errors, isSubmitting, isValid },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    mode: 'onChange', // validate on input change
+    mode: 'onChange',
   })
 
   const onSubmit = async (data: LoginInput) => {
     try {
+      const credentials: LoginCredentials = {
+        email: data.email,
+        password: data.password,
+      }
 
-        const credentials: LoginCredentials = {
-      email: data.email,
-      password: data.password
-    };
       await login(credentials)
-      console.log('Logged in successfully')
-    } catch (error) {
+      // toast.success('Connexion réussie !')
+      navigate('/')
+    } catch (error: any) {
+      // toast.error(
+      //   error?.response?.data?.message || 'Échec de la connexion. Veuillez réessayer.'
+      // )
       console.error('Login failed', error)
     }
   }
 
   return (
-    <section className="flex relative h-screen w-full items-center">
+    <section className="flex flex-col sm:flex-row h-screen w-full">
       {/* Logo */}
       <img
         src="/assets/img/logo.png"
         alt="Logo"
-        className="absolute top-4 left-2 w-24"
+        className="absolute top-4 left-2 w-24 sm:w-28"
       />
 
       {/* Form Section */}
-      <div className="sm:w-1/2 w-full h-full grid px-5 sm:px-28 items-center">
-        <div className="grid gap-8">
+      <div className="sm:w-1/2 w-full h-full flex flex-col justify-center px-5 sm:px-28">
+        <div className="max-w-md mx-auto grid gap-8">
           {/* Heading */}
-          <div className="grid justify-center gap-4 text-center">
-            <h1 className="text-3xl font-bold">Bonjour!</h1>
-            <h3 className="text-gray-600">
-              Pour vous connecter à votre compte, renseignez votre adresse e-mail ainsi que votre mot de passe.
-            </h3>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">Bonjour !</h1>
+            <p className="mt-2 text-gray-600">
+              Connectez-vous à votre compte en utilisant votre e-mail et votre mot de passe.
+            </p>
           </div>
 
           {/* Form */}
           <form className="grid gap-6" onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-2">
-              <InputWithLabel
-                errors={errors}
-                type="email"
-                label="Email"
-                register={register}
-                name="email"
-              />
-              <InputWithLabel
-                errors={errors}
-                type="password"
-                label="Mot de Passe"
-                register={register}
-                name="password"
-              />
+            <InputWithLabel
+              errors={errors}
+              type="email"
+              label="Email"
+              register={register}
+              name="email"
+              // placeholder="votre.email@exemple.com"
+              required
+            />
+            <InputWithLabel
+              errors={errors}
+              type="password"
+              label="Mot de passe"
+              register={register}
+              name="password"
+              // placeholder="••••••••"
+              required
+            />
+
+            <div className="flex justify-between items-center text-sm">
+              <Link
+                to="/forgot-password"
+                className="text-blue-600 hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
             </div>
 
             <Button
               type="submit"
-              disabled={!isValid}
+              disabled={!isValid || isSubmitting}
               isLoading={isSubmitting}
+              className="w-full"
             >
               Se connecter
             </Button>
           </form>
+
+          <p className="text-center text-gray-500 text-sm mt-4">
+            Pas encore de compte ?{' '}
+            <Link to="/register" className="text-blue-600 hover:underline">
+              Inscrivez-vous
+            </Link>
+          </p>
         </div>
       </div>
 
@@ -87,7 +114,7 @@ function Login() {
       <div className="hidden sm:block flex-1 h-full w-full">
         <img
           src="/assets/img/bg-hero.avif"
-          alt="hero-bg"
+          alt="Illustration d'accueil"
           className="w-full h-full object-cover"
         />
       </div>
