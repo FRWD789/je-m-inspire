@@ -155,7 +155,7 @@ const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
                     >
                         <option value="utilisateur">Utilisateur</option>
                         <option value="professionnel">Professionnel</option>
-                        <option value="admin">Administrateur</option>
+                        {/* <option value="admin">Administrateur</option> */}
                     </select>
 
                     {rolesError && (

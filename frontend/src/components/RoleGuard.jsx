@@ -93,6 +93,15 @@ export const ProfessionalOnly = ({ children, fallback, redirectTo }) => (
         {children}
     </RoleGuard>
 );
+export const UserOnly = ({ children, fallback, redirectTo }) => (
+    <RoleGuard 
+        roles={['utilisateur']} 
+        fallback={fallback} 
+        redirectTo={redirectTo}
+    >
+        {children}
+    </RoleGuard>
+);
 
 export const UserOrProfessional = ({ children, fallback, redirectTo }) => (
     <RoleGuard 

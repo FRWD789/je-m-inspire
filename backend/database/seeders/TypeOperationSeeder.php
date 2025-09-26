@@ -14,8 +14,8 @@ class TypeOperationSeeder extends Seeder
     public function run(): void
     {
         DB::table('type_operations')->insert([
-            ['id' => 1, 'name' => 'Creation Evenement', 'description' => 'Opération liée à la création dun événement par un professionnel.'],
-            ['id' => 2, 'name' => 'Reserver Evenement', 'description' => 'Opération pour réserver un événement par un utilisateur.'],
+            ['id' => 1, 'name' => 'Creation', 'description' => 'Opération liée à la création dun événement par un professionnel.'],
+            ['id' => 2, 'name' => 'Reservation', 'description' => 'Opération pour réserver un événement par un utilisateur.'],
             ['id' => 3, 'name' => 'Transaction', 'description' => 'Opération de transaction financière.'],
         ]);
     }

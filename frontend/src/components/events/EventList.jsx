@@ -1,79 +1,174 @@
-import React from 'react';
-import { useEvents } from '../hooks/useEvents';
+import React, { useState } from 'react';
+import { useApi } from "../../contexts/AuthContext";
+import { useEvents } from '../../hooks/useEvents';
+import { EditEventForm } from './editEventForm';
+import { ReserveEventForm } from './reserveEventForm';
 
-export const EventList = () => {
-  const { events, loading, removeEvent } = useEvents();
+export const EventList = ({ endpoint = '/api/events', showReserveButton = true, showDeleteButton = false, showEditButton = false, title = "Événements" }) => {
+    const { events, loading, error, refetch } = useEvents(endpoint);
+    const { post, delete: deleteApi } = useApi();
+    const [editingEvent, setEditingEvent] = useState(null);
+    const [reservingEvent, setReservingEvent] = useState(null);
 
-  if (loading) return <p>Chargement des événements...</p>;
+    const handleReserve =  (event) => {
+        setReservingEvent(event);
+    };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+    const handleDelete = async (eventId, eventName) => {
+        if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${eventName}" ?`)) {
+            try {
+                await deleteApi(`/api/events/${eventId}`);
+                alert('Événement supprimé avec succès !');
+                refetch();
+            } catch (error) {
+                alert(error.response?.data?.error || 'Erreur lors de la suppression');
+            }
+        }
+    };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price);
-  };
+    const handleEdit = (event) => {
+        setEditingEvent(event);
+    };
 
-  return (
-    <div>
-      <h1>Liste des événements</h1>
-      
-      {events.length === 0 ? (
-        <p>Aucun événement disponible.</p>
-      ) : (
-        <table border="1" cellPadding="8" cellSpacing="0" width="100%">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nom</th>
-              <th>Description</th>
-              <th>Date début</th>
-              <th>Date fin</th>
-              <th>Prix de base</th>
-              <th>Capacité</th>
-              <th>Places max</th>
-              <th>Places disponibles</th>
-              <th>Niveau</th>
-              <th>Priorité</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map(event => (
-              <tr key={event.id}>
-                <td>{event.id}</td>
-                <td><strong>{event.name}</strong></td>
-                <td>{event.description}</td>
-                <td>{formatDate(event.start_date)}</td>
-                <td>{formatDate(event.end_date)}</td>
-                <td>{formatPrice(event.base_price)}</td>
-                <td>{event.capacity}</td>
-                <td>{event.max_places}</td>
-                <td>{event.available_places}</td>
-                <td>{event.level}</td>
-                <td>{event.priority}</td>
-                <td>
-                  <button onClick={() => removeEvent(event.id)}>
-                    Supprimer
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      
-      <p>Total: {events.length} événement(s)</p>
-    </div>
-  );
+    const handleEventUpdated = () => {
+        setEditingEvent(null);
+        refetch();
+    };
+    const handleEventReserved = () => {
+        setReservingEvent(null);
+        refetch();
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleString('fr-FR');
+    };
+
+    if (loading) {
+        return <div>Chargement des événements...</div>;
+    }
+
+    if (error) {
+        return <div style={{ color: 'red' }}>{error}</div>;
+    }
+
+    return (
+        <div>
+            <h2>{title}</h2>
+            {events.length === 0 ? (
+                <p>Aucun événement disponible.</p>
+            ) : (
+                <div style={{ display: 'grid', gap: '20px' }}>
+                    {events.map(event => (
+                        <div key={event.id} style={{
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            backgroundColor: '#f9f9f9'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>{event.name}</h3>
+                                    <p style={{ margin: '0 0 10px 0', color: '#666' }}>{event.description}</p>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                                        <div><strong>Début:</strong> {formatDate(event.start_date)}</div>
+                                        <div><strong>Fin:</strong> {formatDate(event.end_date)}</div>
+                                        <div><strong>Prix:</strong> {event.base_price}€</div>
+                                        <div><strong>Places:</strong> {event.available_places}/{event.capacity}</div>
+                                        <div><strong>Niveau:</strong> {event.level}</div>
+                                        {event.localisation && (
+                                            <div><strong>Lieu:</strong> {event.localisation.name || 'Non spécifié'}</div>
+                                        )}
+                                    </div>
+
+                                    {event.creator && (
+                                        <div style={{ 
+                                            backgroundColor: '#e8f4f8', 
+                                            padding: '10px', 
+                                            borderRadius: '4px',
+                                            marginBottom: '15px'
+                                        }}>
+                                            <strong>Organisé par:</strong> {event.creator.name} {event.creator.last_name}
+                                            <br />
+                                            <small style={{ color: '#666' }}>
+                                                {event.creator.roles?.join(', ')} • {event.creator.email}
+                                            </small>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ marginLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {showReserveButton && (
+                                        <button
+                                            onClick={() => handleReserve(event)}
+                                            disabled={event.available_places <= 0}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: event.available_places > 0 ? '#28a745' : '#6c757d',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: event.available_places > 0 ? 'pointer' : 'not-allowed'
+                                            }}
+                                        >
+                                            {event.available_places > 0 ? 'Réserver' : 'Complet'}
+                                        </button>
+                                    )}
+
+                                    {showEditButton && (
+                                        <button
+                                            onClick={() => handleEdit(event)}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: '#ffc107',
+                                                color: '#212529',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Modifier
+                                        </button>
+                                    )}
+
+                                    {showDeleteButton && (
+                                        <button
+                                            onClick={() => handleDelete(event.id, event.name)}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: '#dc3545',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Supprimer
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+            
+            {/* Modale d'édition */}
+            {editingEvent && (
+                <EditEventForm
+                    event={editingEvent}
+                    onEventUpdated={handleEventUpdated}
+                    onCancel={() => setEditingEvent(null)}
+                />
+            )}
+            {/* Modale de reservation */}
+            {reservingEvent && (
+                <ReserveEventForm
+                    event={reservingEvent}
+                    onEventReserved={handleEventReserved}
+                    onCancel={() => setReservingEvent(null)}
+                />
+            )}
+        </div>
+    );
 };

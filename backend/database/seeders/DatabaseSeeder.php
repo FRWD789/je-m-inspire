@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             LocalisationSeeder::class,
             TypeOperationSeeder::class,
             EventSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }

@@ -44,6 +44,8 @@ Route::get('/events', [EventController::class, 'index']);
 Route::middleware('auth:api')->group(function () {
     // Route spécifique AVANT les routes avec paramètres
     Route::get('/events/my', [EventController::class, 'myEvents']);
+    Route::get('/events/mesReservations', [OperationController::class, 'mesReservations']);
+
 
     Route::post('/events', [EventController::class, 'store']);
     Route::get('/events/{id}', [EventController::class, 'show']);
@@ -51,8 +53,11 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
 
     // Opérations
+    Route::post('/operations', [OperationController::class, 'store']);
     Route::get('/operations', [OperationController::class, 'index']);
     Route::get('/operations/{id}', [OperationController::class, 'show']);
+    Route::delete('/operations/{id}', [OperationController::class, 'destroy']);
+
 });
 
 // Types d'opérations

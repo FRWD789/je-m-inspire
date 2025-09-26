@@ -18,10 +18,12 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
 
             // FK event (1 event a UNE operation seulement)
-            $table->foreignId('event_id')->unique()->constrained('events')->onDelete('cascade');
+            $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
 
             // FK type_operation
             $table->foreignId('type_operation_id')->constrained('type_operations')->onDelete('cascade');
+            $table->integer('adults')->default(0);
+            $table->integer('children')->default(0);
 
             $table->timestamps();
         });
