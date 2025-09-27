@@ -1,9 +1,10 @@
+// components/events/EventDashboard.jsx
 import React, { useState } from 'react';
 import { useAuth } from "../../contexts/AuthContext";
 import { EventList } from './EventList';
-import { ProfessionalOnly, UserOnly } from '../RoleGuard';
-import { CreateEventForm } from './createEventForm';
-import { ReservationList } from './ReservationList';
+import { ProfessionalOnly, UserOnly } from '../common/RoleGuard';
+import { CreateEventForm } from './CreateEventForm';
+import { MyReservations } from '../reservations/MyReservations';
 
 export const EventDashboard = () => {
     const { user, isProfessional, hasRole } = useAuth();
@@ -29,6 +30,7 @@ export const EventDashboard = () => {
                 >
                     Tous les événements
                 </button>
+                
                 {/* Onglet pour les utilisateurs - Mes réservations */}
                 {(hasRole('utilisateur') || hasRole('client')) && (
                     <button
@@ -38,6 +40,7 @@ export const EventDashboard = () => {
                         Mes réservations
                     </button>
                 )}
+                
                 {isProfessional() && (
                     <>
                         <button
@@ -54,7 +57,6 @@ export const EventDashboard = () => {
                         </button>
                     </>
                 )}
-                
             </div>
 
             {/* Contenu des onglets */}
@@ -78,7 +80,7 @@ export const EventDashboard = () => {
                 {activeTab === 'myEvents' && (
                     <ProfessionalOnly fallback={<p>Accès réservé aux professionnels</p>}>
                         <EventList 
-                            endpoint="/api/events/my" 
+                            endpoint="/api/my-events" 
                             title="Mes événements créés"
                             showReserveButton={false} 
                             showDeleteButton={true}
@@ -89,7 +91,7 @@ export const EventDashboard = () => {
 
                 {activeTab === 'myReservations' && (
                     <UserOnly fallback={<p>Accès réservé aux utilisateurs</p>}>
-                        <ReservationList/>
+                        <MyReservations />
                     </UserOnly>
                 )}
             </div>

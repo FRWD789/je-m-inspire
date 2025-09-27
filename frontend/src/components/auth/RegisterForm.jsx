@@ -1,7 +1,7 @@
 // components/RegisterForm.jsx
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useRoles } from '../hooks/useRoles';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRoles } from '../../hooks/useRoles';
 
 const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
     const [formData, setFormData] = useState({

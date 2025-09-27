@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,10 +12,18 @@ class Operation extends Model
         'user_id',
         'event_id',
         'type_operation_id',
-        'adults',
-        'children',
+        'quantity', // Remplace adults + children
+        'paiement_id',
+        'abonnement_id'
     ];
 
+    protected $casts = [
+        'quantity' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    // Relations
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -31,4 +38,22 @@ class Operation extends Model
     {
         return $this->belongsTo(TypeOperation::class, 'type_operation_id');
     }
+
+    public function paiement()
+    {
+        return $this->belongsTo(Paiement::class, 'paiement_id', 'paiement_id');
+    }
+
+    public function abonnement()
+    {
+        return $this->belongsTo(Abonnement::class, 'abonnement_id', 'abonnement_id');
+    }
+
+    // Accesseur pour le montant total
+    public function getTotalAmountAttribute()
+    {
+        if (!$this->event) return 0;
+        return $this->quantity * $this->event->base_price;
+    }
 }
+?>

@@ -1,7 +1,8 @@
+// components/reservations/MyReservations.jsx (ancien ReservationList.jsx)
 import React, { useState, useEffect } from 'react';
 import { useApi } from "../../contexts/AuthContext";
 
-export const ReservationList = () => {
+export const MyReservations = () => {
     const { get, delete: deleteApi } = useApi();
     const [reservations, setReservations] = useState([]);
     const [stats, setStats] = useState(null);
@@ -17,10 +18,9 @@ export const ReservationList = () => {
             setLoading(true);
             setError(null);
 
-            const response = await get('/api/events/mesReservations');
-            console.log('Réponse API:', response);
-
-            const data = response.data || response; // Axios → .data
+            // API mise à jour selon le nouveau backend
+            const response = await get('/api/mes-reservations');
+            const data = response.data || response;
 
             setReservations(data.reservations || []);
             setStats(data.stats || null);
@@ -32,13 +32,12 @@ export const ReservationList = () => {
         }
     };
 
-
     const handleCancelReservation = async (reservationId) => {
         if (window.confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
             try {
-                await deleteApi(`/api/operations/${reservationId}`);
+                await deleteApi(`/api/reservations/${reservationId}`);
                 alert('Réservation annulée avec succès');
-                fetchReservations(); // Recharger la liste
+                fetchReservations();
             } catch (err) {
                 console.error('Erreur lors de l\'annulation:', err);
                 alert(err.response?.data?.error || 'Erreur lors de l\'annulation');
@@ -123,9 +122,9 @@ export const ReservationList = () => {
                         textAlign: 'center'
                     }}>
                         <h3 style={{ margin: '0 0 5px 0', color: '#f57c00' }}>
-                            {stats.total_personnes}
+                            {stats.total_places}
                         </h3>
-                        <p style={{ margin: 0, fontSize: '14px' }}>Personnes total</p>
+                        <p style={{ margin: 0, fontSize: '14px' }}>Places total</p>
                     </div>
                     <div style={{
                         background: '#f3e5f5',
@@ -141,18 +140,6 @@ export const ReservationList = () => {
                 </div>
             )}
 
-            {/* Debug info */}
-            <div style={{ 
-                background: '#f8f9fa', 
-                padding: '10px', 
-                borderRadius: '4px', 
-                marginBottom: '20px',
-                fontSize: '12px',
-                color: '#666'
-            }}>
-                <strong>Debug:</strong> {reservations.length} réservation(s) trouvée(s)
-            </div>
-
             {/* Liste des réservations */}
             {reservations.length === 0 ? (
                 <div style={{
@@ -165,11 +152,25 @@ export const ReservationList = () => {
                     <small style={{ color: '#666' }}>
                         Les réservations que vous effectuez apparaîtront ici.
                     </small>
+                    <br />
+                    <button
+                        onClick={() => window.location.href = '/events'}
+                        style={{
+                            marginTop: '15px',
+                            padding: '10px 20px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Découvrir les événements
+                    </button>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '20px' }}>
                     {reservations.map((reservation, index) => {
-                        console.log('Réservation:', reservation); // Debug
                         const statusColors = getStatusColor(reservation.statut);
                         
                         return (
@@ -205,8 +206,8 @@ export const ReservationList = () => {
                                             <div><strong>Fin:</strong> {formatDate(reservation.end_date || reservation.event?.end_date)}</div>
                                             <div><strong>Lieu:</strong> {reservation.localisation || reservation.event?.localisation?.name || 'Non spécifié'}</div>
                                             <div><strong>Catégorie:</strong> {reservation.categorie || reservation.event?.categorie?.name || 'Non spécifiée'}</div>
-                                            <div><strong>Adultes:</strong> {reservation.adults || 0}</div>
-                                            <div><strong>Enfants:</strong> {reservation.children || 0}</div>
+                                            <div><strong>Nombre de places:</strong> {reservation.quantity || (reservation.adults + reservation.children) || 1}</div>
+                                            <div><strong>Prix unitaire:</strong> {reservation.unit_price || reservation.event?.base_price || 0}€</div>
                                         </div>
 
                                         <div style={{
@@ -216,10 +217,10 @@ export const ReservationList = () => {
                                             marginBottom: '10px'
                                         }}>
                                             <strong>
-                                                Total: {reservation.prix_total || (reservation.total_personnes * (reservation.prix_unitaire || reservation.event?.base_price))}€
+                                                Total: {reservation.total_price || reservation.prix_total || (reservation.quantity * reservation.unit_price)}€
                                             </strong>
                                             <small style={{ display: 'block', color: '#666' }}>
-                                                {(reservation.total_personnes || (reservation.adults + reservation.children))} personne(s) × {reservation.prix_unitaire || reservation.event?.base_price}€
+                                                {reservation.quantity || (reservation.adults + reservation.children) || 1} place(s) × {reservation.unit_price || reservation.event?.base_price || 0}€
                                             </small>
                                         </div>
 

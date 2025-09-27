@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('operations', function (Blueprint $table) {
@@ -17,22 +14,29 @@ return new class extends Migration
             // FK user (1 user peut avoir plusieurs opérations)
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
 
-            // FK event (1 event a UNE operation seulement)
+            // FK event (1 event peut avoir plusieurs opérations)
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
 
             // FK type_operation
             $table->foreignId('type_operation_id')->constrained('type_operations')->onDelete('cascade');
-            $table->integer('adults')->default(0);
-            $table->integer('children')->default(0);
+
+            // Nombre de places (remplace adults + children)
+            $table->integer('quantity')->default(1);
+
+            // FK paiement (optionnel)
+            $table->foreignId('paiement_id')->nullable()->constrained('paiements', 'paiement_id')->onDelete('set null');
+
+            // FK abonnement (optionnel)
+            $table->foreignId('abonnement_id')->nullable()->constrained('abonnements', 'abonnement_id')->onDelete('set null');
 
             $table->timestamps();
-        });
 
+            // Index pour les requêtes courantes
+            $table->index(['user_id', 'type_operation_id']);
+            $table->index(['event_id', 'type_operation_id']);
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('operations');

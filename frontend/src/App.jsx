@@ -1,77 +1,78 @@
-// App.jsx
-import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth, useApi } from './contexts/AuthContext';
-import RegisterForm from './components/RegisterForm';
-import LoginForm from './components/LoginForm';
-import { Navigation } from './components/Navigation';
-import { EventDashboard } from './components/events/EventDashboard';
+// src/App.jsx
+import React, { useState, useEffect } from "react";
+import { AuthProvider, useAuth, useApi } from "./contexts/AuthContext";
+import RegisterForm from "./components/auth/RegisterForm";
+import LoginForm from "./components/auth/LoginForm";
+import { Navigation } from "./components/common/Navigation";
+import { EventDashboard } from "./components/events/EventDashboard";
 
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
 
-// Composant principal de l'application
-const AppContent = () => {
-    const { isAuthenticated, loading, isInitialized } = useAuth();
-    const [showRegister, setShowRegister] = useState(false);
+function AppContent() {
+  const { user, loading, isAuthenticated } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
 
-    if (!isInitialized || loading) {
-        return (
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '100vh' 
-            }}>
-                <div>Chargement de l'application...</div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return (
-            <div>
-                {showRegister ? (
-                    <RegisterForm 
-                        onRegistrationSuccess={() => setShowRegister(false)}
-                        onSwitchToLogin={() => setShowRegister(false)}
-                    />
-                ) : (
-                    <div>
-                        <LoginForm />
-                        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                            <span>Pas encore de compte ? </span>
-                            <button 
-                                onClick={() => setShowRegister(true)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: '#007bff',
-                                    cursor: 'pointer',
-                                    textDecoration: 'underline'
-                                }}
-                            >
-                                S'inscrire
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
+  if (loading) {
     return (
-        <div>
-            <Navigation />
-            <EventDashboard />
-        </div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        Chargement...
+      </div>
     );
-};
+  }
 
-// App principale avec le Provider
-const App = () => {
+  if (!isAuthenticated) {
     return (
-        <AuthProvider>
-            <AppContent />
-        </AuthProvider>
+      <div>
+        {showRegister ? (
+          <RegisterForm
+            onRegistrationSuccess={() => {
+              setShowRegister(false);
+              // L'utilisateur sera automatiquement connecté après l'inscription
+            }}
+            onSwitchToLogin={() => setShowRegister(false)}
+          />
+        ) : (
+          <div>
+            <LoginForm />
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              <span style={{ color: '#666' }}>Pas encore de compte ? </span>
+              <button 
+                onClick={() => setShowRegister(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#3498db',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                S'inscrire
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     );
-};
+  }
+
+  return (
+    <div>
+      <Navigation />
+      <EventDashboard />
+    </div>
+  );
+}
 
 export default App;

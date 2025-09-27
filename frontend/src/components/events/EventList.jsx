@@ -1,17 +1,23 @@
+// components/events/EventList.jsx
 import React, { useState } from 'react';
 import { useApi } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
-import { EditEventForm } from './editEventForm';
-import { ReserveEventForm } from './reserveEventForm';
+import { EditEventForm } from './EditEventForm';
 
-export const EventList = ({ endpoint = '/api/events', showReserveButton = true, showDeleteButton = false, showEditButton = false, title = "Événements" }) => {
+export const EventList = ({ 
+    endpoint = '/api/events', 
+    showReserveButton = true, 
+    showDeleteButton = false, 
+    showEditButton = false, 
+    title = "Événements" 
+}) => {
     const { events, loading, error, refetch } = useEvents(endpoint);
-    const { post, delete: deleteApi } = useApi();
+    const { delete: deleteApi } = useApi();
     const [editingEvent, setEditingEvent] = useState(null);
-    const [reservingEvent, setReservingEvent] = useState(null);
 
-    const handleReserve =  (event) => {
-        setReservingEvent(event);
+    const handleReserve = (event) => {
+        // Redirection directe vers la page de paiement (plus de modal)
+        window.location.href = `/payment/${event.id}`;
     };
 
     const handleDelete = async (eventId, eventName) => {
@@ -26,30 +32,12 @@ export const EventList = ({ endpoint = '/api/events', showReserveButton = true, 
         }
     };
 
-    const handleEdit = (event) => {
-        setEditingEvent(event);
-    };
-
-    const handleEventUpdated = () => {
-        setEditingEvent(null);
-        refetch();
-    };
-    const handleEventReserved = () => {
-        setReservingEvent(null);
-        refetch();
-    };
-
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString('fr-FR');
     };
 
-    if (loading) {
-        return <div>Chargement des événements...</div>;
-    }
-
-    if (error) {
-        return <div style={{ color: 'red' }}>{error}</div>;
-    }
+    if (loading) return <div>Chargement des événements...</div>;
+    if (error) return <div style={{ color: 'red' }}>{error}</div>;
 
     return (
         <div>
@@ -73,8 +61,8 @@ export const EventList = ({ endpoint = '/api/events', showReserveButton = true, 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
                                         <div><strong>Début:</strong> {formatDate(event.start_date)}</div>
                                         <div><strong>Fin:</strong> {formatDate(event.end_date)}</div>
-                                        <div><strong>Prix:</strong> {event.base_price}€</div>
-                                        <div><strong>Places:</strong> {event.available_places}/{event.capacity}</div>
+                                        <div><strong>Prix par place:</strong> {event.base_price}€</div>
+                                        <div><strong>Places:</strong> {event.available_places}/{event.max_places}</div>
                                         <div><strong>Niveau:</strong> {event.level}</div>
                                         {event.localisation && (
                                             <div><strong>Lieu:</strong> {event.localisation.name || 'Non spécifié'}</div>
@@ -117,7 +105,7 @@ export const EventList = ({ endpoint = '/api/events', showReserveButton = true, 
 
                                     {showEditButton && (
                                         <button
-                                            onClick={() => handleEdit(event)}
+                                            onClick={() => setEditingEvent(event)}
                                             style={{
                                                 padding: '10px 20px',
                                                 backgroundColor: '#ffc107',
@@ -153,20 +141,15 @@ export const EventList = ({ endpoint = '/api/events', showReserveButton = true, 
                 </div>
             )}
             
-            {/* Modale d'édition */}
+            {/* Modale d'édition seulement */}
             {editingEvent && (
                 <EditEventForm
                     event={editingEvent}
-                    onEventUpdated={handleEventUpdated}
+                    onEventUpdated={() => {
+                        setEditingEvent(null);
+                        refetch();
+                    }}
                     onCancel={() => setEditingEvent(null)}
-                />
-            )}
-            {/* Modale de reservation */}
-            {reservingEvent && (
-                <ReserveEventForm
-                    event={reservingEvent}
-                    onEventReserved={handleEventReserved}
-                    onCancel={() => setReservingEvent(null)}
                 />
             )}
         </div>
