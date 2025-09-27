@@ -1,51 +1,136 @@
-import React from 'react';
-import { CheckCircle } from 'lucide-react';
-import { formatDate, formatCurrency } from '../../utils/formatUtils';
+// components/payment/PaymentSuccess.jsx
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useApi } from '../../contexts/AuthContext';
 
-const PaymentSuccess = ({ paymentData }) => (
-  <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg text-center">
-    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-      <CheckCircle size={32} className="text-green-600" />
-    </div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-2">Paiement réussi !</h1>
-    <p className="text-gray-600 mb-6">
-      Votre réservation a été confirmée avec succès.
-    </p>
-    
-    <ReservationDetails paymentData={paymentData} />
-    <SuccessActions />
-  </div>
-);
+const PaymentSuccess = () => {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const { get } = useApi();
+    const [loading, setLoading] = useState(true);
+    const [paymentDetails, setPaymentDetails] = useState(null);
+    const [error, setError] = useState(null);
 
-const ReservationDetails = ({ paymentData }) => (
-  <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
-    <h3 className="font-semibold text-gray-900 mb-2">Détails de la réservation</h3>
-    <div className="space-y-1 text-sm text-gray-600">
-      <p><strong>Événement :</strong> {paymentData.event?.name}</p>
-      <p><strong>Date :</strong> {formatDate(paymentData.event?.start_date)}</p>
-      <p><strong>Lieu :</strong> {paymentData.event?.localisation}</p>
-      <p><strong>Nombre de places :</strong> {paymentData.quantity}</p>
-      <p><strong>Prix unitaire :</strong> {formatCurrency(paymentData.unit_price)}</p>
-      <p><strong>Total payé :</strong> {formatCurrency(paymentData.total)}</p>
-    </div>
-  </div>
-);
+    useEffect(() => {
+        const verifyPayment = async () => {
+            try {
+                const sessionId = searchParams.get('session_id');
+                const paymentId = searchParams.get('paymentId');
+                
+                if (sessionId || paymentId) {
+                    // Vérifier le paiement côté serveur
+                    const response = await get(`/api/payment/status?session_id=${sessionId}&payment_id=${paymentId}`);
+                    setPaymentDetails(response.data);
+                }
+            } catch (error) {
+                console.error('Erreur vérification paiement:', error);
+                setError('Erreur lors de la vérification du paiement');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-const SuccessActions = () => (
-  <div className="space-y-3">
-    <button
-      onClick={() => window.location.href = '/mes-reservations'}
-      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-    >
-      Voir mes réservations
-    </button>
-    <button
-      onClick={() => window.location.href = '/events'}
-      className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-    >
-      Retour aux événements
-    </button>
-  </div>
-);
+        verifyPayment();
+    }, [searchParams]);
+
+    const handleGoToDashboard = () => {
+        navigate('/');
+    };
+
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                textAlign: 'center'
+            }}>
+                <div style={{ fontSize: '18px', marginBottom: '20px' }}>
+                    Vérification du paiement en cours...
+                </div>
+                <div>Veuillez patienter</div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{
+            maxWidth: '600px',
+            margin: '50px auto',
+            padding: '40px',
+            textAlign: 'center',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '10px',
+            border: '1px solid #dee2e6'
+        }}>
+            {error ? (
+                <div>
+                    <div style={{
+                        fontSize: '48px',
+                        color: '#dc3545',
+                        marginBottom: '20px'
+                    }}>
+                        ❌
+                    </div>
+                    <h1 style={{ color: '#dc3545', marginBottom: '20px' }}>
+                        Erreur de vérification
+                    </h1>
+                    <p style={{ color: '#666', marginBottom: '30px' }}>
+                        {error}
+                    </p>
+                </div>
+            ) : (
+                <div>
+                    <div style={{
+                        fontSize: '48px',
+                        color: '#28a745',
+                        marginBottom: '20px'
+                    }}>
+                        ✅
+                    </div>
+                    <h1 style={{ color: '#28a745', marginBottom: '20px' }}>
+                        Paiement réussi !
+                    </h1>
+                    <p style={{ color: '#666', marginBottom: '30px' }}>
+                        Votre réservation a été confirmée. Vous recevrez un email de confirmation sous peu.
+                    </p>
+                    
+                    {paymentDetails && (
+                        <div style={{
+                            backgroundColor: 'white',
+                            padding: '20px',
+                            borderRadius: '8px',
+                            marginBottom: '30px',
+                            textAlign: 'left'
+                        }}>
+                            <h3 style={{ marginBottom: '15px' }}>Détails de la réservation</h3>
+                            <p><strong>Événement :</strong> {paymentDetails.event_name}</p>
+                            <p><strong>Nombre de places :</strong> {paymentDetails.quantity}</p>
+                            <p><strong>Montant payé :</strong> {paymentDetails.amount}€</p>
+                            <p><strong>Numéro de transaction :</strong> {paymentDetails.transaction_id}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            <button
+                onClick={handleGoToDashboard}
+                style={{
+                    padding: '12px 30px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    fontSize: '16px',
+                    cursor: 'pointer'
+                }}
+            >
+                Retour au tableau de bord
+            </button>
+        </div>
+    );
+};
 
 export default PaymentSuccess;

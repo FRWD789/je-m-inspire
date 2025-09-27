@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Resources\EventResource;
@@ -112,7 +113,6 @@ class EventController extends Controller
                 'message' => 'Événement créé avec succès',
                 'event' => $event->load(['localisation', 'categorie'])
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -124,250 +124,332 @@ class EventController extends Controller
     }
 
     /**
-     * Afficher un événement spécifique
+     * Réserver des places pour un événement
      */
-    public function show($id)
-    {
-        $event = Event::with(['localisation', 'categorie'])->find($id);
-
-        if (!$event) {
-            return response()->json([
-                'message' => 'Événement non trouvé'
-            ], 404);
-        }
-
-        // Calculer les statistiques de réservation
-        $totalReserved = Operation::where('event_id', $event->id)
-            ->where('type_operation_id', 2) // Réservations
-            ->whereHas('paiement', function($query) {
-                $query->where('status', 'paid');
-            })
-            ->sum('quantity');
-
-        return response()->json([
-            'event' => [
-                'id' => $event->id,
-                'name' => $event->name,
-                'description' => $event->description,
-                'start_date' => $event->start_date,
-                'end_date' => $event->end_date,
-                'base_price' => $event->base_price,
-                'available_places' => $event->available_places,
-                'max_places' => $event->max_places,
-                'reserved_places' => $totalReserved,
-                'level' => $event->level,
-                'priority' => $event->priority,
-                'localisation' => [
-                    'id' => $event->localisation->id,
-                    'name' => $event->localisation->name,
-                    'address' => $event->localisation->address,
-                    'latitude' => $event->localisation->latitude,
-                    'longitude' => $event->localisation->longitude,
-                ],
-                'categorie' => [
-                    'id' => $event->categorie->id,
-                    'name' => $event->categorie->name,
-                    'description' => $event->categorie->description,
-                ],
-                'can_reserve' => $event->available_places > 0 && $event->start_date > now(),
-                'is_past' => $event->end_date < now(),
-                'is_ongoing' => $event->start_date <= now() && $event->end_date >= now(),
-            ]
-        ]);
-    }
-
-    /**
-     * Mes événements créés (pour les professionnels)
-     */
-    public function myEvents()
+    public function reserve(Request $request, $eventId)
     {
         $user = JWTAuth::user();
-
-        if (!$user->hasRole('professionnel') && !$user->hasRole('admin')) {
-            return response()->json([
-                'error' => 'Accès réservé aux professionnels'
-            ], 403);
-        }
-
-        // Récupérer les événements créés par l'utilisateur
-        $events = Event::with(['localisation', 'categorie'])
-            ->whereHas('operation', function($query) use ($user) {
-                $query->where('user_id', $user->id)
-                      ->where('type_operation_id', 1); // Type "Creation Evenement"
-            })
-            ->withCount(['operations as total_reservations' => function($query) {
-                $query->where('type_operation_id', 2)
-                      ->whereHas('paiement', function($q) {
-                          $q->where('status', 'paid');
-                      });
-            }])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($event) {
-                // Calculer le chiffre d'affaires
-                $revenue = Operation::where('event_id', $event->id)
-                    ->where('type_operation_id', 2)
-                    ->whereHas('paiement', function($query) {
-                        $query->where('status', 'paid');
-                    })
-                    ->with('paiement')
-                    ->get()
-                    ->sum(function($operation) {
-                        return $operation->paiement ? $operation->paiement->total : 0;
-                    });
-
-                return [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'start_date' => $event->start_date,
-                    'end_date' => $event->end_date,
-                    'base_price' => $event->base_price,
-                    'available_places' => $event->available_places,
-                    'max_places' => $event->max_places,
-                    'localisation' => $event->localisation->name,
-                    'categorie' => $event->categorie->name,
-                    'total_reservations' => $event->total_reservations,
-                    'revenue' => $revenue,
-                    'status' => $event->start_date > now() ? 'À venir' :
-                               ($event->end_date < now() ? 'Terminé' : 'En cours'),
-                ];
-            });
-
-        return response()->json([
-            'events' => $events,
-            'summary' => [
-                'total_events' => $events->count(),
-                'upcoming_events' => $events->where('status', 'À venir')->count(),
-                'total_revenue' => $events->sum('revenue'),
-                'total_reservations' => $events->sum('total_reservations'),
-            ]
-        ]);
-    }
-
-    /**
-     * Modifier un événement
-     */
-    public function update(Request $request, $id)
-    {
-        $user = JWTAuth::user();
-
         if (!$user) {
             return response()->json(['error' => 'Non authentifié'], 401);
         }
 
-        $event = Event::find($id);
-        if (!$event) {
-            return response()->json(['message' => 'Événement non trouvé'], 404);
-        }
-
-        // Vérifier que l'utilisateur est le créateur
-        $isOwner = $event->operation()
-            ->where('user_id', $user->id)
-            ->where('type_operation_id', 1) // Type "Creation Evenement"
-            ->exists();
-
-        if (!$isOwner && !$user->hasRole('admin')) {
-            return response()->json([
-                'error' => 'Vous ne pouvez modifier que vos propres événements'
-            ], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string|max:2000',
-            'start_date' => 'sometimes|required|date',
-            'end_date' => 'sometimes|required|date|after_or_equal:start_date',
-            'base_price' => 'sometimes|required|numeric|min:0|max:9999.99',
-            'capacity' => 'sometimes|required|integer|min:1|max:10000',
-            'max_places' => 'sometimes|required|integer|min:1|max:10000',
-            'level' => 'sometimes|required|string|max:50',
-            'priority' => 'sometimes|required|integer|min:1|max:10',
-            'localisation_id' => 'sometimes|required|exists:localisations,id',
-            'categorie_event_id' => 'sometimes|required|exists:categorie_events,id',
+        // Validation de la quantité
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:1|max:10'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $validated = $validator->validated();
-
-        // Si max_places est modifié, ajuster available_places
-        if (isset($validated['max_places'])) {
-            $currentReservations = $event->max_places - $event->available_places;
-            $validated['available_places'] = $validated['max_places'] - $currentReservations;
-
-            // S'assurer que available_places n'est pas négatif
-            if ($validated['available_places'] < 0) {
-                return response()->json([
-                    'error' => 'Le nouveau nombre de places maximum est insuffisant par rapport aux réservations existantes'
-                ], 400);
-            }
-        }
-
         try {
-            $event->update($validated);
+            DB::beginTransaction();
 
-            return response()->json([
-                'message' => 'Événement modifié avec succès',
-                'event' => $event->load(['localisation', 'categorie'])
+            // Récupérer l'événement avec un verrou pour éviter les conditions de course
+            $event = Event::lockForUpdate()->find($eventId);
+
+            if (!$event) {
+                return response()->json(['error' => 'Événement non trouvé'], 404);
+            }
+
+            // Vérifier si l'événement est encore disponible à la réservation
+            if ($event->start_date <= now()) {
+                return response()->json([
+                    'error' => 'Impossible de réserver pour un événement passé ou en cours'
+                ], 422);
+            }
+
+            // Vérifier la disponibilité des places
+            if ($event->available_places < $validated['quantity']) {
+                return response()->json([
+                    'error' => 'Places insuffisantes disponibles',
+                    'available_places' => $event->available_places,
+                    'requested_quantity' => $validated['quantity']
+                ], 422);
+            }
+
+            // Vérifier si l'utilisateur a déjà une réservation pour cet événement
+            $existingReservation = Operation::where([
+                'user_id' => $user->id,
+                'event_id' => $eventId,
+                'type_operation_id' => 2 // Supposons que 2 = "Reservation"
+            ])->first();
+
+            if ($existingReservation) {
+                return response()->json([
+                    'error' => 'Vous avez déjà une réservation pour cet événement'
+                ], 422);
+            }
+
+            // Mettre à jour les places disponibles
+            $event->available_places -= $validated['quantity'];
+            $event->save();
+
+            // Créer l'opération de réservation
+            $operation = Operation::create([
+                'user_id' => $user->id,
+                'event_id' => $eventId,
+                'type_operation_id' => 2, // Type "Reservation"
+                'quantity' => $validated['quantity'],
             ]);
 
-        } catch (\Exception $e) {
+            DB::commit();
+
             return response()->json([
-                'error' => 'Erreur lors de la modification',
+                'message' => 'Réservation effectuée avec succès',
+                'operation' => $operation,
+                'event' => $event->load(['localisation', 'categorie']),
+                'remaining_places' => $event->available_places
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Erreur lors de la réservation',
                 'details' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Supprimer un événement
+     * Récupérer les événements de l'utilisateur connecté
      */
-    public function destroy($id)
+    public function myEvents()
     {
         $user = JWTAuth::user();
-
         if (!$user) {
             return response()->json(['error' => 'Non authentifié'], 401);
         }
 
-        $event = Event::find($id);
+        try {
+            // Pour l'instant, récupérer les événements basés sur les opérations directement
+            $userOperations = Operation::where('user_id', $user->id)->get();
+
+            // Récupérer les IDs des événements où l'utilisateur a des opérations
+            $eventIds = $userOperations->pluck('event_id')->unique();
+
+            // Récupérer les événements concernés
+            $events = Event::with(['localisation', 'categorie'])
+                ->whereIn('id', $eventIds)
+                ->orderBy('start_date')
+                ->get();
+
+            // Séparer les événements créés et réservés
+            $createdEvents = collect();
+            $reservedEvents = collect();
+
+            foreach ($events as $event) {
+                $userOpsForEvent = $userOperations->where('event_id', $event->id);
+
+                // Vérifier si l'utilisateur a créé l'événement (type_operation_id = 1)
+                $isCreator = $userOpsForEvent->where('type_operation_id', 1)->isNotEmpty();
+
+                // Vérifier si l'utilisateur a réservé (type_operation_id = 2)
+                $hasReservation = $userOpsForEvent->where('type_operation_id', 2)->isNotEmpty();
+
+                $eventData = [
+                    'id' => $event->id,
+                    'name' => $event->name,
+                    'description' => $event->description,
+                    'start_date' => $event->start_date,
+                    'end_date' => $event->end_date,
+                    'base_price' => $event->base_price,
+                    'available_places' => $event->available_places,
+                    'max_places' => $event->max_places,
+                    'level' => $event->level,
+                    'priority' => $event->priority,
+                    'localisation' => [
+                        'id' => $event->localisation->id,
+                        'name' => $event->localisation->name,
+                        'address' => $event->localisation->address,
+                    ],
+                    'categorie' => [
+                        'id' => $event->categorie->id,
+                        'name' => $event->categorie->name,
+                    ],
+                    'can_reserve' => $event->available_places > 0 && $event->start_date > now(),
+                ];
+
+                if ($isCreator) {
+                    $createdEvents->push(array_merge($eventData, [
+                        'is_creator' => true,
+                        'user_role' => 'creator'
+                    ]));
+                }
+
+                if ($hasReservation) {
+                    $reservedEvents->push(array_merge($eventData, [
+                        'is_creator' => false,
+                        'user_role' => 'participant'
+                    ]));
+                }
+            }
+
+            return response()->json([
+                'events' => $createdEvents->merge($reservedEvents)->values(),
+                'created_events' => $createdEvents->values(),
+                'reserved_events' => $reservedEvents->values(),
+                'total' => $createdEvents->count() + $reservedEvents->count(),
+                'total_created' => $createdEvents->count(),
+                'total_reserved' => $reservedEvents->count(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erreur lors de la récupération des événements',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Afficher les détails d'un événement
+     */
+    public function show($id)
+    {
+        $event = Event::with(['localisation', 'categorie'])->find($id);
+
         if (!$event) {
-            return response()->json(['message' => 'Événement non trouvé'], 404);
+            return response()->json(['error' => 'Événement non trouvé'], 404);
         }
 
-        // Vérifier que l'utilisateur est le créateur
-        $isOwner = $event->operation()
-            ->where('user_id', $user->id)
-            ->where('type_operation_id', 1) // Type "Creation Evenement"
-            ->exists();
+        $eventData = [
+            'id' => $event->id,
+            'name' => $event->name,
+            'description' => $event->description,
+            'start_date' => $event->start_date,
+            'end_date' => $event->end_date,
+            'base_price' => $event->base_price,
+            'available_places' => $event->available_places,
+            'max_places' => $event->max_places,
+            'level' => $event->level,
+            'priority' => $event->priority,
+            'localisation' => [
+                'id' => $event->localisation->id,
+                'name' => $event->localisation->name,
+                'address' => $event->localisation->address,
+            ],
+            'categorie' => [
+                'id' => $event->categorie->id,
+                'name' => $event->categorie->name,
+            ],
+            'can_reserve' => $event->available_places > 0 && $event->start_date > now(),
+        ];
 
-        if (!$isOwner && !$user->hasRole('admin')) {
-            return response()->json([
-                'error' => 'Vous ne pouvez supprimer que vos propres événements'
-            ], 403);
-        }
+        return response()->json(['event' => $eventData]);
+    }
 
-        // Vérifier s'il y a des réservations confirmées
-        $hasConfirmedReservations = Operation::where('event_id', $event->id)
-            ->where('type_operation_id', 2)
-            ->whereHas('paiement', function($query) {
-                $query->where('status', 'paid');
-            })
-            ->exists();
-
-        if ($hasConfirmedReservations) {
-            return response()->json([
-                'error' => 'Impossible de supprimer un événement avec des réservations confirmées'
-            ], 400);
+    /**
+     * Annuler une réservation
+     */
+    public function cancelReservation($eventId)
+    {
+        $user = JWTAuth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Non authentifié'], 401);
         }
 
         try {
             DB::beginTransaction();
 
-            // Supprimer toutes les opérations liées (réservations non confirmées)
-            Operation::where('event_id', $event->id)->delete();
+            // Trouver la réservation
+            $operation = Operation::where([
+                'user_id' => $user->id,
+                'event_id' => $eventId,
+                'type_operation_id' => 2 // Type "Reservation"
+            ])->first();
+
+            if (!$operation) {
+                return response()->json([
+                    'error' => 'Aucune réservation trouvée pour cet événement'
+                ], 404);
+            }
+
+            // Récupérer l'événement
+            $event = Event::lockForUpdate()->find($eventId);
+
+            // Vérifier si l'annulation est encore possible (par exemple, 24h avant)
+            if ($event->start_date <= now()->addHours(24)) {
+                return response()->json([
+                    'error' => 'Impossible d\'annuler moins de 24h avant l\'événement'
+                ], 422);
+            }
+
+            // Remettre les places disponibles
+            $event->available_places += $operation->quantity;
+            $event->save();
+
+            // Supprimer l'opération de réservation
+            $operation->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Réservation annulée avec succès',
+                'restored_places' => $operation->quantity
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Erreur lors de l\'annulation',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Supprimer un événement (créateur ou admin uniquement)
+     */
+    public function destroy($id)
+    {
+        $user = JWTAuth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Non authentifié'], 401);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $event = Event::find($id);
+            if (!$event) {
+                return response()->json(['error' => 'Événement non trouvé'], 404);
+            }
+
+            // Vérifier les permissions : admin ou créateur de l'événement
+            $isAdmin = $user->hasRole('admin');
+            $isCreator = false;
+
+            // Vérifier si l'utilisateur est le créateur via les opérations
+            $creationOperation = Operation::where([
+                'event_id' => $id,
+                'user_id' => $user->id,
+                'type_operation_id' => 1 // Type "Creation Evenement"
+            ])->exists();
+
+            if ($creationOperation) {
+                $isCreator = true;
+            }
+
+            if (!$isAdmin && !$isCreator) {
+                return response()->json([
+                    'error' => 'Vous n\'êtes pas autorisé à supprimer cet événement'
+                ], 403);
+            }
+
+            // Vérifier s'il y a des réservations actives
+            $activeReservations = Operation::where([
+                'event_id' => $id,
+                'type_operation_id' => 2 // Type "Reservation"
+            ])->count();
+
+            if ($activeReservations > 0) {
+                return response()->json([
+                    'error' => 'Impossible de supprimer un événement avec des réservations actives',
+                    'active_reservations' => $activeReservations
+                ], 422);
+            }
+
+            // Supprimer toutes les opérations liées à l'événement
+            Operation::where('event_id', $id)->delete();
 
             // Supprimer l'événement
             $event->delete();
@@ -382,10 +464,81 @@ class EventController extends Controller
             DB::rollBack();
 
             return response()->json([
-                'error' => 'Erreur lors de la suppression',
+                'error' => 'Erreur lors de la suppression de l\'événement',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mettre à jour un événement (créateur ou admin uniquement)
+     */
+    public function update(Request $request, $id)
+    {
+        $user = JWTAuth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Non authentifié'], 401);
+        }
+
+        try {
+            $event = Event::find($id);
+            if (!$event) {
+                return response()->json(['error' => 'Événement non trouvé'], 404);
+            }
+
+            // Vérifier les permissions
+            $isAdmin = $user->hasRole('admin');
+            $isCreator = Operation::where([
+                'event_id' => $id,
+                'user_id' => $user->id,
+                'type_operation_id' => 1
+            ])->exists();
+
+            if (!$isAdmin && !$isCreator) {
+                return response()->json([
+                    'error' => 'Vous n\'êtes pas autorisé à modifier cet événement'
+                ], 403);
+            }
+
+            // Validation des champs (similaire à store mais avec des règles moins strictes)
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'description' => 'sometimes|string|max:2000',
+                'start_date' => 'sometimes|date|after_or_equal:now',
+                'end_date' => 'sometimes|date|after:start_date',
+                'base_price' => 'sometimes|numeric|min:0|max:9999.99',
+                'max_places' => 'sometimes|integer|min:1|max:10000',
+                'level' => 'sometimes|string|max:50',
+                'priority' => 'sometimes|integer|min:1|max:10',
+                'localisation_id' => 'sometimes|exists:localisations,id',
+                'categorie_event_id' => 'sometimes|exists:categorie_events,id',
+            ]);
+
+            // Si on modifie max_places, vérifier la cohérence
+            if (isset($validated['max_places'])) {
+                $reservedPlaces = $event->max_places - $event->available_places;
+                if ($validated['max_places'] < $reservedPlaces) {
+                    return response()->json([
+                        'error' => 'Le nouveau nombre maximum de places ne peut pas être inférieur aux places déjà réservées',
+                        'reserved_places' => $reservedPlaces
+                    ], 422);
+                }
+                $validated['available_places'] = $validated['max_places'] - $reservedPlaces;
+            }
+
+            // Mettre à jour l'événement
+            $event->update($validated);
+
+            return response()->json([
+                'message' => 'Événement mis à jour avec succès',
+                'event' => $event->load(['localisation', 'categorie'])
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erreur lors de la mise à jour de l\'événement',
                 'details' => $e->getMessage()
             ], 500);
         }
     }
 }
-?>

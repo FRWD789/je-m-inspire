@@ -107,10 +107,8 @@ class PaiementController extends Controller
                     'quantity' => $quantity,
                 ]],
                 'mode' => 'payment',
-                'success_url' => env('FRONTEND_URL', 'http://localhost:3000') .
-                               "/payment-result?session_id={CHECKOUT_SESSION_ID}&status=success",
-                'cancel_url' => env('FRONTEND_URL', 'http://localhost:3000') .
-                              "/payment-result?status=cancelled&payment_id=" . $paiement->paiement_id,
+                'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
                 'metadata' => [
                     'payment_id' => $paiement->paiement_id,
                     'operation_id' => $operation->id,
@@ -229,10 +227,8 @@ class PaiementController extends Controller
             $response = $paypal->createOrder([
                 "intent" => "CAPTURE",
                 "application_context" => [
-                    "return_url" => env('FRONTEND_URL', 'http://localhost:3000') .
-                                  "/payment-result?provider=paypal&payment_id=" . $paiement->paiement_id . "&status=success",
-                    "cancel_url" => env('FRONTEND_URL', 'http://localhost:3000') .
-                                  "/payment-result?provider=paypal&payment_id=" . $paiement->paiement_id . "&status=cancelled",
+                    'return_url' => env('FRONTEND_URL') . '/payment/success?payment_id=' . $paiement->paiement_id,
+                    'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
                 ],
                 "purchase_units" => [[
                     "amount" => [
@@ -314,11 +310,13 @@ class PaiementController extends Controller
         switch ($event->type) {
             case 'checkout.session.completed':
                 $session = $event->data->object;
+                Log::debug("checkout.session.completed recu");
                 $this->handleStripePaymentSuccess($session);
                 break;
 
             case 'checkout.session.expired':
                 $session = $event->data->object;
+                Log::debug("checkout.session.expired recu");
                 $this->handleStripePaymentExpired($session);
                 break;
 
@@ -349,6 +347,7 @@ class PaiementController extends Controller
             case 'PAYMENT.CAPTURE.COMPLETED':
                 if ($paiement) {
                     $this->handlePaypalPaymentSuccess($paiement, $payload);
+                    Log::debug("PAYMENT.CAPTURE.COMPLETED recu");
                 }
                 break;
 
@@ -356,6 +355,7 @@ class PaiementController extends Controller
             case 'PAYMENT.CAPTURE.FAILED':
                 if ($paiement) {
                     $this->handlePaypalPaymentFailed($paiement);
+                    Log::debug("PAYMENT.CAPTURE.FAILED recu");
                 }
                 break;
 

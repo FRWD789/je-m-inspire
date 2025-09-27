@@ -16,7 +16,7 @@ export const EventList = ({
     const [editingEvent, setEditingEvent] = useState(null);
 
     const handleReserve = (event) => {
-        // Redirection directe vers la page de paiement (plus de modal)
+        console.log('Redirection vers:', `/payment/${event.id}`);
         window.location.href = `/payment/${event.id}`;
     };
 

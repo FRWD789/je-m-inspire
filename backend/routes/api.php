@@ -33,13 +33,16 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Événements (gestion)
+    // Événements (gestion) - SANS DOUBLONS
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
     Route::get('/my-events', [EventController::class, 'myEvents']);
 
-    // Réservations
+    // Réservations - AJOUTER CETTE ROUTE MANQUANTE
+    Route::post('/events/{id}/reserve', [EventController::class, 'reserve']);
+    Route::delete('/events/{id}/reservation', [EventController::class, 'cancelReservation']);
+
     Route::get('/mes-reservations', [OperationController::class, 'mesReservations']);
     Route::delete('/reservations/{id}', [OperationController::class, 'destroy']);
 
