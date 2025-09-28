@@ -299,29 +299,86 @@ class PaiementController extends Controller
         $endpoint_secret = env('STRIPE_WEBHOOK_SECRET');
         $payload = $request->getContent();
         $sig_header = $request->header('Stripe-Signature');
+        $event = null;
 
         try {
             $event = \Stripe\Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
-        } catch (\Exception $e) {
-            Log::error('Erreur webhook Stripe', ['error' => $e->getMessage()]);
+        } catch (\UnexpectedValueException $e) {
+            // Payload invalide
+            Log::error('Stripe webhook payload invalide', ['error' => $e->getMessage()]);
+            return response('', 400);
+        } catch (\Stripe\Exception\SignatureVerificationException $e) {
+            // Signature invalide
+            Log::error('Stripe webhook signature invalide', ['error' => $e->getMessage()]);
             return response('', 400);
         }
 
         switch ($event->type) {
             case 'checkout.session.completed':
                 $session = $event->data->object;
-                Log::debug("checkout.session.completed recu");
-                $this->handleStripePaymentSuccess($session);
+
+                $paiement = Paiement::where('session_id', $session->id)->first();
+
+                if ($paiement) {
+                    // Pour paiement unique
+                    if ($paiement->type_paiement_id == 1) {
+                        $amount = ($session->amount_total ?? 0) / 100; // convertir en euros
+                        $paiement->update([
+                            'status' => 'paid',
+                            'total' => $amount,
+                        ]);
+
+                        // Finaliser la réservation (déduire les places)
+                        $this->handleStripePaymentSuccess($session);
+                    }
+
+                    // Pour abonnement
+                    if ($paiement->type_paiement_id == 2) {
+                        $subscriptionId = $session->subscription ?? null;
+                        $paiement->update([
+                            'status' => 'paid', // ou 'active' si tu préfères attendre invoice.paid
+                            'stripe_subscription_id' => $subscriptionId,
+                            'total' => $session->amount_total ? $session->amount_total / 100 : 0,
+                        ]);
+                    }
+                }
+                Log::info("Webhook checkout.session.completed traité pour session {$session->id}");
                 break;
 
             case 'checkout.session.expired':
                 $session = $event->data->object;
-                Log::debug("checkout.session.expired recu");
                 $this->handleStripePaymentExpired($session);
+                Log::info("Webhook checkout.session.expired traité pour session {$session->id}");
+                break;
+
+            case 'invoice.paid':
+                $invoice = $event->data->object;
+                $subscriptionId = $invoice->subscription;
+
+                $paiement = Paiement::where('stripe_subscription_id', $subscriptionId)->first();
+                if ($paiement) {
+                    $amount = ($invoice->amount_paid ?? 0) / 100;
+                    $paiement->update([
+                        'status' => 'paid',
+                        'total' => $amount,
+                    ]);
+                }
+                Log::info("Webhook invoice.paid traité pour subscription $subscriptionId");
+                break;
+
+            case 'invoice.payment_failed':
+                $invoice = $event->data->object;
+                $subscriptionId = $invoice->subscription;
+
+                $paiement = Paiement::where('stripe_subscription_id', $subscriptionId)->first();
+                if ($paiement) {
+                    $paiement->update(['status' => 'failed']);
+                }
+                Log::warning("Webhook invoice.payment_failed pour subscription $subscriptionId");
                 break;
 
             default:
-                Log::info('Événement Stripe non géré : ' . $event->type);
+                Log::info("Événement Stripe non géré : " . $event->type);
                 break;
         }
 
@@ -334,37 +391,132 @@ class PaiementController extends Controller
     public function paypalWebhook(Request $request)
     {
         $payload = $request->all();
-        $eventType = $payload['event_type'] ?? null;
+        Log::info("Webhook PayPal reçu : " . json_encode($payload));
+
+        response()->json(['status' => 'success'], 200)->send();
+
+        $event = $payload['event_type'] ?? null;
         $paypalId = $payload['resource']['id'] ?? null;
 
-        if (!$paypalId) {
-            return response()->json(['status' => 'ignored'], 200);
-        }
+        switch ($event) {
+            case 'CHECKOUT.ORDER.APPROVED':
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'pending',
+                    'updated_at' => now(),
+                ]);
+                Log::info("Paiement $paypalId en pending");
 
-        $paiement = Paiement::where('paypal_id', $paypalId)->first();
+                // Capturer le paiement
+                $paypal = new \Srmklive\PayPal\Services\PayPal;
+                $paypal->setApiCredentials(config('paypal'));
+                $token = $paypal->getAccessToken();
+                $paypal->setAccessToken($token);
 
-        switch ($eventType) {
-            case 'PAYMENT.CAPTURE.COMPLETED':
-                if ($paiement) {
-                    $this->handlePaypalPaymentSuccess($paiement, $payload);
-                    Log::debug("PAYMENT.CAPTURE.COMPLETED recu");
+                try {
+                    $capture = $paypal->capturePaymentOrder($paypalId);
+
+                    if ($capture['status'] === 'COMPLETED') {
+                        $amount = $capture['purchase_units'][0]['payments']['captures'][0]['amount']['value'] ?? null;
+
+                        $paiement = Paiement::where('paypal_id', $paypalId)->first();
+                        if ($paiement) {
+                            $paiement->update([
+                                'status' => 'paid',
+                                'total' => $amount,
+                                'updated_at' => now(),
+                            ]);
+
+                            // Finaliser la réservation (déduire les places)
+                            $this->handlePaypalPaymentSuccess($paiement, $capture);
+                        }
+
+                        Log::info("✅ Paiement $paypalId capturé automatiquement pour $amount");
+                    } else {
+                        Log::warning("Paiement $paypalId non capturé : " . json_encode($capture));
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Erreur capture PayPal pour $paypalId : " . $e->getMessage());
                 }
+
                 break;
 
-            case 'PAYMENT.CAPTURE.DENIED':
-            case 'PAYMENT.CAPTURE.FAILED':
+            case 'PAYMENT.CAPTURE.COMPLETED':
+                $amount = $payload['resource']['amount']['value'] ?? null;
+                $currency = $payload['resource']['amount']['currency_code'] ?? null;
+
+                $paiement = Paiement::where('paypal_id', $paypalId)->first();
                 if ($paiement) {
-                    $this->handlePaypalPaymentFailed($paiement);
-                    Log::debug("PAYMENT.CAPTURE.FAILED recu");
+                    $paiement->update([
+                        'status' => 'paid',
+                        'total' => $amount,
+                        'updated_at' => now(),
+                    ]);
+
+                    // Finaliser la réservation (déduire les places)
+                    $this->handlePaypalPaymentSuccess($paiement, $payload);
                 }
+
+                Log::info("Paiement $paypalId payé : $amount $currency");
+                break;
+
+            case 'BILLING.SUBSCRIPTION.CREATED':
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'pending',
+                    'updated_at' => now(),
+                ]);
+                Log::info("Abonnement $paypalId créé (pending)");
+                break;
+
+            case 'BILLING.SUBSCRIPTION.ACTIVATED':
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'active',
+                    'updated_at' => now(),
+                ]);
+                Log::info("Abonnement $paypalId activé");
+                break;
+
+            case 'BILLING.SUBSCRIPTION.CANCELLED':
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'cancelled',
+                    'updated_at' => now(),
+                ]);
+                Log::info("Abonnement $paypalId annulé");
+                break;
+
+            case 'BILLING.SUBSCRIPTION.SUSPENDED':
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'suspended',
+                    'updated_at' => now(),
+                ]);
+                Log::info("Abonnement $paypalId suspendu");
+                break;
+
+            case 'BILLING.SUBSCRIPTION.PAYMENT.SUCCEEDED':
+                $amount = $payload['resource']['amount_with_breakdown']['value'] ?? null;
+                $currency = $payload['resource']['amount_with_breakdown']['currency_code'] ?? null;
+
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'paid',
+                    'total' => $amount,
+                    'updated_at' => now(),
+                ]);
+                Log::info("Abonnement $paypalId : paiement réussi $amount $currency");
+                break;
+
+            case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
+                Paiement::where('paypal_id', $paypalId)->update([
+                    'status' => 'failed',
+                    'updated_at' => now(),
+                ]);
+                Log::warning("Abonnement $paypalId : paiement échoué");
                 break;
 
             default:
-                Log::info("Événement PayPal non géré : {$eventType}");
+                Log::warning("Événement PayPal non géré : $event");
                 break;
         }
 
-        return response()->json(['status' => 'success'], 200);
+        return;
     }
 
     /**
