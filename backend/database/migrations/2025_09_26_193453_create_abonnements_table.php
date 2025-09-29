@@ -19,7 +19,6 @@ return new class extends Migration
             $table->dateTime('date_fin')->nullable();    // Fin abonnement (calculée depuis plan)
             $table->string('stripe_subscription_id')->nullable();
             $table->string('paypal_subscription_id')->nullable();
-            $table->integer('user_id')->constrained('users'); // Utilisateur propriétaire
             $table->timestamps();
         });
     }

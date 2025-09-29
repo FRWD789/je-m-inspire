@@ -5,11 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
-use App\Models\Role; // Ajoute cette ligne
-use App\Models\Operation; // Ajoute aussi Operation
-use App\Models\Event; // Et Event
-class User extends Authenticatable implements JWTSubject
+
+class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
@@ -32,61 +29,122 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'email_verified_at' => 'datetime',
-            'date_of_birth' => 'date',
             'password' => 'hashed',
+            'date_of_birth' => 'date',
         ];
     }
 
-    // JWT Methods
-    public function getJWTIdentifier()
-    {
-        return $this->getKey();
-    }
-
-    public function getJWTCustomClaims()
-    {
-        return [];
-    }
-
-    // Relations avec les rôles (many-to-many)
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
-    }
-
-    // Méthodes utilitaires pour les rôles
-    public function hasRole($role)
-    {
-        return $this->roles()->where('role', $role)->exists();
-    }
-
-    public function hasAnyRole($roles)
-    {
-        return $this->roles()->whereIn('role', $roles)->exists();
-    }
-
-    // Si tu veux aussi supporter role_id (one-to-many), ajoute:
-    // public function role()
-    // {
-    //     return $this->belongsTo(Role::class);
-    // }
-
-    // ------------------------------
-    // Relation avec les opérations (1 user -> N operations)
-    // ------------------------------
+    /**
+     * Relation avec les opérations
+     */
     public function operations()
     {
-        return $this->hasMany(Operation::class);
+        return $this->hasMany(Operation::class, 'user_id');
     }
 
-    // ------------------------------
-    // Relation pratique avec les événements via les opérations
-    // ------------------------------
-    public function events()
+    /**
+     * Relation avec les abonnements via operations
+     */
+    public function abonnements()
     {
-        // un user peut créer ou réserver plusieurs événements via les opérations
-        return $this->hasManyThrough(Event::class, Operation::class, 'user_id', 'id', 'id', 'event_id');
-        // user_id dans Operation
-        // event_id dans Operation vers id dans Event
+        return $this->hasManyThrough(
+            Abonnement::class,
+            Operation::class,
+            'user_id',        // Clé étrangère sur operations
+            'abonnement_id',  // Clé étrangère sur abonnements
+            'id',             // Clé locale sur users
+            'abonnement_id'   // Clé locale sur operations
+        )->where('type_operation_id', 3);
+    }
+
+    /**
+     * Obtenir l'abonnement actif de l'utilisateur
+     */
+    public function abonnementActif()
+    {
+        return $this->abonnements()
+            ->where(function($query) {
+                $query->whereNull('date_fin')
+                      ->orWhere('date_fin', '>', now());
+            })
+            ->where('date_debut', '<=', now())
+            ->latest('date_debut')
+            ->limit(1);
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un abonnement Pro Plus actif
+     *
+     * @return bool
+     */
+    public function hasProPlus()
+    {
+        $abonnement = $this->abonnementActif()->first();
+
+        if (!$abonnement) {
+            return false;
+        }
+
+        // Vérifier si c'est un abonnement Pro Plus
+        return $abonnement->nom === 'Pro Plus' ||
+               $abonnement->description === 'Pro Plus';
+    }
+
+    /**
+     * Obtenir le type d'abonnement de l'utilisateur
+     *
+     * @return string 'pro-plus' | 'pro' | null
+     */
+    public function getAbonnementType()
+    {
+        if ($this->hasProPlus()) {
+            return 'pro-plus';
+        }
+
+        $abonnement = $this->abonnementActif()->first();
+
+        if ($abonnement) {
+            return 'pro';
+        }
+
+        return null;
+    }
+
+    /**
+     * Vérifier si l'abonnement est actif (Pro ou Pro Plus)
+     *
+     * @return bool
+     */
+    public function hasActiveSubscription()
+    {
+        return $this->abonnementActif()->exists();
+    }
+
+    /**
+     * Obtenir la date d'expiration de l'abonnement
+     *
+     * @return \Carbon\Carbon|null
+     */
+    public function getSubscriptionEndDate()
+    {
+        $abonnement = $this->abonnementActif()->first();
+
+        return $abonnement ? $abonnement->date_fin : null;
+    }
+
+    /**
+     * Vérifier si l'abonnement expire bientôt (dans les 7 prochains jours)
+     *
+     * @return bool
+     */
+    public function subscriptionExpiringSoon()
+    {
+        $endDate = $this->getSubscriptionEndDate();
+
+        if (!$endDate) {
+            return false;
+        }
+
+        return $endDate->diffInDays(now()) <= 7 && $endDate->isFuture();
     }
 }
