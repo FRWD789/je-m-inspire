@@ -3,6 +3,7 @@ import { useEvents } from '../hooks/useEvents';
 
 export const EventList = () => {
   const { events, loading, removeEvent } = useEvents();
+  console.log(typeof events)
 
   if (loading) return <p>Loading events...</p>;
 

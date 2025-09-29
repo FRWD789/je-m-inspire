@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Navigate,Outlet, useActionData } from 'react-router-dom'
+import { Navigate,Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function ProtectedRoutes() {

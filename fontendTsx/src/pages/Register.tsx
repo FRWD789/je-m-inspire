@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { registerSchema, type RegisterInput } from "../schema/auth"
 import { AxiosError } from "axios"
+import { Link } from "react-router-dom"
 
 export default function Register() {
   const { register_user } = useAuth()
@@ -66,57 +67,65 @@ export default function Register() {
           </div>
 
           {/* Form */}
-          <form className="grid gap-6" onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-2">
-              <InputWithLabel
-                errors={errors}
-                type="email"
-                label="Email"
-                register={register}
-                name="email"
-                required
-              />
-              <InputWithLabel
-                errors={errors}
-                type="text"
-                label="Nom"
-                register={register}
-                name="name"
-                required
-              />
-              <InputWithLabel
-                errors={errors}
-                type="password"
-                label="Mot de Passe"
-                register={register}
-                name="password"
-                required
-              />
-              <InputWithLabel
-                errors={errors}
-                type="password"
-                label="Confirmer le Mot de Passe"
-                register={register}
-                name="password_confirmation"
-                required
-              />
-            </div>
+        <form className="grid gap-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid gap-2">
+            <InputWithLabel
+              errors={errors}
+              type="email"
+              label="Email"
+              register={register}
+              name="email"
+              required
+            />
+            <InputWithLabel
+              errors={errors}
+              type="text"
+              label="Nom"
+              register={register}
+              name="name"
+              required
+            />
+            <InputWithLabel
+              errors={errors}
+              type="password"
+              label="Mot de Passe"
+              register={register}
+              name="password"
+              required
+            />
+            <InputWithLabel
+              errors={errors}
+              type="password"
+              label="Confirmer le Mot de Passe"
+              register={register}
+              name="password_confirmation"
+              required
+            />
+          </div>
 
-            <Button
-              type="submit"
-              disabled={!isValid || isSubmitting}
-              isLoading={isSubmitting}
-            >
-              Créer le compte
-            </Button>
+          <Button
+            type="submit"
+            disabled={!isValid || isSubmitting}
+            isLoading={isSubmitting}
+          >
+            Créer le compte
+          </Button>
 
-            {/* Server Error */}
-            {serverError && (
-              <p className="text-red-600 text-sm font-medium text-center">
-                {serverError}
-              </p>
-            )}
-          </form>
+          {/* Server Error */}
+          {serverError && (
+            <p className="text-red-600 text-sm font-medium text-center">
+              {serverError}
+            </p>
+          )}
+
+          {/* Already have account link */}
+          <p className="text-sm text-center text-gray-500 mt-2">
+            Vous avez déjà un compte?{" "}
+            <Link to="/login" className="text-blue-600 hover:underline">
+              Connectez-vous
+            </Link>
+          </p>
+        </form>
         </div>
       </div>
 

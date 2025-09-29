@@ -18,16 +18,16 @@ class EventResource extends JsonResource
             'id'               => $this->id,
             'name'             => $this->name,
             'description'      => $this->description,
-            'start_date'       => $this->start_date->toDateTimeString(),
-            'end_date'         => $this->end_date->toDateTimeString(),
+            'start_date'       => $this->start_date,
+            'end_date'         => $this->end_date,
             'base_price'       => $this->base_price,
             'capacity'         => $this->capacity,
             'max_places'       => $this->max_places,
             'available_places' => $this->available_places,
             'level'            => $this->level,
             'priority'         => $this->priority,
-            'created_at'       => $this->created_at->toDateTimeString(),
-            'updated_at'       => $this->updated_at->toDateTimeString(),
+            'created_at'       => $this->created_at,
+            'updated_at'       => $this->updated_at,
         ];
     }
 }

@@ -8,6 +8,8 @@ import ProtectedRoutes from './components/ProtectedRoutes';
 import VerifyEmail from './components/VerifyEmail';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import Layout from './layout/Layout';
+import Events from './pages/Events';
 
 function App() {
 
@@ -16,6 +18,7 @@ function App() {
   return (
 
     <Routes>
+       <Route path='/events' element={<Events/>} />
       <Route path='/login' element={<Login/>} />
 
       <Route path='/register' element={<Register/>} />
@@ -26,7 +29,7 @@ function App() {
 
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      <Route element={<ProtectedRoutes />}>
+      <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
       </Route>
     </Routes>
