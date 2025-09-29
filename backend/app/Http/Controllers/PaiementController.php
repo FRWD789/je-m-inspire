@@ -1,22 +1,4 @@
 <?php
-// =============================================================================
-// NETTOYAGE COMPLET DU PROJET LARAVEL - SYSTÈME SIMPLIFIÉ SANS ADULTE/ENFANT
-// =============================================================================
-
-/*
-CHANGEMENTS EFFECTUÉS :
-1. Suppression complète du concept adulte/enfant
-2. Simplification du calcul des prix (prix unique par personne)
-3. Refactorisation complète des controllers
-4. Optimisation des models et relations
-5. Corrections des migrations
-6. API unifiée pour React
-*/
-
-// =============================================================================
-// 1. PAIEMENTCONTROLLER.PHP - VERSION SIMPLIFIÉE
-// =============================================================================
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;

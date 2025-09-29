@@ -39,8 +39,8 @@ class AbonnementController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'subscription',
-                'success_url' => url('/abonnement/success') . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => url('/abonnement/cancel'),
+                'success_url' => env('FRONTEND_URL') . '/abonnement/success' . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel',
                 'client_reference_id' => $user->id,
                 'customer_email' => $user->email,
                 'metadata' => [
@@ -111,8 +111,8 @@ class AbonnementController extends Controller
                     'locale' => 'fr-FR',
                     'shipping_preference' => 'NO_SHIPPING',
                     'user_action' => 'SUBSCRIBE_NOW',
-                    'return_url' => url('/abonnement/paypal/success'),
-                    'cancel_url' => url('/abonnement/cancel')
+                    'return_url' => env('FRONTEND_URL') . '/abonnement/paypal/success',
+                    'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel'
                 ],
                 'custom_id' => json_encode([
                     'user_id' => $user->id,
@@ -525,5 +525,51 @@ class AbonnementController extends Controller
             'expiring_soon' => $user->subscriptionExpiringSoon(),
             'details' => $abonnement
         ]);
+    }
+
+    public function checkSubscriptionStatus(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Non authentifié'
+                ], 401);
+            }
+
+            $abonnement = $user->abonnementActif()->first();
+
+            $response = [
+                'success' => true,
+                'has_subscription' => $user->hasActiveSubscription(),
+                'has_pro_plus' => $user->hasProPlus(),
+                'subscription_type' => $user->getAbonnementType(),
+            ];
+
+            if ($abonnement) {
+                $response['subscription'] = [
+                    'id' => $abonnement->abonnement_id,
+                    'name' => $abonnement->nom,
+                    'description' => $abonnement->description,
+                    'start_date' => $abonnement->date_debut,
+                    'end_date' => $abonnement->date_fin,
+                    'is_active' => $abonnement->isActive(),
+                    'stripe_subscription_id' => $abonnement->stripe_subscription_id,
+                    'paypal_subscription_id' => $abonnement->paypal_subscription_id,
+                    'expiring_soon' => $user->subscriptionExpiringSoon(),
+                ];
+            }
+
+            return response()->json($response);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur checkSubscriptionStatus: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la vérification du statut'
+            ], 500);
+        }
     }
 }

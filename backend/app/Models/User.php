@@ -5,8 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Tymon\JWTAuth\Contracts\JWTSubject; // AJOUT IMPORTANT
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
 {
     use HasFactory, Notifiable;
 
@@ -32,6 +33,62 @@ class User extends Authenticatable
             'password' => 'hashed',
             'date_of_birth' => 'date',
         ];
+    }
+
+    // ========================================
+    // MÉTHODES JWT OBLIGATOIRES - AJOUT
+    // ========================================
+
+    /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Return a key value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    // ========================================
+    // RELATIONS EXISTANTES
+    // ========================================
+
+    /**
+     * Relation avec les rôles (many-to-many)
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
+    }
+
+    /**
+     * Vérifier si l'utilisateur a un rôle spécifique
+     */
+    public function hasRole($role)
+    {
+        return $this->roles()->where('role', $role)->exists();
+    }
+
+    /**
+     * Vérifier si l'utilisateur a l'un des rôles donnés
+     */
+    public function hasAnyRole($roles)
+    {
+        if (is_string($roles)) {
+            return $this->hasRole($roles);
+        }
+
+        return $this->roles()->whereIn('role', $roles)->exists();
     }
 
     /**

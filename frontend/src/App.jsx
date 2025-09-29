@@ -1,14 +1,17 @@
 // src/App.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth, useApi } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import RegisterForm from "./components/auth/RegisterForm";
 import LoginForm from "./components/auth/LoginForm";
 import { Navigation } from "./components/common/Navigation";
 import { EventDashboard } from "./components/events/EventDashboard";
-import PaymentPage from "./components/payment/PaymentPage"; // Vous devrez créer ce composant
-import PaymentSuccess from "./components/payment/PaymentSuccess"; // Ajoutez ceci
-import PaymentCancel from "./components/payment/PaymentCancel";   // Ajoutez ceci
+import PaymentPage from "./components/payment/PaymentPage";
+import PaymentSuccess from "./components/payment/PaymentSuccess";
+import PaymentCancel from "./components/payment/PaymentCancel";
+import ProPlusPage from "./components/subscription/ProPlusPage";
+import SubscriptionSuccess from "./components/subscription/SubscriptionSuccess";
+import SubscriptionCancel from "./components/subscription/SubscriptionCancel";
 
 function App() {
   return (
@@ -94,6 +97,12 @@ function AppContent() {
         <Route path="/payment/:id" element={<PaymentPage />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} />
+        
+        {/* Routes d'abonnement Pro Plus */}
+        <Route path="/abonnement" element={<ProPlusPage />} />
+        <Route path="/abonnement/success" element={<SubscriptionSuccess />} />
+        <Route path="/abonnement/cancel" element={<SubscriptionCancel />} />
+        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
