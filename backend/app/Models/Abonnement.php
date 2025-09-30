@@ -19,12 +19,28 @@ class Abonnement extends Model
         'date_fin',
         'stripe_subscription_id',
         'paypal_subscription_id',
+        'plan_abonnement_id',
+        'status',
+        'next_billing_date',
+        'cancel_at_period_end',
+        'status_updated_at',
     ];
 
     protected $casts = [
         'date_debut' => 'datetime',
         'date_fin' => 'datetime',
+        'next_billing_date' => 'datetime',
+        'cancel_at_period_end' => 'boolean',
+        'status_updated_at' => 'datetime',
     ];
+
+    /**
+     * Relation avec le plan
+     */
+    public function plan()
+    {
+        return $this->belongsTo(PlanAbonnement::class, 'plan_abonnement_id');
+    }
 
     /**
      * Relation avec les opérations
@@ -35,17 +51,17 @@ class Abonnement extends Model
     }
 
     /**
-     * Obtenir les utilisateurs ayant cet abonnement via operations
+     * Obtenir les utilisateurs
      */
     public function users()
     {
         return $this->hasManyThrough(
             User::class,
             Operation::class,
-            'abonnement_id',  // Clé étrangère sur operations
-            'id',             // Clé étrangère sur users
-            'abonnement_id',  // Clé locale sur abonnements
-            'user_id'         // Clé locale sur operations
+            'abonnement_id',
+            'id',
+            'abonnement_id',
+            'user_id'
         );
     }
 
@@ -54,18 +70,62 @@ class Abonnement extends Model
      */
     public function isActive()
     {
-        $now = now();
+        if (!in_array($this->status, ['active', 'trialing'])) {
+            return false;
+        }
 
-        // Actif si date_debut <= maintenant ET (pas de date_fin OU date_fin > maintenant)
+        $now = now();
         return $this->date_debut <= $now &&
                (is_null($this->date_fin) || $this->date_fin > $now);
     }
 
     /**
-     * Vérifier si c'est un abonnement Pro Plus
+     * Vérifier si c'est Pro Plus
      */
     public function isProPlus()
     {
-        return $this->nom === 'Pro Plus';
+        return $this->nom === 'Pro Plus' ||
+               ($this->plan && str_contains(strtolower($this->plan->nom), 'pro plus'));
+    }
+
+    /**
+     * Obtenir le provider
+     */
+    public function getProvider()
+    {
+        if ($this->stripe_subscription_id) {
+            return 'stripe';
+        }
+
+        if ($this->paypal_subscription_id) {
+            return 'paypal';
+        }
+
+        return null;
+    }
+
+    /**
+     * Vérifier si expire bientôt (7 jours)
+     */
+    public function isExpiringSoon()
+    {
+        if (!$this->cancel_at_period_end || !$this->next_billing_date) {
+            return false;
+        }
+
+        return $this->next_billing_date->diffInDays(now()) <= 7
+               && $this->next_billing_date->isFuture();
+    }
+
+    /**
+     * Obtenir les jours restants avant renouvellement
+     */
+    public function getDaysUntilRenewal()
+    {
+        if (!$this->next_billing_date) {
+            return null;
+        }
+
+        return now()->diffInDays($this->next_billing_date, false);
     }
 }
