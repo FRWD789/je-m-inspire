@@ -2,9 +2,12 @@
 import React, { useState } from 'react';
 import { useAuth } from "../../contexts/AuthContext";
 import { EventList } from './EventList';
-import { ProfessionalOnly, UserOnly } from '../common/RoleGuard';
+import { ProfessionalOnly, UserOnly, AdminOnly } from '../common/RoleGuard';
 import { CreateEventForm } from './CreateEventForm';
 import { MyReservations } from '../reservations/MyReservations';
+import { CreateRemboursementForm } from '../remboursements/CreateRemboursementForm';
+import { MesRemboursements } from '../remboursements/MesRemboursements';
+import { AdminRemboursements } from '../remboursements/AdminRemboursements';
 
 export const EventDashboard = () => {
     const { user, isProfessional, hasRole } = useAuth();
@@ -12,16 +15,20 @@ export const EventDashboard = () => {
 
     const tabStyle = (isActive) => ({
         padding: '10px 20px',
-        backgroundColor: isActive ? '#007bff' : '#f8f9fa',
-        color: isActive ? 'white' : '#007bff',
-        border: '1px solid #007bff',
+        backgroundColor: isActive ? '#50562E' : '#FAF5EE',
+        color: isActive ? '#FAF5EE' : '#50562E',
+        border: '1px solid #50562E',
         cursor: 'pointer',
         marginRight: '5px',
         borderRadius: '4px 4px 0 0'
     });
 
     return (
-        <div style={{ padding: '20px' }}>
+        <div style={{ 
+            padding: '20px',
+            backgroundColor: '#FAF5EE',
+            minHeight: '100vh'
+        }}>
             {/* Onglets de navigation */}
             <div style={{ marginBottom: '20px', borderBottom: '1px solid #dee2e6' }}>
                 <button
@@ -31,16 +38,31 @@ export const EventDashboard = () => {
                     Tous les événements
                 </button>
                 
-                {/* Onglet pour les utilisateurs - Mes réservations */}
+                {/* Onglets pour les utilisateurs */}
                 {(hasRole('utilisateur') || hasRole('client')) && (
-                    <button
-                        onClick={() => setActiveTab('myReservations')}
-                        style={tabStyle(activeTab === 'myReservations')}
-                    >
-                        Mes réservations
-                    </button>
+                    <>
+                        <button
+                            onClick={() => setActiveTab('myReservations')}
+                            style={tabStyle(activeTab === 'myReservations')}
+                        >
+                            Mes réservations
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('createRemboursement')}
+                            style={tabStyle(activeTab === 'createRemboursement')}
+                        >
+                            Demander un remboursement
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('mesRemboursements')}
+                            style={tabStyle(activeTab === 'mesRemboursements')}
+                        >
+                            Mes demandes de remboursement
+                        </button>
+                    </>
                 )}
                 
+                {/* Onglets pour les professionnels */}
                 {isProfessional() && (
                     <>
                         <button
@@ -56,6 +78,16 @@ export const EventDashboard = () => {
                             Mes événements
                         </button>
                     </>
+                )}
+
+                {/* Onglet pour les administrateurs */}
+                {hasRole('admin') && (
+                    <button
+                        onClick={() => setActiveTab('adminRemboursements')}
+                        style={tabStyle(activeTab === 'adminRemboursements')}
+                    >
+                        Gérer les remboursements
+                    </button>
                 )}
             </div>
 
@@ -93,6 +125,26 @@ export const EventDashboard = () => {
                     <UserOnly fallback={<p>Accès réservé aux utilisateurs</p>}>
                         <MyReservations />
                     </UserOnly>
+                )}
+
+                {activeTab === 'createRemboursement' && (
+                    <UserOnly fallback={<p>Accès réservé aux utilisateurs</p>}>
+                        <CreateRemboursementForm 
+                            onSuccess={() => setActiveTab('mesRemboursements')} 
+                        />
+                    </UserOnly>
+                )}
+
+                {activeTab === 'mesRemboursements' && (
+                    <UserOnly fallback={<p>Accès réservé aux utilisateurs</p>}>
+                        <MesRemboursements />
+                    </UserOnly>
+                )}
+
+                {activeTab === 'adminRemboursements' && (
+                    <AdminOnly fallback={<p>Accès réservé aux administrateurs</p>}>
+                        <AdminRemboursements />
+                    </AdminOnly>
                 )}
             </div>
         </div>

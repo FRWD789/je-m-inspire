@@ -22,7 +22,7 @@ export const Navigation = () => {
             alignItems: 'center'
         }}>
             <div>
-                <h3>Mon App Événements</h3>
+                <h3>JEM'inspire</h3>
             </div>
             
             {user && (

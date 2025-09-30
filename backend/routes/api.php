@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\PaiementController;
+use App\Http\Controllers\RemboursementController;
 use App\Http\Controllers\RoleController;
 
 // Routes publiques
@@ -49,4 +50,12 @@ Route::middleware(['jwt.auth'])->group(function () {
     // Paiements
     Route::post('/stripe/checkout', [PaiementController::class, 'stripeCheckout']);
     Route::post('/paypal/checkout', [PaiementController::class, 'paypalCheckout']);
+
+    // Remboursements - Utilisateur
+    Route::post('/remboursements', [RemboursementController::class, 'store']);
+    Route::get('/mes-remboursements', [RemboursementController::class, 'mesDemandes']);
+
+    // Remboursements - Admin uniquement
+        Route::get('/remboursements', [RemboursementController::class, 'index']);
+        Route::put('/remboursements/{id}/traiter', [RemboursementController::class, 'traiter']);
 });

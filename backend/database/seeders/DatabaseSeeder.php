@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             EventSeeder::class,
             UserSeeder::class,
             TypePaiementSeeder::class,
+            OperationSeeder::class,
         ]);
     }
 }
