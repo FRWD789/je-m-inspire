@@ -1,9 +1,11 @@
-import { useNavigate } from 'react-router-dom'; // AJOUT IMPORTANT
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../contexts/AuthContext";
+import { useSubscription } from '../../hooks/useSubscription';
 
 export const Navigation = () => {
     const { user, logout, isProfessional, isAdmin } = useAuth();
-    const navigate = useNavigate(); // AJOUT IMPORTANT
+    const { hasProPlus } = useSubscription();
+    const navigate = useNavigate();
     
     const handleLogout = async () => {
         try {
@@ -27,8 +29,8 @@ export const Navigation = () => {
                     Mon App Événements
                 </h3>
                 
-                {/* Bouton Pro Plus pour les professionnels */}
-                {isProfessional() && (
+                {/* Bouton Pro Plus pour les professionnels sans abonnement */}
+                {isProfessional() && !hasProPlus && (
                     <button
                         onClick={() => navigate('/abonnement')}
                         style={{
@@ -43,24 +45,42 @@ export const Navigation = () => {
                             transition: 'all 0.3s ease',
                             boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
                         }}
-                        onMouseEnter={(e) => {
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
-                        }}
                     >
                         ⭐ Pro Plus
                     </button>
+                )}
+
+                {/* Badge Pro Plus actif */}
+                {isProfessional() && hasProPlus && (
+                    <span style={{
+                        padding: '8px 16px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                    }}>
+                        ⭐ Pro Plus
+                    </span>
                 )}
             </div>
             
             {user && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ color: '#333' }}>
-                        Bonjour, <strong>{user.name}</strong>
+                    {/* Nom cliquable vers le profil */}
+                    <span 
+                        onClick={() => navigate('/profile')}
+                        style={{ 
+                            color: '#007bff',
+                            cursor: 'pointer',
+                            textDecoration: 'none',
+                            fontWeight: '500'
+                        }}
+                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                    >
+                        {user.name} {user.last_name}
                     </span>
                     
                     {/* Badge de rôle */}
@@ -73,11 +93,10 @@ export const Navigation = () => {
                         fontWeight: 'bold'
                     }}>
                         {user.roles?.map(role => {
-                            // Traduire les rôles en français
                             const roleNames = {
                                 'admin': 'Admin',
-                                'professionnel': 'Professionnel',
-                                'utilisateur': 'Utilisateur'
+                                'professionnel': 'Pro',
+                                'utilisateur': 'User'
                             };
                             return roleNames[role.role] || role.role;
                         }).join(', ')}

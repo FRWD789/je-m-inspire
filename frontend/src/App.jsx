@@ -12,6 +12,7 @@ import PaymentCancel from "./components/payment/PaymentCancel";
 import ProPlusPage from "./components/subscription/ProPlusPage";
 import SubscriptionSuccess from "./components/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./components/subscription/SubscriptionCancel";
+import ProfilePage from "./components/profile/ProfilePage";
 
 function App() {
   return (
@@ -94,6 +95,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<EventDashboard />} />
         <Route path="/dashboard" element={<EventDashboard />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/payment/:id" element={<PaymentPage />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} />
@@ -104,7 +106,7 @@ function AppContent() {
         <Route path="/abonnement/cancel" element={<SubscriptionCancel />} />
         
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+    </Routes>
     </div>
   );
 }

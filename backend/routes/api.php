@@ -25,6 +25,9 @@ Route::get('/roles', [RoleController::class, 'index']);
 Route::post('/stripe/webhook', [PaiementController::class, 'stripeWebhook']);
 Route::post('/paypal/webhook', [PaiementController::class, 'paypalWebhook']);
 
+Route::post('/abonnementStripe/webhook', [AbonnementController::class, 'abonnementStripeWebhook']);
+Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonnementPaypalWebhook']);
+
 // Statut de paiement (accessible sans auth pour les redirections)
 Route::get('/payment/status', [PaiementController::class, 'getPaymentStatus']);
 
@@ -50,6 +53,8 @@ Route::middleware(['jwt.auth'])->group(function () {
     // Paiements
     Route::post('/stripe/checkout', [PaiementController::class, 'stripeCheckout']);
     Route::post('/paypal/checkout', [PaiementController::class, 'paypalCheckout']);
+
+    Route::put('/profile/update', [AuthController::class, 'updateProfile']);
 });
 
 Route::middleware('auth.jwt')->prefix('abonnement')->group(function () {
