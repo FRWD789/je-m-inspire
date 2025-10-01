@@ -92,7 +92,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 // ==========================================
 // ABONNEMENTS PRO PLUS
 // ==========================================
-Route::middleware('auth.jwt')->prefix('/abonnement')->group(function () {
+Route::middleware('auth.jwt')->prefix('abonnement')->group(function () {
     Route::post('/stripe', [AbonnementController::class, 'abonnementStripe']);
     Route::post('/paypal', [AbonnementController::class, 'abonnementPaypal']);
     Route::post('/cancel', [AbonnementController::class, 'cancelAbonnement']);
