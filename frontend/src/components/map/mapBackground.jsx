@@ -74,3 +74,4 @@ function geocode(request, geocoder, callback) {
         console.log("Geocode was not successful for the following reason: " + e);
       });
   
+}
