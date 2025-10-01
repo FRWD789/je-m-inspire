@@ -3,9 +3,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Link } from "react-router-dom"
 import Button from "../components/Button"
-import InputWithLabel from "../components/InputWithLabel"
+import InputWithLabel from "./Input"
 import authService from "../service/authService"
 import { z } from "zod"
+import FormField from "./FormField"
+import Input from "./Input"
 
 // Zod schema for forgot password
 const forgotPasswordSchema = z.object({
@@ -44,15 +46,19 @@ export default function ForgotPassword() {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <InputWithLabel
+          <FormField   label="Email" error={errors.email}>
+            <Input
             type="email"
-            label="Email"
+          
             register={register}
             name="email"
             errors={errors}
             // placeholder="votre.email@exemple.com"
             required
           />
+
+          </FormField>
+          
 
           <Button type="submit" disabled={!isValid || isSubmitting} isLoading={isSubmitting}>
             Envoyer le lien

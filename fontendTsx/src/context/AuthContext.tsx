@@ -4,12 +4,11 @@ import type { LoginCredentials, RegisterCredentials } from '../types/auth';
 import { useNavigate } from 'react-router-dom';
 
 
-
-
 type User = {
   id: number;
   name: string;
   email: string;
+  role:string;
 };
 
 type AuthContextType = {
@@ -19,41 +18,37 @@ type AuthContextType = {
   register_user: (userData:RegisterCredentials) => Promise<void>;
   logout?: () => Promise<void>;
   setAccessToken: (token: string | null) => void;
+  loading:boolean
 };
 
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-
-
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate()
     const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
-           const didRun = useRef(false);
+    const didRun = useRef(false);
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-   
-     
         const initAuth = async () => {
             console.log("im here")
-
-            
           if (didRun.current) return; // persist across renders
             didRun.current = true;
-
         try {
             const data = await authService.refresh();
-            console.log("token",data)
-            setAccessToken(data);
-            navigate("/")
-            
-          
+            setAccessToken(data.access_token);
+            setUser(data.user);
         } catch {
             setAccessToken(null);
             setUser(null);
+        }finally{
+          setLoading(false);
         }
         };
         initAuth();
+
     }, []);
     const login = async (credentials:LoginCredentials) => {
         const data = await authService.login(credentials);
@@ -70,7 +65,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
 
 
   return (
-    <AuthContext.Provider value={{ user, accessToken,register_user, login, setAccessToken }}>
+    <AuthContext.Provider value={{ user, accessToken,loading,register_user, login, setAccessToken }}>
         {children}
     </AuthContext.Provider>
   )

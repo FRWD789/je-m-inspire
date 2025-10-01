@@ -4,8 +4,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Button from "../components/Button"
-import InputWithLabel from "../components/InputWithLabel"
+import InputWithLabel from "./Input"
 import authService from "../service/authService"
+import Input from "./Input"
+import FormField from "./FormField"
 
 
 // Zod schema for password reset
@@ -68,23 +70,35 @@ export default function ResetPassword() {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <InputWithLabel
+
+
+        <FormField  label="Nouveau mot de passe" error={errors.password}>
+          <Input
             type="password"
-            label="Nouveau mot de passe"
+           
             register={register}
             name="password"
 
             errors={errors}
             required
           />
-          <InputWithLabel
+
+        </FormField>
+
+        
+        <FormField label="Confirmer le mot de passe" error={errors.password_confirmation}>
+          <Input
             type="password"
-            label="Confirmer le mot de passe"
             register={register}
             name="password_confirmation"
             errors={errors}
             required
           />
+
+        </FormField>
+        
+          
+       
 
           <Button type="submit" disabled={!isValid || isSubmitting} isLoading={isSubmitting}>
             Réinitialiser le mot de passe

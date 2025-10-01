@@ -2,6 +2,9 @@
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\OperationController;
+use App\Http\Controllers\PaiementController;
+use App\Http\Controllers\RoleController;
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Resources\UserResource;
 use Illuminate\Auth\Events\Verified;
@@ -93,11 +96,43 @@ Route::get('/refresh', [AuthController::class, 'refresh']);
 //     return new UserResource($request->user());  //le mdp et token ne sont pas envoyé (voir resource)
 // })->middleware('auth:sanctum');
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/login', [AuthController::class, 'login']);
-// Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/events', [EventController::class, 'index'])->name('events.index');      // lister tous
-    Route::get('/event/{id}', [EventController::class, 'show'])->name('events.show');    // détail
-    Route::post('/event', [EventController::class, 'store'])->name('events.store');      // créer
-    Route::put('/event/{id}', [EventController::class, 'update'])->name('events.update');// modifier
-// });
+
+// Événements publics
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/{id}', [EventController::class, 'show']);
+
+// Rôles (pour le formulaire d'inscription)
+Route::get('/roles', [RoleController::class, 'index']);
+
+// Webhooks (sans authentification)
+Route::post('/stripe/webhook', [PaiementController::class, 'stripeWebhook']);
+Route::post('/paypal/webhook', [PaiementController::class, 'paypalWebhook']);
+
+// Statut de paiement (accessible sans auth pour les redirections)
+Route::get('/payment/status', [PaiementController::class, 'getPaymentStatus']);
+
+// Routes protégées par JWT
+Route::middleware(['jwt.auth'])->group(function () {
+    // Authentification
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/user/password', [AuthController::class, 'updatePassword']);
+    // Événements (gestion) - SANS DOUBLONS
+    Route::post('/events', [EventController::class, 'store']);
+    Route::put('/events/{id}', [EventController::class, 'update']);
+    Route::delete('/events/{id}', [EventController::class, 'destroy']);
+    Route::get('/my-events', [EventController::class, 'myEvents']);
+
+    // Réservations - AJOUTER CETTE ROUTE MANQUANTE
+    Route::post('/events/{id}/reserve', [EventController::class, 'reserve']);
+    Route::delete('/events/{id}/reservation', [EventController::class, 'cancelReservation']);
+
+    Route::get('/mes-reservations', [OperationController::class, 'mesReservations']);
+    Route::delete('/reservations/{id}', [OperationController::class, 'destroy']);
+
+    // Paiements
+    Route::post('/stripe/checkout', [PaiementController::class, 'stripeCheckout']);
+    Route::post('/paypal/checkout', [PaiementController::class, 'paypalCheckout']);
+});

@@ -28,7 +28,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
-            EventSeeder::class
+
+            RoleSeeder::class,
+            CategorieEventSeeder::class,
+            LocalisationSeeder::class,
+            TypeOperationSeeder::class,
+            EventSeeder::class,
+            UserSeeder::class,
+            TypePaiementSeeder::class,
         ]);
     }
 }

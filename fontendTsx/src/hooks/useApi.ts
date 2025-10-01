@@ -39,7 +39,7 @@ function useApi() {
     };
   }, [accessToken, refresh]);
 
-  return privateApi;
+  return{privateApi};
 }
 
 export default useApi

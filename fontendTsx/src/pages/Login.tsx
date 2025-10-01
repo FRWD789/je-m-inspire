@@ -2,11 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { loginSchema, type LoginInput } from '../schema/auth'
-import InputWithLabel from '../components/InputWithLabel'
+import InputWithLabel from '../components/Input'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import type { LoginCredentials } from '../types/auth'
 import { useNavigate, Link } from 'react-router-dom'
+import FormField from '@/components/FormField'
+import Input from '../components/Input'
 // import { toast } from 'react-toastify'
 // import 'react-toastify/dist/ReactToastify.css'
 
@@ -63,25 +65,30 @@ function Login() {
 
           {/* Form */}
           <form className="grid gap-6" onSubmit={handleSubmit(onSubmit)}>
-            <InputWithLabel
+
+            <FormField    label="Email" error={errors.email}>
+                   <Input
               errors={errors}
               type="email"
-              label="Email"
+           
               register={register}
               name="email"
               // placeholder="votre.email@exemple.com"
               required
             />
-            <InputWithLabel
-              errors={errors}
-              type="password"
-              label="Mot de passe"
-              register={register}
-              name="password"
-              // placeholder="••••••••"
-              required
-            />
 
+            </FormField>
+            <FormField     label="Mot de passe" error={errors.password}>
+            <Input
+                errors={errors}
+                type="password"
+               
+                register={register}
+                name="password"
+                // placeholder="••••••••"
+                required
+              />
+            </FormField>
             <div className="flex justify-between items-center text-sm">
               <Link
                 to="/forgot-password"

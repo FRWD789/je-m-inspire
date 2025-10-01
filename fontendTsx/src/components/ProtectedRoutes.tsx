@@ -4,12 +4,14 @@ import { Navigate,Outlet, useActionData } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function ProtectedRoutes() {
+ 
 
-    const {accessToken} = useAuth()
+    const {accessToken,loading} = useAuth()
 
 
     
-  return accessToken? <Outlet/> : <Navigate to ="/login"/>
+   if (loading) return <p>Loading...</p>;
+  return accessToken ? <Outlet /> : <Navigate to="/login" />;
 
 
 }

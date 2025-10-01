@@ -28,7 +28,7 @@ const authService = {
   // Refresh token
   refresh: async () => {
     const response = await api.get("/refresh");
-    return response.data.access_token;
+    return response.data;
   },
 
   // forgot password
