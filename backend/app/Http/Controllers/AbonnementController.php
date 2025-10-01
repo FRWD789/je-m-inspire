@@ -67,6 +67,9 @@ class AbonnementController extends Controller
     /**
      * Créer un abonnement PayPal Pro Plus
      */
+    /**
+ * Créer un abonnement PayPal Pro Plus
+ */
     public function abonnementPaypal(Request $request)
     {
         try {
@@ -80,15 +83,43 @@ class AbonnementController extends Controller
                 ], 400);
             }
 
-            // Configuration PayPal
+            // ✅ 1. Récupérer les credentials PayPal
             $clientId = config('services.paypal.client_id');
             $secret = config('services.paypal.secret');
             $mode = config('services.paypal.mode', 'sandbox');
+            $planId = config('services.paypal.pro_plus_plan_id');
+
+            Log::info('[PayPal] Configuration chargée', [
+                'mode' => $mode,
+                'client_id' => $clientId ? 'OK' : 'MANQUANT',
+                'secret' => $secret ? 'OK' : 'MANQUANT',
+                'plan_id' => $planId ?? 'MANQUANT'
+            ]);
+
+            // ✅ Vérifier que les credentials existent
+            if (!$clientId || !$secret) {
+                Log::error('[PayPal] Credentials manquants dans .env');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Configuration PayPal incomplète. Vérifiez vos credentials.'
+                ], 500);
+            }
+
+            if (!$planId) {
+                Log::error('[PayPal] Plan ID manquant dans .env');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Plan PayPal non configuré.'
+                ], 500);
+            }
+
             $baseUrl = $mode === 'live'
                 ? 'https://api-m.paypal.com'
                 : 'https://api-m.sandbox.paypal.com';
 
-            // Obtenir un token d'accès
+            // ✅ 2. Obtenir le token d'accès avec gestion d'erreur complète
+            Log::info('[PayPal] Demande token à: ' . $baseUrl);
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "$baseUrl/v1/oauth2/token");
             curl_setopt($ch, CURLOPT_HEADER, false);
@@ -99,19 +130,57 @@ class AbonnementController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, "grant_type=client_credentials");
 
             $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
 
-            $token = json_decode($result)->access_token;
+            // ✅ Vérifier erreur cURL
+            if ($curlError) {
+                Log::error('[PayPal] Erreur cURL lors de l\'authentification', [
+                    'error' => $curlError
+                ]);
+                throw new \Exception('Erreur de connexion à PayPal: ' . $curlError);
+            }
 
-            // Créer l'abonnement Pro Plus
+            // ✅ Vérifier code HTTP
+            if ($httpCode !== 200) {
+                Log::error('[PayPal] Erreur HTTP authentification', [
+                    'http_code' => $httpCode,
+                    'response' => $result
+                ]);
+                throw new \Exception('Échec authentification PayPal (HTTP ' . $httpCode . ')');
+            }
+
+            // ✅ Décoder le JSON
+            $tokenData = json_decode($result);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('[PayPal] JSON invalide', [
+                    'error' => json_last_error_msg(),
+                    'response' => substr($result, 0, 200)
+                ]);
+                throw new \Exception('Réponse PayPal invalide');
+            }
+
+            if (!isset($tokenData->access_token)) {
+                Log::error('[PayPal] Access token manquant', [
+                    'response' => $tokenData
+                ]);
+                throw new \Exception('Access token non reçu de PayPal');
+            }
+
+            $token = $tokenData->access_token;
+            Log::info('[PayPal] ✅ Token obtenu avec succès');
+
+            // ✅ 3. Créer l'abonnement
             $subscriptionData = [
-                'plan_id' => config('services.paypal.pro_plus_plan_id'),
+                'plan_id' => $planId,
                 'application_context' => [
                     'brand_name' => config('app.name'),
-                    'locale' => 'fr-FR',
+                    'locale' => 'fr-CA',
                     'shipping_preference' => 'NO_SHIPPING',
                     'user_action' => 'SUBSCRIBE_NOW',
-                    'return_url' => env('FRONTEND_URL') . '/abonnement/paypal/success',
+                    'return_url' => env('FRONTEND_URL') . '/abonnement/success',
                     'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel'
                 ],
                 'custom_id' => json_encode([
@@ -119,6 +188,11 @@ class AbonnementController extends Controller
                     'plan_type' => 'pro-plus'
                 ])
             ];
+
+            Log::info('[PayPal] Création abonnement', [
+                'user_id' => $user->id,
+                'plan_id' => $planId
+            ]);
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "$baseUrl/v1/billing/subscriptions");
@@ -133,29 +207,57 @@ class AbonnementController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($subscriptionData));
 
             $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+
+            // ✅ Vérifier erreurs
+            if ($curlError) {
+                Log::error('[PayPal] Erreur cURL création abonnement', [
+                    'error' => $curlError
+                ]);
+                throw new \Exception('Erreur lors de la création: ' . $curlError);
+            }
 
             $subscription = json_decode($result);
 
-            if (isset($subscription->id)) {
-                $approvalUrl = collect($subscription->links)
-                    ->firstWhere('rel', 'approve')
-                    ->href ?? null;
-
-                return response()->json([
-                    'success' => true,
-                    'subscription_id' => $subscription->id,
-                    'approval_url' => $approvalUrl
+            if ($httpCode !== 201) {
+                Log::error('[PayPal] Erreur création abonnement', [
+                    'http_code' => $httpCode,
+                    'response' => $subscription
                 ]);
+                throw new \Exception('Échec création abonnement (HTTP ' . $httpCode . ')');
             }
 
-            throw new \Exception('Erreur lors de la création de l\'abonnement PayPal');
+            if (!isset($subscription->id)) {
+                Log::error('[PayPal] ID abonnement manquant', [
+                    'response' => $subscription
+                ]);
+                throw new \Exception('ID abonnement non reçu');
+            }
+
+            // ✅ Récupérer l'URL d'approbation
+            $approvalUrl = collect($subscription->links)
+                ->firstWhere('rel', 'approve')
+                ->href ?? null;
+
+            Log::info('[PayPal] ✅ Abonnement créé avec succès', [
+                'subscription_id' => $subscription->id,
+                'approval_url' => $approvalUrl ? 'OK' : 'MANQUANT'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'subscription_id' => $subscription->id,
+                'approval_url' => $approvalUrl
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Erreur PayPal: ' . $e->getMessage());
+            Log::error('[PayPal] Erreur finale: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la création de l\'abonnement PayPal'
+                'message' => $e->getMessage()
             ], 500);
         }
     }

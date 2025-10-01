@@ -258,7 +258,7 @@ const ProPlusPage = () => {
                     color: '#667eea',
                     marginBottom: '10px'
                 }}>
-                    29.99 CAD
+                  14.99 CAD
                 </div>
                 <div style={{
                     fontSize: '20px',

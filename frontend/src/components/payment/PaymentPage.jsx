@@ -111,8 +111,8 @@ const PaymentPage = () => {
             
             console.log('Réponse PayPal:', response);
             
-            if (response.data.approve_url) {
-                window.location.href = response.data.approve_url;
+            if (response.data.approval_url) {
+                window.location.href = response.data.approval_url;
             } else {
                 alert('Erreur lors de l\'initialisation du paiement PayPal');
             }

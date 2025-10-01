@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('vendor_id')->nullable();
             $table->string("session_id")->nullable();
             $table->string("paypal_id")->nullable();
+            $table->string("paypal_capture_id")->nullable();
 
             $table->timestamps();
 
