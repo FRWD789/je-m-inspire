@@ -8,6 +8,7 @@ use App\Http\Controllers\OperationController;
 use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\AbonnementController;
+use App\Http\Controllers\ProfileController;
 
 // Routes publiques
 Route::post('/register', [AuthController::class, 'register']);
@@ -55,6 +56,9 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::post('/paypal/checkout', [PaiementController::class, 'paypalCheckout']);
 
     Route::put('/profile/update', [AuthController::class, 'updateProfile']);
+
+    Route::post('/link/stripe', [ProfileController::class, 'linkStripeAccount']);
+    Route::post('/link/paypal', [ProfileController::class, 'linkPaypalAccount']);
 });
 
 Route::middleware('auth.jwt')->prefix('abonnement')->group(function () {

@@ -20,6 +20,7 @@ const PaymentSuccess = () => {
                 if (sessionId || paymentId) {
                     // Vérifier le paiement côté serveur
                     const response = await get(`/api/payment/status?session_id=${sessionId}&payment_id=${paymentId}`);
+                    console.log(response);
                     setPaymentDetails(response.data);
                 }
             } catch (error) {

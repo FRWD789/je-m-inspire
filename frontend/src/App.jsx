@@ -13,6 +13,7 @@ import ProPlusPage from "./components/subscription/ProPlusPage";
 import SubscriptionSuccess from "./components/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./components/subscription/SubscriptionCancel";
 import ProfilePage from "./components/profile/ProfilePage";
+import LinkPaypalSuccess from "./components/profile/LinkPaypalSuccess";
 
 function App() {
   return (
@@ -104,6 +105,11 @@ function AppContent() {
         <Route path="/abonnement" element={<ProPlusPage />} />
         <Route path="/abonnement/success" element={<SubscriptionSuccess />} />
         <Route path="/abonnement/cancel" element={<SubscriptionCancel />} />
+
+
+        <Route path="/link/paypal" element={<LinkPaypalSuccess />} />
+
+        
         
         <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
