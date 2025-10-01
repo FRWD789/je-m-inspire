@@ -35,4 +35,23 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'pro_plus_price_id' => env('PRO_PLUS_ID_STRIPE'), // price_1S9A0Z3JJu344kSQ63Nnyivb
+    ],
+
+    'paypal' => [
+        'client_id' => env('PAYPAL_MODE') === 'live'
+            ? env('PAYPAL_LIVE_CLIENT_ID')
+            : env('PAYPAL_SANDBOX_CLIENT_ID'),
+        'secret' => env('PAYPAL_MODE') === 'live'
+            ? env('PAYPAL_LIVE_CLIENT_SECRET')
+            : env('PAYPAL_SANDBOX_CLIENT_SECRET'),
+        'mode' => env('PAYPAL_MODE', 'sandbox'),
+        'currency' => env('PAYPAL_CURRENCY', 'CAD'),
+        'pro_plus_plan_id' => env('PRO_PLUS_PLAN_ID'), // P-6H8771292B5725726NDG3YXQ
+    ],
+
 ];

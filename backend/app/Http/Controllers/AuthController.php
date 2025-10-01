@@ -216,6 +216,7 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
     public function getProfessionnels()
     {
         $professionnels = User::whereHas('roles', function($query) {
@@ -244,5 +245,37 @@ class AuthController extends Controller
         $user->save();
 
         return response()->json(['message' => 'Statut modifié avec succès']);
+
+
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'last_name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|unique:users,email,' . $user->id,
+                'city' => 'nullable|string|max:255',
+                'date_of_birth' => 'sometimes|date|before:today'
+            ]);
+
+            $user->update($validated);
+            $user->load('roles');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profil mis à jour avec succès',
+                'user' => $user
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour du profil',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
     }
 }
