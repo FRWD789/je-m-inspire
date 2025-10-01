@@ -8,6 +8,8 @@ import { MyReservations } from '../reservations/MyReservations';
 import { CreateRemboursementForm } from '../remboursements/CreateRemboursementForm';
 import { MesRemboursements } from '../remboursements/MesRemboursements';
 import { AdminRemboursements } from '../remboursements/AdminRemboursements';
+import { AdminProfessionnels } from '../admin/AdminProfessionnels';
+import { AdminUtilisateurs } from '../admin/AdminUtilisateurs';
 
 export const EventDashboard = () => {
     const { user, isProfessional, hasRole } = useAuth();
@@ -82,12 +84,32 @@ export const EventDashboard = () => {
 
                 {/* Onglet pour les administrateurs */}
                 {hasRole('admin') && (
+                    <>
                     <button
                         onClick={() => setActiveTab('adminRemboursements')}
                         style={tabStyle(activeTab === 'adminRemboursements')}
                     >
                         Gérer les remboursements
                     </button>
+                    <button
+                        onClick={() => setActiveTab('adminRemboursements')}
+                        style={tabStyle(activeTab === 'adminRemboursements')}
+                    >
+                        Remboursements
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('adminProfessionnels')}
+                        style={tabStyle(activeTab === 'adminProfessionnels')}
+                    >
+                        Professionnels
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('adminUtilisateurs')}
+                        style={tabStyle(activeTab === 'adminUtilisateurs')}
+                    >
+                        Utilisateurs
+                    </button>
+                    </>
                 )}
             </div>
 
@@ -144,6 +166,17 @@ export const EventDashboard = () => {
                 {activeTab === 'adminRemboursements' && (
                     <AdminOnly fallback={<p>Accès réservé aux administrateurs</p>}>
                         <AdminRemboursements />
+                    </AdminOnly>
+                )}
+                {activeTab === 'adminProfessionnels' && (
+                    <AdminOnly fallback={<p>Accès réservé aux administrateurs</p>}>
+                        <AdminProfessionnels />
+                    </AdminOnly>
+                )}
+
+                {activeTab === 'adminUtilisateurs' && (
+                    <AdminOnly fallback={<p>Accès réservé aux administrateurs</p>}>
+                        <AdminUtilisateurs />
                     </AdminOnly>
                 )}
             </div>

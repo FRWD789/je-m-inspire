@@ -22,7 +22,12 @@ export const Navigation = () => {
             alignItems: 'center'
         }}>
             <div>
-                <h3>JEM'inspire</h3>
+                 {/* Logo */}
+                <img
+                    src="/assets/img/logo.png"
+    style={{ height: '120px', width: 'auto' }}
+                    alt="Je m'inspire"
+                />
             </div>
             
             {user && (

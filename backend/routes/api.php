@@ -58,4 +58,8 @@ Route::middleware(['jwt.auth'])->group(function () {
     // Remboursements - Admin uniquement
         Route::get('/remboursements', [RemboursementController::class, 'index']);
         Route::put('/remboursements/{id}/traiter', [RemboursementController::class, 'traiter']);
+
+    Route::get('/professionnels', [AuthController::class, 'getProfessionnels']);
+    Route::get('/utilisateurs', [AuthController::class, 'getUtilisateurs']);
+    Route::put('/users/{id}/toggle-status', [AuthController::class, 'toggleUserStatus']);
 });

@@ -216,4 +216,33 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function getProfessionnels()
+    {
+        $professionnels = User::whereHas('roles', function($query) {
+            $query->where('role', 'professionnel');
+        })->with('roles')->get();
+
+        return response()->json($professionnels);
+    }
+
+    public function getUtilisateurs()
+    {
+        $utilisateurs = User::whereHas('roles', function($query) {
+            $query->where('role', 'utilisateur');
+        })
+        ->withCount('operations')
+        ->with('roles')
+        ->get();
+
+        return response()->json($utilisateurs);
+    }
+
+    public function toggleUserStatus($id)
+    {
+        $user = User::findOrFail($id);
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        return response()->json(['message' => 'Statut modifié avec succès']);
+    }
 }
