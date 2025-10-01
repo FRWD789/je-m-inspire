@@ -17,17 +17,13 @@ return new class extends Migration
             $table->string('status');
             $table->unsignedBigInteger('type_paiement_id');
             $table->integer('taux_commission')->nullable(); //permet de calculer la commission en multipliant avec le montant
-            $table->unsignedBigInteger('facture_id')->nullable();
             $table->integer('vendor_id')->nullable();
             $table->string("session_id")->nullable();
-            $table->string("stripe_id")->nullable();
             $table->string("paypal_id")->nullable();
-            $table->string("stripe_subscription_id")->nullable();
 
             $table->timestamps();
 
             $table->foreign('type_paiement_id')->references('type_paiement_id')->on('type_paiements');
-            $table->foreign('facture_id')->references('facture_id')->on('factures');
 
         });
     }

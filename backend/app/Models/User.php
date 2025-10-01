@@ -147,7 +147,7 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
         }
 
         // Vérifier si c'est un abonnement Pro Plus
-        return $abonnement->nom === 'Pro Plus' ||
+        return $abonnement->nom === 'Pro Plus Mensuel' ||
                $abonnement->description === 'Pro Plus';
     }
 
@@ -207,5 +207,10 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
         }
 
         return $endDate->diffInDays(now()) <= 7 && $endDate->isFuture();
+    }
+
+    public function hasStripeLinked()
+    {
+        return $this->stripeAccount_id != null;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class Event extends Model
 {
@@ -55,12 +56,16 @@ class Event extends Model
         return $this->hasMany(Operation::class);
     }
 
-    /**
-     * Relation avec l'utilisateur créateur (optionnel si vous avez user_id)
-     */
     public function creator()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->hasOneThrough(
+            User::class,       // modèle final
+            Operation::class,  // modèle pivot
+            'event_id',        // clé étrangère dans operations (vers events)
+            'id',              // clé primaire dans users
+            'id',              // clé primaire dans events
+            'user_id'          // clé étrangère dans operations (vers users)
+        )->where('operations.type_operation_id', 1);
     }
 
     /**

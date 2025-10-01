@@ -1,5 +1,5 @@
-// contexts/AuthContext.jsx
-import React, { createContext, useState, useEffect, useLayoutEffect, useContext } from "react";
+// contexts/AuthContext.jsx - VERSION CORRIGÉE
+import React, { createContext, useState, useEffect, useLayoutEffect, useContext, useRef } from "react";
 import api, { apiSimple } from "../api"; 
 
 export const AuthContext = createContext();
@@ -11,38 +11,68 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // ✅ FIX 1: Flag pour empêcher les refreshs simultanés
+  const isRefreshingRef = useRef(false);
+  const refreshSubscribersRef = useRef([]);
+  
+  // ✅ FIX LOGOUT: Flag pour empêcher les logouts simultanés
+  const isLoggingOutRef = useRef(false);
 
-  // Au montage, on peut tenter de récupérer le profil user
+  // ✅ FIX 2: Fonction pour gérer les abonnés au refresh
+  const subscribeTokenRefresh = (callback) => {
+    refreshSubscribersRef.current.push(callback);
+  };
+
+  const onRefreshed = (newToken) => {
+    refreshSubscribersRef.current.forEach(callback => callback(newToken));
+    refreshSubscribersRef.current = [];
+  };
+
+  // ✅ FIX 3: useEffect amélioré avec flag pour éviter les appels multiples
   useEffect(() => {
+    let isMounted = true;
+
     const fetchMe = async () => {
       try {
         const res = await api.get("/api/me");
-        console.log("User data:", res.data);
-        setUser(res.data);
+        if (isMounted) {
+          console.log("User data loaded:", res.data);
+          setUser(res.data);
+        }
       } catch (err) {
-        console.log("Not authenticated", err.message);
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('access_token');
+        if (isMounted) {
+          console.log("Not authenticated", err.message);
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('access_token');
+        }
       } finally {
-        setLoading(false);
-        setIsInitialized(true);
+        if (isMounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
       }
     };
 
-    if (token) {
+    if (token && !user) { // ✅ Seulement si pas encore d'user
       fetchMe();
-    } else {
+    } else if (!token) {
       setLoading(false);
       setIsInitialized(true);
     }
-  }, [token]);
 
-  // Intercepteur de requête : injecte le Bearer token
+    return () => {
+      isMounted = false;
+    };
+  }, [token]); // Dépendance token OK, mais avec vérification !user
+
+  // ✅ FIX 4: Intercepteur de requête simplifié
   useLayoutEffect(() => {
     const authInterceptor = api.interceptors.request.use((config) => {
-      if (token && !config._retry) {
-        config.headers.Authorization = `Bearer ${token}`;
+      const currentToken = localStorage.getItem('access_token');
+      if (currentToken && !config._retry) {
+        config.headers.Authorization = `Bearer ${currentToken}`;
       }
       return config;
     });
@@ -50,35 +80,58 @@ export const AuthProvider = ({ children }) => {
     return () => {
       api.interceptors.request.eject(authInterceptor);
     };
-  }, [token]);
+  }, []);
 
-  // Intercepteur de réponse : gère les 401 Unauthorized et refresh token
+  // ✅ FIX 5: Intercepteur de réponse avec gestion de file d'attente
   useLayoutEffect(() => {
     const refreshInterceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
         
+        // Vérifier si c'est une erreur 401 et pas déjà une retry
         if (
           error.response?.status === 401 &&
-          !originalRequest._retry
+          !originalRequest._retry &&
+          originalRequest.url !== '/api/refresh' && // ✅ Éviter boucle sur refresh lui-même
+          originalRequest.url !== '/api/login' // ✅ Éviter refresh sur login
         ) {
           originalRequest._retry = true;
           
+          // ✅ Si un refresh est déjà en cours, attendre sa résolution
+          if (isRefreshingRef.current) {
+            return new Promise((resolve) => {
+              subscribeTokenRefresh((newToken) => {
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                resolve(api(originalRequest));
+              });
+            });
+          }
+
+          isRefreshingRef.current = true;
+
           try {
+            console.log('🔄 Tentative de refresh du token...');
             const response = await api.post("/api/refresh");
             const newToken = response.data.access_token;
             
+            console.log('✅ Token refreshed successfully');
+            
             setToken(newToken);
             localStorage.setItem('access_token', newToken);
+            
+            isRefreshingRef.current = false;
+            onRefreshed(newToken);
             
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
             
           } catch (refreshError) {
-            console.error("Refresh token invalid:", refreshError);
+            console.error("❌ Refresh token invalid:", refreshError);
+            isRefreshingRef.current = false;
             logout();
             window.location.href = '/login';
+            return Promise.reject(refreshError);
           }
         }
         
@@ -89,12 +142,11 @@ export const AuthProvider = ({ children }) => {
     return () => {
       api.interceptors.response.eject(refreshInterceptor);
     };
-  }, []);
+  }, []); // ✅ Pas de dépendances car on utilise refs
 
-  // Fonctions d'authentification avec gestion d'erreurs améliorée
+  // Fonctions d'authentification
   const login = async (email, password) => {
     try {
-      // Utiliser l'instance simple pour éviter les problèmes CORS sur login
       const response = await apiSimple.post('/api/login', { email, password });
       const { token: accessToken, user: userData } = response.data;
       
@@ -120,7 +172,6 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      // Utiliser l'instance simple pour l'inscription aussi
       const response = await apiSimple.post('/api/register', userData);
       const { token: accessToken, user: newUser } = response.data;
       
@@ -132,23 +183,19 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Registration error details:', error);
       
-      // Gestion spécifique des erreurs réseau
       if (error.code === 'ERR_NETWORK') {
         throw new Error('Erreur réseau : Impossible de contacter le serveur');
       }
       
-      // Gestion des erreurs CORS
       if (error.message.includes('CORS') || error.message.includes('blocked')) {
         throw new Error('Erreur CORS : Vérifiez la configuration du serveur Laravel');
       }
       
-      // Gestion des erreurs de validation Laravel
       if (error.response?.status === 422) {
         const errors = error.response.data.errors;
         throw { message: errors, isValidation: true };
       }
       
-      // Autres erreurs
       const errorMessage = error.response?.data?.error || 'Erreur d\'inscription';
       throw new Error(errorMessage);
     }
@@ -163,6 +210,8 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
       setUser(null);
       localStorage.removeItem('access_token');
+      isRefreshingRef.current = false; // ✅ Reset du flag
+      refreshSubscribersRef.current = []; // ✅ Clear des subscribers
     }
   };
 

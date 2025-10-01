@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
 
             // FK event (1 event peut avoir plusieurs opérations)
-            $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
+            $table->foreignId('event_id')->constrained('events')->onDelete('cascade')->nullable();
 
             // FK type_operation
             $table->foreignId('type_operation_id')->constrained('type_operations')->onDelete('cascade');

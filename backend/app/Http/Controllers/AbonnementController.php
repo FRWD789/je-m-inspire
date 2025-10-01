@@ -296,7 +296,6 @@ class AbonnementController extends Controller
             // Créer l'opération qui lie l'utilisateur à l'abonnement (type_operation_id = 3)
             Operation::create([
                 'user_id' => $userId,
-                'event_id' => 1, // À adapter selon ton besoin
                 'type_operation_id' => 3,
                 'quantity' => 1,
                 'abonnement_id' => $abonnement->abonnement_id,

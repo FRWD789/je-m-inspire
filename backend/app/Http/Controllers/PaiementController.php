@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\Operation;
 use App\Models\Paiement;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
@@ -28,6 +29,8 @@ class PaiementController extends Controller
             $event = Event::with(['localisation', 'categorie'])->findOrFail($validated['event_id']);
             $user = JWTAuth::user();
             $quantity = $validated['quantity'];
+            $vendor = $event->creator;
+
 
             // Vérifications métier
             if ($event->available_places < $quantity) {
@@ -57,12 +60,10 @@ class PaiementController extends Controller
                 'total' => $totalAmount,
                 'status' => 'pending',
                 'type_paiement_id' => 1, // Paiement unique
-                'taux_commission' => 0,
-                'vendor_id' => $event->localisation_id ?? null,
+                'taux_commission' => $vendor->commission_rate ?? 0,
+                'vendor_id' => $vendor->id ?? null,
                 'session_id' => '', // Sera mis à jour
-                'stripe_id' => '',
                 'paypal_id' => '',
-                'stripe_subscription_id' => '',
             ]);
 
             // Créer l'opération (réservation temporaire)
@@ -74,31 +75,44 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // Créer la session Stripe
-            $session = \Stripe\Checkout\Session::create([
+            $sessionData = [
                 'payment_method_types' => ['card'],
                 'line_items' => [[
                     'price_data' => [
-                        'currency' => 'EUR',
+                        'currency' => 'CAD',
                         'product_data' => [
                             'name' => $event->name,
                             'description' => "Réservation de {$quantity} place(s) - " . ($event->localisation->name ?? '')
                         ],
-                        'unit_amount' => intval($event->base_price * 100), // Prix unitaire
+                        'unit_amount' => intval($event->base_price * 100),
                     ],
                     'quantity' => $quantity,
                 ]],
                 'mode' => 'payment',
                 'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
-                'metadata' => [
-                    'payment_id' => $paiement->paiement_id,
+                'cancel_url'  => env('FRONTEND_URL') . '/payment/cancel',
+                'metadata'    => [
+                    'payment_id'   => $paiement->paiement_id,
                     'operation_id' => $operation->id,
-                    'event_id' => $event->id,
-                    'user_id' => $user->id,
-                    'quantity' => $quantity,
-                ]
-            ]);
+                    'event_id'     => $event->id,
+                    'user_id'      => $user->id,
+                    'quantity'     => $quantity,
+                ],
+            ];
+
+            // Ajout commission si vendor éligible
+            if ($vendor && $vendor->hasProPlus() && $vendor->hasStripeLinked()) {
+                $applicationFee = intval(($amountCents * $vendor->commission_rate) / 100);
+                log::info('stripe oui');
+                $sessionData['payment_intent_data'] = [
+                    'application_fee_amount' => $applicationFee,
+                    'transfer_data' => [
+                        'destination' => $vendor->stripeAccount_id,
+                    ],
+                ];
+            }
+
+            $session = \Stripe\Checkout\Session::create($sessionData);
 
             // Mettre à jour le paiement avec l'ID de session
             $paiement->update(['session_id' => $session->id]);
@@ -161,6 +175,7 @@ class PaiementController extends Controller
             $event = Event::with(['localisation', 'categorie'])->findOrFail($validated['event_id']);
             $user = JWTAuth::user();
             $quantity = $validated['quantity'];
+            $vendor = $event->creator;
 
             // Vérifications métier
             if ($event->available_places < $quantity) {
@@ -188,12 +203,10 @@ class PaiementController extends Controller
                 'total' => $totalAmount,
                 'status' => 'pending',
                 'type_paiement_id' => 1,
-                'taux_commission' => 0,
-                'vendor_id' => $event->localisation_id ?? null,
+                'taux_commission' => $event->creator->commission_rate ?? 0,
+                'vendor_id' => $event->creator->id ?? null,
                 'session_id' => '',
-                'stripe_id' => '',
                 'paypal_id' => '', // Sera mis à jour
-                'stripe_subscription_id' => '',
             ]);
 
             // Créer l'opération
@@ -205,20 +218,44 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // Créer la commande PayPal
+            $purchaseUnit = [
+                "amount" => [
+                    "currency_code" => "CAD",
+                    "value" => number_format($totalAmount, 2, '.', '')
+                ],
+            ];
+
+            // Si un vendor est lié et qu’il a une commission
+            if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccountId) {
+                $commissionAmount = $amount * ($vendor->commission_rate / 100);
+                $vendorAmount = $amount - $commissionAmount;
+                log::info('paypal oui');
+
+                $purchaseUnit["payee"] = [
+                    "merchant_id" => $vendor->paypalAccount_id, // compte PayPal du vendeur
+                ];
+
+                // Optional: ajouter la commission à la plateforme via 'payment_instruction'
+                $purchaseUnit["payment_instruction"] = [
+                    "disbursement_mode" => "INSTANT", // ou "DELAYED" si tu veux capturer plus tard
+                    "platform_fees" => [
+                        [
+                            "amount" => [
+                                "currency_code" => "CAD",
+                                "value" => number_format($commissionAmount, 2, '.', '')
+                            ]
+                        ]
+                    ]
+                ];
+            }
+
             $response = $paypal->createOrder([
                 "intent" => "CAPTURE",
                 "application_context" => [
                     'return_url' => env('FRONTEND_URL') . '/payment/success?payment_id=' . $paiement->paiement_id,
                     'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
                 ],
-                "purchase_units" => [[
-                    "amount" => [
-                        "currency_code" => "EUR",
-                        "value" => number_format($totalAmount, 2, '.', '')
-                    ],
-                    "description" => "Réservation de {$quantity} place(s) - {$event->name}"
-                ]]
+                "purchase_units" => [$purchaseUnit]
             ]);
 
             if (isset($response['id'])) {
@@ -297,33 +334,20 @@ class PaiementController extends Controller
 
         switch ($event->type) {
             case 'checkout.session.completed':
-                $session = $event->data->object;
 
+                $session = $event->data->object;
+                log::info("id: " . $session->id);
                 $paiement = Paiement::where('session_id', $session->id)->first();
 
-                if ($paiement) {
-                    // Pour paiement unique
-                    if ($paiement->type_paiement_id == 1) {
-                        $amount = ($session->amount_total ?? 0) / 100; // convertir en euros
-                        $paiement->update([
-                            'status' => 'paid',
-                            'total' => $amount,
-                        ]);
+                $amount = ($session->amount_total ?? 0) / 100;
+                    $paiement->update([
+                        'status' => 'paid',
+                        'total' => $amount,
+                    ]);
 
-                        // Finaliser la réservation (déduire les places)
-                        $this->handleStripePaymentSuccess($session);
-                    }
+                // Finaliser la réservation (déduire les places)
+                $this->handleStripePaymentSuccess($session);
 
-                    // Pour abonnement
-                    if ($paiement->type_paiement_id == 2) {
-                        $subscriptionId = $session->subscription ?? null;
-                        $paiement->update([
-                            'status' => 'paid', // ou 'active' si tu préfères attendre invoice.paid
-                            'stripe_subscription_id' => $subscriptionId,
-                            'total' => $session->amount_total ? $session->amount_total / 100 : 0,
-                        ]);
-                    }
-                }
                 Log::info("Webhook checkout.session.completed traité pour session {$session->id}");
                 break;
 
@@ -331,32 +355,6 @@ class PaiementController extends Controller
                 $session = $event->data->object;
                 $this->handleStripePaymentExpired($session);
                 Log::info("Webhook checkout.session.expired traité pour session {$session->id}");
-                break;
-
-            case 'invoice.paid':
-                $invoice = $event->data->object;
-                $subscriptionId = $invoice->subscription;
-
-                $paiement = Paiement::where('stripe_subscription_id', $subscriptionId)->first();
-                if ($paiement) {
-                    $amount = ($invoice->amount_paid ?? 0) / 100;
-                    $paiement->update([
-                        'status' => 'paid',
-                        'total' => $amount,
-                    ]);
-                }
-                Log::info("Webhook invoice.paid traité pour subscription $subscriptionId");
-                break;
-
-            case 'invoice.payment_failed':
-                $invoice = $event->data->object;
-                $subscriptionId = $invoice->subscription;
-
-                $paiement = Paiement::where('stripe_subscription_id', $subscriptionId)->first();
-                if ($paiement) {
-                    $paiement->update(['status' => 'failed']);
-                }
-                Log::warning("Webhook invoice.payment_failed pour subscription $subscriptionId");
                 break;
 
             default:
@@ -400,17 +398,10 @@ class PaiementController extends Controller
                     if ($capture['status'] === 'COMPLETED') {
                         $amount = $capture['purchase_units'][0]['payments']['captures'][0]['amount']['value'] ?? null;
 
-                        $paiement = Paiement::where('paypal_id', $paypalId)->first();
-                        if ($paiement) {
-                            $paiement->update([
-                                'status' => 'paid',
-                                'total' => $amount,
-                                'updated_at' => now(),
-                            ]);
+                        $paiement = Paiement::where('paypal_id', $paypalId)->firstOrFail();
 
-                            // Finaliser la réservation (déduire les places)
-                            $this->handlePaypalPaymentSuccess($paiement, $capture);
-                        }
+                        // Finaliser la réservation (déduire les places)
+                        $this->handlePaypalPaymentSuccess($paiement, $capture);
 
                         Log::info("✅ Paiement $paypalId capturé automatiquement pour $amount");
                     } else {
