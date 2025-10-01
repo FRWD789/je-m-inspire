@@ -142,7 +142,7 @@ export const EventDashboard = () => {
           Mes événements
         </button>
 
-        {!isPro && (
+        {isPro && (
           <button
             onClick={() => {
               console.log('🚀 Navigation vers /pro-plus');

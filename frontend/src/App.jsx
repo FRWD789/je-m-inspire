@@ -16,6 +16,8 @@ import ProfilePage from "./components/profile/ProfilePage";
 import LinkAccountSuccess from "./components/profile/LinkAccountSuccess";
 import AdminCommissionsPage from './components/admin/AdminCommissionsPage';
 import VendorEarningsPage from './components/vendor/VendorEarningsPage';
+import MesRemboursementsPage from './components/remboursements/MesRemboursementsPage';
+import {AdminRemboursements} from './components/remboursements/AdminRemboursements';
 
 function App() {
   return (
@@ -195,7 +197,7 @@ function AppContent() {
 
         {/* ==================== ABONNEMENT PRO PLUS ==================== */}
         <Route 
-          path="/pro-plus" 
+          path="/abonnement" 
           element={
             <ProtectedRoute>
               <ProPlusPage />
@@ -268,6 +270,8 @@ function AppContent() {
             </ProtectedRoute>
           } 
         />
+      <Route path="/mes-remboursements" element={<ProtectedRoute><MesRemboursementsPage /></ProtectedRoute>} />
+      <Route path="/admin/remboursements" element={<ProtectedRoute requiredRole="admin"><AdminRemboursements /></ProtectedRoute>} />
 
         {/* ==================== FALLBACK ==================== */}
         <Route 

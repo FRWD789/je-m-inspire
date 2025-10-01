@@ -1,5 +1,6 @@
-// components/events/EventList.jsx - VERSION OPTIMISÉE
+// components/events/EventList.jsx
 import React, { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApi } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
 import { EditEventForm } from './EditEventForm';
@@ -13,13 +14,13 @@ export const EventList = ({
 }) => {
     const { events, loading, error, refetch } = useEvents(endpoint);
     const { delete: deleteApi } = useApi();
+    const navigate = useNavigate();
     const [editingEvent, setEditingEvent] = useState(null);
 
-    // ✅ Utiliser useCallback pour éviter de recréer les fonctions à chaque render
     const handleReserve = useCallback((event) => {
-        console.log('🎫 Redirection vers:', `/payment/${event.id}`);
-        window.location.href = `/payment/${event.id}`;
-    }, []);
+        console.log('Navigation vers:', `/payment/${event.id}`);
+        navigate(`/payment/${event.id}`);
+    }, [navigate]);
 
     const handleDelete = useCallback(async (eventId, eventName) => {
         if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${eventName}" ?`)) {
@@ -37,7 +38,6 @@ export const EventList = ({
         return new Date(dateString).toLocaleString('fr-FR');
     }, []);
 
-    // ✅ Mémoriser le rendu des événements pour éviter les re-renders
     const eventsList = useMemo(() => {
         if (loading) return <div>Chargement des événements...</div>;
         if (error) return <div style={{ color: 'red' }}>{error}</div>;
@@ -95,7 +95,9 @@ export const EventList = ({
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '4px',
-                                            cursor: event.available_places > 0 ? 'pointer' : 'not-allowed'
+                                            cursor: event.available_places > 0 ? 'pointer' : 'not-allowed',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold'
                                         }}
                                     >
                                         {event.available_places > 0 ? 'Réserver' : 'Complet'}
@@ -108,10 +110,12 @@ export const EventList = ({
                                         style={{
                                             padding: '10px 20px',
                                             backgroundColor: '#ffc107',
-                                            color: '#212529',
+                                            color: '#000',
                                             border: 'none',
                                             borderRadius: '4px',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold'
                                         }}
                                     >
                                         Modifier
@@ -127,7 +131,9 @@ export const EventList = ({
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '4px',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold'
                                         }}
                                     >
                                         Supprimer
@@ -139,23 +145,22 @@ export const EventList = ({
                 ))}
             </div>
         );
-    }, [events, loading, error, formatDate, handleReserve, handleDelete, showReserveButton, showEditButton, showDeleteButton]);
+    }, [events, loading, error, handleReserve, handleDelete, showReserveButton, showDeleteButton, showEditButton, formatDate]);
 
     return (
         <div>
-            <h2>{title}</h2>
-            {eventsList}
-            
+            {title && <h2>{title}</h2>}
             {editingEvent && (
-                <EditEventForm
+                <EditEventForm 
                     event={editingEvent}
+                    onClose={() => setEditingEvent(null)}
                     onEventUpdated={() => {
                         setEditingEvent(null);
                         refetch();
                     }}
-                    onCancel={() => setEditingEvent(null)}
                 />
             )}
+            {eventsList}
         </div>
     );
 };

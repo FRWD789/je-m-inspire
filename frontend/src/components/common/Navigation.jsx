@@ -1,3 +1,4 @@
+// frontend/src/components/common/Navigation.jsx
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,44 +31,58 @@ const Navigation = () => {
                 />
             </div>
 
-            {/* Logo / Brand */}
+            {/* Navigation principale */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-               
-
-                {/* Navigation principale */}
                 {isAuthenticated && (
                     <div style={{ display: 'flex', gap: '20px' }}>
                         <Link to="/" style={navLinkStyle}>
                             🏠 Accueil
                         </Link>
+
+                        {hasRole('utilisateur') && (
+                            <>
+                                {/* ✅ REMBOURSEMENTS - Visible pour tous les utilisateurs */}
+                                <Link to="/mes-remboursements" style={navLinkStyle}>
+                                    💸 Mes Remboursements
+                                </Link>
+                            </>
+                        )}
                         
-                        <Link to="/events" style={navLinkStyle}>
-                            📅 Événements
-                        </Link>
 
-
+                        {/* Liens spécifiques aux professionnels */}
                         {isProfessional() && (
                             <>
                                 <Link to="/abonnement" style={navLinkStyle}>
                                     ⭐ Pro Plus
                                 </Link>
-                                {/* ✅ AJOUTER CE LIEN */}
                                 <Link to="/vendor/earnings" style={navLinkStyle}>
                                     💰 Mes Revenus
                                 </Link>
                             </>
                         )}
 
-                        {/* ✅ LIEN ADMIN - Utiliser hasRole ou isAdmin */}
+                        {/* ✅ LIENS ADMIN */}
                         {hasRole('admin') && (
-                            <Link to="/admin/commissions" style={{
-                                ...navLinkStyle,
-                                backgroundColor: '#dc3545',
-                                padding: '5px 15px',
-                                borderRadius: '5px'
-                            }}>
-                                💰 Commissions
-                            </Link>
+                            <>
+                                <Link to="/admin/commissions" style={{
+                                    ...navLinkStyle,
+                                    backgroundColor: '#dc3545',
+                                    padding: '5px 15px',
+                                    borderRadius: '5px'
+                                }}>
+                                    💰 Commissions
+                                </Link>
+                                
+                                {/* ✅ NOUVEAU LIEN ADMIN REMBOURSEMENTS */}
+                                <Link to="/admin/remboursements" style={{
+                                    ...navLinkStyle,
+                                    backgroundColor: '#dc3545',
+                                    padding: '5px 15px',
+                                    borderRadius: '5px'
+                                }}>
+                                    💸 Remboursements Admin
+                                </Link>
+                            </>
                         )}
                     </div>
                 )}
@@ -148,7 +163,6 @@ const Navigation = () => {
                         </Link>
                     </>
                 )}
-
             </div>
         </nav>
     );
