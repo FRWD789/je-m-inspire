@@ -11,6 +11,7 @@ export const useSubscription = () => {
         try {
             setLoading(true);
             const response = await get('/api/abonnement/status');
+            console.log(response);
             setSubscription(response.data);
             setError(null);
         } catch (err) {

@@ -20,9 +20,7 @@ class Paiement extends Model
         'facture_id',
         'vendor_id',
         'session_id',
-        'stripe_id',
         'paypal_id',
-        'stripe_subscription_id',
     ];
 
     protected $casts = [

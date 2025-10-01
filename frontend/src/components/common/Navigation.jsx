@@ -1,128 +1,164 @@
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from "../../contexts/AuthContext";
-import { useSubscription } from '../../hooks/useSubscription';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-export const Navigation = () => {
-    const { user, logout, isProfessional, isAdmin } = useAuth();
-    const { hasProPlus } = useSubscription();
+const Navigation = () => {
     const navigate = useNavigate();
-    
+    const { user, isAuthenticated, logout, hasRole, isAdmin, isProfessional, isUser } = useAuth();
+
     const handleLogout = async () => {
-        try {
-            await logout();
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
+        await logout();
+        navigate('/login');
     };
 
     return (
-        <nav style={{ 
-            padding: '1rem', 
-            backgroundColor: '#f8f9fa', 
-            borderBottom: '1px solid #dee2e6',
+        <nav style={{
+            backgroundColor: '#343a40',
+            padding: '15px 30px',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                <h3 style={{ margin: 0, cursor: 'pointer' }} onClick={() => navigate('/')}>
-                    Mon App Événements
-                </h3>
-                
-                {/* Bouton Pro Plus pour les professionnels sans abonnement */}
-                {isProfessional() && !hasProPlus && (
-                    <button
-                        onClick={() => navigate('/abonnement')}
-                        style={{
-                            padding: '8px 16px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            fontSize: '14px',
-                            transition: 'all 0.3s ease',
-                            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
-                        }}
-                    >
-                        ⭐ Pro Plus
-                    </button>
-                )}
+            {/* Logo / Brand */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+                <Link 
+                    to="/" 
+                    style={{ 
+                        color: 'white', 
+                        textDecoration: 'none', 
+                        fontSize: '24px', 
+                        fontWeight: 'bold' 
+                    }}
+                >
+                    Je m'inspire
+                </Link>
 
-                {/* Badge Pro Plus actif */}
-                {isProfessional() && hasProPlus && (
-                    <span style={{
-                        padding: '8px 16px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        borderRadius: '20px',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
-                    }}>
-                        ⭐ Pro Plus
-                    </span>
+                {/* Navigation principale */}
+                {isAuthenticated && (
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                        <Link to="/" style={navLinkStyle}>
+                            🏠 Accueil
+                        </Link>
+                        
+                        <Link to="/events" style={navLinkStyle}>
+                            📅 Événements
+                        </Link>
+
+
+                        {isProfessional() && (
+                            <>
+                                <Link to="/abonnement" style={navLinkStyle}>
+                                    ⭐ Pro Plus
+                                </Link>
+                                {/* ✅ AJOUTER CE LIEN */}
+                                <Link to="/vendor/earnings" style={navLinkStyle}>
+                                    💰 Mes Revenus
+                                </Link>
+                            </>
+                        )}
+
+                        {/* ✅ LIEN ADMIN - Utiliser hasRole ou isAdmin */}
+                        {hasRole('admin') && (
+                            <Link to="/admin/commissions" style={{
+                                ...navLinkStyle,
+                                backgroundColor: '#dc3545',
+                                padding: '5px 15px',
+                                borderRadius: '5px'
+                            }}>
+                                💰 Commissions
+                            </Link>
+                        )}
+                    </div>
                 )}
             </div>
-            
-            {user && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {/* Nom cliquable vers le profil */}
-                    <span 
-                        onClick={() => navigate('/profile')}
-                        style={{ 
-                            color: '#007bff',
-                            cursor: 'pointer',
-                            textDecoration: 'none',
-                            fontWeight: '500'
-                        }}
-                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                    >
-                        {user.name} {user.last_name}
-                    </span>
-                    
-                    {/* Badge de rôle */}
-                    <span style={{ 
-                        backgroundColor: isAdmin() ? '#dc3545' : isProfessional() ? '#28a745' : '#007bff',
-                        color: 'white',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: 'bold'
-                    }}>
-                        {user.roles?.map(role => {
-                            const roleNames = {
-                                'admin': 'Admin',
-                                'professionnel': 'Pro',
-                                'utilisateur': 'User'
-                            };
-                            return roleNames[role.role] || role.role;
-                        }).join(', ')}
-                    </span>
-                    
-                    {/* Bouton de déconnexion */}
-                    <button 
-                        onClick={handleLogout}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            transition: 'background-color 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
-                    >
-                        Déconnexion
-                    </button>
-                </div>
-            )}
+
+            {/* Menu utilisateur */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                {isAuthenticated ? (
+                    <>
+                        <span style={{ color: 'white', fontSize: '14px' }}>
+                            Bonjour, <strong>{user?.name}</strong>
+                            {hasRole('admin') && (
+                                <span style={{
+                                    marginLeft: '8px',
+                                    padding: '2px 8px',
+                                    backgroundColor: '#dc3545',
+                                    borderRadius: '3px',
+                                    fontSize: '12px'
+                                }}>
+                                    ADMIN
+                                </span>
+                            )}
+                            {isProfessional() && (
+                                <span style={{
+                                    marginLeft: '8px',
+                                    padding: '2px 8px',
+                                    backgroundColor: '#28a745',
+                                    borderRadius: '3px',
+                                    fontSize: '12px'
+                                }}>
+                                    PRO
+                                </span>
+                            )}
+                        </span>
+                        
+                        <Link to="/profile" style={navLinkStyle}>
+                            👤 Profil
+                        </Link>
+                        
+                        <button
+                            onClick={handleLogout}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#dc3545',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            Déconnexion
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <Link 
+                            to="/login" 
+                            style={{
+                                ...navLinkStyle,
+                                backgroundColor: '#007bff',
+                                padding: '8px 16px',
+                                borderRadius: '5px'
+                            }}
+                        >
+                            Connexion
+                        </Link>
+                        <Link 
+                            to="/register" 
+                            style={{
+                                ...navLinkStyle,
+                                backgroundColor: '#28a745',
+                                padding: '8px 16px',
+                                borderRadius: '5px'
+                            }}
+                        >
+                            Inscription
+                        </Link>
+                    </>
+                )}
+            </div>
         </nav>
     );
 };
+
+// Style pour les liens de navigation
+const navLinkStyle = {
+    color: 'white',
+    textDecoration: 'none',
+    fontSize: '16px',
+    transition: 'opacity 0.2s',
+};
+
+export default Navigation;

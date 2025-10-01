@@ -90,7 +90,7 @@ class ProfileController extends Controller
                 . "&client_id=" . env('STRIPE_OAUTH_ID')
                 . "&scope=read_write"
                 . "&state=" . urlencode($state)
-                . "&redirect_uri=" . urlencode(env('FRONTEND_URL') . '/profile/stripe/success');
+                . "&redirect_uri=" . 'http://192.168.1.72:5173/profile/stripe/success';
 
             Log::info('[Stripe] OAuth initié', [
                 'user_id' => $user->id,
@@ -390,6 +390,43 @@ class ProfileController extends Controller
         }
     }
 
+   public function getLinkedAccounts(Request $request)
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Utilisateur non authentifié'
+                ], 401);
+            }
+
+            return response()->json([
+                'success' => true,
+                'stripe' => [
+                    'linked' => !empty($user->stripeAccount_id),
+                    'account_id' => $user->stripeAccount_id,
+                ],
+                'paypal' => [
+                    'linked' => !empty($user->paypalAccount_id),
+                    'account_id' => $user->paypalAccount_id,
+                    'email' => $user->paypalEmail,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('[Profile] Erreur récupération comptes liés', [
+                'message' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des comptes liés'
+            ], 500);
+        }
+    }
+
     /**
      * Délier le compte Stripe
      */
@@ -405,17 +442,17 @@ class ProfileController extends Controller
                 ], 401);
             }
 
-            if (!$user->stripe_account_id) {
+            if (!$user->stripeAccount_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Aucun compte Stripe lié'
                 ], 404);
             }
 
-            $stripeAccountId = $user->stripe_account_id;
+            $stripeAccountId = $user->stripeAccount_id;
 
             // Supprimer les informations Stripe
-            $user->stripe_account_id = null;
+            $user->stripeAccount_id = null;
             $user->save();
 
             Log::info('[Stripe] Compte délié', [
@@ -463,18 +500,13 @@ class ProfileController extends Controller
                 ], 404);
             }
 
-            $paypalAccountId = $user->paypalAccount_id;
-            $paypalEmail = $user->paypalEmail;
-
             // Supprimer les informations PayPal
             $user->paypalAccount_id = null;
             $user->paypalEmail = null;
             $user->save();
 
             Log::info('[PayPal] Compte délié', [
-                'user_id' => $user->id,
-                'paypal_account_id' => $paypalAccountId,
-                'paypal_email' => $paypalEmail
+                'user_id' => $user->id
             ]);
 
             return response()->json([
@@ -495,40 +527,4 @@ class ProfileController extends Controller
         }
     }
 
-    public function getLinkedAccounts(Request $request)
-    {
-        try {
-            $user = auth()->user();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Utilisateur non authentifié'
-                ], 401);
-            }
-
-            return response()->json([
-                'success' => true,
-                'stripe' => [
-                    'linked' => !empty($user->stripe_account_id),
-                    'account_id' => $user->stripe_account_id,
-                ],
-                'paypal' => [
-                    'linked' => !empty($user->paypalAccount_id) || !empty($user->paypalEmail),
-                    'account_id' => $user->paypalAccount_id,
-                    'email' => $user->paypalEmail,
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('[Profile] Erreur récupération comptes liés', [
-                'message' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des comptes liés'
-            ], 500);
-        }
-    }
 }

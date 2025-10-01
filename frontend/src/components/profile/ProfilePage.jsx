@@ -1,26 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useSubscription } from '../../hooks/useSubscription';
-import { useApi } from '../../contexts/AuthContext';
+import { useAuth, useApi } from '../../contexts/AuthContext';
 
 const ProfilePage = () => {
     const navigate = useNavigate();
-    const { user, isProfessional, refreshUser } = useAuth();
-    const { subscription, hasProPlus, hasActiveSubscription, loading: subLoading } = useSubscription();
-    const { get, post, put } = useApi();
+    const { user, setUser } = useAuth();
+    const { get, post, put, delete: deleteApi } = useApi();
     
     const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [linkingProvider, setLinkingProvider] = useState(null);
+    const [message, setMessage] = useState({ type: '', text: '' });
+    const [hasProPlus, setHasProPlus] = useState(false);
+    const [linkedAccounts, setLinkedAccounts] = useState({
+        stripe: { linked: false, account_id: null },
+        paypal: { linked: false, account_id: null, email: null }
+    });
+    
     const [formData, setFormData] = useState({
         name: '',
         last_name: '',
         email: '',
-        city: '',
-        date_of_birth: ''
+        numero_de_telephone: '',
+        adresse: '',
+        date_de_naissance: '',
+        description: ''
     });
-    const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState({ type: '', text: '' });
-    const [linkingProvider, setLinkingProvider] = useState(null);
 
     useEffect(() => {
         if (user) {
@@ -28,28 +33,63 @@ const ProfilePage = () => {
                 name: user.name || '',
                 last_name: user.last_name || '',
                 email: user.email || '',
-                city: user.city || '',
-                date_of_birth: user.date_of_birth || ''
+                numero_de_telephone: user.numero_de_telephone || '',
+                adresse: user.adresse || '',
+                date_de_naissance: user.date_de_naissance || '',
+                description: user.description || ''
             });
+            checkProPlusStatus();
+            fetchLinkedAccounts();
         }
     }, [user]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const isProfessional = () => {
+        return user?.roles?.some(role => role.role === 'professionnel');
     };
 
-    const handleSave = async () => {
-        setSaving(true);
-        setMessage({ type: '', text: '' });
-
+    const checkProPlusStatus = async () => {
         try {
-            await put('/api/profile/update', formData);
-            await refreshUser();
-            setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
+            const response = await get('/api/abonnement/status');
+            // Le backend retourne "has_pro_plus" et non "hasActiveSubscription"
+            setHasProPlus(response.data.has_pro_plus || false);
+        } catch (error) {
+            console.error('Erreur vérification Pro Plus:', error);
+            setHasProPlus(false);
+        }
+    };
+
+    const fetchLinkedAccounts = async () => {
+        try {
+            const response = await get('/api/profile/linked-accounts');
+            if (response.data.success) {
+                setLinkedAccounts({
+                    stripe: response.data.stripe || { linked: false },
+                    paypal: response.data.paypal || { linked: false }
+                });
+            }
+        } catch (error) {
+            console.error('Erreur chargement comptes liés:', error);
+        }
+    };
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        
+        try {
+            const response = await put('/api/profile/update', formData);
+            setUser(response.data.user);
+            setMessage({ 
+                type: 'success', 
+                text: 'Profil mis à jour avec succès' 
+            });
             setEditing(false);
         } catch (error) {
             setMessage({ 
@@ -69,7 +109,7 @@ const ProfilePage = () => {
                 ? '/api/profile/stripe/link' 
                 : '/api/profile/paypal/link';
             
-            const response = await get(endpoint, {});
+            const response = await get(endpoint);
             
             if (response.data.success && response.data.url) {
                 window.location.href = response.data.url;
@@ -78,6 +118,33 @@ const ProfilePage = () => {
             }
         } catch (error) {
             alert(error.response?.data?.message || 'Erreur lors de la liaison');
+        } finally {
+            setLinkingProvider(null);
+        }
+    };
+
+    const handleUnlinkAccount = async (provider) => {
+        const providerName = provider === 'stripe' ? 'Stripe' : 'PayPal';
+        
+        if (!window.confirm(`Êtes-vous sûr de vouloir délier votre compte ${providerName} ?`)) {
+            return;
+        }
+
+        setLinkingProvider(provider);
+        
+        try {
+            const endpoint = provider === 'stripe' 
+                ? '/api/profile/stripe/unlink' 
+                : '/api/profile/paypal/unlink';
+            
+            const response = await deleteApi(endpoint);
+            
+            if (response.data.success) {
+                alert(`Compte ${providerName} délié avec succès`);
+                await fetchLinkedAccounts();
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erreur lors de la déliaison');
         } finally {
             setLinkingProvider(null);
         }
@@ -150,11 +217,18 @@ const ProfilePage = () => {
                     {isProfessional() && hasProPlus && (
                         <>
                             <button
-                                onClick={() => handleLinkAccount('stripe')}
+                                onClick={() => linkedAccounts.stripe.linked 
+                                    ? handleUnlinkAccount('stripe') 
+                                    : handleLinkAccount('stripe')
+                                }
                                 disabled={linkingProvider !== null}
                                 style={{
                                     padding: '10px 20px',
-                                    backgroundColor: linkingProvider === 'stripe' ? '#6c757d' : '#635bff',
+                                    backgroundColor: linkingProvider === 'stripe' 
+                                        ? '#6c757d' 
+                                        : linkedAccounts.stripe.linked 
+                                            ? '#dc3545' 
+                                            : '#635bff',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -166,16 +240,23 @@ const ProfilePage = () => {
                                     gap: '8px'
                                 }}
                             >
-                                {linkingProvider === 'stripe' ? '⏳' : '💳'} 
-                                Lier Stripe
+                                {linkingProvider === 'stripe' ? '⏳' : linkedAccounts.stripe.linked ? '🔗' : '💳'} 
+                                {linkedAccounts.stripe.linked ? 'Délier Stripe' : 'Lier Stripe'}
                             </button>
 
                             <button
-                                onClick={() => handleLinkAccount('paypal')}
+                                onClick={() => linkedAccounts.paypal.linked 
+                                    ? handleUnlinkAccount('paypal') 
+                                    : handleLinkAccount('paypal')
+                                }
                                 disabled={linkingProvider !== null}
                                 style={{
                                     padding: '10px 20px',
-                                    backgroundColor: linkingProvider === 'paypal' ? '#6c757d' : '#0070ba',
+                                    backgroundColor: linkingProvider === 'paypal' 
+                                        ? '#6c757d' 
+                                        : linkedAccounts.paypal.linked 
+                                            ? '#dc3545' 
+                                            : '#0070ba',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -187,296 +268,321 @@ const ProfilePage = () => {
                                     gap: '8px'
                                 }}
                             >
-                                {linkingProvider === 'paypal' ? '⏳' : '🅿️'} 
-                                Lier PayPal
+                                {linkingProvider === 'paypal' ? '⏳' : linkedAccounts.paypal.linked ? '🔗' : '💰'} 
+                                {linkedAccounts.paypal.linked ? 'Délier PayPal' : 'Lier PayPal'}
                             </button>
                         </>
                     )}
                 </div>
             </div>
 
-            {/* Message de feedback */}
+            {/* Message de statut */}
             {message.text && (
                 <div style={{
                     padding: '15px',
                     marginBottom: '20px',
+                    borderRadius: '8px',
                     backgroundColor: message.type === 'success' ? '#d4edda' : '#f8d7da',
                     color: message.type === 'success' ? '#155724' : '#721c24',
-                    borderRadius: '8px',
                     border: `1px solid ${message.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`
                 }}>
                     {message.text}
                 </div>
             )}
 
-            {/* Statut d'abonnement Pro Plus */}
-            {isProfessional() && hasProPlus && (
-                <div style={{
-                    padding: '20px',
-                    marginBottom: '30px',
-                    backgroundColor: '#d4edda',
-                    borderRadius: '10px',
-                    border: '1px solid #c3e6cb'
-                }}>
-                    <h3 style={{ margin: '0 0 10px 0', color: '#155724' }}>
-                        ✅ Abonnement Pro Plus Actif
-                    </h3>
-                    {subscription?.subscription && (
-                        <div style={{ color: '#155724' }}>
-                            <p style={{ margin: '5px 0' }}>
-                                <strong>Début :</strong> {formatDate(subscription.subscription.start_date)}
-                            </p>
-                            {subscription.subscription.end_date && (
-                                <p style={{ margin: '5px 0' }}>
-                                    <strong>Fin :</strong> {formatDate(subscription.subscription.end_date)}
-                                </p>
-                            )}
-                            {subscription.subscription.expiring_soon && (
-                                <p style={{ 
-                                    margin: '10px 0 0 0', 
-                                    padding: '10px', 
-                                    backgroundColor: '#fff3cd',
-                                    color: '#856404',
-                                    borderRadius: '5px'
-                                }}>
-                                    ⚠️ Votre abonnement expire bientôt
-                                </p>
-                            )}
-                        </div>
-                    )}
-                    <button
-                        onClick={() => navigate('/abonnement')}
-                        style={{
-                            marginTop: '15px',
-                            padding: '8px 16px',
-                            backgroundColor: '#28a745',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '5px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Gérer mon abonnement
-                    </button>
-                </div>
-            )}
-
-            {/* Informations personnelles */}
+            {/* Section Informations du compte */}
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '10px',
                 padding: '30px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                marginBottom: '20px'
             }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '25px'
+                    marginBottom: '20px'
                 }}>
-                    <h2 style={{ margin: 0 }}>Informations personnelles</h2>
-                    <button
-                        onClick={() => editing ? handleSave() : setEditing(true)}
-                        disabled={saving}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: editing ? '#28a745' : '#007bff',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '5px',
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {saving ? 'Enregistrement...' : editing ? 'Enregistrer' : 'Modifier'}
-                    </button>
+                    <h2 style={{ margin: 0 }}>Informations du compte</h2>
+                    {!editing ? (
+                        <button
+                            onClick={() => setEditing(true)}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            ✏️ Modifier
+                        </button>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                                onClick={() => setEditing(false)}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#6c757d',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={saving}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: saving ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                {saving ? 'Enregistrement...' : '💾 Enregistrer'}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {editing && (
-                    <button
-                        onClick={() => {
-                            setEditing(false);
-                            setFormData({
-                                name: user.name || '',
-                                last_name: user.last_name || '',
-                                email: user.email || '',
-                                city: user.city || '',
-                                date_of_birth: user.date_of_birth || ''
-                            });
-                        }}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#6c757d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '5px',
-                            cursor: 'pointer',
-                            marginBottom: '15px'
-                        }}
-                    >
-                        Annuler
-                    </button>
-                )}
+                {editing ? (
+                    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                    Prénom
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '5px'
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                    Nom
+                                </label>
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    onChange={handleChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '5px'
+                                    }}
+                                />
+                            </div>
+                        </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    gap: '20px'
-                }}>
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#333' }}>
-                            Prénom
-                        </label>
-                        {editing ? (
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                style={{
-                                    width: '100%',
-                                    padding: '10px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '5px',
-                                    fontSize: '14px'
-                                }}
-                            />
-                        ) : (
-                            <p style={{ margin: 0, padding: '10px 0', color: '#666' }}>
-                                {user.name || 'Non spécifié'}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#333' }}>
-                            Nom de famille
-                        </label>
-                        {editing ? (
-                            <input
-                                type="text"
-                                name="last_name"
-                                value={formData.last_name}
-                                onChange={handleInputChange}
-                                style={{
-                                    width: '100%',
-                                    padding: '10px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '5px',
-                                    fontSize: '14px'
-                                }}
-                            />
-                        ) : (
-                            <p style={{ margin: 0, padding: '10px 0', color: '#666' }}>
-                                {user.last_name || 'Non spécifié'}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#333' }}>
-                            Email
-                        </label>
-                        {editing ? (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                Email
+                            </label>
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
-                                onChange={handleInputChange}
+                                onChange={handleChange}
                                 style={{
                                     width: '100%',
                                     padding: '10px',
                                     border: '1px solid #ddd',
-                                    borderRadius: '5px',
-                                    fontSize: '14px'
+                                    borderRadius: '5px'
                                 }}
                             />
-                        ) : (
-                            <p style={{ margin: 0, padding: '10px 0', color: '#666' }}>
-                                {user.email}
-                            </p>
-                        )}
-                    </div>
+                        </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#333' }}>
-                            Ville
-                        </label>
-                        {editing ? (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                Téléphone
+                            </label>
+                            <input
+                                type="tel"
+                                name="numero_de_telephone"
+                                value={formData.numero_de_telephone}
+                                onChange={handleChange}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '5px'
+                                }}
+                            />
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                Adresse
+                            </label>
                             <input
                                 type="text"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleInputChange}
+                                name="adresse"
+                                value={formData.adresse}
+                                onChange={handleChange}
                                 style={{
                                     width: '100%',
                                     padding: '10px',
                                     border: '1px solid #ddd',
-                                    borderRadius: '5px',
-                                    fontSize: '14px'
+                                    borderRadius: '5px'
                                 }}
                             />
-                        ) : (
-                            <p style={{ margin: 0, padding: '10px 0', color: '#666' }}>
-                                {user.city || 'Non spécifié'}
-                            </p>
-                        )}
-                    </div>
+                        </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#333' }}>
-                            Date de naissance
-                        </label>
-                        {editing ? (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                Date de naissance
+                            </label>
                             <input
                                 type="date"
-                                name="date_of_birth"
-                                value={formData.date_of_birth}
-                                onChange={handleInputChange}
+                                name="date_de_naissance"
+                                value={formData.date_de_naissance}
+                                onChange={handleChange}
                                 style={{
                                     width: '100%',
                                     padding: '10px',
                                     border: '1px solid #ddd',
-                                    borderRadius: '5px',
-                                    fontSize: '14px'
+                                    borderRadius: '5px'
                                 }}
                             />
-                        ) : (
-                            <p style={{ margin: 0, padding: '10px 0', color: '#666' }}>
-                                {formatDate(user.date_of_birth)}
-                            </p>
+                        </div>
+
+                        {isProfessional() && (
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                                    Description professionnelle
+                                </label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    rows="4"
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '5px',
+                                        resize: 'vertical'
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </form>
+                ) : (
+                    <div style={{ display: 'grid', gap: '15px' }}>
+                        <InfoRow label="Email" value={user.email} />
+                        <InfoRow label="Téléphone" value={user.numero_de_telephone || 'Non renseigné'} />
+                        <InfoRow label="Adresse" value={user.adresse || 'Non renseignée'} />
+                        <InfoRow label="Date de naissance" value={formatDate(user.date_de_naissance)} />
+                        {isProfessional() && (
+                            <InfoRow label="Description" value={user.description || 'Aucune description'} />
                         )}
                     </div>
+                )}
+            </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#333' }}>
-                            Membre depuis
-                        </label>
-                        <p style={{ margin: 0, padding: '10px 0', color: '#666' }}>
-                            {formatDate(user.created_at)}
-                        </p>
+            {/* Affichage des comptes liés si Pro Plus */}
+            {isProfessional() && hasProPlus && (
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '10px',
+                    padding: '30px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                    <h2 style={{ marginBottom: '20px' }}>Comptes de paiement liés</h2>
+                    
+                    <div style={{ display: 'grid', gap: '15px' }}>
+                        {/* Stripe */}
+                        <div style={{
+                            padding: '15px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            backgroundColor: linkedAccounts.stripe.linked ? '#f0f9ff' : '#f9f9f9'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 5px 0', color: '#635bff' }}>💳 Stripe</h3>
+                                    <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                                        {linkedAccounts.stripe.linked 
+                                            ? `Compte lié : ${linkedAccounts.stripe.account_id}` 
+                                            : 'Compte non lié'}
+                                    </p>
+                                </div>
+                                <div style={{
+                                    padding: '5px 15px',
+                                    borderRadius: '20px',
+                                    backgroundColor: linkedAccounts.stripe.linked ? '#28a745' : '#6c757d',
+                                    color: 'white',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    {linkedAccounts.stripe.linked ? '✓ Lié' : '✗ Non lié'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* PayPal */}
+                        <div style={{
+                            padding: '15px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            backgroundColor: linkedAccounts.paypal.linked ? '#f0f9ff' : '#f9f9f9'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 5px 0', color: '#0070ba' }}>💰 PayPal</h3>
+                                    <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                                        {linkedAccounts.paypal.linked 
+                                            ? `Payer ID : ${linkedAccounts.paypal.account_id}` 
+                                            : 'Compte non lié'}
+                                    </p>
+                                </div>
+                                <div style={{
+                                    padding: '5px 15px',
+                                    borderRadius: '20px',
+                                    backgroundColor: linkedAccounts.paypal.linked ? '#28a745' : '#6c757d',
+                                    color: 'white',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    {linkedAccounts.paypal.linked ? '✓ Lié' : '✗ Non lié'}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Bouton retour */}
-            <div style={{ marginTop: '30px', textAlign: 'center' }}>
-                <button
-                    onClick={() => navigate('/')}
-                    style={{
-                        padding: '10px 30px',
-                        backgroundColor: '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    Retour au tableau de bord
-                </button>
-            </div>
+            )}
         </div>
     );
 };
+
+const InfoRow = ({ label, value }) => (
+    <div style={{
+        display: 'grid',
+        gridTemplateColumns: '200px 1fr',
+        gap: '20px',
+        padding: '10px 0',
+        borderBottom: '1px solid #f0f0f0'
+    }}>
+        <span style={{ fontWeight: '500', color: '#666' }}>{label}</span>
+        <span style={{ color: '#333' }}>{value}</span>
+    </div>
+);
 
 export default ProfilePage;

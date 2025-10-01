@@ -9,6 +9,8 @@ use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\AbonnementController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CommissionController;
+use App\Http\Controllers\VendorEarningsController;
 
 // Routes publiques
 Route::post('/register', [AuthController::class, 'register']);
@@ -25,7 +27,6 @@ Route::get('/roles', [RoleController::class, 'index']);
 // Webhooks (sans authentification)
 Route::post('/stripe/webhook', [PaiementController::class, 'stripeWebhook']);
 Route::post('/paypal/webhook', [PaiementController::class, 'paypalWebhook']);
-Route::post('/abonnementStripe/webhook', [AbonnementController::class, 'abonnementStripeWebhook']);
 Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonnementPaypalWebhook']);
 
 // Statut de paiement (accessible sans auth pour les redirections)
@@ -110,4 +111,23 @@ Route::get('/abonnement/cancel', function() {
 
 Route::get('/abonnement/paypal/success', function() {
     return redirect(env('FRONTEND_URL') . '/abonnement/success?provider=paypal');
+});
+
+// ==========================================
+// ADMIN - GESTION DES COMMISSIONS
+// ==========================================
+Route::middleware(['auth.jwt', 'admin'])->prefix('/admin')->group(function () {
+    Route::get('/commissions', [CommissionController::class, 'index']);
+    Route::get('/commissions/statistics', [CommissionController::class, 'statistics']);
+    Route::put('/commissions/{id}', [CommissionController::class, 'update']);
+    Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
+});
+
+// ==========================================
+// VENDEUR - REVENUS ET COMMISSIONS
+// ==========================================
+Route::middleware(['auth.jwt', 'professional'])->prefix('/vendor')->group(function () {
+    Route::get('/earnings', [VendorEarningsController::class, 'index']);
+    Route::get('/earnings/statistics', [VendorEarningsController::class, 'statistics']);
+    Route::get('/earnings/export', [VendorEarningsController::class, 'export']);
 });

@@ -161,59 +161,6 @@ class AbonnementController extends Controller
     }
 
     /**
-     * Webhook Stripe pour gérer les événements d'abonnement
-     */
-    public function abonnementStripeWebhook(Request $request)
-    {
-        Stripe::setApiKey(config('services.stripe.secret'));
-        $endpoint_secret = config('services.stripe.webhook_secret');
-
-        $payload = $request->getContent();
-        $sig_header = $request->header('Stripe-Signature');
-
-        try {
-            $event = Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
-        } catch (\UnexpectedValueException $e) {
-            return response()->json(['error' => 'Invalid payload'], 400);
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            return response()->json(['error' => 'Invalid signature'], 400);
-        }
-
-        // Gérer les différents types d'événements
-        switch ($event->type) {
-            case 'checkout.session.completed':
-                $session = $event->data->object;
-                $this->handleStripeCheckoutCompleted($session);
-                break;
-
-            case 'customer.subscription.updated':
-                $subscription = $event->data->object;
-                $this->handleStripeSubscriptionUpdated($subscription);
-                break;
-
-            case 'customer.subscription.deleted':
-                $subscription = $event->data->object;
-                $this->handleStripeSubscriptionDeleted($subscription);
-                break;
-
-            case 'invoice.payment_succeeded':
-                $invoice = $event->data->object;
-                $this->handleStripeInvoicePaymentSucceeded($invoice);
-                break;
-
-            case 'invoice.payment_failed':
-                $invoice = $event->data->object;
-                $this->handleStripeInvoicePaymentFailed($invoice);
-                break;
-
-            default:
-                Log::info('Événement Stripe non géré: ' . $event->type);
-        }
-
-        return response()->json(['status' => 'success'], 200);
-    }
-
-    /**
      * Webhook PayPal pour gérer les événements d'abonnement
      */
     public function abonnementPaypalWebhook(Request $request)
@@ -255,9 +202,9 @@ class AbonnementController extends Controller
         }
     }
 
-    // ========== Méthodes privées pour gérer les événements Stripe ==========
+    // ========== Méthodes publics pour gérer les événements Stripe ==========
 
-    private function handleStripeCheckoutCompleted($session)
+    public function handleStripeCheckoutCompleted($session)
     {
         try {
             $userId = $session->metadata->user_id ?? $session->client_reference_id;
@@ -294,8 +241,9 @@ class AbonnementController extends Controller
             ]);
 
             // Créer l'opération qui lie l'utilisateur à l'abonnement (type_operation_id = 3)
-            Operation::create([
+           Operation::create([
                 'user_id' => $userId,
+                'event_id' => null, // ✅ Explicite
                 'type_operation_id' => 3,
                 'quantity' => 1,
                 'abonnement_id' => $abonnement->abonnement_id,
@@ -308,7 +256,7 @@ class AbonnementController extends Controller
         }
     }
 
-    private function handleStripeSubscriptionUpdated($subscription)
+    public function handleStripeSubscriptionUpdated($subscription)
     {
         try {
             $abonnement = Abonnement::where('stripe_subscription_id', $subscription->id)->first();
@@ -330,7 +278,7 @@ class AbonnementController extends Controller
         }
     }
 
-    private function handleStripeSubscriptionDeleted($subscription)
+    public function handleStripeSubscriptionDeleted($subscription)
     {
         try {
             $abonnement = Abonnement::where('stripe_subscription_id', $subscription->id)->first();
@@ -347,12 +295,12 @@ class AbonnementController extends Controller
         }
     }
 
-    private function handleStripeInvoicePaymentSucceeded($invoice)
+    public function handleStripeInvoicePaymentSucceeded($invoice)
     {
         Log::info("Paiement Stripe réussi pour la facture: {$invoice->id}");
     }
 
-    private function handleStripeInvoicePaymentFailed($invoice)
+    public function handleStripeInvoicePaymentFailed($invoice)
     {
         Log::warning("Échec du paiement Stripe pour la facture: {$invoice->id}");
 
@@ -412,9 +360,9 @@ class AbonnementController extends Controller
             ]);
 
             // Créer l'opération qui lie l'utilisateur à l'abonnement
-            Operation::create([
+           Operation::create([
                 'user_id' => $userId,
-                'event_id' => 1, // À adapter
+                'event_id' => null, // ✅ NULL car pas lié à un événement
                 'type_operation_id' => 3,
                 'quantity' => 1,
                 'abonnement_id' => $abonnement->abonnement_id,

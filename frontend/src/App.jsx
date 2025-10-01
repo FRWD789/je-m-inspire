@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import RegisterForm from "./components/auth/RegisterForm";
 import LoginForm from "./components/auth/LoginForm";
-import { Navigation } from "./components/common/Navigation";
+import Navigation from "./components/common/Navigation";
 import { EventDashboard } from "./components/events/EventDashboard";
 import PaymentPage from "./components/payment/PaymentPage";
 import PaymentSuccess from "./components/payment/PaymentSuccess";
@@ -14,6 +14,9 @@ import SubscriptionSuccess from "./components/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./components/subscription/SubscriptionCancel";
 import ProfilePage from "./components/profile/ProfilePage";
 import LinkAccountSuccess from "./components/profile/LinkAccountSuccess";
+import AdminCommissionsPage from './components/admin/AdminCommissionsPage';
+import VendorEarningsPage from './components/vendor/VendorEarningsPage';
+
 
 function App() {
   return (
@@ -107,9 +110,10 @@ function AppContent() {
         <Route path="/abonnement/cancel" element={<SubscriptionCancel />} />
 
 
-         <Route path="/profile/stripe/success" element={<LinkAccountSuccess />} />
+        <Route path="/profile/stripe/success" element={<LinkAccountSuccess />} />
         <Route path="/profile/paypal/success" element={<LinkAccountSuccess />} />
-
+        <Route path="/admin/commissions" element={<AdminCommissionsPage />} />
+        <Route path="/vendor/earnings" element={<VendorEarningsPage />} />
         
         
         <Route path="*" element={<Navigate to="/" replace />} />

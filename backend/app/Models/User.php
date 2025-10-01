@@ -108,14 +108,13 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
      */
     public function abonnements()
     {
-        return $this->hasManyThrough(
+        return $this->belongsToMany(
             Abonnement::class,
-            Operation::class,
-            'user_id',        // Clé étrangère sur operations
-            'abonnement_id',  // Clé étrangère sur abonnements
-            'id',             // Clé locale sur users
-            'abonnement_id'   // Clé locale sur operations
-        )->where('type_operation_id', 3);
+            'operations',
+            'user_id',
+            'abonnement_id'
+        )->wherePivot('type_operation_id', 3)
+        ->withTimestamps();
     }
 
     /**
@@ -147,7 +146,7 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
         }
 
         // Vérifier si c'est un abonnement Pro Plus
-        return $abonnement->nom === 'Pro Plus Mensuel' ||
+        return $abonnement->nom === 'Pro Plus' ||
                $abonnement->description === 'Pro Plus';
     }
 

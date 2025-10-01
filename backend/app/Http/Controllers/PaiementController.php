@@ -323,42 +323,74 @@ class PaiementController extends Controller
         try {
             $event = \Stripe\Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
         } catch (\UnexpectedValueException $e) {
-            // Payload invalide
             Log::error('Stripe webhook payload invalide', ['error' => $e->getMessage()]);
             return response('', 400);
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            // Signature invalide
             Log::error('Stripe webhook signature invalide', ['error' => $e->getMessage()]);
             return response('', 400);
         }
 
+        Log::info("Webhook Stripe reçu: {$event->type}");
+
         switch ($event->type) {
             case 'checkout.session.completed':
-
                 $session = $event->data->object;
-                log::info("id: " . $session->id);
-                $paiement = Paiement::where('session_id', $session->id)->first();
+                Log::info("Session Stripe complétée - Mode: {$session->mode}, ID: {$session->id}");
 
-                $amount = ($session->amount_total ?? 0) / 100;
+                // ✅ ROUTER SELON LE MODE
+                if ($session->mode === 'subscription') {
+                    // Déléguer au contrôleur d'abonnements
+                    Log::info("Abonnement détecté - Traitement par AbonnementController");
+                    app(AbonnementController::class)->handleStripeCheckoutCompleted($session);
+                } else {
+                    // Paiement unique (événement)
+                    $paiement = Paiement::where('session_id', $session->id)->first();
+
+                    if (!$paiement) {
+                        Log::warning("Aucun paiement trouvé pour la session: {$session->id}");
+                        break;
+                    }
+
+                    $amount = ($session->amount_total ?? 0) / 100;
                     $paiement->update([
                         'status' => 'paid',
                         'total' => $amount,
                     ]);
 
-                // Finaliser la réservation (déduire les places)
-                $this->handleStripePaymentSuccess($session);
-
-                Log::info("Webhook checkout.session.completed traité pour session {$session->id}");
+                    $this->handleStripePaymentSuccess($session);
+                    Log::info("Paiement traité avec succès pour session {$session->id}");
+                }
                 break;
 
             case 'checkout.session.expired':
                 $session = $event->data->object;
                 $this->handleStripePaymentExpired($session);
-                Log::info("Webhook checkout.session.expired traité pour session {$session->id}");
+                Log::info("Session expirée: {$session->id}");
+                break;
+
+            // ✅ GÉRER LES ÉVÉNEMENTS D'ABONNEMENT
+            case 'customer.subscription.updated':
+                $subscription = $event->data->object;
+                app(AbonnementController::class)->handleStripeSubscriptionUpdated($subscription);
+                break;
+
+            case 'customer.subscription.deleted':
+                $subscription = $event->data->object;
+                app(AbonnementController::class)->handleStripeSubscriptionDeleted($subscription);
+                break;
+
+            case 'invoice.payment_succeeded':
+                $invoice = $event->data->object;
+                Log::info("Facture payée: {$invoice->id}");
+                break;
+
+            case 'invoice.payment_failed':
+                $invoice = $event->data->object;
+                Log::warning("Échec paiement facture: {$invoice->id}");
                 break;
 
             default:
-                Log::info("Événement Stripe non géré : " . $event->type);
+                Log::info("Événement Stripe non géré: {$event->type}");
                 break;
         }
 
