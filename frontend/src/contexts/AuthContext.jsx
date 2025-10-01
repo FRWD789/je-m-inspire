@@ -1,51 +1,69 @@
-// contexts/AuthContext.jsx - VERSION CORRIGÉE
-import React, { createContext, useState, useEffect, useLayoutEffect, useContext, useRef } from "react";
-import api, { apiSimple } from "../api"; 
+// frontend/src/contexts/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import axios from 'axios';
 
-export const AuthContext = createContext();
+const AuthContext = createContext(null);
+
+// ✅ BASE URL sans /api à la fin
+const BASE_URL = 'http://localhost:8000';
+
+// ✅ Configuration de base pour les requêtes simples (sans intercepteur)
+const apiSimple = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
+// ✅ Configuration pour les requêtes authentifiées (avec intercepteurs)
+const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('access_token');
-  });
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('access_token'));
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // ✅ FIX 1: Flag pour empêcher les refreshs simultanés
+  // ✅ Refs pour éviter les re-renders et gérer l'état de refresh
   const isRefreshingRef = useRef(false);
-  const refreshSubscribersRef = useRef([]);
-  
-  // ✅ FIX LOGOUT: Flag pour empêcher les logouts simultanés
-  const isLoggingOutRef = useRef(false);
+  const failedQueueRef = useRef([]);
 
-  // ✅ FIX 2: Fonction pour gérer les abonnés au refresh
-  const subscribeTokenRefresh = (callback) => {
-    refreshSubscribersRef.current.push(callback);
-  };
-
-  const onRefreshed = (newToken) => {
-    refreshSubscribersRef.current.forEach(callback => callback(newToken));
-    refreshSubscribersRef.current = [];
-  };
-
-  // ✅ FIX 3: useEffect amélioré avec flag pour éviter les appels multiples
+  // ✅ ÉTAPE 1 : Initialisation - Charger l'utilisateur si token existe
   useEffect(() => {
     let isMounted = true;
 
-    const fetchMe = async () => {
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('access_token');
+      
+      if (!storedToken) {
+        setLoading(false);
+        setIsInitialized(true);
+        return;
+      }
+
       try {
-        const res = await api.get("/api/me");
+        // Récupérer les infos utilisateur avec le token stocké
+        const response = await api.get('/api/me', {
+          headers: { Authorization: `Bearer ${storedToken}` }
+        });
+        
         if (isMounted) {
-          console.log("User data loaded:", res.data);
-          setUser(res.data);
+          setUser(response.data);
+          setToken(storedToken);
         }
-      } catch (err) {
+      } catch (error) {
+        console.error('❌ Initialisation échouée:', error);
         if (isMounted) {
-          console.log("Not authenticated", err.message);
-          setUser(null);
-          setToken(null);
           localStorage.removeItem('access_token');
+          setToken(null);
+          setUser(null);
         }
       } finally {
         if (isMounted) {
@@ -55,96 +73,131 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    if (token && !user) { // ✅ Seulement si pas encore d'user
-      fetchMe();
-    } else if (!token) {
-      setLoading(false);
-      setIsInitialized(true);
-    }
+    initializeAuth();
 
     return () => {
       isMounted = false;
     };
-  }, [token]); // Dépendance token OK, mais avec vérification !user
+  }, []); // ✅ Une seule fois au montage
 
-  // ✅ FIX 4: Intercepteur de requête simplifié
+  // ✅ ÉTAPE 2 : Intercepteur de requête - Ajouter le token
   useLayoutEffect(() => {
-    const authInterceptor = api.interceptors.request.use((config) => {
-      const currentToken = localStorage.getItem('access_token');
-      if (currentToken && !config._retry) {
-        config.headers.Authorization = `Bearer ${currentToken}`;
-      }
-      return config;
-    });
+    const requestInterceptor = api.interceptors.request.use(
+      (config) => {
+        // Ne pas ajouter le token si c'est une retry ou si c'est /refresh ou /login
+        if (config._retry || config.url === '/api/refresh' || config.url === '/api/login') {
+          return config;
+        }
+
+        const currentToken = localStorage.getItem('access_token');
+        if (currentToken) {
+          config.headers.Authorization = `Bearer ${currentToken}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
     return () => {
-      api.interceptors.request.eject(authInterceptor);
+      api.interceptors.request.eject(requestInterceptor);
     };
   }, []);
 
-  // ✅ FIX 5: Intercepteur de réponse avec gestion de file d'attente
+  // ✅ ÉTAPE 3 : Intercepteur de réponse - Gérer le refresh
   useLayoutEffect(() => {
-    const refreshInterceptor = api.interceptors.response.use(
+    const responseInterceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
-        
-        // Vérifier si c'est une erreur 401 et pas déjà une retry
+
+        // ✅ Conditions pour NE PAS tenter de refresh
         if (
-          error.response?.status === 401 &&
-          !originalRequest._retry &&
-          originalRequest.url !== '/api/refresh' && // ✅ Éviter boucle sur refresh lui-même
-          originalRequest.url !== '/api/login' // ✅ Éviter refresh sur login
+          !error.response ||
+          error.response.status !== 401 ||
+          originalRequest._retry ||
+          originalRequest.url === '/api/refresh' ||
+          originalRequest.url === '/api/login' ||
+          originalRequest.url === '/api/register'
         ) {
-          originalRequest._retry = true;
-          
-          // ✅ Si un refresh est déjà en cours, attendre sa résolution
-          if (isRefreshingRef.current) {
-            return new Promise((resolve) => {
-              subscribeTokenRefresh((newToken) => {
-                originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                resolve(api(originalRequest));
-              });
-            });
-          }
-
-          isRefreshingRef.current = true;
-
-          try {
-            console.log('🔄 Tentative de refresh du token...');
-            const response = await api.post("/api/refresh");
-            const newToken = response.data.access_token;
-            
-            console.log('✅ Token refreshed successfully');
-            
-            setToken(newToken);
-            localStorage.setItem('access_token', newToken);
-            
-            isRefreshingRef.current = false;
-            onRefreshed(newToken);
-            
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return api(originalRequest);
-            
-          } catch (refreshError) {
-            console.error("❌ Refresh token invalid:", refreshError);
-            isRefreshingRef.current = false;
-            logout();
-            window.location.href = '/login';
-            return Promise.reject(refreshError);
-          }
+          return Promise.reject(error);
         }
-        
-        return Promise.reject(error);
+
+        // ✅ Marquer cette requête comme "retry" pour éviter les boucles
+        originalRequest._retry = true;
+
+        // ✅ Si un refresh est déjà en cours, mettre cette requête en file d'attente
+        if (isRefreshingRef.current) {
+          return new Promise((resolve, reject) => {
+            failedQueueRef.current.push({ resolve, reject });
+          })
+            .then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return api(originalRequest);
+            })
+            .catch((err) => {
+              return Promise.reject(err);
+            });
+        }
+
+        // ✅ Marquer qu'un refresh est en cours
+        isRefreshingRef.current = true;
+
+        try {
+          console.log('🔄 Tentative de refresh du token...');
+          
+          // ✅ Utiliser apiSimple pour éviter l'intercepteur
+          const response = await apiSimple.post('/api/refresh');
+          const newToken = response.data.access_token;
+
+          console.log('✅ Token refreshed avec succès');
+
+          // ✅ Mettre à jour le token
+          localStorage.setItem('access_token', newToken);
+          setToken(newToken);
+
+          // ✅ Résoudre toutes les requêtes en attente
+          failedQueueRef.current.forEach((callback) => {
+            callback.resolve(newToken);
+          });
+          failedQueueRef.current = [];
+
+          // ✅ Retry la requête originale avec le nouveau token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+
+        } catch (refreshError) {
+          console.error('❌ Refresh token invalide ou expiré');
+
+          // ✅ Rejeter toutes les requêtes en attente
+          failedQueueRef.current.forEach((callback) => {
+            callback.reject(refreshError);
+          });
+          failedQueueRef.current = [];
+
+          // ✅ Déconnecter l'utilisateur
+          localStorage.removeItem('access_token');
+          setToken(null);
+          setUser(null);
+
+          // ✅ Rediriger vers login
+          window.location.href = '/login';
+
+          return Promise.reject(refreshError);
+
+        } finally {
+          // ✅ Réinitialiser le flag de refresh
+          isRefreshingRef.current = false;
+        }
       }
     );
 
     return () => {
-      api.interceptors.response.eject(refreshInterceptor);
+      api.interceptors.response.eject(responseInterceptor);
     };
-  }, []); // ✅ Pas de dépendances car on utilise refs
+  }, []); // ✅ Pas de dépendances car on utilise des refs
 
-  // Fonctions d'authentification
+  // ✅ ÉTAPE 4 : Fonctions d'authentification
+
   const login = async (email, password) => {
     try {
       const response = await apiSimple.post('/api/login', { email, password });
@@ -156,14 +209,14 @@ export const AuthProvider = ({ children }) => {
       
       return response.data;
     } catch (error) {
-      console.error('Login error details:', error);
+      console.error('Login error:', error);
       
       if (error.code === 'ERR_NETWORK') {
         throw new Error('Erreur réseau : Impossible de contacter le serveur');
       }
       
-      if (error.message.includes('CORS')) {
-        throw new Error('Erreur CORS : Vérifiez la configuration du serveur');
+      if (error.response?.status === 401) {
+        throw new Error('Email ou mot de passe incorrect');
       }
       
       throw new Error(error.response?.data?.error || 'Erreur de connexion');
@@ -181,15 +234,7 @@ export const AuthProvider = ({ children }) => {
       
       return response.data;
     } catch (error) {
-      console.error('Registration error details:', error);
-      
-      if (error.code === 'ERR_NETWORK') {
-        throw new Error('Erreur réseau : Impossible de contacter le serveur');
-      }
-      
-      if (error.message.includes('CORS') || error.message.includes('blocked')) {
-        throw new Error('Erreur CORS : Vérifiez la configuration du serveur Laravel');
-      }
+      console.error('Registration error:', error);
       
       if (error.response?.status === 422) {
         const errors = error.response.data.errors;
@@ -210,8 +255,8 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
       setUser(null);
       localStorage.removeItem('access_token');
-      isRefreshingRef.current = false; // ✅ Reset du flag
-      refreshSubscribersRef.current = []; // ✅ Clear des subscribers
+      isRefreshingRef.current = false;
+      failedQueueRef.current = [];
     }
   };
 
@@ -227,7 +272,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Méthodes utilitaires pour les rôles
+  // ✅ Méthodes utilitaires pour les rôles
   const hasRole = (role) => {
     return user && user.roles && user.roles.some(r => r.role === role);
   };
@@ -276,7 +321,7 @@ export const useAuth = () => {
 export const useApi = () => {
   return {
     api,
-    apiSimple, 
+    apiSimple,
     get: (url, config) => api.get(url, config),
     post: (url, data, config) => api.post(url, data, config),
     put: (url, data, config) => api.put(url, data, config),

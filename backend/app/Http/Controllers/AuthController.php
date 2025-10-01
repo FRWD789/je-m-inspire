@@ -245,7 +245,7 @@ class AuthController extends Controller
         $user->save();
 
         return response()->json(['message' => 'Statut modifié avec succès']);
-
+    }
 
     public function updateProfile(Request $request)
     {

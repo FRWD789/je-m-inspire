@@ -25,23 +25,14 @@ const Navigation = () => {
                  {/* Logo */}
                 <img
                     src="/assets/img/logo.png"
-    style={{ height: '120px', width: 'auto' }}
+                    style={{ height: '120px', width: 'auto' }}
                     alt="Je m'inspire"
                 />
+            </div>
 
             {/* Logo / Brand */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                <Link 
-                    to="/" 
-                    style={{ 
-                        color: 'white', 
-                        textDecoration: 'none', 
-                        fontSize: '24px', 
-                        fontWeight: 'bold' 
-                    }}
-                >
-                    Je m'inspire
-                </Link>
+               
 
                 {/* Navigation principale */}
                 {isAuthenticated && (

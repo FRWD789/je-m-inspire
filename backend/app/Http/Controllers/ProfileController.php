@@ -90,7 +90,7 @@ class ProfileController extends Controller
                 . "&client_id=" . env('STRIPE_OAUTH_ID')
                 . "&scope=read_write"
                 . "&state=" . urlencode($state)
-                . "&redirect_uri=" . 'http://172.20.10.4:5173/profile/stripe/success';
+                . "&redirect_uri=" . env('PUBLIC_FRONTEND_URL') . '/profile/stripe/success';
 
             Log::info('[Stripe] OAuth initié', [
                 'user_id' => $user->id,
@@ -127,7 +127,7 @@ class ProfileController extends Controller
             }
 
             $clientId = env('PAYPAL_SANDBOX_CLIENT_ID');
-            $redirectUri = 'http://172.20.10.4:5173/profile/paypal/success';
+            $redirectUri = env('PUBLIC_FRONTEND_URL') . '/profile/paypal/success';
 
             $url = "https://www.sandbox.paypal.com/connect/?flowEntry=static"
                 . "&client_id={$clientId}"
