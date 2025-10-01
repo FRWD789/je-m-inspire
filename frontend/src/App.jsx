@@ -1,5 +1,5 @@
-// src/App.jsx
-import React, { useState } from "react";
+// frontend/src/App.jsx
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import RegisterForm from "./components/auth/RegisterForm";
@@ -17,7 +17,6 @@ import LinkAccountSuccess from "./components/profile/LinkAccountSuccess";
 import AdminCommissionsPage from './components/admin/AdminCommissionsPage';
 import VendorEarningsPage from './components/vendor/VendorEarningsPage';
 
-
 function App() {
   return (
     <AuthProvider>
@@ -29,95 +28,271 @@ function App() {
 }
 
 function AppContent() {
-  const { user, loading, isAuthenticated } = useAuth();
-  const [showRegister, setShowRegister] = useState(false);
+  const { isAuthenticated, isInitialized, loading, user, hasRole } = useAuth();
 
-  if (loading) {
+  // ✅ Attendre l'initialisation complète de l'authentification
+  if (!isInitialized || loading) {
     return (
       <div style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        fontSize: '18px'
+        fontSize: '18px',
+        flexDirection: 'column',
+        gap: '20px',
+        backgroundColor: '#f5f5f5'
       }}>
-        Chargement...
+        <div style={{
+          width: '60px',
+          height: '60px',
+          border: '5px solid #f3f3f3',
+          borderTop: '5px solid #3498db',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <div style={{ 
+          fontSize: '20px', 
+          fontWeight: 'bold',
+          color: '#333'
+        }}>
+          Chargement de l'application...
+        </div>
+        <div style={{ 
+          fontSize: '14px', 
+          color: '#666' 
+        }}>
+          Veuillez patienter
+        </div>
+        
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="/register" element={
-          <RegisterForm
-            onRegistrationSuccess={() => {
-              setShowRegister(false);
+  // ✅ Composant pour protéger les routes
+  const ProtectedRoute = ({ children, requiredRole = null }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+    }
+
+    if (requiredRole && !hasRole(requiredRole)) {
+      return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          flexDirection: 'column',
+          gap: '20px',
+          textAlign: 'center',
+          padding: '20px'
+        }}>
+          <div style={{ fontSize: '48px' }}>🚫</div>
+          <h2>Accès refusé</h2>
+          <p>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#3498db',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold'
             }}
-            onSwitchToLogin={() => setShowRegister(false)}
-          />
-        } />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="*" element={
-          <div>
-            {showRegister ? (
-              <RegisterForm
-                onRegistrationSuccess={() => {
-                  setShowRegister(false);
-                }}
-                onSwitchToLogin={() => setShowRegister(false)}
-              />
-            ) : (
-              <div>
-                <LoginForm />
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                  <span style={{ color: '#666' }}>Pas encore de compte ? </span>
-                  <button 
-                    onClick={() => setShowRegister(true)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#3498db',
-                      cursor: 'pointer',
-                      textDecoration: 'underline'
-                    }}
-                  >
-                    S'inscrire
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        } />
-      </Routes>
-    );
-  }
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      );
+    }
+
+    return children;
+  };
 
   return (
-    <div>
-      <Navigation />
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+      {/* Navigation visible uniquement si authentifié */}
+      {isAuthenticated && <Navigation />}
+      
       <Routes>
-        <Route path="/" element={<EventDashboard />} />
-        <Route path="/dashboard" element={<EventDashboard />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/payment/:id" element={<PaymentPage />} />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/cancel" element={<PaymentCancel />} />
+        {/* ==================== ROUTES PUBLIQUES ==================== */}
+        <Route 
+          path="/register" 
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <RegisterForm />
+          } 
+        />
         
-        {/* Routes d'abonnement Pro Plus */}
-        <Route path="/abonnement" element={<ProPlusPage />} />
-        <Route path="/abonnement/success" element={<SubscriptionSuccess />} />
-        <Route path="/abonnement/cancel" element={<SubscriptionCancel />} />
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <LoginForm />
+          } 
+        />
 
+        {/* ==================== ROUTES PROTÉGÉES ==================== */}
+        
+        {/* Dashboard principal */}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <EventDashboard />
+            </ProtectedRoute>
+          } 
+        />
 
-        <Route path="/profile/stripe/success" element={<LinkAccountSuccess />} />
-        <Route path="/profile/paypal/success" element={<LinkAccountSuccess />} />
-        <Route path="/admin/commissions" element={<AdminCommissionsPage />} />
-        <Route path="/vendor/earnings" element={<VendorEarningsPage />} />
+        {/* ==================== PAIEMENT ==================== */}
+        <Route 
+          path="/payment/:eventId" 
+          element={
+            <ProtectedRoute>
+              <PaymentPage />
+            </ProtectedRoute>
+          } 
+        />
         
+        <Route 
+          path="/payment/success" 
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
+            </ProtectedRoute>
+          } 
+        />
         
-        <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route 
+          path="/payment/cancel" 
+          element={
+            <ProtectedRoute>
+              <PaymentCancel />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ==================== ABONNEMENT PRO PLUS ==================== */}
+        <Route 
+          path="/pro-plus" 
+          element={
+            <ProtectedRoute>
+              <ProPlusPage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/abonnement/success" 
+          element={
+            <ProtectedRoute>
+              <SubscriptionSuccess />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/abonnement/cancel" 
+          element={
+            <ProtectedRoute>
+              <SubscriptionCancel />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ==================== PROFIL UTILISATEUR ==================== */}
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Callbacks OAuth Stripe/PayPal */}
+        <Route 
+          path="/profile/stripe/success" 
+          element={
+            <ProtectedRoute>
+              <LinkAccountSuccess />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/profile/paypal/success" 
+          element={
+            <ProtectedRoute>
+              <LinkAccountSuccess />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ==================== ADMINISTRATION ==================== */}
+        <Route 
+          path="/admin/commissions" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminCommissionsPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ==================== VENDOR/PROFESSIONNEL ==================== */}
+        <Route 
+          path="/vendor/earnings" 
+          element={
+            <ProtectedRoute requiredRole="professionnel">
+              <VendorEarningsPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ==================== FALLBACK ==================== */}
+        <Route 
+          path="*" 
+          element={
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100vh',
+              flexDirection: 'column',
+              gap: '20px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '72px' }}>404</div>
+              <h2>Page non trouvée</h2>
+              <p style={{ color: '#666' }}>
+                La page que vous recherchez n'existe pas.
+              </p>
+              <button
+                onClick={() => window.location.href = '/'}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#3498db',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}
+              >
+                Retour à l'accueil
+              </button>
+            </div>
+          } 
+        />
+      </Routes>
     </div>
   );
 }
