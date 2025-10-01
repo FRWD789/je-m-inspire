@@ -8,10 +8,7 @@ export const useEvents = (endpoint = '/api/events') => {
     const [error, setError] = useState(null);
     const { get } = useApi();
     
-    // ✅ FIX 1: Utiliser useRef pour suivre si un fetch est en cours
     const isFetchingRef = useRef(false);
-    
-    // ✅ FIX 2: Utiliser useRef pour suivre le dernier endpoint fetché
     const lastEndpointRef = useRef(null);
 
     const fetchEvents = async () => {
@@ -21,7 +18,7 @@ export const useEvents = (endpoint = '/api/events') => {
             return;
         }
 
-        // ✅ Éviter de refetch le même endpoint
+        // ✅ CORRECTION : Vérifier le cache SANS bloquer le loading
         if (lastEndpointRef.current === endpoint && events.length > 0) {
             console.log('📋 Données déjà en cache pour', endpoint);
             setLoading(false);
@@ -57,6 +54,7 @@ export const useEvents = (endpoint = '/api/events') => {
             setError(error.response?.data?.error || error.message || 'Erreur lors du chargement des événements');
             setEvents([]);
         } finally {
+            console.log('🏁 FINALLY: setLoading(false)'); // ✅ LOG AJOUTÉ
             setLoading(false);
             isFetchingRef.current = false;
         }
@@ -64,6 +62,8 @@ export const useEvents = (endpoint = '/api/events') => {
 
     useEffect(() => {
         let isMounted = true;
+        
+        console.log('🚀 useEvents useEffect pour endpoint:', endpoint);
 
         const loadEvents = async () => {
             if (isMounted) {
@@ -73,14 +73,14 @@ export const useEvents = (endpoint = '/api/events') => {
 
         loadEvents();
 
-        // ✅ Cleanup pour éviter les updates sur composant démonté
         return () => {
+            console.log('🧹 useEvents cleanup');
             isMounted = false;
         };
-    }, [endpoint]); // Dépendance endpoint OK avec les protections ci-dessus
+    }, [endpoint]);
 
     const refetch = () => {
-        // ✅ Reset le cache pour forcer un nouveau fetch
+        console.log('🔄 Refetch manuel demandé');
         lastEndpointRef.current = null;
         fetchEvents();
     };

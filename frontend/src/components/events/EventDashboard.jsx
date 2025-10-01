@@ -1,17 +1,30 @@
 // frontend/src/components/events/EventDashboard.jsx
 import React, { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { EventList } from './EventList';
-import { Navigate } from 'react-router-dom';
 import { CreateEventForm } from './CreateEventForm';
 
 export const EventDashboard = () => {
+  console.log('🎪 EventDashboard: Début du composant');
+  
   const { isAuthenticated, isInitialized, loading, user, isProfessional } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // ✅ CRITIQUE : Attendre que l'auth soit initialisée
+  console.log('🎪 EventDashboard state:', {
+    isAuthenticated,
+    isInitialized,
+    loading,
+    userEmail: user?.email,
+    isPro: isProfessional ? isProfessional() : 'undefined',
+    activeTab,
+    showCreateForm
+  });
+
   if (!isInitialized || loading) {
+    console.log('⏳ EventDashboard: En attente initialisation');
     return (
       <div style={{
         display: 'flex',
@@ -42,12 +55,15 @@ export const EventDashboard = () => {
     );
   }
 
-  // ✅ Rediriger si non authentifié
   if (!isAuthenticated) {
+    console.log('🔒 EventDashboard: Non authentifié, redirect');
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ Maintenant on peut charger les événements en toute sécurité
+  console.log('✅ EventDashboard: Rendu du contenu principal');
+
+  const isPro = isProfessional && isProfessional();
+
   return (
     <div style={{ 
       padding: '20px',
@@ -74,11 +90,11 @@ export const EventDashboard = () => {
           fontSize: '16px'
         }}>
           Bienvenue, <strong>{user?.name || 'Utilisateur'}</strong> 
-          {isProfessional() && ' (Professionnel)'}
+          {isPro && ' (Professionnel)'}
         </p>
       </div>
 
-      {/* Navigation par onglets */}
+      {/* Onglets */}
       <div style={{
         display: 'flex',
         gap: '10px',
@@ -87,7 +103,10 @@ export const EventDashboard = () => {
         flexWrap: 'wrap'
       }}>
         <button
-          onClick={() => setActiveTab('all')}
+          onClick={() => {
+            console.log('🔄 Changement onglet: all');
+            setActiveTab('all');
+          }}
           style={{
             padding: '12px 24px',
             border: 'none',
@@ -96,16 +115,18 @@ export const EventDashboard = () => {
             cursor: 'pointer',
             fontSize: '16px',
             fontWeight: activeTab === 'all' ? 'bold' : 'normal',
-            borderRadius: '8px 8px 0 0',
-            transition: 'all 0.3s',
-            borderBottom: activeTab === 'all' ? '3px solid #3498db' : '3px solid transparent'
+            borderBottom: activeTab === 'all' ? '3px solid #3498db' : 'none',
+            transition: 'all 0.3s'
           }}
         >
-          📋 Tous les événements
+          Tous les événements
         </button>
-        
+
         <button
-          onClick={() => setActiveTab('my-events')}
+          onClick={() => {
+            console.log('🔄 Changement onglet: my-events');
+            setActiveTab('my-events');
+          }}
           style={{
             padding: '12px 24px',
             border: 'none',
@@ -114,39 +135,56 @@ export const EventDashboard = () => {
             cursor: 'pointer',
             fontSize: '16px',
             fontWeight: activeTab === 'my-events' ? 'bold' : 'normal',
-            borderRadius: '8px 8px 0 0',
-            transition: 'all 0.3s',
-            borderBottom: activeTab === 'my-events' ? '3px solid #3498db' : '3px solid transparent'
+            borderBottom: activeTab === 'my-events' ? '3px solid #3498db' : 'none',
+            transition: 'all 0.3s'
           }}
         >
-          🎫 Mes événements
+          Mes événements
         </button>
-      </div>
 
-      {/* Bouton créer un événement (si professionnel) */}
-      {isProfessional() && activeTab === 'my-events' && (
-        <div style={{ marginBottom: '20px' }}>
+        {!isPro && (
           <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
+            onClick={() => {
+              console.log('🚀 Navigation vers /pro-plus');
+              navigate('/pro-plus');
+            }}
             style={{
               padding: '12px 24px',
-              backgroundColor: showCreateForm ? '#e74c3c' : '#27ae60',
+              border: '2px solid #f39c12',
+              background: 'linear-gradient(135deg, #f39c12, #e67e22)',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              marginLeft: 'auto',
+              transition: 'all 0.3s',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            ⭐ Devenir Pro Plus
+          </button>
+        )}
+      </div>
+
+      {/* Bouton créer événement */}
+      {isPro && activeTab === 'my-events' && (
+        <div style={{ marginBottom: '20px' }}>
+          <button
+            onClick={() => {
+              console.log('🔄 Toggle form:', !showCreateForm);
+              setShowCreateForm(!showCreateForm);
+            }}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: showCreateForm ? '#dc3545' : '#28a745',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '16px',
               fontWeight: 'bold',
-              transition: 'all 0.3s',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              transition: 'all 0.3s'
             }}
           >
             {showCreateForm ? '❌ Annuler' : '➕ Créer un nouvel événement'}
@@ -154,8 +192,8 @@ export const EventDashboard = () => {
         </div>
       )}
 
-      {/* Formulaire de création (si affiché) */}
-      {showCreateForm && isProfessional() && (
+      {/* Formulaire de création */}
+      {showCreateForm && isPro && (
         <div style={{
           marginBottom: '30px',
           padding: '20px',
@@ -165,14 +203,14 @@ export const EventDashboard = () => {
         }}>
           <CreateEventForm 
             onEventCreated={() => {
+              console.log('✅ Événement créé, fermeture formulaire');
               setShowCreateForm(false);
-              // Le refetch sera géré automatiquement par EventList
             }}
           />
         </div>
       )}
 
-      {/* Contenu principal basé sur l'onglet actif */}
+      {/* Liste des événements */}
       <div style={{ marginTop: '30px' }}>
         {activeTab === 'all' && (
           <div>
@@ -188,7 +226,7 @@ export const EventDashboard = () => {
                 fontSize: '20px',
                 color: '#1976d2'
               }}>
-                Événements disponibles
+                📅 Événements disponibles
               </h2>
               <p style={{ 
                 margin: 0,
@@ -199,6 +237,7 @@ export const EventDashboard = () => {
               </p>
             </div>
             
+            {console.log('🔄 Rendu EventList pour /api/events')}
             <EventList 
               endpoint="/api/events" 
               showReserveButton={true}
@@ -223,60 +262,26 @@ export const EventDashboard = () => {
                 fontSize: '20px',
                 color: '#f57c00'
               }}>
-                Mes événements créés et réservés
+                🎫 Mes événements
               </h2>
               <p style={{ 
                 margin: 0,
                 fontSize: '14px',
                 color: '#666'
               }}>
-                Gérez vos événements créés et consultez vos réservations
+                Événements que vous avez créés ou auxquels vous participez
               </p>
             </div>
             
+            {console.log('🔄 Rendu EventList pour /api/my-events')}
             <EventList 
               endpoint="/api/my-events" 
               showReserveButton={false}
-              showEditButton={isProfessional()}
-              showDeleteButton={isProfessional()}
+              showEditButton={isPro}
+              showDeleteButton={isPro}
               title=""
             />
           </div>
-        )}
-      </div>
-
-      {/* Footer informatif */}
-      <div style={{
-        marginTop: '60px',
-        padding: '20px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '8px',
-        textAlign: 'center',
-        color: '#666',
-        fontSize: '14px'
-      }}>
-        <p style={{ margin: '0 0 10px 0' }}>
-          💡 <strong>Astuce :</strong> {isProfessional() 
-            ? 'En tant que professionnel, vous pouvez créer et gérer vos événements.' 
-            : 'Devenez professionnel pour créer vos propres événements !'}
-        </p>
-        {!isProfessional() && (
-          <button
-            onClick={() => window.location.href = '/pro-plus'}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#9c27b0',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              marginTop: '10px'
-            }}
-          >
-            🚀 Passer Pro Plus
-          </button>
         )}
       </div>
     </div>

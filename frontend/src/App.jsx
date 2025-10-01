@@ -30,8 +30,17 @@ function App() {
 function AppContent() {
   const { isAuthenticated, isInitialized, loading, user, hasRole } = useAuth();
 
-  // ✅ Attendre l'initialisation complète de l'authentification
-  if (!isInitialized || loading) {
+  // ✅ AJOUT DE LOGS POUR DEBUG
+  console.log('🎨 AppContent render:', {
+    isInitialized,
+    loading,
+    isAuthenticated,
+    userEmail: user?.email
+  });
+
+  // ✅ CORRECTION : Attendre UNIQUEMENT que isInitialized soit true
+  if (!isInitialized) {
+    console.log('⏳ AppContent attend isInitialized');
     return (
       <div style={{
         display: 'flex',
@@ -75,13 +84,17 @@ function AppContent() {
     );
   }
 
+  console.log('✅ AppContent initialized - rendering routes');
+
   // ✅ Composant pour protéger les routes
   const ProtectedRoute = ({ children, requiredRole = null }) => {
     if (!isAuthenticated) {
+      console.log('🔒 ProtectedRoute: Non authentifié, redirect vers /login');
       return <Navigate to="/login" replace />;
     }
 
     if (requiredRole && !hasRole(requiredRole)) {
+      console.log('🚫 ProtectedRoute: Rôle requis non satisfait:', requiredRole);
       return (
         <div style={{
           display: 'flex',
@@ -115,6 +128,7 @@ function AppContent() {
       );
     }
 
+    console.log('✅ ProtectedRoute: Accès autorisé');
     return children;
   };
 
@@ -217,7 +231,6 @@ function AppContent() {
           } 
         />
         
-        {/* Callbacks OAuth Stripe/PayPal */}
         <Route 
           path="/profile/stripe/success" 
           element={

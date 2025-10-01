@@ -1,6 +1,6 @@
-// components/common/RoleGuard.jsx
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { Navigate } from 'react-router-dom'; // ✅ AJOUTEZ
 
 const RoleGuard = ({ 
     children, 
@@ -11,7 +11,6 @@ const RoleGuard = ({
 }) => {
     const { user, hasRole, hasAnyRole, loading, isAuthenticated } = useAuth();
 
-    // Attendre le chargement
     if (loading) {
         return (
             <div style={{ 
@@ -25,11 +24,10 @@ const RoleGuard = ({
         );
     }
 
-    // Vérifier l'authentification
     if (!isAuthenticated) {
+        // ✅ UTILISEZ Navigate au lieu de window.location
         if (redirectTo) {
-            window.location.href = redirectTo;
-            return null;
+            return <Navigate to={redirectTo} replace />;
         }
         return fallback || (
             <div style={{ 
@@ -42,20 +40,18 @@ const RoleGuard = ({
         );
     }
 
-    // Si aucun rôle spécifié, l'utilisateur authentifié a accès
     if (roles.length === 0) {
         return children;
     }
 
-    // Vérifier les rôles
     const hasAccess = requireAll 
         ? roles.every(role => hasRole(role))
         : hasAnyRole(roles);
 
     if (!hasAccess) {
+        // ✅ UTILISEZ Navigate au lieu de window.location
         if (redirectTo) {
-            window.location.href = redirectTo;
-            return null;
+            return <Navigate to={redirectTo} replace />;
         }
         return fallback || (
             <div style={{ 
@@ -64,72 +60,11 @@ const RoleGuard = ({
                 color: '#e74c3c' 
             }}>
                 Vous n'avez pas les permissions nécessaires pour accéder à cette page.
-                <br />
-                <small>Rôles requis: {roles.join(', ')}</small>
             </div>
         );
     }
 
     return children;
-};
-
-// Composants spécialisés pour les rôles courants
-export const AdminOnly = ({ children, fallback, redirectTo }) => (
-    <RoleGuard 
-        roles={['admin']} 
-        fallback={fallback} 
-        redirectTo={redirectTo}
-    >
-        {children}
-    </RoleGuard>
-);
-
-export const ProfessionalOnly = ({ children, fallback, redirectTo }) => (
-    <RoleGuard 
-        roles={['professionnel']} 
-        fallback={fallback} 
-        redirectTo={redirectTo}
-    >
-        {children}
-    </RoleGuard>
-);
-
-export const UserOnly = ({ children, fallback, redirectTo }) => (
-    <RoleGuard 
-        roles={['utilisateur', 'client']} 
-        fallback={fallback} 
-        redirectTo={redirectTo}
-    >
-        {children}
-    </RoleGuard>
-);
-
-export const UserOrProfessional = ({ children, fallback, redirectTo }) => (
-    <RoleGuard 
-        roles={['utilisateur', 'client', 'professionnel']} 
-        fallback={fallback} 
-        redirectTo={redirectTo}
-    >
-        {children}
-    </RoleGuard>
-);
-
-// Hook pour utiliser la vérification de rôle dans les composants
-export const useRoleCheck = () => {
-    const { hasRole, hasAnyRole } = useAuth();
-    
-    return {
-        canAccess: (roles, requireAll = false) => {
-            if (!Array.isArray(roles)) {
-                return hasRole(roles);
-            }
-            return requireAll 
-                ? roles.every(role => hasRole(role))
-                : hasAnyRole(roles);
-        },
-        hasRole,
-        hasAnyRole
-    };
 };
 
 export default RoleGuard;

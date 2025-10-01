@@ -41,44 +41,41 @@ export const AuthProvider = ({ children }) => {
   const isRefreshingRef = useRef(false);
   const failedQueueRef = useRef([]);
 
-  console.log('🔧 AuthContext: Provider monté');
+  console.log('🔄 RENDER AuthProvider', { loading, user: user?.email });
 
   // ✅ ÉTAPE 1 : Initialisation - Charger l'utilisateur si token existe
   useEffect(() => {
-    console.log('🔧 AuthContext: useEffect Initialisation');
+    console.log('🚀 useEffect Initialisation DÉMARRE');
     let isMounted = true;
 
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('access_token');
       
-      console.log('🔍 Initialisation Auth:', {
-        hasToken: !!storedToken,
-        tokenPreview: storedToken?.substring(0, 30) + '...'
-      });
+      console.log('1️⃣ Token trouvé:', !!storedToken);
       
       if (!storedToken) {
-        console.log('⏭️ Pas de token, skip initialisation');
-        setLoading(false);
-        setIsInitialized(true);
+        console.log('2️⃣ Pas de token - setLoading(false)');
+        if (isMounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
         return;
       }
 
       try {
-        console.log('📤 Appel /api/me pour initialisation');
-        
-        // Récupérer les infos utilisateur avec le token stocké
+        console.log('3️⃣ Appel /api/me');
         const response = await api.get('/api/me', {
           headers: { Authorization: `Bearer ${storedToken}` }
         });
         
-        console.log('✅ /api/me réussi:', response.data);
+        console.log('4️⃣ Réponse reçue:', response.data);
         
         if (isMounted) {
           setUser(response.data);
           setToken(storedToken);
         }
       } catch (error) {
-        console.error('❌ Initialisation échouée:', error);
+        console.error('5️⃣ Erreur:', error.message);
         if (isMounted) {
           localStorage.removeItem('access_token');
           setToken(null);
@@ -86,9 +83,11 @@ export const AuthProvider = ({ children }) => {
         }
       } finally {
         if (isMounted) {
+          console.log('6️⃣ AVANT setLoading(false)');
           setLoading(false);
+          console.log('7️⃣ APRÈS setLoading(false)');
           setIsInitialized(true);
-          console.log('✅ Initialisation terminée');
+          console.log('8️⃣ Initialisation terminée');
         }
       }
     };
@@ -96,9 +95,10 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
 
     return () => {
+      console.log('🧹 Cleanup useEffect');
       isMounted = false;
     };
-  }, []); // ✅ Une seule fois au montage
+  }, []);
 
   // ✅ ÉTAPE 2 : Intercepteur de requête - Ajouter le token
   useLayoutEffect(() => {
@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }) => {
       console.log('🔧 AuthContext: Désinstallation intercepteur RESPONSE');
       api.interceptors.response.eject(responseInterceptor);
     };
-  }, []); // ✅ Pas de dépendances car on utilise des refs
+  }, []);
 
   // ✅ ÉTAPE 4 : Fonctions d'authentification
 
@@ -267,13 +267,8 @@ export const AuthProvider = ({ children }) => {
         user: userData
       });
       
-      // ✅ SAUVEGARDER IMMÉDIATEMENT
       localStorage.setItem('access_token', accessToken);
       console.log('💾 Token sauvegardé dans localStorage');
-      
-      // ✅ Vérification
-      const verification = localStorage.getItem('access_token');
-      console.log('🔍 Vérification localStorage:', verification ? 'OK' : 'FAILED');
       
       setToken(accessToken);
       setUser(userData);
@@ -381,6 +376,34 @@ export const AuthProvider = ({ children }) => {
     isUser,
   };
 
+  // ✅ AJOUT DU LOADER
+  console.log('👁️ Avant return - loading:', loading);
+
+  if (loading) {
+    console.log('⏳ Affichage du loader');
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '15px',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <div style={{ fontSize: '3rem' }}>🔄</div>
+        <div style={{ fontSize: '1.2rem', color: '#333', fontWeight: '500' }}>
+          Chargement de l'application...
+        </div>
+        <div style={{ fontSize: '0.9rem', color: '#666' }}>
+          Vérification de l'authentification
+        </div>
+      </div>
+    );
+  }
+
+  console.log('✅ Affichage des children');
+  
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -400,7 +423,6 @@ export const useApi = () => {
   const apiRef = useRef(api);
   const apiSimpleRef = useRef(apiSimple);
 
-  // ✅ Mémoriser les fonctions pour éviter les re-renders
   return useMemo(() => ({
     api: apiRef.current,
     apiSimple: apiSimpleRef.current,
@@ -409,5 +431,5 @@ export const useApi = () => {
     put: (url, data, config) => apiRef.current.put(url, data, config),
     delete: (url, config) => apiRef.current.delete(url, config),
     patch: (url, data, config) => apiRef.current.patch(url, data, config),
-  }), []); // ✅ Dépendances vides = pas de re-création
+  }), []);
 };

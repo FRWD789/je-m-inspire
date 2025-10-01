@@ -4,7 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../../contexts/AuthContext';
 
 const PaymentPage = () => {
-    const { id } = useParams();
+    console.log('💳 PaymentPage: MOUNTED');
+    
+    const { eventId } = useParams();  // ✅ CHANGÉ ICI
     const navigate = useNavigate();
     const { get, post } = useApi();
     const [event, setEvent] = useState(null);
@@ -13,25 +15,41 @@ const PaymentPage = () => {
     const [quantity, setQuantity] = useState(1);
     const [paymentLoading, setPaymentLoading] = useState(false);
 
+    console.log('💳 PaymentPage state:', { eventId, loading, hasEvent: !!event });
+
     useEffect(() => {
+        console.log('💳 PaymentPage useEffect START, eventId=', eventId);
+        
         const fetchEvent = async () => {
             try {
-                const response = await get(`/api/events/${id}`);
-                setEvent(response.data.event);
+                console.log('💳 Fetching event:', eventId);
+                const response = await get(`/api/events/${eventId}`);
+                console.log('💳 Response complète:', response);
+                console.log('💳 Response.data:', response.data);
+                
+                const eventData = response.data.event || response.data;
+                console.log('💳 Event data:', eventData);
+                
+                setEvent(eventData);
             } catch (error) {
+                console.error('💳 Error loading event:', error);
                 setError('Événement non trouvé');
-                console.error('Erreur:', error);
             } finally {
+                console.log('💳 setLoading(false)');
                 setLoading(false);
             }
         };
 
-        if (id) {
+        if (eventId) {
             fetchEvent();
+        } else {
+            console.error('💳 Pas d\'ID fourni');
+            setLoading(false);
         }
-    }, [id]);
+    }, [eventId, get]);
 
     const handleGoBack = () => {
+        console.log('💳 Retour à la page précédente');
         navigate('/');
     };
 
@@ -48,21 +66,19 @@ const PaymentPage = () => {
         setPaymentLoading(true);
         try {
             console.log('Initiation paiement Stripe:', {
-                event_id: id,
+                event_id: eventId,  // ✅ CHANGÉ ICI
                 quantity: quantity,
                 total_amount: totalPrice
             });
             
-            // Directement initier le paiement Stripe (pas de réservation préalable)
             const response = await post('/api/stripe/checkout', {
-                event_id: id,
+                event_id: eventId,  // ✅ CHANGÉ ICI
                 quantity: quantity,
                 total_amount: totalPrice
             });
             
             console.log('Réponse Stripe:', response);
             
-            // Rediriger vers Stripe Checkout
             if (response.data.checkout_url) {
                 window.location.href = response.data.checkout_url;
             } else {
@@ -82,21 +98,19 @@ const PaymentPage = () => {
         setPaymentLoading(true);
         try {
             console.log('Initiation paiement PayPal:', {
-                event_id: id,
+                event_id: eventId,  // ✅ CHANGÉ ICI
                 quantity: quantity,
                 total_amount: totalPrice
             });
             
-            // Directement initier le paiement PayPal (pas de réservation préalable)
             const response = await post('/api/paypal/checkout', {
-                event_id: id,
+                event_id: eventId,  // ✅ CHANGÉ ICI
                 quantity: quantity,
                 total_amount: totalPrice
             });
             
             console.log('Réponse PayPal:', response);
             
-            // Rediriger vers PayPal
             if (response.data.approve_url) {
                 window.location.href = response.data.approve_url;
             } else {
@@ -112,7 +126,10 @@ const PaymentPage = () => {
 
     const totalPrice = event ? (event.base_price * quantity).toFixed(2) : 0;
 
+    console.log('💳 Avant render, loading=', loading, 'error=', error, 'event=', !!event);
+
     if (loading) {
+        console.log('💳 Affichage loader');
         return (
             <div style={{ 
                 display: 'flex', 
@@ -126,6 +143,7 @@ const PaymentPage = () => {
     }
 
     if (error || !event) {
+        console.log('💳 Affichage erreur');
         return (
             <div style={{ 
                 textAlign: 'center', 
@@ -150,6 +168,8 @@ const PaymentPage = () => {
             </div>
         );
     }
+
+    console.log('💳 Affichage formulaire paiement');
 
     return (
         <div style={{ 
