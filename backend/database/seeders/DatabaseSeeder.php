@@ -23,7 +23,12 @@ class DatabaseSeeder extends Seeder
             LocalisationSeeder::class,
             PlanAbonnementSeeder::class,  // <-- AJOUTER ICI
             UserSeeder::class,
+
+            
+            
+
             EventSeeder::class,
+
         ]);
     }
 }

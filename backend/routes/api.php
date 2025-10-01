@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\PaiementController;
+use App\Http\Controllers\RemboursementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\AbonnementController;
 use App\Http\Controllers\ProfileController;
@@ -62,6 +63,19 @@ Route::middleware(['jwt.auth'])->group(function () {
     // ==========================================
     Route::post('/stripe/checkout', [PaiementController::class, 'stripeCheckout']);
     Route::post('/paypal/checkout', [PaiementController::class, 'paypalCheckout']);
+
+
+    // Remboursements - Utilisateur
+    Route::post('/remboursements', [RemboursementController::class, 'store']);
+    Route::get('/mes-remboursements', [RemboursementController::class, 'mesDemandes']);
+
+    // Remboursements - Admin uniquement
+        Route::get('/remboursements', [RemboursementController::class, 'index']);
+        Route::put('/remboursements/{id}/traiter', [RemboursementController::class, 'traiter']);
+
+    Route::get('/professionnels', [AuthController::class, 'getProfessionnels']);
+    Route::get('/utilisateurs', [AuthController::class, 'getUtilisateurs']);
+    Route::put('/users/{id}/toggle-status', [AuthController::class, 'toggleUserStatus']);
 
     // ==========================================
     // ✅ COMPTES LIÉS (STRIPE & PAYPAL)
@@ -130,4 +144,5 @@ Route::middleware(['auth.jwt', 'professional'])->prefix('/vendor')->group(functi
     Route::get('/earnings', [VendorEarningsController::class, 'index']);
     Route::get('/earnings/statistics', [VendorEarningsController::class, 'statistics']);
     Route::get('/earnings/export', [VendorEarningsController::class, 'export']);
+
 });

@@ -133,7 +133,7 @@ export const MyReservations = () => {
                         textAlign: 'center'
                     }}>
                         <h3 style={{ margin: '0 0 5px 0', color: '#7b1fa2' }}>
-                            {stats.total_depense}€
+                            {stats.total_depense}$
                         </h3>
                         <p style={{ margin: 0, fontSize: '14px' }}>Total dépensé</p>
                     </div>

@@ -1,4 +1,4 @@
-// components/RoleGuard.jsx
+// components/common/RoleGuard.jsx
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -93,9 +93,10 @@ export const ProfessionalOnly = ({ children, fallback, redirectTo }) => (
         {children}
     </RoleGuard>
 );
+
 export const UserOnly = ({ children, fallback, redirectTo }) => (
     <RoleGuard 
-        roles={['utilisateur']} 
+        roles={['utilisateur', 'client']} 
         fallback={fallback} 
         redirectTo={redirectTo}
     >
@@ -105,7 +106,7 @@ export const UserOnly = ({ children, fallback, redirectTo }) => (
 
 export const UserOrProfessional = ({ children, fallback, redirectTo }) => (
     <RoleGuard 
-        roles={['utilisateur', 'professionnel']} 
+        roles={['utilisateur', 'client', 'professionnel']} 
         fallback={fallback} 
         redirectTo={redirectTo}
     >

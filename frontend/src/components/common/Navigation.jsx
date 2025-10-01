@@ -20,6 +20,15 @@ const Navigation = () => {
             alignItems: 'center',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
+
+            <div>
+                 {/* Logo */}
+                <img
+                    src="/assets/img/logo.png"
+    style={{ height: '120px', width: 'auto' }}
+                    alt="Je m'inspire"
+                />
+
             {/* Logo / Brand */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                 <Link 
@@ -148,6 +157,7 @@ const Navigation = () => {
                         </Link>
                     </>
                 )}
+
             </div>
         </nav>
     );
