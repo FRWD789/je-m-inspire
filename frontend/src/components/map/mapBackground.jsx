@@ -4,7 +4,7 @@ import {APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary} from '@vi
 export const MapLoader = ({events}) => 
 {
     //variable/const
-    let API_KEY = "AIzaSyAhuGDFbO3Op46g4NoxwFY6-_7spS9_ung"; //Ya pas un fichier .env ou moyen d'utiliser celui du backend ?
+    let API_KEY = "A"; //Ya pas un fichier .env ou moyen d'utiliser celui du backend ?
 
     const MarkersComponent = ({events}) =>
     {
