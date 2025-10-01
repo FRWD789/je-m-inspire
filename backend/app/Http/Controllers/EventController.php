@@ -219,7 +219,7 @@ class EventController extends Controller
         }
 
         try {
-            // Pour l'instant, récupérer les événements basés sur les opérations directement
+            // Récupérer les événements basés sur les opérations directement
             $userOperations = Operation::where('user_id', $user->id)->get();
 
             // Récupérer les IDs des événements où l'utilisateur a des opérations
@@ -242,7 +242,8 @@ class EventController extends Controller
                 $isCreator = $userOpsForEvent->where('type_operation_id', 1)->isNotEmpty();
 
                 // Vérifier si l'utilisateur a réservé (type_operation_id = 2)
-                $hasReservation = $userOpsForEvent->where('type_operation_id', 2)->isNotEmpty();
+                $reservationOp = $userOpsForEvent->where('type_operation_id', 2)->first();
+                $hasReservation = $reservationOp !== null;
 
                 $eventData = [
                     'id' => $event->id,
@@ -270,6 +271,7 @@ class EventController extends Controller
                 if ($isCreator) {
                     $createdEvents->push(array_merge($eventData, [
                         'is_creator' => true,
+                        'is_reserved' => false,
                         'user_role' => 'creator'
                     ]));
                 }
@@ -277,6 +279,8 @@ class EventController extends Controller
                 if ($hasReservation) {
                     $reservedEvents->push(array_merge($eventData, [
                         'is_creator' => false,
+                        'is_reserved' => true,
+                        'operation_id' => $reservationOp->id, // Ajouter l'ID de l'opération
                         'user_role' => 'participant'
                     ]));
                 }

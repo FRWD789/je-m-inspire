@@ -13,94 +13,60 @@ export const EventDashboard = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  // ✅ CORRECTION: isProfessional est une fonction, il faut l'appeler avec ()
+  const isPro = isProfessional();
+
   console.log('🎪 EventDashboard state:', {
     isAuthenticated,
     isInitialized,
     loading,
     userEmail: user?.email,
-    isPro: isProfessional ? isProfessional() : 'undefined',
-    activeTab,
-    showCreateForm
+    isPro: isPro,
+    userRoles: user?.roles // Pour debug
   });
 
-  if (!isInitialized || loading) {
-    console.log('⏳ EventDashboard: En attente initialisation');
+  if (loading || !isInitialized) {
+    console.log('🎪 EventDashboard: En attente d\'initialisation...');
     return (
       <div style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '400px',
-        flexDirection: 'column',
-        gap: '20px'
+        height: '100vh'
       }}>
-        <div style={{
-          width: '50px',
-          height: '50px',
-          border: '4px solid #f3f3f3',
-          borderTop: '4px solid #3498db',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <div style={{ fontSize: '18px', color: '#666' }}>
-          Initialisation en cours...
-        </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+        <div>Chargement...</div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    console.log('🔒 EventDashboard: Non authentifié, redirect');
+    console.log('🎪 EventDashboard: Non authentifié, redirection vers /login');
     return <Navigate to="/login" replace />;
   }
 
-  console.log('✅ EventDashboard: Rendu du contenu principal');
-
-  const isPro = isProfessional && isProfessional();
+  console.log('🎪 EventDashboard: Rendu du composant');
 
   return (
-    <div style={{ 
+    <div style={{
       padding: '20px',
       maxWidth: '1400px',
-      margin: '0 auto',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
+      margin: '0 auto'
     }}>
-      {/* En-tête */}
-      <div style={{
+      <h1 style={{
+        textAlign: 'center',
         marginBottom: '30px',
-        borderBottom: '2px solid #e0e0e0',
-        paddingBottom: '20px'
+        color: '#333'
       }}>
-        <h1 style={{ 
-          margin: '0 0 10px 0',
-          fontSize: '32px',
-          color: '#333'
-        }}>
-          Tableau de bord des événements
-        </h1>
-        <p style={{ 
-          margin: 0,
-          color: '#666',
-          fontSize: '16px'
-        }}>
-          Bienvenue, <strong>{user?.name || 'Utilisateur'}</strong> 
-          {isPro && ' (Professionnel)'}
-        </p>
-      </div>
+        🎪 Tableau de bord des événements
+      </h1>
 
-      {/* Onglets */}
+      {/* Onglets de navigation */}
       <div style={{
         display: 'flex',
         gap: '10px',
         marginBottom: '30px',
-        borderBottom: '1px solid #e0e0e0',
-        flexWrap: 'wrap'
+        borderBottom: '2px solid #ddd',
+        paddingBottom: '0'
       }}>
         <button
           onClick={() => {
@@ -145,8 +111,8 @@ export const EventDashboard = () => {
         {isPro && (
           <button
             onClick={() => {
-              console.log('🚀 Navigation vers /pro-plus');
-              navigate('/pro-plus');
+              console.log('🚀 Navigation vers /abonnement');
+              navigate('/abonnement');
             }}
             style={{
               padding: '12px 24px',
@@ -243,6 +209,7 @@ export const EventDashboard = () => {
               showReserveButton={true}
               showEditButton={false}
               showDeleteButton={false}
+              showRefundButton={false}
               title=""
             />
           </div>
@@ -279,6 +246,7 @@ export const EventDashboard = () => {
               showReserveButton={false}
               showEditButton={isPro}
               showDeleteButton={isPro}
+              showRefundButton={true}
               title=""
             />
           </div>

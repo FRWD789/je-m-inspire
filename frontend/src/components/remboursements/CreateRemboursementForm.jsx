@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useApi } from "../../contexts/AuthContext"; // Ajoutez cet import
+import { useApi } from "../../contexts/AuthContext";
+import { useSearchParams } from 'react-router-dom';
 
 export const CreateRemboursementForm = ({ onSuccess }) => {
-    const { get, post } = useApi(); // Utilisez le hook
+    const { get, post } = useApi();
+    const [searchParams] = useSearchParams();
+    const preSelectedOperationId = searchParams.get('operation_id');
+    
     const [reservations, setReservations] = useState([]);
     const [formData, setFormData] = useState({
         operation_id: '',
@@ -17,14 +21,27 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
         fetchReservations();
     }, []);
 
+    // Pré-sélectionner la réservation si un operation_id est fourni dans l'URL
+    useEffect(() => {
+        if (preSelectedOperationId && reservations.length > 0) {
+            const reservationExists = reservations.find(
+                r => r.id === parseInt(preSelectedOperationId)
+            );
+            if (reservationExists) {
+                setFormData(prev => ({
+                    ...prev,
+                    operation_id: preSelectedOperationId
+                }));
+            }
+        }
+    }, [preSelectedOperationId, reservations]);
+
     const fetchReservations = async () => {
         setLoadingReservations(true);
         try {
-            // Utilisez get() au lieu d'axios.get()
             const response = await get('/api/mes-reservations');
             const data = response.data || response;
 
-            // 🔍 LOGS DE DEBUG
             console.log('=== DEBUG RÉSERVATIONS ===');
             console.log('Response complète:', data);
             console.log('Nombre total:', data.reservations?.length || 0);
@@ -58,87 +75,81 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
         }
     };
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
 
-    if (!formData.operation_id) {
-        setError('Veuillez sélectionner une réservation');
-        setLoading(false);
-        return;
-    }
-
-    if (formData.motif.trim().length < 10) {
-        setError('Le motif doit contenir au moins 10 caractères');
-        setLoading(false);
-        return;
-    }
-
-    try {
-        // Trouver la réservation sélectionnée
-        const reservation = reservations.find(r => r.id === parseInt(formData.operation_id));
-        
-        console.log('Réservation sélectionnée:', reservation);
-        
-        if (!reservation) {
-            setError('Réservation introuvable');
+        if (!formData.operation_id) {
+            setError('Veuillez sélectionner une réservation');
             setLoading(false);
             return;
         }
 
-        // Vérifier que le montant existe
-        const montant = parseFloat(reservation.total_price);
-        
-        console.log('Montant extrait:', montant);
-        console.log('Type du montant:', typeof montant);
-        
-        if (!montant || isNaN(montant) || montant <= 0) {
-            setError('Montant invalide pour cette réservation');
+        if (formData.motif.trim().length < 10) {
+            setError('Le motif doit contenir au moins 10 caractères');
             setLoading(false);
             return;
         }
 
-        // Préparer les données
-        const dataToSend = {
-            operation_id: parseInt(formData.operation_id),
-            motif: formData.motif.trim(),
-            montant: montant
-        };
+        try {
+            const reservation = reservations.find(r => r.id === parseInt(formData.operation_id));
+            
+            console.log('Réservation sélectionnée:', reservation);
+            
+            if (!reservation) {
+                setError('Réservation introuvable');
+                setLoading(false);
+                return;
+            }
 
-        console.log('Données à envoyer:', dataToSend);
+            const montant = parseFloat(reservation.total_price);
+            
+            console.log('Montant extrait:', montant);
+            console.log('Type du montant:', typeof montant);
+            
+            if (!montant || isNaN(montant) || montant <= 0) {
+                setError('Montant invalide pour cette réservation');
+                setLoading(false);
+                return;
+            }
 
-        const response = await post('/api/remboursements', dataToSend);
-        
-        console.log('Réponse du serveur:', response);
-        
-        setSuccess('Demande de remboursement créée avec succès !');
-        setFormData({ operation_id: '', motif: '' });
-        
-        fetchReservations();
-        
-        setTimeout(() => {
-            if (onSuccess) onSuccess();
-        }, 1500);
-    } catch (err) {
-        console.error('Erreur complète:', err);
-        console.error('Réponse erreur:', err.response?.data);
-        
-        const errorMessage = err.response?.data?.message || 
-                            err.response?.data?.error || 
-                            'Erreur lors de la création de la demande';
-        setError(errorMessage);
-    } finally {
-        setLoading(false);
-    }
-};
+            const dataToSend = {
+                operation_id: parseInt(formData.operation_id),
+                motif: formData.motif.trim(),
+                montant: montant
+            };
 
+            console.log('Données à envoyer:', dataToSend);
 
-    // Obtenir les détails de la réservation sélectionnée
+            const response = await post('/api/remboursements', dataToSend);
+            
+            console.log('Réponse du serveur:', response);
+            
+            setSuccess('Demande de remboursement créée avec succès !');
+            setFormData({ operation_id: '', motif: '' });
+            
+            fetchReservations();
+            
+            setTimeout(() => {
+                if (onSuccess) onSuccess();
+            }, 1500);
+        } catch (err) {
+            console.error('Erreur complète:', err);
+            console.error('Réponse erreur:', err.response?.data);
+            
+            const errorMessage = err.response?.data?.message || 
+                                err.response?.data?.error || 
+                                'Erreur lors de la création de la demande';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const selectedReservation = reservations.find(r => r.id === parseInt(formData.operation_id));
 
-    // Affichage pendant le chargement
     if (loadingReservations) {
         return (
             <div style={{
@@ -151,7 +162,6 @@ const handleSubmit = async (e) => {
         );
     }
 
-    // Affichage si aucune réservation éligible
     if (reservations.length === 0) {
         return (
             <div style={{
@@ -185,6 +195,18 @@ const handleSubmit = async (e) => {
             <h3 style={{ color: '#50562E', marginBottom: '20px' }}>
                 Créer une demande de remboursement
             </h3>
+
+            {preSelectedOperationId && (
+                <div style={{
+                    backgroundColor: '#e3f2fd',
+                    padding: '12px',
+                    borderRadius: '4px',
+                    marginBottom: '15px',
+                    border: '1px solid #90caf9'
+                }}>
+                    ℹ️ <strong>Une réservation a été pré-sélectionnée pour vous</strong>
+                </div>
+            )}
 
             {error && (
                 <div style={{
@@ -244,7 +266,6 @@ const handleSubmit = async (e) => {
                                 ({new Date(reservation.date_reservation).toLocaleDateString('fr-FR')})
                             </option>
                         ))}
-
                     </select>
                     {selectedReservation && (
                         <div style={{
@@ -260,7 +281,6 @@ const handleSubmit = async (e) => {
                             Montant : {selectedReservation.total_price}€
                         </div>
                     )}
-
                 </div>
 
                 <div style={{ marginBottom: '15px' }}>
@@ -287,30 +307,29 @@ const handleSubmit = async (e) => {
                             borderRadius: '4px',
                             fontSize: '14px',
                             resize: 'vertical',
-                            backgroundColor: loading ? '#f5f5f5' : '#fff'
+                            backgroundColor: loading ? '#f5f5f5' : '#fff',
+                            cursor: loading ? 'not-allowed' : 'text'
                         }}
                     />
-                    <small style={{ color: '#666', fontSize: '12px' }}>
-                        {formData.motif.length} / 10 caractères minimum
-                    </small>
                 </div>
 
                 <button
                     type="submit"
-                    disabled={loading || !formData.operation_id || formData.motif.trim().length < 10}
+                    disabled={loading}
                     style={{
                         width: '100%',
                         padding: '12px',
-                        backgroundColor: (loading || !formData.operation_id || formData.motif.trim().length < 10) ? '#ccc' : '#50562E',
-                        color: '#FAF5EE',
+                        backgroundColor: loading ? '#ccc' : '#50562E',
+                        color: 'white',
                         border: 'none',
                         borderRadius: '4px',
                         fontSize: '16px',
                         fontWeight: 'bold',
-                        cursor: (loading || !formData.operation_id || formData.motif.trim().length < 10) ? 'not-allowed' : 'pointer'
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        transition: 'background-color 0.3s'
                     }}
                 >
-                    {loading ? 'Envoi en cours...' : 'Envoyer la demande'}
+                    {loading ? 'Envoi en cours...' : 'Soumettre la demande'}
                 </button>
             </form>
         </div>

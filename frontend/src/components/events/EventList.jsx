@@ -9,7 +9,8 @@ export const EventList = ({
     endpoint = '/api/events', 
     showReserveButton = true, 
     showDeleteButton = false, 
-    showEditButton = false, 
+    showEditButton = false,
+    showRefundButton = false, // Nouveau prop
     title = "Événements" 
 }) => {
     const { events, loading, error, refetch } = useEvents(endpoint);
@@ -34,6 +35,12 @@ export const EventList = ({
         }
     }, [deleteApi, refetch]);
 
+    const handleRefund = useCallback((event) => {
+        console.log('Navigation vers remboursement pour operation_id:', event.operation_id);
+        // Rediriger vers la page de remboursement avec l'operation_id
+        navigate(`/mes-remboursements?operation_id=${event.operation_id}`);
+    }, [navigate]);
+
     const formatDate = useCallback((dateString) => {
         return new Date(dateString).toLocaleString('fr-FR');
     }, []);
@@ -45,107 +52,159 @@ export const EventList = ({
 
         return (
             <div style={{ display: 'grid', gap: '20px' }}>
-                {events.map(event => (
-                    <div key={event.id} style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        padding: '20px',
-                        backgroundColor: '#f9f9f9'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ flex: 1 }}>
-                                <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>{event.name}</h3>
-                                <p style={{ margin: '0 0 10px 0', color: '#666' }}>{event.description}</p>
-                                
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-                                    <div><strong>Début:</strong> {formatDate(event.start_date)}</div>
-                                    <div><strong>Fin:</strong> {formatDate(event.end_date)}</div>
-                                    <div><strong>Prix par place:</strong> {event.base_price}€</div>
-                                    <div><strong>Places:</strong> {event.available_places}/{event.max_places}</div>
-                                    <div><strong>Niveau:</strong> {event.level}</div>
-                                    {event.localisation && (
-                                        <div><strong>Lieu:</strong> {event.localisation.name || 'Non spécifié'}</div>
+                {events.map(event => {
+                    // Déterminer si c'est un événement créé ou réservé
+                    const isCreator = event.is_creator || false;
+                    const isReserved = event.is_reserved || false;
+
+                    return (
+                        <div key={event.id} style={{
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            backgroundColor: '#f9f9f9'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                                        <h3 style={{ margin: 0, color: '#333' }}>{event.name}</h3>
+                                        {isCreator && (
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                backgroundColor: '#4CAF50',
+                                                color: 'white',
+                                                borderRadius: '4px',
+                                                fontSize: '12px',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                Créateur
+                                            </span>
+                                        )}
+                                        {isReserved && (
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                backgroundColor: '#2196F3',
+                                                color: 'white',
+                                                borderRadius: '4px',
+                                                fontSize: '12px',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                Réservé
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <p style={{ margin: '0 0 10px 0', color: '#666' }}>{event.description}</p>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                                        <div><strong>Début:</strong> {formatDate(event.start_date)}</div>
+                                        <div><strong>Fin:</strong> {formatDate(event.end_date)}</div>
+                                        <div><strong>Prix par place:</strong> {event.base_price}€</div>
+                                        <div><strong>Places:</strong> {event.available_places}/{event.max_places}</div>
+                                        <div><strong>Niveau:</strong> {event.level}</div>
+                                        {event.localisation && (
+                                            <div><strong>Lieu:</strong> {event.localisation.name || 'Non spécifié'}</div>
+                                        )}
+                                    </div>
+
+                                    {event.creator && (
+                                        <div style={{ 
+                                            backgroundColor: '#e8f4f8', 
+                                            padding: '10px', 
+                                            borderRadius: '4px',
+                                            marginBottom: '15px'
+                                        }}>
+                                            <strong>Organisé par:</strong> {event.creator.name} {event.creator.last_name}
+                                            <br />
+                                            <small style={{ color: '#666' }}>
+                                                {event.creator.roles?.join(', ')} • {event.creator.email}
+                                            </small>
+                                        </div>
                                     )}
                                 </div>
 
-                                {event.creator && (
-                                    <div style={{ 
-                                        backgroundColor: '#e8f4f8', 
-                                        padding: '10px', 
-                                        borderRadius: '4px',
-                                        marginBottom: '15px'
-                                    }}>
-                                        <strong>Organisé par:</strong> {event.creator.name} {event.creator.last_name}
-                                        <br />
-                                        <small style={{ color: '#666' }}>
-                                            {event.creator.roles?.join(', ')} • {event.creator.email}
-                                        </small>
-                                    </div>
-                                )}
-                            </div>
+                                <div style={{ marginLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {showReserveButton && (
+                                        <button
+                                            onClick={() => handleReserve(event)}
+                                            disabled={event.available_places <= 0}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: event.available_places > 0 ? '#28a745' : '#6c757d',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: event.available_places > 0 ? 'pointer' : 'not-allowed',
+                                                fontSize: '14px',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            {event.available_places > 0 ? 'Réserver' : 'Complet'}
+                                        </button>
+                                    )}
 
-                            <div style={{ marginLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {showReserveButton && (
-                                    <button
-                                        onClick={() => handleReserve(event)}
-                                        disabled={event.available_places <= 0}
-                                        style={{
-                                            padding: '10px 20px',
-                                            backgroundColor: event.available_places > 0 ? '#28a745' : '#6c757d',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: event.available_places > 0 ? 'pointer' : 'not-allowed',
-                                            fontSize: '14px',
-                                            fontWeight: 'bold'
-                                        }}
-                                    >
-                                        {event.available_places > 0 ? 'Réserver' : 'Complet'}
-                                    </button>
-                                )}
+                                    {showEditButton && isCreator && (
+                                        <button
+                                            onClick={() => setEditingEvent(event)}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: '#ffc107',
+                                                color: '#000',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '14px',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            Modifier
+                                        </button>
+                                    )}
 
-                                {showEditButton && (
-                                    <button
-                                        onClick={() => setEditingEvent(event)}
-                                        style={{
-                                            padding: '10px 20px',
-                                            backgroundColor: '#ffc107',
-                                            color: '#000',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontSize: '14px',
-                                            fontWeight: 'bold'
-                                        }}
-                                    >
-                                        Modifier
-                                    </button>
-                                )}
+                                    {showDeleteButton && isCreator && (
+                                        <button
+                                            onClick={() => handleDelete(event.id, event.name)}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: '#dc3545',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '14px',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            Supprimer
+                                        </button>
+                                    )}
 
-                                {showDeleteButton && (
-                                    <button
-                                        onClick={() => handleDelete(event.id, event.name)}
-                                        style={{
-                                            padding: '10px 20px',
-                                            backgroundColor: '#dc3545',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontSize: '14px',
-                                            fontWeight: 'bold'
-                                        }}
-                                    >
-                                        Supprimer
-                                    </button>
-                                )}
+                                    {/* Nouveau bouton de remboursement */}
+                                    {showRefundButton && isReserved && event.operation_id && (
+                                        <button
+                                            onClick={() => handleRefund(event)}
+                                            style={{
+                                                padding: '10px 20px',
+                                                backgroundColor: '#ff9800',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '14px',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            💸 Demander un remboursement
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         );
-    }, [events, loading, error, handleReserve, handleDelete, showReserveButton, showDeleteButton, showEditButton, formatDate]);
+    }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, formatDate]);
 
     return (
         <div>
