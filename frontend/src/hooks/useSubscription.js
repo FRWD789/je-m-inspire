@@ -33,7 +33,7 @@ export const useSubscription = () => {
             
             // CORRECTION : Utiliser POST au lieu de GET
             const response = await post(endpoint, {}); // Ajouter un objet vide comme body
-            
+            console.log(response);
             if (response.data.success) {
                 const url = provider === 'stripe' 
                     ? response.data.url 
