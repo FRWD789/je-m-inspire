@@ -17,6 +17,7 @@ return new class extends Migration
             $table->timestamps();
         });
     }
+    //Bright : Ce n'est pas la structure noté dans le schema le plus récent de la DB
 
     public function down()
     {

@@ -3,6 +3,7 @@ import { useApi } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
 import { EditEventForm } from './editEventForm';
 import { ReserveEventForm } from './reserveEventForm';
+import { MapLoader } from '../map/mapBackground';
 
 export const EventList = ({ endpoint = '/api/events', showReserveButton = true, showDeleteButton = false, showEditButton = false, title = "Événements" }) => {
     const { events, loading, error, refetch } = useEvents(endpoint);
@@ -53,6 +54,7 @@ export const EventList = ({ endpoint = '/api/events', showReserveButton = true, 
 
     return (
         <div>
+            <MapLoader events={events}></MapLoader>
             <h2>{title}</h2>
             {events.length === 0 ? (
                 <p>Aucun événement disponible.</p>
