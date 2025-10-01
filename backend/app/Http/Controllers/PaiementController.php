@@ -440,59 +440,6 @@ class PaiementController extends Controller
 
                 Log::info("Paiement $paypalId payé : $amount $currency");
                 break;
-
-            case 'BILLING.SUBSCRIPTION.CREATED':
-                Paiement::where('paypal_id', $paypalId)->update([
-                    'status' => 'pending',
-                    'updated_at' => now(),
-                ]);
-                Log::info("Abonnement $paypalId créé (pending)");
-                break;
-
-            case 'BILLING.SUBSCRIPTION.ACTIVATED':
-                Paiement::where('paypal_id', $paypalId)->update([
-                    'status' => 'active',
-                    'updated_at' => now(),
-                ]);
-                Log::info("Abonnement $paypalId activé");
-                break;
-
-            case 'BILLING.SUBSCRIPTION.CANCELLED':
-                Paiement::where('paypal_id', $paypalId)->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
-                Log::info("Abonnement $paypalId annulé");
-                break;
-
-            case 'BILLING.SUBSCRIPTION.SUSPENDED':
-                Paiement::where('paypal_id', $paypalId)->update([
-                    'status' => 'suspended',
-                    'updated_at' => now(),
-                ]);
-                Log::info("Abonnement $paypalId suspendu");
-                break;
-
-            case 'BILLING.SUBSCRIPTION.PAYMENT.SUCCEEDED':
-                $amount = $payload['resource']['amount_with_breakdown']['value'] ?? null;
-                $currency = $payload['resource']['amount_with_breakdown']['currency_code'] ?? null;
-
-                Paiement::where('paypal_id', $paypalId)->update([
-                    'status' => 'paid',
-                    'total' => $amount,
-                    'updated_at' => now(),
-                ]);
-                Log::info("Abonnement $paypalId : paiement réussi $amount $currency");
-                break;
-
-            case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
-                Paiement::where('paypal_id', $paypalId)->update([
-                    'status' => 'failed',
-                    'updated_at' => now(),
-                ]);
-                Log::warning("Abonnement $paypalId : paiement échoué");
-                break;
-
             default:
                 Log::warning("Événement PayPal non géré : $event");
                 break;

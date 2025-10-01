@@ -13,7 +13,7 @@ import ProPlusPage from "./components/subscription/ProPlusPage";
 import SubscriptionSuccess from "./components/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./components/subscription/SubscriptionCancel";
 import ProfilePage from "./components/profile/ProfilePage";
-import LinkPaypalSuccess from "./components/profile/LinkPaypalSuccess";
+import LinkAccountSuccess from "./components/profile/LinkAccountSuccess";
 
 function App() {
   return (
@@ -107,7 +107,8 @@ function AppContent() {
         <Route path="/abonnement/cancel" element={<SubscriptionCancel />} />
 
 
-        <Route path="/link/paypal" element={<LinkPaypalSuccess />} />
+         <Route path="/profile/stripe/success" element={<LinkAccountSuccess />} />
+        <Route path="/profile/paypal/success" element={<LinkAccountSuccess />} />
 
         
         

@@ -57,8 +57,18 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     Route::put('/profile/update', [AuthController::class, 'updateProfile']);
 
+
     Route::post('/link/stripe', [ProfileController::class, 'linkStripeAccount']);
     Route::post('/link/paypal', [ProfileController::class, 'linkPaypalAccount']);
+
+    // Callbacks OAuth (finalisation de la liaison)
+    Route::get('/profile/stripe/callback', [ProfileController::class, 'linkStripeSuccess']);
+    Route::get('/profile/paypal/callback', [ProfileController::class, 'linkPaypalSuccess']);
+
+    // Délier les comptes (suppression en BD)
+    Route::post('/unlink-stripe', [ProfileController::class, 'unlinkStripeAccount']);
+    Route::post('/unlink-paypal', [ProfileController::class, 'unlinkPaypalAccount']);
+
 });
 
 Route::middleware('auth.jwt')->prefix('abonnement')->group(function () {
@@ -81,3 +91,4 @@ Route::get('/abonnement/cancel', function() {
 Route::get('/abonnement/paypal/success', function() {
     return redirect(env('FRONTEND_URL') . '/abonnement/success?provider=paypal');
 });
+
