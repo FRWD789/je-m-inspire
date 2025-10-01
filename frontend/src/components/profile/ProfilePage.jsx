@@ -66,10 +66,10 @@ const ProfilePage = () => {
         
         try {
             const endpoint = provider === 'stripe' 
-                ? '/api/link/stripe' 
-                : '/api/link/paypal';
+                ? '/api/profile/stripe/link' 
+                : '/api/profile/paypal/link';
             
-            const response = await post(endpoint, {});
+            const response = await get(endpoint, {});
             
             if (response.data.success && response.data.url) {
                 window.location.href = response.data.url;

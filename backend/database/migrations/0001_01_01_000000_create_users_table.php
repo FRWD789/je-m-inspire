@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('stripeAccount_id')->nullable();
             $table->string('paypalAccount_id')->nullable();
             $table->string('paypalEmail')->nullable();
+            $table->integer('commission_rate')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

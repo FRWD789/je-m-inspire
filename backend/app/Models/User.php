@@ -21,7 +21,8 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
         'password',
         'stripeAccount_id',
         'paypalAccount_id',
-        'paypalEmail'
+        'paypalEmail',
+        'commission_rate'
     ];
 
     protected $hidden = [
