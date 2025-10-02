@@ -2,7 +2,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { eventSchema } from '@/schema/event';
 import { useEventsContext } from '@/context/EventsContext';
-import useApi from '@/hooks/useApi';
 import Input from './Input';
 import FormField from './FormField';
 import Textarea from './TextArea';
@@ -35,7 +34,6 @@ export default function EventForm({
   initialData 
 }: EventFormProps) {
   const { addEvent } = useEventsContext();
-  const { privateApi } = useApi();
 
   const { 
     register, 

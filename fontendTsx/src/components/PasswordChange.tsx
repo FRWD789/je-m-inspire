@@ -44,7 +44,7 @@ type PasswordFormData = z.infer<typeof passwordSchema>
 
 export function PasswordChange() {
   const { user, updateUser } = useAuth()
-  const { privateApi } = useApi()
+  const privateApi  = useApi()
   const [accountSuccess, setAccountSuccess] = useState<string | null>(null)
   const [accountError, setAccountError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
@@ -89,7 +89,7 @@ export function PasswordChange() {
     setPasswordSuccess(null)
     setPasswordError(null)
     try {
-      await privateApi.put("/api/user/password", data)
+      await privateApi.put("/user/password", data)
       setPasswordSuccess("Mot de passe modifié avec succès. Vous allez être déconnecté.")
       resetPassword()
       // Logout after 2 seconds
@@ -168,8 +168,8 @@ export function PasswordChange() {
                   )}
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isSubmittingAccount}>
+              <CardFooter className="py-6">
+                <Button type="submit" className="w-full" disabled={isSubmittingAccount}>
                   {isSubmittingAccount ? "Enregistrement..." : "Enregistrer les modifications"}
                 </Button>
               </CardFooter>
@@ -235,8 +235,8 @@ export function PasswordChange() {
                   )}
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isSubmittingPassword}>
+              <CardFooter className="py-6">
+                <Button type="submit" className="w-full" disabled={isSubmittingPassword}>
                   {isSubmittingPassword ? "Modification..." : "Modifier le mot de passe"}
                 </Button>
               </CardFooter>

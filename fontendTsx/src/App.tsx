@@ -10,6 +10,9 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Dashboard from './laoyout/Dashboard';
 import CreateEvent from './pages/CreateEvent';
+import MyEvents from './pages/MyEvents';
+import IndexPro from './pages/indexPro';
+import Missing from './pages/Missing';
 
 function App() {
 
@@ -19,7 +22,9 @@ function App() {
 <Routes>
   <Route element={<ProtectedRoutes />}>
    <Route path="/dashboard" element={<Dashboard />} >
+   <Route index element={<IndexPro/>}/>
     <Route path='events' element={<CreateEvent/>}/>
+    <Route path='my-events' element={<MyEvents/>}/>
   </Route>
   </Route>
  
@@ -28,6 +33,8 @@ function App() {
   <Route path="/verify-email" element={<VerifyEmail />} />
   <Route path="/forgot-password" element={<ForgotPassword />} />
   <Route path="/reset-password" element={<ResetPassword />} />
+
+  <Route path='*' element={<Missing/>}/>
 </Routes>
 
 

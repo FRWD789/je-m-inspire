@@ -15,20 +15,20 @@ export default function Dashboard() {
 
 
     <EventsProvider>
-    <SidebarProvider
-        style={
-            {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-        }
-        >
-      <AppSidebar variant="inset" />
-      <SidebarInset className="p-4 grid gap-y-6">
-            <SiteHeader />
-                <Outlet/>
-            </SidebarInset>
-        </SidebarProvider>
+      <SidebarProvider
+          style={
+              {
+              "--sidebar-width": "calc(var(--spacing) * 72)",
+              "--header-height": "calc(var(--spacing) * 12)",
+              } as React.CSSProperties
+          }
+          >
+        <AppSidebar variant="inset" />
+        <SidebarInset className="p-4 grid gap-y-6">
+              <SiteHeader />
+                  <Outlet/>
+              </SidebarInset>
+      </SidebarProvider>
     </EventsProvider>
  
   )

@@ -1,20 +1,25 @@
-import React from 'react'
-
-import { Navigate,Outlet, useActionData } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Loader } from "lucide-react";
 
 function ProtectedRoutes() {
- 
+  const { accessToken, loading } = useAuth();
+  const location = useLocation();
 
-    const {accessToken,loading} = useAuth()
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
-
-    
-   if (loading) return <p>Loading...</p>;
-  return accessToken ? <Outlet /> : <Navigate to="/login" />;
-
-
+  return accessToken ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/login" state={{ from: location }} replace />
+  );
 }
-    
 
-export default ProtectedRoutes
+export default ProtectedRoutes;

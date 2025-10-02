@@ -27,7 +27,7 @@ const eventService = {
     api.delete(`/events/${id}/cancel-reservation`),
 
   // Mes événements (créés et réservés)
-  myEvents: (api: AxiosInstance) => api.get<Event[]>("/events/my-events"),
+  myEvents: (api: AxiosInstance) => api.get<{events:Event[]}>("/my-events"),
 
   // Supprimer un événement
   deleteEvent: (api: AxiosInstance, id: number) =>

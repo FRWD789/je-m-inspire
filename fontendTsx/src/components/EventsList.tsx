@@ -1,29 +1,10 @@
-import React from "react";
+import type { Event } from '@/types/event'
+import React from 'react'
 
-import { useAuth } from "../context/AuthContext";
-import eventService from "../service/eventService";
-import EventForm from "../components/EventForm";
-import { useEventsContext } from "@/context/EventsContext";
-
-function Events() {
-  const { events, loading, error, refetch} = useEventsContext()
-
-
-
-
+function EventsList({events}:{events:Event[]}) {
   return (
-
-
-    <>
-    <div >
+     <div >
       <h1 className="text-xl font-bold mb-4">Liste des événements</h1>
-
-      <button
-        onClick={refetch}
-        className="mb-4 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        🔄 Recharger
-      </button>
 
       {events.length === 0 ? (
         <p>Aucun événement disponible.</p>
@@ -44,10 +25,7 @@ function Events() {
         </ul>
       )}
     </div>
-    
-    </>
-
-  );
+  )
 }
 
-export default Events;
+export default EventsList

@@ -6,15 +6,18 @@ import InputWithLabel from '../components/Input'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import type { LoginCredentials } from '../types/auth'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import FormField from '@/components/FormField'
 import Input from '../components/Input'
+import { treeifyError } from 'zod'
 // import { toast } from 'react-toastify'
 // import 'react-toastify/dist/ReactToastify.css'
 
 function Login() {
+  const location = useLocation()
   const { login } = useAuth()
   const navigate = useNavigate()
+  const from = location.state?.from?.pathname || "/"
 
   const {
     register,
@@ -34,7 +37,7 @@ function Login() {
 
       await login(credentials)
       // toast.success('Connexion réussie !')
-      navigate('/')
+      navigate(from,{replace:true})
     } catch (error: any) {
       // toast.error(
       //   error?.response?.data?.message || 'Échec de la connexion. Veuillez réessayer.'

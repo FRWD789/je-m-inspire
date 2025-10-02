@@ -5,12 +5,17 @@ import { useAuth } from '../context/AuthContext';
 
 
 function useApi() {
+
   const { accessToken } = useAuth();
   const refresh = useRefreshToken();
 
   useEffect(() => {
+
     const requestIntercept = privateApi.interceptors.request.use(
       async config => {
+         console.log(">>> useApi Interceptor");
+      console.log("Access token from AuthContext:", accessToken);
+      console.log("Headers BEFORE setting:", config.headers.Authorization);
         if (!config.headers["Authorization"]) {
           config.headers["Authorization"] = `Bearer ${accessToken}`;
         }
@@ -33,13 +38,16 @@ function useApi() {
       }
     );
 
+
+    
+
     return () => {
       privateApi.interceptors.response.eject(responseIntercept);
       privateApi.interceptors.request.eject(requestIntercept);
     };
   }, [accessToken, refresh]);
 
-  return{privateApi};
+  return privateApi;
 }
 
 export default useApi
