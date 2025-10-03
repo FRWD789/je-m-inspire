@@ -34,7 +34,7 @@ export const MapHandler = ({events}) =>
             <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => console.log('Maps API has loaded.')}>
                 <Map
                     mapId='DEMO_MAP_ID'
-                    style={{width: '95vw', height: '100vh'}}
+                    style={{height: '50vh'}}
                     defaultZoom={13}
                     defaultCenter={ { lat: 45.40124220000001, lng: -71.8899362 } }
                     mapTypeControl={false}

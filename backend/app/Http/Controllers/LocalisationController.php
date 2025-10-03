@@ -28,7 +28,14 @@ class LocalisationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        //validate string
+        //geolocate it
+        //if it isnt in the db
+            //insert it
+        //elseif it in the db
+            //get that and return it
+        //else
+            //throw an error
     }
 
     /**

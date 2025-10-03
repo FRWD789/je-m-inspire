@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Models\Operation;
+use App\Models\Localisation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -83,7 +84,7 @@ class EventController extends Controller
             'max_places' => 'required|integer|min:1|max:10000',
             'level' => 'required|string|max:50',
             'priority' => 'required|integer|min:1|max:10',
-            'localisation_id' => 'required|exists:localisations,id',
+            'localisation_address' => 'required|string|max:255',
             'categorie_event_id' => 'required|exists:categorie_events,id',
         ]);
 
@@ -109,6 +110,15 @@ class EventController extends Controller
                 'type_operation_id' => 1, // Type "Creation Evenement"
                 'quantity' => 0, // Pas de places pour une création
             ]);
+
+            /*
+            Localisation::create([
+                'name' => "Helpy",
+                'address' => $validated["address"],
+                'latitude',
+                'longitude',
+            ]);
+            */
 
             DB::commit();
 

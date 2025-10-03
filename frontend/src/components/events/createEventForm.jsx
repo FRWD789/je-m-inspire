@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useApi } from '../../contexts/AuthContext';
+//import { geocode } from '../maps/mapsHandler';
+import { useMapsLibrary } from '@vis.gl/react-google-maps';
+
 
 export const CreateEventForm = ({ onEventCreated }) => {
     const [formData, setFormData] = useState({
@@ -12,7 +15,9 @@ export const CreateEventForm = ({ onEventCreated }) => {
         max_places: '',
         level: '',
         priority: '5',
-        localisation_id: '1',
+        localisation_address: '',
+        localisation_lat: '',
+        localisation_lng: '',
         categorie_event_id: '1'
     });
     const [errors, setErrors] = useState({});
@@ -25,6 +30,20 @@ export const CreateEventForm = ({ onEventCreated }) => {
         setErrors({});
 
         try {
+
+            /*
+            const geocoder = useMapsLibrary("geocoding");
+            geocode(formData["localisation_address"], geocoder, function(location){
+
+                console.log("LOCATION : " + location.lat() + "|" + location.lng());
+
+                formData["localisation_lat"] = location.lat();
+                formData["localisation_lng"] = location.lng();
+
+            });
+
+            */
+           
             await post('/api/events', formData);
             alert('Événement créé avec succès !');
             setFormData({
@@ -37,7 +56,9 @@ export const CreateEventForm = ({ onEventCreated }) => {
                 max_places: '',
                 level: '',
                 priority: '5',
-                localisation_id: '1',
+                localisation_address: '',
+                localisation_lat: '',
+                localisation_lng: '',
                 categorie_event_id: '1'
             });
             if (onEventCreated) onEventCreated();
@@ -59,6 +80,7 @@ export const CreateEventForm = ({ onEventCreated }) => {
             setErrors(prev => ({ ...prev, [name]: null }));
         }
     };
+
 
     const inputStyle = {
         width: '100%',
@@ -112,6 +134,21 @@ export const CreateEventForm = ({ onEventCreated }) => {
                     </select>
                     {errors.level && <div style={errorStyle}>{errors.level[0]}</div>}
                 </div>
+            </div>
+
+            <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Adresse *
+                </label>
+                <input
+                        type="text"
+                        name="localisation_address"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        style={{ ...inputStyle, borderColor: errors.name ? '#e74c3c' : '#ddd' }}
+                        required
+                    />
+                    {errors.name && <div style={errorStyle}>{errors.address[0]}</div>}
             </div>
 
             <div>
@@ -209,6 +246,13 @@ export const CreateEventForm = ({ onEventCreated }) => {
                         required
                     />
                     {errors.max_places && <div style={errorStyle}>{errors.max_places[0]}</div>}
+                </div>
+            </div>
+
+            <div>
+                <div>
+                    <input type="hidden" id="localisation_lat" name="localisation_lat" value="0"/>
+                    <input type="hidden" id="localisation_lng" name="localisation_lng" value="0"/>
                 </div>
             </div>
 
