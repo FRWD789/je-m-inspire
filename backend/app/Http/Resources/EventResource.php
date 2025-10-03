@@ -4,6 +4,9 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Carbon\Carbon;
+
+
 
 class EventResource extends JsonResource
 {
@@ -18,8 +21,8 @@ class EventResource extends JsonResource
             'id'               => $this->id,
             'name'             => $this->name,
             'description'      => $this->description,
-            'start_date'       => $this->start_date,
-            'end_date'         => $this->end_date,
+            'start_date'       => Carbon::parse($this->start_date)->toDateTimeString(),
+            'end_date'         => Carbon::parse($this->end_date)->toDateTimeString(),
             'base_price'       => $this->base_price,
             'capacity'         => $this->capacity,
             'max_places'       => $this->max_places,

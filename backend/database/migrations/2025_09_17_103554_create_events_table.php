@@ -23,8 +23,17 @@ return new class extends Migration
             $table->integer('available_places');
             $table->string('level');
             $table->integer('priority');
+
+            // FK localisation
+            $table->foreignId('localisation_id')->constrained('localisations')->onDelete('cascade');
+
+            // FK catégorie
+            $table->foreignId('categorie_event_id')->constrained('categorie_events')->onDelete('cascade');
+
             $table->timestamps();
         });
+
+
     }
 
     /**

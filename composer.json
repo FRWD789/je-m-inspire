@@ -1,5 +1,5 @@
 {
     "require": {
-        "predis/predis": "^3.2"
+        "spatie/laravel-backup": "^9.3"
     }
 }
