@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
 import { EditEventForm } from './EditEventForm';
+import { MapHandler } from '../maps/mapsHandler';
+
 
 export const EventList = ({ 
     endpoint = '/api/events', 
@@ -52,6 +54,7 @@ export const EventList = ({
 
         return (
             <div style={{ display: 'grid', gap: '20px' }}>
+                <MapHandler events={events}></MapHandler>
                 {events.map(event => {
                     // Déterminer si c'est un événement créé ou réservé
                     const isCreator = event.is_creator || false;
@@ -63,7 +66,7 @@ export const EventList = ({
                             borderRadius: '8px',
                             padding: '20px',
                             backgroundColor: '#f9f9f9'
-                        }}>
+                        }}>                                                    
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
@@ -205,6 +208,9 @@ export const EventList = ({
             </div>
         );
     }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, formatDate]);
+
+    console.log("Wesh les events : ");
+    console.log(events);
 
     return (
         <div>

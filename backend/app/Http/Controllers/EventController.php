@@ -37,6 +37,9 @@ class EventController extends Controller
                         'id' => $event->localisation->id,
                         'name' => $event->localisation->name,
                         'address' => $event->localisation->address,
+                        'lat' => $event->localisation->latitude,
+                        'lng' => $event->localisation->longitude,
+
                     ],
                     'categorie' => [
                         'id' => $event->categorie->id,
