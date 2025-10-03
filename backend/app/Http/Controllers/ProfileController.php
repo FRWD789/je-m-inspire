@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class ProfileController extends Controller
 {
@@ -527,7 +528,10 @@ class ProfileController extends Controller
         }
     }
 
-     public function deleteAccount(Request $request)
+    /**
+ * Supprimer le compte utilisateur et toutes ses données
+ */
+    public function deleteAccount(Request $request)
     {
         try {
             $request->validate([
@@ -549,11 +553,9 @@ class ProfileController extends Controller
 
             Log::info('=== DÉBUT SUPPRESSION COMPTE ===', ['user_id' => $user->id]);
 
-            // ====================================================================
-            // 1. SUPPRIMER LES ÉVÉNEMENTS CRÉÉS PAR L'UTILISATEUR
-            // ====================================================================
+            // 1. Supprimer les événements créés par l'utilisateur
             $createdEvents = Operation::where('user_id', $user->id)
-                ->where('type_operation_id', 1) // Type "création"
+                ->where('type_operation_id', 1)
                 ->pluck('event_id')
                 ->unique();
 
@@ -564,16 +566,11 @@ class ProfileController extends Controller
                         'event_id' => $event->id,
                         'event_name' => $event->name
                     ]);
-
-                    // Cela supprimera aussi toutes les operations liées à cet event (cascade)
                     $event->delete();
                 }
             }
 
-            // ====================================================================
-            // 2. SUPPRIMER LES PAIEMENTS DE L'UTILISATEUR
-            // ====================================================================
-            // Récupérer tous les paiement_id des opérations de l'utilisateur
+            // 2. Supprimer les paiements de l'utilisateur
             $paiementIds = Operation::where('user_id', $user->id)
                 ->whereNotNull('paiement_id')
                 ->pluck('paiement_id')
@@ -591,9 +588,7 @@ class ProfileController extends Controller
                 }
             }
 
-            // ====================================================================
-            // 3. ANNULER ET SUPPRIMER LES ABONNEMENTS
-            // ====================================================================
+            // 3. Annuler et supprimer les abonnements
             $abonnementIds = Operation::where('user_id', $user->id)
                 ->whereNotNull('abonnement_id')
                 ->pluck('abonnement_id')
@@ -604,20 +599,17 @@ class ProfileController extends Controller
 
                 if ($abonnement && $abonnement->status === 'active') {
                     try {
-                        // Annuler sur Stripe
                         if ($abonnement->stripe_subscription_id) {
                             Stripe::setApiKey(env('STRIPE_SECRET'));
                             \Stripe\Subscription::update($abonnement->stripe_subscription_id, [
                                 'cancel_at_period_end' => false
                             ]);
                             \Stripe\Subscription::retrieve($abonnement->stripe_subscription_id)->cancel();
-
                             Log::info('Abonnement Stripe annulé', [
                                 'subscription_id' => $abonnement->stripe_subscription_id
                             ]);
                         }
 
-                        // Annuler sur PayPal
                         if ($abonnement->paypal_subscription_id) {
                             $response = Http::withBasicAuth(
                                 env('PAYPAL_CLIENT_ID'),
@@ -626,7 +618,6 @@ class ProfileController extends Controller
                                 env('PAYPAL_API_URL') . "/v1/billing/subscriptions/{$abonnement->paypal_subscription_id}/cancel",
                                 ['reason' => 'Account deletion']
                             );
-
                             Log::info('Abonnement PayPal annulé', [
                                 'subscription_id' => $abonnement->paypal_subscription_id
                             ]);
@@ -641,7 +632,6 @@ class ProfileController extends Controller
                     }
                 }
 
-                // Supprimer l'abonnement
                 if ($abonnement) {
                     Log::info('Suppression abonnement', [
                         'abonnement_id' => $abonnement->abonnement_id
@@ -650,14 +640,20 @@ class ProfileController extends Controller
                 }
             }
 
-            // ====================================================================
-            // 4. SUPPRIMER L'UTILISATEUR
-            // ====================================================================
-            // Cela supprimera automatiquement (cascade) :
-            // - operations (FK user_id)
-            // - remboursements (FK user_id)
-            // - role_user (FK user_id)
+            // 4. Récupérer le token JWT actuel pour le blacklister (optionnel)
+            try {
+                $token = JWTAuth::getToken();
+                if ($token) {
+                    JWTAuth::invalidate($token);
+                    Log::info('Token JWT invalidé');
+                }
+            } catch (\Exception $e) {
+                Log::warning('Impossible d\'invalider le token JWT', [
+                    'error' => $e->getMessage()
+                ]);
+            }
 
+            // 5. Supprimer l'utilisateur (cascade automatique)
             $userId = $user->id;
             $userEmail = $user->email;
 
@@ -670,11 +666,7 @@ class ProfileController extends Controller
 
             DB::commit();
 
-            // Déconnecter l'utilisateur
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
+            // ✅ PAS DE Auth::logout() ni de session->invalidate() en JWT !
             return response()->json([
                 'success' => true,
                 'message' => 'Votre compte a été supprimé avec succès'
@@ -696,4 +688,6 @@ class ProfileController extends Controller
             ], 500);
         }
     }
+
+
 }

@@ -155,7 +155,7 @@ const ProfilePage = () => {
         setDeleting(true);
 
         try {
-            const response = await deleteApi('/api/profile/delete-account', {
+            const response = await deleteApi('/api/profile/deleteAccount', {
                 data: {
                     password: deletePassword,
                     confirmation: deleteConfirmation

@@ -13,7 +13,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\VendorEarningsController;
 
-// Routes publiques
+// ==========================================
+// ROUTES PUBLIQUES
+// ==========================================
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
@@ -22,127 +24,97 @@ Route::post('/refresh', [AuthController::class, 'refresh']);
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
 
-// Rôles (pour le formulaire d'inscription)
+// Rôles
 Route::get('/roles', [RoleController::class, 'index']);
 
-// Webhooks (sans authentification)
+// Statut de paiement
+Route::get('/payment/status', [PaiementController::class, 'getPaymentStatus']);
+
+// ==========================================
+// WEBHOOKS
+// ==========================================
 Route::post('/stripe/webhook', [PaiementController::class, 'stripeWebhook']);
 Route::post('/paypal/webhook', [PaiementController::class, 'paypalWebhook']);
 Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonnementPaypalWebhook']);
 
-// Statut de paiement (accessible sans auth pour les redirections)
-Route::get('/payment/status', [PaiementController::class, 'getPaymentStatus']);
+// ==========================================
+// ROUTES PROTÉGÉES - UTILISEZ LE MIDDLEWARE QUI EXISTE CHEZ VOUS
+// Remplacez 'auth:api' par 'jwt.auth' ou 'auth.jwt' selon votre config
+// ==========================================
+Route::middleware(['auth:api'])->group(function () {
 
-// Routes protégées par JWT
-Route::middleware(['jwt.auth'])->group(function () {
-    // ==========================================
-    // AUTHENTIFICATION
-    // ==========================================
+    // AUTHENTIFICATION & PROFIL
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/profile/update', [AuthController::class, 'updateProfile']);
 
-    // ==========================================
     // ÉVÉNEMENTS
-    // ==========================================
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
     Route::get('/my-events', [EventController::class, 'myEvents']);
 
-    // ==========================================
     // RÉSERVATIONS
-    // ==========================================
     Route::post('/events/{id}/reserve', [EventController::class, 'reserve']);
     Route::delete('/events/{id}/reservation', [EventController::class, 'cancelReservation']);
     Route::get('/mes-reservations', [OperationController::class, 'mesReservations']);
     Route::delete('/reservations/{id}', [OperationController::class, 'destroy']);
 
-    // ==========================================
     // PAIEMENTS
-    // ==========================================
     Route::post('/stripe/checkout', [PaiementController::class, 'stripeCheckout']);
     Route::post('/paypal/checkout', [PaiementController::class, 'paypalCheckout']);
 
-
-    // Remboursements - Utilisateur
+    // REMBOURSEMENTS
     Route::post('/remboursements', [RemboursementController::class, 'store']);
     Route::get('/mes-remboursements', [RemboursementController::class, 'mesDemandes']);
+    Route::get('/remboursements', [RemboursementController::class, 'index']);
+    Route::put('/remboursements/{id}/traiter', [RemboursementController::class, 'traiter']);
 
-    // Remboursements - Admin uniquement
-        Route::get('/remboursements', [RemboursementController::class, 'index']);
-        Route::put('/remboursements/{id}/traiter', [RemboursementController::class, 'traiter']);
-
+    // GESTION UTILISATEURS
     Route::get('/professionnels', [AuthController::class, 'getProfessionnels']);
     Route::get('/utilisateurs', [AuthController::class, 'getUtilisateurs']);
     Route::put('/users/{id}/toggle-status', [AuthController::class, 'toggleUserStatus']);
 
-    // ==========================================
-    // ✅ COMPTES LIÉS (STRIPE & PAYPAL)
-    // ==========================================
-
-    // Récupérer le statut des comptes liés
+    // COMPTES LIÉS
     Route::get('/profile/linked-accounts', [ProfileController::class, 'getLinkedAccounts']);
-
-    // STRIPE - Liaison OAuth
     Route::get('/profile/stripe/link', [ProfileController::class, 'linkStripeAccount']);
     Route::get('/profile/stripe/success', [ProfileController::class, 'linkStripeSuccess']);
-    Route::get('/profile/stripe/callback', [ProfileController::class, 'linkStripeSuccess']); // Alias pour compatibilité
+    Route::get('/profile/stripe/callback', [ProfileController::class, 'linkStripeSuccess']);
     Route::delete('/profile/stripe/unlink', [ProfileController::class, 'unlinkStripeAccount']);
-
-    // PAYPAL - Liaison OAuth
     Route::get('/profile/paypal/link', [ProfileController::class, 'linkPaypalAccount']);
     Route::get('/profile/paypal/success', [ProfileController::class, 'linkPaypalSuccess']);
-    Route::get('/profile/paypal/callback', [ProfileController::class, 'linkPaypalSuccess']); // Alias pour compatibilité
+    Route::get('/profile/paypal/callback', [ProfileController::class, 'linkPaypalSuccess']);
     Route::delete('/profile/paypal/unlink', [ProfileController::class, 'unlinkPaypalAccount']);
 
-    // ⚠️ ANCIENNES ROUTES (à supprimer après migration du frontend)
-    Route::post('/link/stripe', [ProfileController::class, 'linkStripeAccount']); // Deprecated
-    Route::post('/link/paypal', [ProfileController::class, 'linkPaypalAccount']); // Deprecated
-    Route::post('/unlink-stripe', [ProfileController::class, 'unlinkStripeAccount']); // Deprecated
-    Route::post('/unlink-paypal', [ProfileController::class, 'unlinkPaypalAccount']); // Deprecated
+    // SUPPRESSION DE COMPTE
+    Route::delete('/profile/deleteAccount', [ProfileController::class, 'deleteAccount']);
+
+    // ABONNEMENTS
+    Route::prefix('abonnement')->group(function () {
+        Route::post('/stripe', [AbonnementController::class, 'abonnementStripe']);
+        Route::post('/paypal', [AbonnementController::class, 'abonnementPaypal']);
+        Route::post('/cancel', [AbonnementController::class, 'cancelAbonnement']);
+        Route::get('/info', [AbonnementController::class, 'getAbonnementInfo']);
+        Route::get('/status', [AbonnementController::class, 'checkSubscriptionStatus']);
+    });
+
+    // ADMIN - COMMISSIONS
+    Route::prefix('admin')->group(function () {
+        Route::get('/commissions', [CommissionController::class, 'index']);
+        Route::get('/commissions/statistics', [CommissionController::class, 'statistics']);
+        Route::put('/commissions/{id}', [CommissionController::class, 'update']);
+        Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
+    });
+
+    // VENDEUR - REVENUS
+    Route::prefix('vendor')->group(function () {
+        Route::get('/earnings', [VendorEarningsController::class, 'index']);
+        Route::get('/earnings/statistics', [VendorEarningsController::class, 'statistics']);
+        Route::get('/earnings/export', [VendorEarningsController::class, 'export']);
+    });
 });
 
-// ==========================================
-// ABONNEMENTS PRO PLUS
-// ==========================================
-Route::middleware('auth.jwt')->prefix('abonnement')->group(function () {
-    Route::post('/stripe', [AbonnementController::class, 'abonnementStripe']);
-    Route::post('/paypal', [AbonnementController::class, 'abonnementPaypal']);
-    Route::post('/cancel', [AbonnementController::class, 'cancelAbonnement']);
-    Route::get('/info', [AbonnementController::class, 'getAbonnementInfo']);
-    Route::get('/status', [AbonnementController::class, 'checkSubscriptionStatus']);
-});
-
-// Pages de succès/annulation pour abonnements
-Route::get('/abonnement/success', function() {
-    return redirect(env('FRONTEND_URL') . '/abonnement/success');
-});
-
-Route::get('/abonnement/cancel', function() {
-    return redirect(env('FRONTEND_URL') . '/abonnement/cancel');
-});
-
-Route::get('/abonnement/paypal/success', function() {
-    return redirect(env('FRONTEND_URL') . '/abonnement/success?provider=paypal');
-});
-
-// ==========================================
-// ADMIN - GESTION DES COMMISSIONS
-// ==========================================
-Route::middleware(['auth.jwt', 'admin'])->prefix('/admin')->group(function () {
-    Route::get('/commissions', [CommissionController::class, 'index']);
-    Route::get('/commissions/statistics', [CommissionController::class, 'statistics']);
-    Route::put('/commissions/{id}', [CommissionController::class, 'update']);
-    Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
-});
-
-// ==========================================
-// VENDEUR - REVENUS ET COMMISSIONS
-// ==========================================
-Route::middleware(['auth.jwt', 'professional'])->prefix('/vendor')->group(function () {
-    Route::get('/earnings', [VendorEarningsController::class, 'index']);
-    Route::get('/earnings/statistics', [VendorEarningsController::class, 'statistics']);
-    Route::get('/earnings/export', [VendorEarningsController::class, 'export']);
-
-});
+// REDIRECTIONS
+Route::get('/abonnement/success', fn() => redirect(env('FRONTEND_URL') . '/abonnement/success'));
+Route::get('/abonnement/cancel', fn() => redirect(env('FRONTEND_URL') . '/abonnement/cancel'));
+Route::get('/abonnement/paypal/success', fn() => redirect(env('FRONTEND_URL') . '/abonnement/success?provider=paypal'));
