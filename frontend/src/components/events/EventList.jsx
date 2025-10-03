@@ -55,9 +55,13 @@ export const EventList = ({
         return (
             <div style={{ display: 'grid', gap: '20px' }}>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 <MapHandler events={events}></MapHandler>
                 {events.map(event => {
                     // Déterminer si c'est un événement créé ou réservé
+=======
+                {events.map((event, index) => {
+>>>>>>> Stashed changes
 =======
                 {events.map((event, index) => {
 >>>>>>> Stashed changes
@@ -225,9 +229,12 @@ export const EventList = ({
             </div>
         );
     }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, formatDate, isAdmin, endpoint]);
+<<<<<<< Updated upstream
 
     console.log("Wesh les events : ");
     console.log(events);
+=======
+>>>>>>> Stashed changes
 
     return (
         <div>
