@@ -79,8 +79,8 @@ const PaymentPage = () => {
             
             console.log('Réponse Stripe:', response);
             
-            if (response.data.checkout_url) {
-                window.location.href = response.data.checkout_url;
+            if (response.data.url) {
+                window.location.href = response.data.url;
             } else {
                 alert('Erreur lors de l\'initialisation du paiement Stripe');
             }

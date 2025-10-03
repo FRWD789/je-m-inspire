@@ -12,24 +12,27 @@ const PaymentSuccess = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const verifyPayment = async () => {
-            try {
-                const sessionId = searchParams.get('session_id');
-                const paymentId = searchParams.get('paymentId');
+      const verifyPayment = async () => {
+        try {
+            const sessionId = searchParams.get('session_id');
+            const paymentId = searchParams.get('paymentId');
+            
+            if (sessionId || paymentId) {
+                const params = new URLSearchParams();
+                if (sessionId) params.append('session_id', sessionId);
+                if (paymentId) params.append('payment_id', paymentId);
                 
-                if (sessionId || paymentId) {
-                    // Vérifier le paiement côté serveur
-                    const response = await get(`/api/payment/status?session_id=${sessionId}&payment_id=${paymentId}`);
-                    console.log(response);
-                    setPaymentDetails(response.data);
-                }
-            } catch (error) {
-                console.error('Erreur vérification paiement:', error);
-                setError('Erreur lors de la vérification du paiement');
-            } finally {
-                setLoading(false);
+                const response = await get(`/api/payment/status?${params.toString()}`);
+                console.log(response);
+                setPaymentDetails(response.data);
             }
-        };
+        } catch (error) {
+            console.error('Erreur vérification paiement:', error);
+            setError('Erreur lors de la vérification du paiement');
+        } finally {
+            setLoading(false);
+        }
+    };
 
         verifyPayment();
     }, [searchParams]);

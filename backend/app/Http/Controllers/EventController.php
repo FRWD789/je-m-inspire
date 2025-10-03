@@ -244,9 +244,8 @@ class EventController extends Controller
                 // Vérifier si l'utilisateur a créé l'événement (type_operation_id = 1)
                 $isCreator = $userOpsForEvent->where('type_operation_id', 1)->isNotEmpty();
 
-                // Vérifier si l'utilisateur a réservé (type_operation_id = 2)
-                $reservationOp = $userOpsForEvent->where('type_operation_id', 2)->first();
-                $hasReservation = $reservationOp !== null;
+                // Récupérer TOUTES les réservations (type_operation_id = 2)
+                $reservationOps = $userOpsForEvent->where('type_operation_id', 2);
 
                 $eventData = [
                     'id' => $event->id,
@@ -279,11 +278,12 @@ class EventController extends Controller
                     ]));
                 }
 
-                if ($hasReservation) {
+                // Ajouter UNE ENTRÉE PAR RÉSERVATION
+                foreach ($reservationOps as $reservationOp) {
                     $reservedEvents->push(array_merge($eventData, [
                         'is_creator' => false,
                         'is_reserved' => true,
-                        'operation_id' => $reservationOp->id, // Ajouter l'ID de l'opération
+                        'operation_id' => $reservationOp->id,
                         'user_role' => 'participant'
                     ]));
                 }

@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use App\Models\User;  // ✅ AJOUT
-use Illuminate\Http\RedirectResponse;
+use App\Models\User;
+use App\Models\Event;
+use App\Models\Operation;
+use App\Models\Paiement;
+use App\Models\Abonnement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;  // ✅ AJOUT pour PayPal
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
-use Stripe\Stripe;  // ✅ AJOUT
+use Stripe\Stripe;
 
 class ProfileController extends Controller
 {
@@ -527,4 +527,173 @@ class ProfileController extends Controller
         }
     }
 
+     public function deleteAccount(Request $request)
+    {
+        try {
+            $request->validate([
+                'password' => 'required|string',
+                'confirmation' => 'required|string|in:SUPPRIMER'
+            ]);
+
+            $user = auth()->user();
+
+            // Vérifier le mot de passe
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mot de passe incorrect'
+                ], 401);
+            }
+
+            DB::beginTransaction();
+
+            Log::info('=== DÉBUT SUPPRESSION COMPTE ===', ['user_id' => $user->id]);
+
+            // ====================================================================
+            // 1. SUPPRIMER LES ÉVÉNEMENTS CRÉÉS PAR L'UTILISATEUR
+            // ====================================================================
+            $createdEvents = Operation::where('user_id', $user->id)
+                ->where('type_operation_id', 1) // Type "création"
+                ->pluck('event_id')
+                ->unique();
+
+            foreach ($createdEvents as $eventId) {
+                $event = Event::find($eventId);
+                if ($event) {
+                    Log::info('Suppression événement créé', [
+                        'event_id' => $event->id,
+                        'event_name' => $event->name
+                    ]);
+
+                    // Cela supprimera aussi toutes les operations liées à cet event (cascade)
+                    $event->delete();
+                }
+            }
+
+            // ====================================================================
+            // 2. SUPPRIMER LES PAIEMENTS DE L'UTILISATEUR
+            // ====================================================================
+            // Récupérer tous les paiement_id des opérations de l'utilisateur
+            $paiementIds = Operation::where('user_id', $user->id)
+                ->whereNotNull('paiement_id')
+                ->pluck('paiement_id')
+                ->unique();
+
+            foreach ($paiementIds as $paiementId) {
+                $paiement = Paiement::where('paiement_id', $paiementId)->first();
+                if ($paiement) {
+                    Log::info('Suppression paiement', [
+                        'paiement_id' => $paiement->paiement_id,
+                        'status' => $paiement->status,
+                        'total' => $paiement->total
+                    ]);
+                    $paiement->delete();
+                }
+            }
+
+            // ====================================================================
+            // 3. ANNULER ET SUPPRIMER LES ABONNEMENTS
+            // ====================================================================
+            $abonnementIds = Operation::where('user_id', $user->id)
+                ->whereNotNull('abonnement_id')
+                ->pluck('abonnement_id')
+                ->unique();
+
+            foreach ($abonnementIds as $abonnementId) {
+                $abonnement = Abonnement::where('abonnement_id', $abonnementId)->first();
+
+                if ($abonnement && $abonnement->status === 'active') {
+                    try {
+                        // Annuler sur Stripe
+                        if ($abonnement->stripe_subscription_id) {
+                            Stripe::setApiKey(env('STRIPE_SECRET'));
+                            \Stripe\Subscription::update($abonnement->stripe_subscription_id, [
+                                'cancel_at_period_end' => false
+                            ]);
+                            \Stripe\Subscription::retrieve($abonnement->stripe_subscription_id)->cancel();
+
+                            Log::info('Abonnement Stripe annulé', [
+                                'subscription_id' => $abonnement->stripe_subscription_id
+                            ]);
+                        }
+
+                        // Annuler sur PayPal
+                        if ($abonnement->paypal_subscription_id) {
+                            $response = Http::withBasicAuth(
+                                env('PAYPAL_CLIENT_ID'),
+                                env('PAYPAL_SECRET')
+                            )->post(
+                                env('PAYPAL_API_URL') . "/v1/billing/subscriptions/{$abonnement->paypal_subscription_id}/cancel",
+                                ['reason' => 'Account deletion']
+                            );
+
+                            Log::info('Abonnement PayPal annulé', [
+                                'subscription_id' => $abonnement->paypal_subscription_id
+                            ]);
+                        }
+
+                        $abonnement->update(['status' => 'cancelled']);
+                    } catch (\Exception $e) {
+                        Log::error('Erreur annulation abonnement', [
+                            'abonnement_id' => $abonnement->abonnement_id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+
+                // Supprimer l'abonnement
+                if ($abonnement) {
+                    Log::info('Suppression abonnement', [
+                        'abonnement_id' => $abonnement->abonnement_id
+                    ]);
+                    $abonnement->delete();
+                }
+            }
+
+            // ====================================================================
+            // 4. SUPPRIMER L'UTILISATEUR
+            // ====================================================================
+            // Cela supprimera automatiquement (cascade) :
+            // - operations (FK user_id)
+            // - remboursements (FK user_id)
+            // - role_user (FK user_id)
+
+            $userId = $user->id;
+            $userEmail = $user->email;
+
+            $user->delete();
+
+            Log::info('=== COMPTE SUPPRIMÉ AVEC SUCCÈS ===', [
+                'user_id' => $userId,
+                'email' => $userEmail
+            ]);
+
+            DB::commit();
+
+            // Déconnecter l'utilisateur
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Votre compte a été supprimé avec succès'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('=== ERREUR SUPPRESSION COMPTE ===', [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression du compte',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

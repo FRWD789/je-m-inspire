@@ -1,7 +1,7 @@
 // components/events/EventList.jsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApi } from "../../contexts/AuthContext";
+import { useApi, useAuth } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
 import { EditEventForm } from './EditEventForm';
 import { MapHandler } from '../maps/mapsHandler';
@@ -12,11 +12,12 @@ export const EventList = ({
     showReserveButton = true, 
     showDeleteButton = false, 
     showEditButton = false,
-    showRefundButton = false, // Nouveau prop
+    showRefundButton = false,
     title = "Événements" 
 }) => {
     const { events, loading, error, refetch } = useEvents(endpoint);
     const { delete: deleteApi } = useApi();
+    const { isAdmin } = useAuth();
     const navigate = useNavigate();
     const [editingEvent, setEditingEvent] = useState(null);
 
@@ -39,7 +40,6 @@ export const EventList = ({
 
     const handleRefund = useCallback((event) => {
         console.log('Navigation vers remboursement pour operation_id:', event.operation_id);
-        // Rediriger vers la page de remboursement avec l'operation_id
         navigate(`/mes-remboursements?operation_id=${event.operation_id}`);
     }, [navigate]);
 
@@ -54,14 +54,18 @@ export const EventList = ({
 
         return (
             <div style={{ display: 'grid', gap: '20px' }}>
+<<<<<<< Updated upstream
                 <MapHandler events={events}></MapHandler>
                 {events.map(event => {
                     // Déterminer si c'est un événement créé ou réservé
+=======
+                {events.map((event, index) => {
+>>>>>>> Stashed changes
                     const isCreator = event.is_creator || false;
                     const isReserved = event.is_reserved || false;
 
                     return (
-                        <div key={event.id} style={{
+                        <div key={`${event.id}-${index}`} style={{
                             border: '1px solid #ddd',
                             borderRadius: '8px',
                             padding: '20px',
@@ -95,6 +99,18 @@ export const EventList = ({
                                                 Réservé
                                             </span>
                                         )}
+                                        {isReserved && event.operation_id && (
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                backgroundColor: '#9c27b0',
+                                                color: 'white',
+                                                borderRadius: '4px',
+                                                fontSize: '11px',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                Réservation #{event.operation_id}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <p style={{ margin: '0 0 10px 0', color: '#666' }}>{event.description}</p>
@@ -120,7 +136,7 @@ export const EventList = ({
                                             <strong>Organisé par:</strong> {event.creator.name} {event.creator.last_name}
                                             <br />
                                             <small style={{ color: '#666' }}>
-                                                {event.creator.roles?.join(', ')} • {event.creator.email}
+                                                {event.creator.roles?.map(r => r.role).join(', ')} • {event.creator.email}
                                             </small>
                                         </div>
                                     )}
@@ -164,7 +180,8 @@ export const EventList = ({
                                         </button>
                                     )}
 
-                                    {showDeleteButton && isCreator && (
+                                    {/* Bouton supprimer - visible pour les créateurs OU les admins sur tous les événements */}
+                                    {((showDeleteButton && isCreator) || (isAdmin() && endpoint === '/api/events')) && (
                                         <button
                                             onClick={() => handleDelete(event.id, event.name)}
                                             style={{
@@ -178,11 +195,11 @@ export const EventList = ({
                                                 fontWeight: 'bold'
                                             }}
                                         >
-                                            Supprimer
+                                            {isAdmin() && !isCreator ? '🔒 Supprimer (Admin)' : 'Supprimer'}
                                         </button>
                                     )}
 
-                                    {/* Nouveau bouton de remboursement */}
+                                    {/* Bouton de remboursement */}
                                     {showRefundButton && isReserved && event.operation_id && (
                                         <button
                                             onClick={() => handleRefund(event)}
@@ -207,7 +224,7 @@ export const EventList = ({
                 })}
             </div>
         );
-    }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, formatDate]);
+    }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, formatDate, isAdmin, endpoint]);
 
     console.log("Wesh les events : ");
     console.log(events);
