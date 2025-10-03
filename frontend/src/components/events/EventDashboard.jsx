@@ -13,7 +13,6 @@ export const EventDashboard = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // ✅ CORRECTION: isProfessional est une fonction, il faut l'appeler avec ()
   const isPro = isProfessional();
 
   console.log('🎪 EventDashboard state:', {
@@ -22,7 +21,7 @@ export const EventDashboard = () => {
     loading,
     userEmail: user?.email,
     isPro: isPro,
-    userRoles: user?.roles // Pour debug
+    userRoles: user?.roles
   });
 
   if (loading || !isInitialized) {
@@ -210,6 +209,7 @@ export const EventDashboard = () => {
               showEditButton={false}
               showDeleteButton={false}
               showRefundButton={false}
+              showMap={true}  // ✅ Afficher la carte pour tous les événements
               title=""
             />
           </div>
@@ -247,6 +247,7 @@ export const EventDashboard = () => {
               showEditButton={isPro}
               showDeleteButton={isPro}
               showRefundButton={true}
+              showMap={false}  // ✅ NE PAS afficher la carte pour "mes événements"
               title=""
             />
           </div>

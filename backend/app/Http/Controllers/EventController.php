@@ -59,6 +59,9 @@ class EventController extends Controller
     /**
      * Créer un événement (professionnels uniquement)
      */
+    /**
+ * Créer un événement (professionnels uniquement)
+ */
     public function store(Request $request)
     {
         $user = JWTAuth::user();
@@ -85,6 +88,8 @@ class EventController extends Controller
             'level' => 'required|string|max:50',
             'priority' => 'required|integer|min:1|max:10',
             'localisation_address' => 'required|string|max:255',
+            'localisation_lat' => 'required|numeric|between:-90,90',
+            'localisation_lng' => 'required|numeric|between:-180,180',
             'categorie_event_id' => 'required|exists:categorie_events,id',
         ]);
 
@@ -100,8 +105,49 @@ class EventController extends Controller
         try {
             DB::beginTransaction();
 
-            // Créer l'événement
-            $event = Event::create($validated);
+            // ✅ CRÉER OU RÉCUPÉRER LA LOCALISATION
+            // Vérifier si une localisation existe déjà avec ces coordonnées (dans un rayon de ~10m)
+            $existingLocalisation = Localisation::where(function($query) use ($validated) {
+                $query->whereBetween('latitude', [
+                    $validated['localisation_lat'] - 0.0001,
+                    $validated['localisation_lat'] + 0.0001
+                ])
+                ->whereBetween('longitude', [
+                    $validated['localisation_lng'] - 0.0001,
+                    $validated['localisation_lng'] + 0.0001
+                ]);
+            })->first();
+
+            if ($existingLocalisation) {
+                // Utiliser la localisation existante
+                $localisation = $existingLocalisation;
+            } else {
+                // Créer une nouvelle localisation
+                $localisation = Localisation::create([
+                    'name' => substr($validated['localisation_address'], 0, 100), // Nom basé sur l'adresse
+                    'address' => $validated['localisation_address'],
+                    'latitude' => $validated['localisation_lat'],
+                    'longitude' => $validated['localisation_lng'],
+                ]);
+            }
+
+            // ✅ CRÉER L'ÉVÉNEMENT AVEC LA LOCALISATION
+            $eventData = [
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'base_price' => $validated['base_price'],
+                'capacity' => $validated['capacity'],
+                'max_places' => $validated['max_places'],
+                'available_places' => $validated['available_places'],
+                'level' => $validated['level'],
+                'priority' => $validated['priority'],
+                'localisation_id' => $localisation->id,
+                'categorie_event_id' => $validated['categorie_event_id'],
+            ];
+
+            $event = Event::create($eventData);
 
             // Créer l'opération associée (création d'événement)
             Operation::create([
@@ -111,20 +157,12 @@ class EventController extends Controller
                 'quantity' => 0, // Pas de places pour une création
             ]);
 
-            /*
-            Localisation::create([
-                'name' => "Helpy",
-                'address' => $validated["address"],
-                'latitude',
-                'longitude',
-            ]);
-            */
-
             DB::commit();
 
             return response()->json([
                 'message' => 'Événement créé avec succès',
-                'event' => $event->load(['localisation', 'categorie'])
+                'event' => $event->load(['localisation', 'categorie']),
+                'localisation' => $localisation
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();

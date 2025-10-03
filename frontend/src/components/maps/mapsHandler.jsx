@@ -10,17 +10,48 @@ export const MapHandler = ({events}) =>
 
         useEffect(() =>
         {          
-          if (!map || !markerLib) return;
-            console.log(events);
-          events.forEach(event => {
-       
-            const marker = new markerLib.AdvancedMarkerElement({
-                map,
-                position: { lat: parseFloat(event.localisation.lat), lng: parseFloat(event.localisation.lng) }
+            if (!map || !markerLib) return;
+            
+            console.log('Événements reçus:', events);
+            
+            // ✅ FILTRER LES ÉVÉNEMENTS AVEC COORDONNÉES VALIDES
+            const validEvents = events.filter(event => {
+                const lat = parseFloat(event.localisation?.lat);
+                const lng = parseFloat(event.localisation?.lng);
+                const isValid = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+                
+                if (!isValid) {
+                    console.warn('⚠️ Événement sans coordonnées valides ignoré:', event.name, event.localisation);
+                }
+                
+                return isValid;
             });
-        });
 
-        map.panTo({ lat: parseFloat(events[0].localisation.lat), lng: parseFloat(events[0].localisation.lng) });
+            console.log(`✅ ${validEvents.length}/${events.length} événements avec coordonnées valides`);
+
+            if (validEvents.length === 0) {
+                console.warn('❌ Aucun événement avec coordonnées valides à afficher sur la carte');
+                return;
+            }
+
+            // Créer les marqueurs uniquement pour les événements valides
+            validEvents.forEach(event => {
+                const lat = parseFloat(event.localisation.lat);
+                const lng = parseFloat(event.localisation.lng);
+                
+                const marker = new markerLib.AdvancedMarkerElement({
+                    map,
+                    position: { lat, lng },
+                    title: event.name
+                });
+            });
+
+            // Centrer la carte sur le premier événement valide
+            const firstEvent = validEvents[0];
+            const firstLat = parseFloat(firstEvent.localisation.lat);
+            const firstLng = parseFloat(firstEvent.localisation.lng);
+            map.panTo({ lat: firstLat, lng: firstLng });
+            
         }, [markerLib, map]);
         
 
@@ -43,34 +74,57 @@ export const MapHandler = ({events}) =>
                     >
 
                 </Map>
-                <MarkersComponent 
-                    events={events}>    
-                </MarkersComponent>
+                {events && events.length > 0 && (
+                    <MarkersComponent 
+                        events={events}>    
+                    </MarkersComponent>
+                )}
             </APIProvider>          
         </div>
         </>
     );
 };
 
-function geocode(request, geocoder, callback) {
-    
-    geocoder
-      .geocode(request)
-      .then((result) => {
-        const { results } = result;
-        const { status } = status;
+// ✅ FONCTION GEOCODE EXPORTÉE
+export function geocode(address, geocodingLib) {
+    return new Promise((resolve, reject) => {
+        if (!geocodingLib) {
+            reject(new Error('Bibliothèque de géocodage non disponible'));
+            return;
+        }
 
-        if(status === 'OK')
-        {
-            callback(results[0].geometry.location);
-        }
-        else
-        {
-            console.log("Houston, we got a problem : " + status);
-        }
-      })
-      .catch((e) => {
-        console.log("Geocode was not successful for the following reason: " + e);
-      });
-  
+        // Créer une instance de Geocoder
+        const geocoder = new geocodingLib.Geocoder();
+
+        geocoder
+            .geocode({ address: address })
+            .then((result) => {
+                const { results } = result;
+                
+                if (results && results.length > 0) {
+                    const location = results[0].geometry.location;
+                    resolve({
+                        lat: location.lat(),
+                        lng: location.lng(),
+                        formatted_address: results[0].formatted_address
+                    });
+                } else {
+                    reject(new Error('Adresse introuvable. Veuillez entrer une adresse valide et complète (ex: "123 Rue de la Paix, Paris, France")'));
+                }
+            })
+            .catch((error) => {
+                console.error("Erreur de géocodage:", error);
+                
+                // Messages d'erreur personnalisés selon le type d'erreur
+                if (error.message && error.message.includes('ZERO_RESULTS')) {
+                    reject(new Error('Adresse introuvable. Vérifiez l\'orthographe et assurez-vous d\'inclure la ville et le pays.'));
+                } else if (error.message && error.message.includes('INVALID_REQUEST')) {
+                    reject(new Error('Format d\'adresse invalide. Exemple valide: "10 Rue de la Paix, Paris, France"'));
+                } else if (error.message && error.message.includes('ERROR')) {
+                    reject(new Error('Erreur temporaire du service de géolocalisation. Veuillez réessayer dans quelques secondes.'));
+                } else {
+                    reject(new Error('Impossible de géolocaliser cette adresse. Assurez-vous qu\'elle existe réellement.'));
+                }
+            });
+    });
 }

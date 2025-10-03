@@ -12,6 +12,7 @@ export const EventList = ({
     showDeleteButton = false, 
     showEditButton = false,
     showRefundButton = false,
+    showMap = true,  // ✅ Nouvelle prop pour contrôler l'affichage de la carte
     title = "Événements" 
 }) => {
     const { events, loading, error, refetch } = useEvents(endpoint);
@@ -53,7 +54,11 @@ export const EventList = ({
 
         return (
             <div style={{ display: 'grid', gap: '20px' }}>
-                <MapHandler events={events}></MapHandler>
+                {/* ✅ Afficher la carte uniquement si showMap est true */}
+                {showMap && events.length > 0 && (
+                    <MapHandler events={events}></MapHandler>
+                )}
+                
                 {events.map((event, index) => {
                     const isCreator = event.is_creator || false;
                     const isReserved = event.is_reserved || false;
@@ -96,27 +101,36 @@ export const EventList = ({
                                         {isReserved && event.operation_id && (
                                             <span style={{
                                                 padding: '4px 8px',
-                                                backgroundColor: '#9c27b0',
+                                                backgroundColor: '#9C27B0',
                                                 color: 'white',
                                                 borderRadius: '4px',
-                                                fontSize: '11px',
-                                                fontWeight: 'bold'
+                                                fontSize: '10px'
                                             }}>
-                                                Réservation #{event.operation_id}
+                                                ID: {event.operation_id}
                                             </span>
                                         )}
                                     </div>
 
-                                    <p style={{ margin: '0 0 10px 0', color: '#666' }}>{event.description}</p>
-                                    
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-                                        <div><strong>Début:</strong> {formatDate(event.start_date)}</div>
-                                        <div><strong>Fin:</strong> {formatDate(event.end_date)}</div>
-                                        <div><strong>Prix par place:</strong> {event.base_price}€</div>
-                                        <div><strong>Places:</strong> {event.available_places}/{event.max_places}</div>
-                                        <div><strong>Niveau:</strong> {event.level}</div>
+                                    <p style={{ margin: '10px 0', color: '#666' }}>{event.description}</p>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '15px' }}>
+                                        <div>
+                                            <strong>📅 Début:</strong> {formatDate(event.start_date)}
+                                        </div>
+                                        <div>
+                                            <strong>📅 Fin:</strong> {formatDate(event.end_date)}
+                                        </div>
+                                        <div>
+                                            <strong>💰 Prix:</strong> {event.base_price}€
+                                        </div>
+                                        <div>
+                                            <strong>👥 Places disponibles:</strong> {event.available_places}/{event.max_places}
+                                        </div>
+                                        {event.level && (
+                                            <div><strong>📊 Niveau:</strong> {event.level}</div>
+                                        )}
                                         {event.localisation && (
-                                            <div><strong>Lieu:</strong> {event.localisation.name || 'Non spécifié'}</div>
+                                            <div><strong>📍 Lieu:</strong> {event.localisation.name || 'Non spécifié'}</div>
                                         )}
                                     </div>
 
@@ -125,7 +139,7 @@ export const EventList = ({
                                             backgroundColor: '#e8f4f8', 
                                             padding: '10px', 
                                             borderRadius: '4px',
-                                            marginBottom: '15px'
+                                            marginTop: '15px'
                                         }}>
                                             <strong>Organisé par:</strong> {event.creator.name} {event.creator.last_name}
                                             <br />
@@ -152,7 +166,7 @@ export const EventList = ({
                                                 fontWeight: 'bold'
                                             }}
                                         >
-                                            {event.available_places > 0 ? 'Réserver' : 'Complet'}
+                                            {event.available_places > 0 ? '🎫 Réserver' : '❌ Complet'}
                                         </button>
                                     )}
 
@@ -161,8 +175,8 @@ export const EventList = ({
                                             onClick={() => setEditingEvent(event)}
                                             style={{
                                                 padding: '10px 20px',
-                                                backgroundColor: '#ffc107',
-                                                color: '#000',
+                                                backgroundColor: '#007bff',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '4px',
                                                 cursor: 'pointer',
@@ -170,12 +184,11 @@ export const EventList = ({
                                                 fontWeight: 'bold'
                                             }}
                                         >
-                                            Modifier
+                                            ✏️ Modifier
                                         </button>
                                     )}
 
-                                    {/* Bouton supprimer - visible pour les créateurs OU les admins sur tous les événements */}
-                                    {((showDeleteButton && isCreator) || (isAdmin() && endpoint === '/api/events')) && (
+                                    {showDeleteButton && (isCreator || isAdmin) && (
                                         <button
                                             onClick={() => handleDelete(event.id, event.name)}
                                             style={{
@@ -189,11 +202,10 @@ export const EventList = ({
                                                 fontWeight: 'bold'
                                             }}
                                         >
-                                            {isAdmin() && !isCreator ? '🔒 Supprimer (Admin)' : 'Supprimer'}
+                                            {isAdmin && !isCreator ? '🔒 Supprimer (Admin)' : 'Supprimer'}
                                         </button>
                                     )}
 
-                                    {/* Bouton de remboursement */}
                                     {showRefundButton && isReserved && event.operation_id && (
                                         <button
                                             onClick={() => handleRefund(event)}
@@ -218,7 +230,7 @@ export const EventList = ({
                 })}
             </div>
         );
-    }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, formatDate, isAdmin, endpoint]);
+    }, [events, loading, error, handleReserve, handleDelete, handleRefund, showReserveButton, showDeleteButton, showEditButton, showRefundButton, showMap, formatDate, isAdmin]);
 
     return (
         <div>
