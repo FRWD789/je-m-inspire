@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApi, useAuth } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
 import { EditEventForm } from './EditEventForm';
+import { MapHandler } from '../maps/mapsHandler';
 
 export const EventList = ({ 
     endpoint = '/api/events', 
@@ -52,6 +53,7 @@ export const EventList = ({
 
         return (
             <div style={{ display: 'grid', gap: '20px' }}>
+                <MapHandler events={events}></MapHandler>
                 {events.map((event, index) => {
                     const isCreator = event.is_creator || false;
                     const isReserved = event.is_reserved || false;
