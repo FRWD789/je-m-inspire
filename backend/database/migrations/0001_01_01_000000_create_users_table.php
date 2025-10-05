@@ -27,6 +27,9 @@ return new class extends Migration
             $table->string('paypalAccount_id')->nullable();
             $table->string('paypalEmail')->nullable();
             $table->integer('commission_rate')->default(10);
+            $table->text('motivation_letter')->nullable();
+            $table->boolean('is_approved')->default(true); // false pour les pros en attente
+            $table->timestamp('approved_at')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
