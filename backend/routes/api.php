@@ -14,6 +14,58 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\VendorEarningsController;
 
+//route auth maher
+Route::get('/test-mail', function() {
+    try {
+        Mail::raw('Hello from Laravel', function($message) {
+            $message->to('test@example.com')
+                    ->subject('Test Mail');
+        });
+
+        return response()->json(['message' => 'Test email sent successfully!']);
+    } catch (\Exception $e) {
+        // Catch any exception and return the error message for debugging
+        return response()->json([
+            'message' => 'Failed to send test email',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
+
+
+Route::post('/forgot-password', function (Request $request) {
+
+    $request->validate(['email' => 'required|email']);
+
+    $status = Password::sendResetLink($request->only('email'));
+
+    return $status === Password::RESET_LINK_SENT
+        ? response()->json(['message' => ($status)], 200)
+        : response()->json(['message' => ($status)], 400);
+});
+
+
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function (User $user, string $password) {
+            $user->forceFill([
+                'password' => Hash::make($password),
+            ])->save();
+        }
+    );
+
+    return $status === Password::PASSWORD_RESET
+        ? response()->json(['message' => ($status)], 200)
+        : response()->json(['message' => ($status)], 400);
+})->name('password.reset');;
+
 // ==========================================
 // ROUTES PUBLIQUES
 // ==========================================
