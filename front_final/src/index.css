@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+
+
+@font-face {
+  font-family: 'AktivGrotesk-Bold';
+  src: url('fonts/AktivGrotesk-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'AktivGrotesk-Regular';
+  src: url('fonts/AktivGrotesk-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Luimp';
+  src: url('fonts/Luimp.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Luimp-Bold';
+  src: url('fonts/Luimp Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-default: "AktivGrotesk-Regular", var(--font-sans);
+  --font-headings: "Luimp-Bold", var(--font-sans);
+  --color-background:#E5DDCE;
+  --color-primary:#3C493F;
+  --color-secondary:#929E83;
+  --color-text:#3C493F;
+  --color-accent:#60993E;
+}
+
+
+
+
+
+
+@layer base{
+  h1,h2{
+    @apply text-primary font-headings font-bold;
+  }
+
+  html{
+    @apply bg-background font-default;
+
+  }
+    h1 {
+    font-size: clamp(2rem, 1.2vw + 1.5rem, 3rem); /* ~32px → 48px */
+   
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 1.2vw + 1.25rem, 2.25rem); /* ~28px → 36px */
+
+  }
+
+  h3 {
+    font-size: clamp(1.5rem, 1.2vw + 1rem, 1.875rem); /* ~24px → 30px */
+    @apply font-headings text-primary;
+  }
+
+  h4 {
+    font-size: clamp(1.25rem, 1.2vw + 0.75rem, 1.5rem); /* ~20px → 24px */
+    @apply font-headings text-primary;
+  }
+
+  h5 {
+    font-size: clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem); /* ~18px → 20px */
+    @apply font-headings text-primary;
+  }
+
+  h6 {
+    font-size: clamp(1rem, 1.2vw + 0.25rem, 1.125rem); /* ~16px → 18px */
+    @apply font-headings text-primary;
+  }
+  p {
+    font-size: clamp(0.875rem, 0.8vw + 0.5rem, 1rem); /* ~14px → 16px */
+    @apply font-default text-primary; /* Utilise font-body pour le texte normal */
+  }
+
+/* Texte plus petit */
+  small {
+    font-size: clamp(0.75rem, 0.6vw + 0.4rem, 0.875rem); /* ~12px → 14px */
+    @apply font-default text-secondary; /* texte secondaire si tu veux une couleur différente */
+  }
+
+
+
+
+
+
+
+}

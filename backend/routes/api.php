@@ -16,7 +16,7 @@ use App\Http\Controllers\VendorEarningsController;
 // Routes publiques
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/refresh', [AuthController::class, 'refresh']);
+Route::get('/refresh', [AuthController::class, 'refresh']);
 
 // Événements publics
 Route::get('/events', [EventController::class, 'index']);

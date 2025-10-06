@@ -1,0 +1,107 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { eventService } from "../service/EventService";
+import usePrivateApi from "../hooks/usePrivateApi";
+import type { AxiosResponse } from "axios";
+import { da } from "zod/locales";
+
+type Event = {
+  id: string | number;
+  name: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  base_price: string | number;
+  capacity: string | number;
+  max_places: string | number;
+  level: string;
+  priority: string | number;
+  localisation_address?: string;
+  localisation_lat?: string | number | null | undefined;
+  localisation_lng?: string | number | null | undefined;
+  localisation_id?: string | number;
+  categorie_event_id: string | number;
+};
+
+type EventContextType = {
+  events: Event[];
+  loading: boolean;
+  fetchEvents: () => Promise<void>;
+  createEvent:  (data: Partial<Event>) => Promise<any>
+  updateEvent: (id: string | number, data: Partial<Event>) => Promise<Event>;
+  deleteEvent: (id: string | number) => Promise<void>;
+};
+
+const EventContext = createContext<EventContextType | undefined>(undefined);
+
+export const useEvent = () => {
+  const context = useContext(EventContext);
+  if (!context) throw new Error("useEvent must be used within an EventProvider");
+  return context;
+};
+
+type EventProviderProps = {
+  children: ReactNode;
+};
+
+export const EventProvider = ({ children }: EventProviderProps) => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const data = await eventService.getAll();
+      setEvents(data.events);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des événements:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createEvent = async (data: Partial<Event>) => {
+    setLoading(true);
+    try {
+      const newEvent = eventService.create(data);
+      console.log(newEvent)
+
+    //   setEvents(prev => [...prev, newEvent.event]);
+      return newEvent;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateEvent = async (id: string | number, data: Partial<Event>) => {
+    setLoading(true);
+    try {
+      const updated = await eventService.update(id, data);
+      setEvents(prev => prev.map(e => (e.id === id ? updated : e)));
+      return updated;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteEvent = async (id: string | number) => {
+    setLoading(true);
+    try {
+      await eventService.delete(id);
+      setEvents(prev => prev.filter(e => e.id !== id));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  return (
+    <EventContext.Provider value={{ events, loading, fetchEvents, createEvent, updateEvent, deleteEvent }}>
+      {children}
+    </EventContext.Provider>
+  );
+};
