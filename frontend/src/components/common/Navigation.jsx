@@ -73,14 +73,24 @@ const Navigation = () => {
                                     💰 Commissions
                                 </Link>
                                 
-                                {/* ✅ NOUVEAU LIEN ADMIN REMBOURSEMENTS */}
+                                {/* ✅ NOUVEAU LIEN APPROBATION PROFESSIONNELS */}
+                                <Link to="/admin/approvals" style={{
+                                    ...navLinkStyle,
+                                    backgroundColor: '#dc3545',
+                                    padding: '5px 15px',
+                                    borderRadius: '5px'
+                                }}>
+                                    👤 Approbations
+                                </Link>
+                                
+                                {/* ✅ LIEN ADMIN REMBOURSEMENTS */}
                                 <Link to="/admin/remboursements" style={{
                                     ...navLinkStyle,
                                     backgroundColor: '#dc3545',
                                     padding: '5px 15px',
                                     borderRadius: '5px'
                                 }}>
-                                    💸 Remboursements Admin
+                                    💸 Remboursements
                                 </Link>
                             </>
                         )}

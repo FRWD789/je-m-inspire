@@ -18,22 +18,31 @@ class AuthController extends Controller
 {
     public function register(Request $request){
         try {
-            // Validation simple
-            $request->validate([
+            $validationRules = [
                 'name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'date_of_birth' => 'required|date|before:today',
                 'city' => 'nullable|string|max:255',
                 'password' => 'required|string|min:6|confirmed',
-                'role' => 'required|string', // Simple: on accepte n'importe quel string
-            ]);
+                'role' => 'required|string|in:utilisateur,professionnel',
+            ];
+
+            // Ajouter la validation de motivation pour les professionnels
+            if ($request->role === 'professionnel') {
+                $validationRules['motivation_letter'] = 'required|string|min:50|max:2000';
+            }
+
+            $request->validate($validationRules);
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
                 'errors' => $e->errors(),
             ], 422);
         }
+
+        // Déterminer le statut d'approbation
+        $isApproved = $request->role === 'utilisateur';
 
         // Créer l'utilisateur
         $user = User::create([
@@ -43,26 +52,80 @@ class AuthController extends Controller
             'date_of_birth' => $request->date_of_birth,
             'city' => $request->city,
             'password' => Hash::make($request->password),
+            'motivation_letter' => $request->motivation_letter ?? null,
+            'is_approved' => $isApproved,
+            'approved_at' => $isApproved ? now() : null,
         ]);
 
-        // Trouver le rôle et l'attacher
+        // Attacher le rôle
         $role = Role::where('role', $request->role)->first();
-
         if ($role) {
             $user->roles()->attach($role->id);
         } else {
-            // Si le rôle n'existe pas, attacher le rôle par défaut "utilisateur"
             $defaultRole = Role::where('role', 'utilisateur')->first();
             if ($defaultRole) {
                 $user->roles()->attach($defaultRole->id);
             }
         }
 
-        // Recharger l'utilisateur avec ses rôles
         $user->load('roles');
 
-        // Générer les tokens
+        // Si professionnel, retourner un message différent
+        if ($request->role === 'professionnel') {
+            return response()->json([
+                'status' => 'pending',
+                'message' => 'Votre demande d\'inscription a été envoyée. Un administrateur examinera votre candidature.',
+                'user' => $user
+            ], 201);
+        }
+
+        // Pour utilisateur normal, générer les tokens
         $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+        $refreshToken = $this->generateRefreshToken($user);
+
+        return response()->json([
+            'status' => 'success',
+            'user' => $user,
+            'token' => $accessToken,
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            'refresh_token' => $refreshToken
+        ])->cookie(
+            'refresh_token',
+            $refreshToken,
+            7*24*60,
+            '/',
+            null,
+            false,
+            true
+        );
+    }
+
+    // Ajouter dans login pour vérifier l'approbation
+public function login(Request $request)
+{
+    $credentials = $request->only('email', 'password');
+
+    try {
+        // Vérifier que l'email existe
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+
+        // Vérifier si approuvé
+        if (!$user->is_approved) {
+            return response()->json([
+                'error' => 'Votre compte est en attente d\'approbation par un administrateur.'
+            ], 403);
+        }
+
+        // Ici seulement on génère le token JWT
+        if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+
+        $user->load('roles');
         $refreshToken = $this->generateRefreshToken($user);
 
         return response()->json([
@@ -79,42 +142,96 @@ class AuthController extends Controller
             false,
             true
         );
+
+    } catch (JWTException $e) {
+        return response()->json([
+            'error' => 'Could not create token',
+            'details' => $e->getMessage()
+        ], 500);
     }
+}
 
-    public function login(Request $request)
+
+    // Ajouter méthodes pour l'admin
+public function getPendingProfessionals()
+{
+    $users = User::where('is_approved', false)
+        ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
+        ->get();
+
+    return response()->json($users);
+}
+
+
+    public function approveProfessional($id)
     {
-        $credentials = $request->only('email', 'password');
-        try {
-            if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)){
-                return response()->json(['error' => 'Invalid credentials'], 401);
-            }
-            $refreshToken = $this->generateRefreshToken(JWTAuth::user());
+        $user = User::findOrFail($id);
 
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
-        }
+        $user->update([
+            'is_approved' => true,
+            'approved_at' => now()
+        ]);
 
-        $user = JWTAuth::user();
-        $user->load('roles');
-
-        // Si tu utilises une relation avec les rôles, charge-les ici
-        // $user->load('roles');
+        // Optionnel: envoyer un email de confirmation
 
         return response()->json([
-            'user' => $user,
-            'token' => $accessToken,
-            'expires_in' => JWTAuth::factory()->getTTL()*60,
-            "refresh_token"=> $refreshToken
-        ])->cookie(
-            'refresh_token',
-            $refreshToken,
-            7*24*60,
-            '/',
-            null,
-            false,
-            true
-        );
+            'message' => 'Professionnel approuvé avec succès',
+            'user' => $user
+        ]);
     }
+
+// AuthController.php - Modifiez cette méthode existante
+
+public function rejectProfessional($id, Request $request)
+{
+    try {
+        // Valider la raison du rejet
+        $request->validate([
+            'reason' => 'required|string|min:10|max:500'
+        ]);
+
+        $user = User::findOrFail($id);
+
+        // Vérifier que c'est bien un professionnel
+        if (!$user->roles()->where('role', 'professionnel')->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cet utilisateur n\'est pas un professionnel'
+            ], 400);
+        }
+
+        // Mettre à jour avec la raison du rejet
+        $user->update([
+            'is_approved' => false,
+            'approved_at' => now(),
+            'rejection_reason' => $request->reason
+        ]);
+
+        Log::info("Professionnel rejeté: {$user->email} - Raison: {$request->reason}");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Demande rejetée avec succès',
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->name . ' ' . $user->last_name,
+                'rejection_reason' => $user->rejection_reason
+            ]
+        ]);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Utilisateur non trouvé'
+        ], 404);
+    } catch (\Exception $e) {
+        Log::error('Erreur rejectProfessional: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors du rejet'
+        ], 500);
+    }
+}
 
     private function generateAccessToken(User $user): string
     {
@@ -138,7 +255,7 @@ class AuthController extends Controller
 
     public function refresh(Request $request)
     {
-        
+
         $refreshToken = $request->cookie('refresh_token');
 
         if (empty($refreshToken)) {
@@ -279,4 +396,86 @@ class AuthController extends Controller
         }
 
     }
+    // AuthController.php - Ajoutez ces méthodes
+
+/**
+ * Récupérer les professionnels approuvés
+ */
+public function getApprovedProfessionals()
+{
+    try {
+        $users = User::where('is_approved', true)
+            ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
+            ->with('roles')
+            ->orderBy('approved_at', 'desc')
+            ->get()
+            ->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'last_name' => $user->last_name,
+                    'full_name' => $user->name . ' ' . $user->last_name,
+                    'email' => $user->email,
+                    'city' => $user->city,
+                    'date_of_birth' => $user->date_of_birth,
+                    'created_at' => $user->created_at,
+                    'approved_at' => $user->approved_at,
+                    'is_approved' => true,
+                    'rejection_reason' => null
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $users
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Erreur getApprovedProfessionals: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la récupération des professionnels approuvés'
+        ], 500);
+    }
+}
+
+/**
+ * Récupérer les professionnels rejetés
+ */
+public function getRejectedProfessionals()
+{
+    try {
+        $users = User::where('is_approved', false)
+            ->whereNotNull('rejection_reason')
+            ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
+            ->with('roles')
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'last_name' => $user->last_name,
+                    'full_name' => $user->name . ' ' . $user->last_name,
+                    'email' => $user->email,
+                    'city' => $user->city,
+                    'date_of_birth' => $user->date_of_birth,
+                    'created_at' => $user->created_at,
+                    'approved_at' => $user->approved_at,
+                    'is_approved' => false,
+                    'rejection_reason' => $user->rejection_reason
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $users
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Erreur getRejectedProfessionals: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la récupération des professionnels rejetés'
+        ], 500);
+    }
+}
 }

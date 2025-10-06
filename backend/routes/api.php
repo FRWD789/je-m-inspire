@@ -10,6 +10,7 @@ use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\RemboursementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\AbonnementController;
+use App\Http\Controllers\AdminApprovalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\VendorEarningsController;
@@ -39,8 +40,7 @@ Route::post('/paypal/webhook', [PaiementController::class, 'paypalWebhook']);
 Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonnementPaypalWebhook']);
 
 // ==========================================
-// ROUTES PROTÉGÉES - UTILISEZ LE MIDDLEWARE QUI EXISTE CHEZ VOUS
-// Remplacez 'auth:api' par 'jwt.auth' ou 'auth.jwt' selon votre config
+// ROUTES PROTÉGÉES
 // ==========================================
 Route::middleware(['auth:api'])->group(function () {
 
@@ -99,12 +99,27 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/status', [AbonnementController::class, 'checkSubscriptionStatus']);
     });
 
-    // ADMIN - COMMISSIONS
+    // ✅ ADMIN - TOUTES LES ROUTES ADMIN REGROUPÉES ICI
     Route::prefix('admin')->group(function () {
+        // Commissions
         Route::get('/commissions', [CommissionController::class, 'index']);
         Route::get('/commissions/statistics', [CommissionController::class, 'statistics']);
         Route::put('/commissions/{id}', [CommissionController::class, 'update']);
         Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
+
+        // Approbations - Nouveau système (AdminApprovalController)
+        Route::get('/approvals', [AdminApprovalController::class, 'index']);
+        Route::post('/approvals/{id}/approve', [AdminApprovalController::class, 'approve']);
+        Route::post('/approvals/{id}/reject', [AdminApprovalController::class, 'reject']);
+        Route::post('/approvals/{id}/revoke', [AdminApprovalController::class, 'revoke']);
+
+        // Professionnels - Ancien système (AuthController) - ROUTES UTILISÉES PAR LE FRONTEND
+        Route::get('/pending-professionals', [AuthController::class, 'getPendingProfessionals']);
+        Route::get('/approved-professionals', [AuthController::class, 'getApprovedProfessionals']); // ⭐ MANQUANTE
+        Route::get('/rejected-professionals', [AuthController::class, 'getRejectedProfessionals']); // ⭐ MANQUANTE
+
+        Route::post('/approve-professional/{id}', [AuthController::class, 'approveProfessional']);
+        Route::delete('/reject-professional/{id}', [AuthController::class, 'rejectProfessional']);
     });
 
     // VENDEUR - REVENUS
