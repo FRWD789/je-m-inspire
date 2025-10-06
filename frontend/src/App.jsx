@@ -18,6 +18,9 @@ import AdminCommissionsPage from './components/admin/AdminCommissionsPage';
 import VendorEarningsPage from './components/vendor/VendorEarningsPage';
 import MesRemboursementsPage from './components/remboursements/MesRemboursementsPage';
 import {AdminRemboursements} from './components/remboursements/AdminRemboursements';
+import RegisterUserForm from "./components/auth/RegisterUserForm";
+import RegisterProfessionalForm from "./components/auth/RegisterProfessionnalForm";
+import AdminApprovalPage from "./components/admin/AdminApprovalPage";
 
 function App() {
   return (
@@ -141,13 +144,26 @@ function AppContent() {
       
       <Routes>
         {/* ==================== ROUTES PUBLIQUES ==================== */}
+
+
+
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/register-user" element={<RegisterUserForm />} />
+        <Route path="/register-professionnal" element={<RegisterProfessionalForm />} />
         <Route 
           path="/register" 
           element={
             isAuthenticated ? <Navigate to="/" replace /> : <RegisterForm />
           } 
         />
-        
+        <Route 
+          path="/admin/approvals" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminApprovalPage />
+            </ProtectedRoute>
+          } 
+        />
         <Route 
           path="/login" 
           element={

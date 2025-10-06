@@ -1,5 +1,0 @@
-std::cout<<"hello world"<<endl;
-
-Helpy needs Help
-
-Close the door on foxy
