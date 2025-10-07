@@ -70,7 +70,9 @@ Route::post('/reset-password', function (Request $request) {
 // ==========================================
 // ROUTES PUBLIQUES
 // ==========================================
-Route::post('/register', [AuthController::class, 'register']);
+// Nouvelles routes principales
+Route::post('/register/user', [AuthController::class, 'registerUser']);
+Route::post('/register/professional', [AuthController::class, 'registerProfessional']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 

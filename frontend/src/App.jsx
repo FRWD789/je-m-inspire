@@ -150,10 +150,18 @@ function AppContent() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register-user" element={<RegisterUserForm />} />
         <Route path="/register-professionnal" element={<RegisterProfessionalForm />} />
+        {/* Routes d'inscription séparées */}
         <Route 
-          path="/register" 
+          path="/register-user" 
           element={
-            isAuthenticated ? <Navigate to="/" replace /> : <RegisterForm />
+            isAuthenticated ? <Navigate to="/" replace /> : <RegisterUserForm />
+          } 
+        />
+        
+        <Route 
+          path="/register-professional" 
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <RegisterProfessionalForm />
           } 
         />
         <Route 

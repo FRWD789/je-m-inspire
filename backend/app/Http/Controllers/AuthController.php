@@ -16,24 +16,20 @@ use Illuminate\Support\Str;
  use Illuminate\Support\Facades\Log;
 class AuthController extends Controller
 {
-    public function register(Request $request){
+/**
+     * Inscription pour les utilisateurs réguliers
+     */
+    public function registerUser(Request $request)
+    {
         try {
-            $validationRules = [
+            $request->validate([
                 'name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'date_of_birth' => 'required|date|before:today',
                 'city' => 'nullable|string|max:255',
                 'password' => 'required|string|min:6|confirmed',
-                'role' => 'required|string|in:utilisateur,professionnel',
-            ];
-
-            // Ajouter la validation de motivation pour les professionnels
-            if ($request->role === 'professionnel') {
-                $validationRules['motivation_letter'] = 'required|string|min:50|max:2000';
-            }
-
-            $request->validate($validationRules);
+            ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -41,10 +37,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Déterminer le statut d'approbation
-        $isApproved = $request->role === 'utilisateur';
-
-        // Créer l'utilisateur
+        // Créer l'utilisateur avec approbation automatique
         $user = User::create([
             'name' => $request->name,
             'last_name' => $request->last_name,
@@ -52,39 +45,25 @@ class AuthController extends Controller
             'date_of_birth' => $request->date_of_birth,
             'city' => $request->city,
             'password' => Hash::make($request->password),
-            'motivation_letter' => $request->motivation_letter ?? null,
-            'is_approved' => $isApproved,
-            'approved_at' => $isApproved ? now() : null,
+            'is_approved' => true,
+            'approved_at' => now(),
         ]);
 
-        // Attacher le rôle
-        $role = Role::where('role', $request->role)->first();
+        // Attacher le rôle utilisateur
+        $role = Role::where('role', 'utilisateur')->first();
         if ($role) {
             $user->roles()->attach($role->id);
-        } else {
-            $defaultRole = Role::where('role', 'utilisateur')->first();
-            if ($defaultRole) {
-                $user->roles()->attach($defaultRole->id);
-            }
         }
 
         $user->load('roles');
 
-        // Si professionnel, retourner un message différent
-        if ($request->role === 'professionnel') {
-            return response()->json([
-                'status' => 'pending',
-                'message' => 'Votre demande d\'inscription a été envoyée. Un administrateur examinera votre candidature.',
-                'user' => $user
-            ], 201);
-        }
-
-        // Pour utilisateur normal, générer les tokens
+        // Générer les tokens
         $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
         $refreshToken = $this->generateRefreshToken($user);
 
         return response()->json([
             'status' => 'success',
+            'message' => 'Inscription réussie',
             'user' => $user,
             'token' => $accessToken,
             'expires_in' => JWTAuth::factory()->getTTL() * 60,
@@ -99,6 +78,63 @@ class AuthController extends Controller
             true
         );
     }
+
+    /**
+     * Inscription pour les professionnels (nécessite approbation)
+     */
+    public function registerProfessional(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'date_of_birth' => 'required|date|before:today',
+                'city' => 'nullable|string|max:255',
+                'password' => 'required|string|min:6|confirmed',
+                'motivation_letter' => 'required|string|min:50|max:2000',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        // Créer l'utilisateur sans approbation
+        $user = User::create([
+            'name' => $request->name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'date_of_birth' => $request->date_of_birth,
+            'city' => $request->city,
+            'password' => Hash::make($request->password),
+            'motivation_letter' => $request->motivation_letter,
+            'is_approved' => false,
+            'approved_at' => null,
+        ]);
+
+        // Attacher le rôle professionnel
+        $role = Role::where('role', 'professionnel')->first();
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
+
+        $user->load('roles');
+
+        return response()->json([
+            'status' => 'pending',
+            'message' => 'Votre demande d\'inscription a été envoyée. Un administrateur examinera votre candidature.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'is_approved' => false
+            ]
+        ], 201);
+    }
+
 
     // Ajouter dans login pour vérifier l'approbation
     public function login(Request $request)

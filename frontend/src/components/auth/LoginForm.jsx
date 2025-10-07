@@ -1,20 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LoginForm = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [credentials, setCredentials] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+
+    // ✅ Afficher le message si redirection depuis inscription professionnel
+    useEffect(() => {
+        if (location.state?.message) {
+            setSuccessMessage(location.state.message);
+        }
+    }, [location]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
+        setSuccessMessage('');
 
         try {
             await login(credentials.email, credentials.password);
+            console.log('✅ Connexion réussie');
+            
+            // ✅ Redirection vers la page d'accueil après connexion
+            navigate('/', { replace: true });
+            
         } catch (err) {
+            console.error('❌ Erreur connexion:', err);
             setError(err.message || 'Erreur de connexion');
         } finally {
             setLoading(false);
@@ -64,8 +82,24 @@ const LoginForm = () => {
                     }}>
                         Connectez-vous à votre compte
                     </p>
+
+                    {/* ✅ Message de succès */}
+                    {successMessage && (
+                        <div style={{
+                            color: '#27ae60',
+                            marginBottom: '20px',
+                            padding: '12px',
+                            backgroundColor: '#d4edda',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            textAlign: 'center',
+                            border: '1px solid #c3e6cb'
+                        }}>
+                            {successMessage}
+                        </div>
+                    )}
                     
-                    <div>
+                    <form onSubmit={handleSubmit}>
                         <div style={{ marginBottom: '20px' }}>
                             <label style={{
                                 display: 'block',
@@ -133,7 +167,7 @@ const LoginForm = () => {
                         )}
 
                         <button 
-                            onClick={handleSubmit}
+                            type="submit"
                             disabled={loading}
                             style={{ 
                                 width: '100%', 
@@ -149,7 +183,7 @@ const LoginForm = () => {
                         >
                             {loading ? 'Connexion...' : 'Se connecter'}
                         </button>
-                    </div>
+                    </form>
 
                     <div style={{
                         textAlign: 'center',
@@ -179,7 +213,7 @@ const LoginForm = () => {
                         </p>
                         
                         <button 
-                            onClick={() => window.location.href = '/register-user'}
+                            onClick={() => navigate('/register-user')}
                             style={{
                                 width: '100%',
                                 padding: '10px',
@@ -196,7 +230,7 @@ const LoginForm = () => {
                         </button>
 
                         <button 
-                            onClick={() => window.location.href = '/register-professionnal'}
+                            onClick={() => navigate('/register-professional')}
                             style={{
                                 width: '100%',
                                 padding: '10px',
@@ -216,7 +250,7 @@ const LoginForm = () => {
                 {/* Image à droite */}
                 <div style={{
                     flex: '1',
-                     backgroundImage: 'url("/assets/img/projet2imglogin.jpg")',
+                    backgroundImage: 'url("/assets/img/projet2imglogin.jpg")',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     minHeight: '600px'

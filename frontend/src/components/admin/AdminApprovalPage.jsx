@@ -167,7 +167,7 @@ const fetchData = async () => {
           <tbody>
             {professionals.map((pro) => (
               <tr key={pro.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={td}>{pro.full_name}</td>
+                <td style={td}>{pro.last_name}</td>
                 <td style={td}>{pro.email}</td>
                 <td style={td}>{pro.city || 'N/A'}</td>
                 <td style={td}>{new Date(pro.created_at).toLocaleDateString('fr-FR')}</td>
@@ -181,7 +181,7 @@ const fetchData = async () => {
                   {!pro.is_approved && !pro.rejection_reason && (
                     <>
                       <button
-                        onClick={() => handleApprove(pro.id, pro.full_name)}
+                        onClick={() => handleApprove(pro.id, pro.last_name)}
                         disabled={processing === pro.id}
                         style={actionBtn(processing === pro.id ? '#ccc' : '#28a745')}
                       >
@@ -206,7 +206,7 @@ const fetchData = async () => {
       {showModal?.type === 'reject' && (
         <div style={modalOverlay}>
           <div style={modalBox}>
-            <h3>Rejeter {showModal.user.full_name}</h3>
+            <h3>Rejeter {showModal.user.last_name}</h3>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}

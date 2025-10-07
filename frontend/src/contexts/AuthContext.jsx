@@ -112,8 +112,16 @@ export const AuthProvider = ({ children }) => {
           retry: config._retry
         });
 
-        // Ne pas ajouter le token si c'est une retry ou si c'est /refresh ou /login
-        if (config._retry || config.url === '/api/refresh' || config.url === '/api/login' || config.url === '/api/register') {
+        // URLs qui ne nécessitent pas de token
+        const publicUrls = [
+          '/api/refresh',
+          '/api/login',
+          '/api/register/user',
+          '/api/register/professional'
+        ];
+
+        // Ne pas ajouter le token si c'est une retry ou une URL publique
+        if (config._retry || publicUrls.includes(config.url)) {
           console.log('⏭️ Skip token injection pour:', config.url);
           return config;
         }
@@ -161,14 +169,20 @@ export const AuthProvider = ({ children }) => {
           retry: originalRequest?._retry
         });
 
+        // URLs qui ne déclenchent pas de refresh
+        const noRefreshUrls = [
+          '/api/refresh',
+          '/api/login',
+          '/api/register/user',
+          '/api/register/professional'
+        ];
+
         // ✅ Conditions pour NE PAS tenter de refresh
         if (
           !error.response ||
           error.response.status !== 401 ||
           originalRequest._retry ||
-          originalRequest.url === '/api/refresh' ||
-          originalRequest.url === '/api/login' ||
-          originalRequest.url === '/api/register'
+          noRefreshUrls.includes(originalRequest.url)
         ) {
           console.log('⏭️ Skip refresh, rejet de l\'erreur');
           return Promise.reject(error);
@@ -284,19 +298,26 @@ export const AuthProvider = ({ children }) => {
       if (error.response?.status === 401) {
         throw new Error('Email ou mot de passe incorrect');
       }
+
+      if (error.response?.status === 403) {
+        throw new Error(error.response.data.error || 'Compte non autorisé');
+      }
       
       throw new Error(error.response?.data?.error || 'Erreur de connexion');
     }
   };
 
-  const register = async (userData) => {
-    console.log('📝 Tentative d\'inscription');
+  /**
+   * Inscription pour utilisateur régulier
+   */
+  const registerUser = async (userData) => {
+    console.log('📝 Tentative d\'inscription utilisateur');
     
     try {
-      const response = await apiSimple.post('/api/register', userData);
+      const response = await apiSimple.post('/api/register/user', userData);
       const { token: accessToken, user: newUser } = response.data;
       
-      console.log('✅ Inscription réussie');
+      console.log('✅ Inscription utilisateur réussie');
       
       setToken(accessToken);
       setUser(newUser);
@@ -313,6 +334,48 @@ export const AuthProvider = ({ children }) => {
       
       const errorMessage = error.response?.data?.error || 'Erreur d\'inscription';
       throw new Error(errorMessage);
+    }
+  };
+
+  /**
+   * Inscription pour professionnel (nécessite approbation)
+   */
+  const registerProfessional = async (userData) => {
+    console.log('📝 Tentative d\'inscription professionnel');
+    
+    try {
+      const response = await apiSimple.post('/api/register/professional', userData);
+      
+      console.log('✅ Demande professionnel envoyée:', response.data);
+      
+      // Ne PAS connecter automatiquement - le compte doit être approuvé
+      return {
+        status: 'pending',
+        message: response.data.message,
+        user: response.data.user
+      };
+    } catch (error) {
+      console.error('❌ Professional registration error:', error);
+      
+      if (error.response?.status === 422) {
+        const errors = error.response.data.errors;
+        throw { message: errors, isValidation: true };
+      }
+      
+      const errorMessage = error.response?.data?.error || 'Erreur d\'inscription professionnel';
+      throw new Error(errorMessage);
+    }
+  };
+
+  /**
+   * Fonction générique register (pour compatibilité)
+   * Détermine automatiquement le type d'inscription
+   */
+  const register = async (userData) => {
+    if (userData.role === 'professionnel') {
+      return registerProfessional(userData);
+    } else {
+      return registerUser(userData);
     }
   };
 
@@ -366,6 +429,8 @@ export const AuthProvider = ({ children }) => {
     isInitialized,
     login,
     register,
+    registerUser,
+    registerProfessional,
     logout,
     refreshUser,
     setToken,
