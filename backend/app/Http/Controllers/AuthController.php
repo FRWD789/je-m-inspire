@@ -72,7 +72,9 @@ class AuthController extends Controller
                 '/',
                 null,
                 false,
-                true
+                true,
+                false,
+                'lax'
             );
 
         } catch (\Exception $e) {
@@ -170,11 +172,13 @@ class AuthController extends Controller
             ], 'Connexion réussie')->cookie(
                 'refresh_token',
                 $refreshToken,
-                7*24*60,
-                '/',
-                null,
-                false,
-                true
+                7*24*60,           // 7 jours
+                '/',               // path
+                null,              // domain (auto)
+                false,             // secure (false en local HTTP)
+                true,              // httpOnly
+                false,             // raw
+                'lax'              // SameSite
             );
 
         } catch (JWTException $e) {
@@ -232,26 +236,78 @@ class AuthController extends Controller
      */
     public function refresh(Request $request)
     {
+        Log::info('🔄 ========== REFRESH TOKEN START ==========');
+
         try {
+            // 1. Vérifier si le cookie existe
             $refreshToken = $request->cookie('refresh_token');
+            Log::info('🍪 Cookie refresh_token:', [
+                'exists' => !empty($refreshToken),
+                'preview' => $refreshToken ? substr($refreshToken, 0, 50) . '...' : 'NULL'
+            ]);
 
             if (!$refreshToken) {
+                Log::error('❌ ERREUR: Refresh token manquant dans le cookie');
+                Log::info('📋 Tous les cookies reçus:', $request->cookies->all());
                 return $this->errorResponse('Refresh token manquant', 401);
             }
 
+            // 2. Décoder le token
+            Log::info('🔓 Décodage du refresh token...');
             $payload = JWTAuth::setToken($refreshToken)->getPayload();
             $jti = $payload->get('jti');
+            $userId = $payload->get('sub');
 
-            if (!Cache::has("refresh_token:$jti")) {
+            Log::info('✅ Token décodé:', [
+                'jti' => $jti,
+                'user_id' => $userId,
+                'type' => $payload->get('type'),
+                'exp' => date('Y-m-d H:i:s', $payload->get('exp'))
+            ]);
+
+            // 3. Vérifier dans le cache
+            Log::info('🔍 Vérification dans le cache...');
+            $cacheKey = "refresh_token:$jti";
+            $cacheExists = Cache::has($cacheKey);
+
+            Log::info('💾 Cache status:', [
+                'key' => $cacheKey,
+                'exists' => $cacheExists,
+                'value' => $cacheExists ? Cache::get($cacheKey) : 'N/A'
+            ]);
+
+            if (!$cacheExists) {
+                Log::error('❌ ERREUR: Refresh token non trouvé dans le cache (expiré ou invalide)');
                 return $this->errorResponse('Refresh token invalide ou expiré', 401);
             }
 
+            // 4. Authentifier l'utilisateur
+            Log::info('👤 Authentification de l\'utilisateur...');
             $user = JWTAuth::setToken($refreshToken)->authenticate();
+            Log::info('✅ Utilisateur authentifié:', [
+                'id' => $user->id,
+                'email' => $user->email
+            ]);
 
-            Cache::forget("refresh_token:$jti");
+            // 5. Invalider l'ancien refresh token
+            Log::info('🗑️ Suppression de l\'ancien refresh token du cache...');
+            Cache::forget($cacheKey);
+            Log::info('✅ Ancien token supprimé');
+
+            // 6. Générer les nouveaux tokens
+            Log::info('🔨 Génération de nouveaux tokens...');
             $newRefreshToken = $this->generateRefreshToken($user);
             $newAccessToken = $this->generateAccessToken($user);
 
+            Log::info('✅ Nouveaux tokens générés:', [
+                'access_token_preview' => substr($newAccessToken, 0, 50) . '...',
+                'refresh_token_preview' => substr($newRefreshToken, 0, 50) . '...',
+                'expires_in' => JWTAuth::factory()->getTTL() * 60 . ' secondes'
+            ]);
+
+            Log::info('✅ ========== REFRESH TOKEN SUCCESS ==========');
+
+            // 7. Retourner la réponse avec le nouveau cookie
             return $this->successResponse([
                 'access_token' => $newAccessToken,
                 'expires_in' => JWTAuth::factory()->getTTL() * 60,
@@ -262,11 +318,25 @@ class AuthController extends Controller
                 '/',
                 null,
                 false,
-                true
+                true,
+                false,
+                'lax'
             );
 
         } catch (JWTException $e) {
-            return $this->errorResponse('Refresh token invalide', 401);
+            Log::error('❌ ========== REFRESH TOKEN ERROR ==========');
+            Log::error('JWTException:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->errorResponse('Refresh token invalide: ' . $e->getMessage(), 401);
+        } catch (\Exception $e) {
+            Log::error('❌ ========== REFRESH TOKEN ERROR ==========');
+            Log::error('Exception générale:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->errorResponse('Erreur lors du refresh: ' . $e->getMessage(), 500);
         }
     }
 
@@ -472,15 +542,22 @@ class AuthController extends Controller
     /**
      * Générer un refresh token
      */
-    private function generateRefreshToken(User $user): string
+   private function generateRefreshToken(User $user): string
     {
         $jti = Str::uuid()->toString();
+        Log::info('🎫 Génération refresh token:', [
+            'jti' => $jti,
+            'user_id' => $user->id,
+            'cache_duration' => '7 jours (10080 minutes)'
+        ]);
+
         $refreshToken = JWTAuth::claims([
             'type' => 'refresh',
             'jti' => $jti
         ])->fromUser($user);
 
         Cache::put("refresh_token:$jti", $user->id, 7*24*60);
+        Log::info('✅ Refresh token stocké dans le cache');
 
         return $refreshToken;
     }

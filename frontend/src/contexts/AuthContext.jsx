@@ -13,7 +13,7 @@ import axios from "axios";
 const AuthContext = createContext(null);
 
 // ✅ Base URL
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = "";
 
 // ===============================
 // AXIOS INSTANCES
@@ -46,45 +46,87 @@ export const AuthProvider = ({ children }) => {
   // 1️⃣ INITIALISATION
   // ===============================
   useEffect(() => {
+    console.log('🚀 useEffect Initialisation DÉMARRE');
     let isMounted = true;
 
     const initializeAuth = async () => {
-      const storedToken = localStorage.getItem("access_token");
-
+      const storedToken = localStorage.getItem('access_token');
+      
+      console.log('1️⃣ Token trouvé:', !!storedToken);
+      
+      // ✅ Nouvelle logique : Si pas de token, tenter un refresh d'abord
       if (!storedToken) {
-        if (isMounted) {
-          setLoading(false);
-          setIsInitialized(true);
+        console.log('2️⃣ Pas d\'access token - Tentative de refresh avec le cookie...');
+        
+        try {
+          // Essayer de refresh avec le cookie refresh_token
+          const refreshResponse = await apiSimple.post('/api/refresh');
+          const newToken = refreshResponse.data.access_token;
+          
+          console.log('✅ Refresh réussi au démarrage !');
+          localStorage.setItem('access_token', newToken);
+          
+          // Maintenant on peut charger l'utilisateur
+          const userResponse = await api.get('/api/me', {
+            headers: { Authorization: `Bearer ${newToken}` }
+          });
+          
+          if (isMounted) {
+            setUser(userResponse.data);
+            setToken(newToken);
+          }
+        } catch (error) {
+          console.log('⚠️ Pas de session valide (refresh échoué)');
+          // Pas de session valide, l'utilisateur doit se reconnecter
+          if (isMounted) {
+            localStorage.removeItem('access_token');
+            setToken(null);
+            setUser(null);
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+            setIsInitialized(true);
+          }
         }
         return;
       }
 
+      // Si on a un access token, on continue comme avant
       try {
-        const response = await api.get("/api/me", {
-          headers: { Authorization: `Bearer ${storedToken}` },
+        console.log('3️⃣ Appel /api/me avec access token existant');
+        const response = await api.get('/api/me', {
+          headers: { Authorization: `Bearer ${storedToken}` }
         });
+        
+        console.log('4️⃣ Réponse reçue:', response.data);
+        
         if (isMounted) {
           setUser(response.data);
           setToken(storedToken);
         }
       } catch (error) {
-        console.error("❌ Auth init error:", error.message);
+        console.error('5️⃣ Erreur:', error.message);
         if (isMounted) {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          setUser(null);
+          localStorage.removeItem('access_token');
           setToken(null);
+          setUser(null);
         }
       } finally {
         if (isMounted) {
+          console.log('6️⃣ AVANT setLoading(false)');
           setLoading(false);
+          console.log('7️⃣ APRÈS setLoading(false)');
           setIsInitialized(true);
+          console.log('8️⃣ Initialisation terminée');
         }
       }
     };
 
     initializeAuth();
+
     return () => {
+      console.log('🧹 Cleanup useEffect');
       isMounted = false;
     };
   }, []);
@@ -123,85 +165,139 @@ export const AuthProvider = ({ children }) => {
   // 3️⃣ INTERCEPTEUR RESPONSE (REFRESH)
   // ===============================
   useLayoutEffect(() => {
+    console.log('🔧 AuthContext: Installation intercepteur RESPONSE');
+    
     const responseInterceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
-        const status = error.response?.status;
 
+        console.group('❌ [RESPONSE INTERCEPTOR] Erreur détectée');
+        console.log('📍 Status:', error.response?.status);
+        console.log('📍 URL:', originalRequest?.url);
+        console.log('📍 Retry flag:', originalRequest?._retry);
+        console.log('📍 Response data:', error.response?.data);
+        console.groupEnd();
+
+        // URLs qui ne déclenchent pas de refresh
         const noRefreshUrls = [
-          "/api/login",
-          "/api/refresh",
-          "/api/register/user",
-          "/api/register/professional",
-          "/api/logout",
+          '/api/refresh',
+          '/api/login',
+          '/api/register/user',
+          '/api/register/professional'
         ];
 
+        // ✅ Conditions pour NE PAS tenter de refresh
         if (
-          !status ||
-          status !== 401 ||
+          !error.response ||
+          error.response.status !== 401 ||
           originalRequest._retry ||
           noRefreshUrls.includes(originalRequest.url)
         ) {
+          console.log('⏭️ Skip refresh - Conditions non remplies');
           return Promise.reject(error);
         }
 
+        // ✅ Marquer cette requête comme "retry"
         originalRequest._retry = true;
 
+        // ✅ Si un refresh est déjà en cours
         if (isRefreshingRef.current) {
+          console.log('⏳ Refresh déjà en cours, mise en file d\'attente');
           return new Promise((resolve, reject) => {
             failedQueueRef.current.push({ resolve, reject });
           })
-            .then((newToken) => {
-              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            .then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
               return api(originalRequest);
             })
-            .catch((err) => Promise.reject(err));
+            .catch((err) => {
+              return Promise.reject(err);
+            });
         }
 
+        // ✅ Démarrer le refresh
         isRefreshingRef.current = true;
-
+        console.group('🔄 ========== REFRESH TOKEN PROCESS START ==========');
+        console.log('⏰ Timestamp:', new Date().toLocaleTimeString());
+        
         try {
-          const refreshToken = localStorage.getItem("refresh_token");
-          if (!refreshToken) throw new Error("Missing refresh token");
+          // Vérifier les cookies avant l'appel
+          console.log('🍪 Cookies disponibles:', document.cookie);
+          
+          console.log('📤 Appel /api/refresh avec withCredentials');
+          const response = await apiSimple.post('/api/refresh');
+          
+          console.group('✅ Réponse reçue');
+          console.log('📦 Response data:', response.data);
+          console.log('🍪 Response headers:', response.headers);
+          console.groupEnd();
+          
+          const newToken = response.data.access_token;
 
-          const response = await apiSimple.post("/api/refresh", {
-            refresh_token: refreshToken,
-          });
+          if (!newToken) {
+            console.error('❌ ERREUR: access_token manquant dans la réponse');
+            throw new Error('Access token manquant dans la réponse');
+          }
 
-          const { access_token: newToken, refresh_token: newRefresh } =
-            response.data;
+          console.log('✅ Nouveau access token reçu:', newToken.substring(0, 50) + '...');
 
-          localStorage.setItem("access_token", newToken);
-          if (newRefresh) localStorage.setItem("refresh_token", newRefresh);
+          // Mettre à jour le token
+          localStorage.setItem('access_token', newToken);
           setToken(newToken);
+          console.log('💾 Token sauvegardé dans localStorage');
 
-          failedQueueRef.current.forEach((cb) => cb.resolve(newToken));
+          // Résoudre toutes les requêtes en attente
+          console.log('📨 Résolution de', failedQueueRef.current.length, 'requêtes en attente');
+          failedQueueRef.current.forEach((callback) => {
+            callback.resolve(newToken);
+          });
           failedQueueRef.current = [];
 
+          // Retry la requête originale
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          console.log('🔁 Retry de la requête originale:', originalRequest.url);
+          console.groupEnd();
+          
           return api(originalRequest);
-        } catch (refreshError) {
-          console.error("❌ Refresh token invalide :", refreshError.message);
 
-          failedQueueRef.current.forEach((cb) => cb.reject(refreshError));
+        } catch (refreshError) {
+          console.group('❌ ========== REFRESH TOKEN ERROR ==========');
+          console.error('Type d\'erreur:', refreshError.name);
+          console.error('Message:', refreshError.message);
+          console.error('Status:', refreshError.response?.status);
+          console.error('Response data:', refreshError.response?.data);
+          console.error('🍪 Cookies actuels:', document.cookie);
+          console.groupEnd();
+
+          // Rejeter toutes les requêtes en attente
+          failedQueueRef.current.forEach((callback) => {
+            callback.reject(refreshError);
+          });
           failedQueueRef.current = [];
 
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          setUser(null);
+          // Déconnecter l'utilisateur
+          console.log('🚪 Déconnexion de l\'utilisateur');
+          localStorage.removeItem('access_token');
           setToken(null);
+          setUser(null);
 
-          // redirection propre
-          window.location.replace("/login");
+          // Rediriger vers login
+          console.log('↪️ Redirection vers /login');
+          window.location.href = '/login';
+
           return Promise.reject(refreshError);
+
         } finally {
+          // Réinitialiser le flag
           isRefreshingRef.current = false;
+          console.log('🏁 Refresh terminé - Flag réinitialisé');
         }
       }
     );
 
     return () => {
+      console.log('🔧 AuthContext: Désinstallation intercepteur RESPONSE');
       api.interceptors.response.eject(responseInterceptor);
     };
   }, []);
