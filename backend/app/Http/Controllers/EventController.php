@@ -20,7 +20,7 @@ class EventController extends Controller
     /**
      * Liste tous les événements futurs
      */
-    public function index()
+   public function index()
     {
         $events = Event::with(['localisation', 'categorie'])
             ->where('start_date', '>', now())
@@ -28,7 +28,7 @@ class EventController extends Controller
             ->get();
 
         return $this->collectionResponse(
-            new EventCollection($events),
+            EventResource::collection($events),
             'Événements récupérés avec succès'
         );
     }
@@ -38,7 +38,8 @@ class EventController extends Controller
      */
     public function show($id)
     {
-        $event = Event::with(['localisation', 'categorie'])->find($id);
+        // ✅ Charger TOUTES les relations nécessaires
+        $event = Event::with(['localisation', 'categorie', 'creator.roles'])->find($id);
 
         if (!$event) {
             return $this->notFoundResponse('Événement non trouvé');
@@ -413,6 +414,7 @@ class EventController extends Controller
             $userOperations = Operation::where('user_id', $user->id)->get();
             $eventIds = $userOperations->pluck('event_id')->unique();
 
+            // ✅ Charger les relations
             $events = Event::with(['localisation', 'categorie'])
                 ->whereIn('id', $eventIds)
                 ->orderBy('start_date')

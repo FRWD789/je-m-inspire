@@ -9,92 +9,131 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 trait ApiResponse
 {
     /**
-     * Réponse de succès avec données
+     * ✅ Réponse de succès générique
+     * Les données sont fusionnées au niveau racine pour compatibilité frontend
+     *
+     * Exemple: successResponse(['user' => $user, 'token' => $token])
+     * Résultat: { success: true, message: "...", user: {...}, token: "..." }
      */
-    protected function successResponse($data = null, string $message = 'Opération réussie', int $status = 200): JsonResponse
+    protected function successResponse($data = null, string $message = 'Success', int $code = 200): JsonResponse
     {
         $response = [
             'success' => true,
             'message' => $message,
         ];
 
-        if ($data !== null) {
-            $response['data'] = $data;
+        // ✅ Fusionner les données au niveau racine (pas dans un wrapper "data")
+        if (is_array($data)) {
+            $response = array_merge($response, $data);
+        } elseif ($data !== null) {
+            $response = array_merge($response, ['data' => $data]);
         }
 
-        $response['meta'] = [
-            'timestamp' => now()->toIso8601String(),
-        ];
-
-        return response()->json($response, $status);
+        return response()->json($response, $code);
     }
 
     /**
-     * Réponse de succès avec resource
+     * ✅ Réponse d'erreur standardisée
      */
-    protected function resourceResponse(JsonResource $resource, string $message = 'Opération réussie', int $status = 200): JsonResponse
-    {
-        return $this->successResponse($resource, $message, $status);
-    }
-
-    /**
-     * Réponse de succès avec collection
-     */
-    protected function collectionResponse(ResourceCollection $collection, string $message = 'Données récupérées', int $status = 200): JsonResponse
-    {
-        return $this->successResponse($collection, $message, $status);
-    }
-
-    /**
-     * Réponse d'erreur
-     */
-    protected function errorResponse(string $message = 'Une erreur est survenue', int $status = 400, array $errors = null): JsonResponse
+    protected function errorResponse(string $message = 'Error', int $code = 400, $errors = null): JsonResponse
     {
         $response = [
             'success' => false,
-            'message' => $message,
+            'error' => $message,
         ];
 
-        if ($errors) {
+        if ($errors !== null) {
             $response['errors'] = $errors;
         }
 
-        $response['meta'] = [
-            'timestamp' => now()->toIso8601String(),
-        ];
-
-        return response()->json($response, $status);
+        return response()->json($response, $code);
     }
 
     /**
-     * Réponse de validation échouée
+     * ✅ Réponse avec Resource unique (User, Event, etc.)
+     * Les données de la resource sont fusionnées au niveau racine
+     *
+     * Exemple: resourceResponse(new UserResource($user))
+     * Résultat: { success: true, message: "...", id: 1, name: "John", email: "..." }
      */
-    protected function validationErrorResponse(array $errors): JsonResponse
+    protected function resourceResponse(JsonResource $resource, string $message = 'Success', int $code = 200): JsonResponse
     {
-        return $this->errorResponse('Erreur de validation', 422, $errors);
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            ...$resource->toArray(request()) // ✅ Fusionner au niveau racine
+        ], $code);
     }
 
     /**
-     * Réponse non trouvé
+     * ✅ Réponse avec Collection de Resources
+     * RETOURNE DIRECTEMENT LE TABLEAU pour compatibilité avec .map() frontend
+     *
+     * Exemple: collectionResponse(EventResource::collection($events))
+     * Résultat: [{id: 1, name: "..."}, {id: 2, name: "..."}]
      */
-    protected function notFoundResponse(string $message = 'Ressource non trouvée'): JsonResponse
+    protected function collectionResponse($collection, string $message = 'Success', int $code = 200): JsonResponse
     {
-        return $this->errorResponse($message, 404);
+        // Convertir en tableau
+        if ($collection instanceof ResourceCollection) {
+            $data = $collection->toArray(request());
+        } elseif (is_array($collection)) {
+            $data = $collection;
+        } else {
+            $data = $collection->toArray();
+        }
+
+        // ✅ Si la collection a une clé 'data' (ResourceCollection standard), extraire le contenu
+        if (is_array($data) && isset($data['data']) && is_array($data['data'])) {
+            return response()->json($data['data'], $code);
+        }
+
+        // ✅ Sinon retourner directement le tableau
+        return response()->json($data, $code);
     }
 
     /**
-     * Réponse non autorisé
+     * ✅ Erreur de validation
      */
-    protected function unauthorizedResponse(string $message = 'Non autorisé'): JsonResponse
+    protected function validationErrorResponse($errors, string $message = 'Validation failed'): JsonResponse
     {
-        return $this->errorResponse($message, 403);
+        return response()->json([
+            'success' => false,
+            'error' => $message,
+            'errors' => $errors
+        ], 422);
     }
 
     /**
-     * Réponse non authentifié
+     * ✅ 404 Not Found
      */
-    protected function unauthenticatedResponse(string $message = 'Non authentifié'): JsonResponse
+    protected function notFoundResponse(string $message = 'Resource not found'): JsonResponse
     {
-        return $this->errorResponse($message, 401);
+        return response()->json([
+            'success' => false,
+            'error' => $message
+        ], 404);
+    }
+
+    /**
+     * ✅ 401 Unauthorized
+     */
+    protected function unauthorizedResponse(string $message = 'Unauthorized'): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'error' => $message
+        ], 401);
+    }
+
+    /**
+     * ✅ 403 Forbidden
+     */
+    protected function unauthenticatedResponse(string $message = 'Unauthenticated'): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'error' => $message
+        ], 403);
     }
 }

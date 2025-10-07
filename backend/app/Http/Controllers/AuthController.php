@@ -23,10 +23,10 @@ class AuthController extends Controller
     /**
      * Inscription pour les utilisateurs réguliers
      */
-   public function registerUser(Request $request)
+    public function registerUser(Request $request)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
@@ -35,49 +35,50 @@ class AuthController extends Controller
                 'password' => 'required|string|min:6|confirmed',
             ]);
         } catch (ValidationException $e) {
-            // ✅ SEULEMENT LE RETURN MODIFIÉ
             return $this->validationErrorResponse($e->errors());
         }
 
-        // ✅ LOGIQUE INCHANGÉE - utiliser $request-> comme l'original
-        $user = User::create([
-            'name' => $request->name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'date_of_birth' => $request->date_of_birth,
-            'city' => $request->city,
-            'password' => Hash::make($request->password),
-            'is_approved' => true,
-            'approved_at' => now(),
-        ]);
+        try {
+            $user = User::create([
+                'name' => $validated['name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+                'date_of_birth' => $validated['date_of_birth'],
+                'city' => $validated['city'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'is_approved' => true,
+                'approved_at' => now(),
+            ]);
 
-        // ✅ LOGIQUE INCHANGÉE
-        $role = Role::where('role', 'utilisateur')->first();
-        if ($role) {
-            $user->roles()->attach($role->id);
+            $role = Role::where('role', 'utilisateur')->first();
+            if ($role) {
+                $user->roles()->attach($role->id);
+            }
+
+            $user->load('roles');
+
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = $this->generateRefreshToken($user);
+
+            return $this->successResponse([
+                'user' => new UserResource($user),
+                'token' => $accessToken,
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'refresh_token' => $refreshToken
+            ], 'Inscription réussie', 201)->cookie(
+                'refresh_token',
+                $refreshToken,
+                7*24*60,
+                '/',
+                null,
+                false,
+                true
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Erreur inscription utilisateur: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de l\'inscription', 500);
         }
-
-        $user->load('roles');
-
-        // ✅ LOGIQUE INCHANGÉE
-        $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
-        $refreshToken = $this->generateRefreshToken($user);
-
-        // ✅ SEULEMENT LE RETURN MODIFIÉ
-        return $this->successResponse([
-            'user' => new UserResource($user),
-            'token' => $accessToken,
-            'expires_in' => JWTAuth::factory()->getTTL() * 60,
-            'refresh_token' => $refreshToken
-        ], 'Inscription réussie', 201)->cookie(
-            'refresh_token',
-            $refreshToken,
-            7*24*60,
-            '/',
-            null,
-            false,
-            true
-        );
     }
 
     /**

@@ -16,17 +16,37 @@ class EventResource extends JsonResource
             'start_date' => $this->start_date?->toIso8601String(),
             'end_date' => $this->end_date?->toIso8601String(),
             'base_price' => (float) $this->base_price,
-            'available_places' => $this->available_places,
+            'capacity' => $this->capacity,
             'max_places' => $this->max_places,
+            'available_places' => $this->available_places,
             'level' => $this->level,
             'priority' => $this->priority,
-            'localisation' => new LocalisationResource($this->whenLoaded('localisation')),
-            'categorie' => new CategorieEventResource($this->whenLoaded('categorie')),
-            'creator' => new UserResource($this->whenLoaded('creator')),
-            'can_reserve' => $this->available_places > 0 && $this->start_date > now(),
-            'is_past' => $this->end_date < now(),
-            'is_ongoing' => $this->start_date <= now() && $this->end_date >= now(),
+
+            // ✅ Utiliser whenLoaded pour les relations
+            'localisation' => $this->whenLoaded('localisation', function() {
+                return [
+                    'id' => $this->localisation->id,
+                    'name' => $this->localisation->name,
+                    'address' => $this->localisation->address,
+                    'lat' => (float) $this->localisation->latitude,
+                    'lng' => (float) $this->localisation->longitude,
+                ];
+            }),
+
+            'categorie' => $this->whenLoaded('categorie', function() {
+                return [
+                    'id' => $this->categorie->id,
+                    'name' => $this->categorie->name,
+                ];
+            }),
+
+            // ✅ Créateur de l'événement (relation optionnelle)
+            'creator' => $this->whenLoaded('creator', function() {
+                return new UserResource($this->creator);
+            }),
+
             'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }
