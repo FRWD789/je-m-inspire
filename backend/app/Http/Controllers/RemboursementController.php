@@ -2,206 +2,194 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\RemboursementResource;
 use App\Models\Remboursement;
 use App\Models\Operation;
-use App\Models\Paiement;
-use App\Models\Event;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class RemboursementController extends Controller
 {
-    // Créer une demande de remboursement (Utilisateur)
+    use ApiResponse;
+
+    /**
+     * Créer une demande de remboursement
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'operation_id' => 'required|exists:operations,id',
-            'motif' => 'required|string|min:10',
-            'montant' => 'required|numeric|min:0.01'
-        ]);
+        try {
+            $validated = $request->validate([
+                'operation_id' => 'required|exists:operations,id',
+                'motif' => 'required|string|min:10',
+                'montant' => 'required|numeric|min:0.01'
+            ]);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        }
 
         $user = Auth::user();
 
-        // Charger l'opération avec sa relation paiement
-        $operation = Operation::with('paiement')
-            ->where('id', $request->operation_id)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
+        try {
+            $operation = Operation::with('paiement')
+                ->where('id', $validated['operation_id'])
+                ->where('user_id', $user->id)
+                ->firstOrFail();
 
-        // Vérifier que l'opération a un paiement et qu'il est payé
-        if (!$operation->paiement) {
-            return response()->json([
-                'error' => 'Cette réservation n\'a pas de paiement associé'
-            ], 400);
+            if (!$operation->paiement) {
+                return $this->errorResponse('Cette réservation n\'a pas de paiement associé', 400);
+            }
+
+            if ($operation->paiement->status !== 'paid') {
+                return $this->errorResponse('Seules les réservations payées peuvent être remboursées', 400);
+            }
+
+            $demandeExistante = Remboursement::where('operation_id', $operation->id)
+                ->where('statut', 'en_attente')
+                ->first();
+
+            if ($demandeExistante) {
+                return $this->errorResponse('Une demande de remboursement est déjà en cours pour cette réservation', 400);
+            }
+
+            $montantPaiement = floatval($operation->paiement->total);
+            $montantDemande = floatval($validated['montant']);
+
+            if (abs($montantPaiement - $montantDemande) > 0.01) {
+                return $this->errorResponse('Le montant demandé ne correspond pas au montant payé', 400);
+            }
+
+            $remboursement = Remboursement::create([
+                'user_id' => $user->id,
+                'operation_id' => $operation->id,
+                'montant' => $montantPaiement,
+                'motif' => $validated['motif'],
+                'statut' => 'en_attente'
+            ]);
+
+            return $this->resourceResponse(
+                new RemboursementResource($remboursement->load('operation.event')),
+                'Demande de remboursement créée avec succès',
+                201
+            );
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Réservation non trouvée');
+        } catch (\Exception $e) {
+            Log::error('Erreur création remboursement: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la création de la demande', 500);
         }
-
-        if ($operation->paiement->status !== 'paid') {
-            return response()->json([
-                'error' => 'Seules les réservations payées peuvent être remboursées'
-            ], 400);
-        }
-
-        // Vérifier qu'il n'y a pas déjà une demande en attente
-        $demandeExistante = Remboursement::where('operation_id', $operation->id)
-            ->where('statut', 'en_attente')
-            ->first();
-
-        if ($demandeExistante) {
-            return response()->json([
-                'error' => 'Une demande de remboursement est déjà en cours pour cette réservation'
-            ], 400);
-        }
-
-        // Vérifier que le montant envoyé correspond au montant du paiement
-        $montantPaiement = floatval($operation->paiement->total);
-        $montantDemande = floatval($request->montant);
-
-        if (abs($montantPaiement - $montantDemande) > 0.01) {
-            return response()->json([
-                'error' => 'Le montant demandé ne correspond pas au montant payé'
-            ], 400);
-        }
-
-        // Créer la demande de remboursement
-        $remboursement = Remboursement::create([
-            'user_id' => $user->id,
-            'operation_id' => $operation->id,
-            'montant' => $montantPaiement,
-            'motif' => $request->motif,
-            'statut' => 'en_attente'
-        ]);
-
-        return response()->json([
-            'message' => 'Demande de remboursement créée avec succès',
-            'remboursement' => $remboursement->load('operation.event')
-        ], 201);
     }
 
-    // Voir mes demandes de remboursement (Utilisateur)
+    /**
+     * Voir mes demandes de remboursement
+     */
     public function mesDemandes()
     {
-        $demandes = Remboursement::where('user_id', Auth::id())
-            ->with('operation.event')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            $demandes = Remboursement::where('user_id', Auth::id())
+                ->with('operation.event')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        return response()->json($demandes);
+            return $this->collectionResponse(
+                RemboursementResource::collection($demandes),
+                'Demandes de remboursement récupérées'
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Erreur récupération demandes: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la récupération des demandes', 500);
+        }
     }
 
-    // Voir toutes les demandes (Admin)
+    /**
+     * Voir toutes les demandes (Admin)
+     */
     public function index()
     {
         try {
-            Log::info('Tentative de récupération des remboursements');
-
             $demandes = Remboursement::with(['user', 'operation.event'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            Log::info('Remboursements récupérés:', ['count' => $demandes->count()]);
+            return $this->collectionResponse(
+                RemboursementResource::collection($demandes),
+                'Toutes les demandes de remboursement récupérées'
+            );
 
-            return response()->json($demandes);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la récupération des remboursements:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'error' => 'Erreur serveur',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Erreur récupération toutes demandes: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la récupération des demandes', 500);
         }
     }
 
-    // Traiter une demande (Admin)
+    /**
+     * Traiter une demande de remboursement (Admin)
+     */
     public function traiter(Request $request, $id)
     {
-        $request->validate([
-            'statut' => 'required|in:approuve,refuse',
-            'commentaire_admin' => 'nullable|string'
-        ]);
+        try {
+            $validated = $request->validate([
+                'statut' => 'required|in:approuve,rejete',
+                'commentaire_admin' => 'nullable|string|max:500'
+            ]);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        }
 
         try {
             DB::beginTransaction();
 
-            $remboursement = Remboursement::with(['operation.paiement', 'operation.event'])
+            $remboursement = Remboursement::with(['operation.event', 'operation.paiement'])
                 ->findOrFail($id);
 
-            // Mettre à jour le remboursement
+            if ($remboursement->statut !== 'en_attente') {
+                return $this->errorResponse('Cette demande a déjà été traitée', 400);
+            }
+
             $remboursement->update([
-                'statut' => $request->statut,
-                'commentaire_admin' => $request->commentaire_admin,
+                'statut' => $validated['statut'],
+                'commentaire_admin' => $validated['commentaire_admin'] ?? null,
                 'date_traitement' => now()
             ]);
 
-            // Si la demande est approuvée, traiter le remboursement
-            if ($request->statut === 'approuve') {
-                $operation = $remboursement->operation;
-                $paiement = $operation->paiement;
-                $event = $operation->event;
+            if ($validated['statut'] === 'approuve') {
+                $event = $remboursement->operation->event;
+                $event->available_places += $remboursement->operation->quantity;
+                $event->save();
 
-                if (!$paiement) {
-                    DB::rollBack();
-                    return response()->json([
-                        'error' => 'Aucun paiement trouvé pour cette réservation'
-                    ], 400);
+                if ($remboursement->operation->paiement) {
+                    $remboursement->operation->paiement->update(['status' => 'refunded']);
                 }
 
-                // 1. Mettre le paiement en statut "cancelled"
-                $paiement->update([
-                    'status' => 'cancelled'
-                ]);
-
-                Log::info('Paiement annulé', [
-                    'paiement_id' => $paiement->paiement_id,
-                    'ancien_statut' => $paiement->status,
-                    'nouveau_statut' => 'cancelled'
-                ]);
-
-                // 2. Remettre les places disponibles dans l'événement
-                if ($event) {
-                    $anciennesPlaces = $event->available_places;
-                    $event->available_places += $operation->quantity;
-                    $event->save();
-
-                    Log::info('Places remises disponibles', [
-                        'event_id' => $event->id,
-                        'anciennes_places' => $anciennesPlaces,
-                        'places_remises' => $operation->quantity,
-                        'nouvelles_places' => $event->available_places
-                    ]);
-                }
-
-                Log::info('Remboursement approuvé et traité', [
+                Log::info('Remboursement approuvé', [
                     'remboursement_id' => $remboursement->id,
-                    'operation_id' => $operation->id,
-                    'montant' => $remboursement->montant
+                    'montant' => $remboursement->montant,
+                    'user_id' => $remboursement->user_id
                 ]);
             }
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Demande traitée avec succès',
-                'remboursement' => $remboursement->load(['user', 'operation.event'])
-            ]);
+            $message = $validated['statut'] === 'approuve'
+                ? 'Demande de remboursement approuvée'
+                : 'Demande de remboursement rejetée';
 
+            return $this->resourceResponse(
+                new RemboursementResource($remboursement->load(['user', 'operation.event'])),
+                $message
+            );
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Demande de remboursement non trouvée');
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Erreur lors du traitement du remboursement:', [
-                'remboursement_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'error' => 'Erreur lors du traitement de la demande',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Erreur traitement remboursement: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du traitement de la demande', 500);
         }
     }
 }

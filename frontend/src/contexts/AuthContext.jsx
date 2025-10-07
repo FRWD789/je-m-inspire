@@ -408,6 +408,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  
+
   // ✅ Méthodes utilitaires pour les rôles
   const hasRole = (role) => {
     return user && user.roles && user.roles.some(r => r.role === role);

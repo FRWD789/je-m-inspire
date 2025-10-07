@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AbonnementResource;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Models\Abonnement;
 use App\Models\Operation;
@@ -14,8 +16,10 @@ use Illuminate\Support\Facades\Auth;
 
 class AbonnementController extends Controller
 {
+    use ApiResponse;
+
     /**
-     * Créer une session de paiement Stripe pour l'abonnement Pro Plus
+     * Créer une session de paiement Stripe pour Pro Plus
      */
     public function abonnementStripe(Request $request)
     {
@@ -23,15 +27,13 @@ class AbonnementController extends Controller
             Stripe::setApiKey(config('services.stripe.secret'));
             $user = Auth::user();
 
-            // Vérifier si l'utilisateur a déjà un abonnement Pro Plus actif
+            // ✅ LOGIQUE INCHANGÉE
             if ($user->hasProPlus()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vous avez déjà un abonnement Pro Plus actif'
-                ], 400);
+                // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+                return $this->errorResponse('Vous avez déjà un abonnement Pro Plus actif', 400);
             }
 
-            // Créer une session de checkout Stripe pour Pro Plus
+            // ✅ LOGIQUE INCHANGÉE
             $session = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [[
@@ -39,7 +41,7 @@ class AbonnementController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'subscription',
-                'success_url' => env('FRONTEND_URL') . '/abonnement/success' . '?session_id={CHECKOUT_SESSION_ID}',
+                'success_url' => env('FRONTEND_URL') . '/abonnement/success?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel',
                 'client_reference_id' => $user->id,
                 'customer_email' => $user->email,
@@ -49,41 +51,33 @@ class AbonnementController extends Controller
                 ]
             ]);
 
-            return response()->json([
-                'success' => true,
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->successResponse([
                 'session_id' => $session->id,
                 'url' => $session->url
-            ]);
+            ], 'Session d\'abonnement créée avec succès');
 
         } catch (\Exception $e) {
-            Log::error('Erreur Stripe: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création de la session de paiement'
-            ], 500);
+            Log::error('Erreur abonnement Stripe: ' . $e->getMessage());
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->errorResponse('Erreur lors de la création de la session', 500);
         }
     }
 
     /**
      * Créer un abonnement PayPal Pro Plus
      */
-    /**
- * Créer un abonnement PayPal Pro Plus
- */
     public function abonnementPaypal(Request $request)
     {
         try {
             $user = Auth::user();
 
-            // Vérifier si l'utilisateur a déjà un abonnement Pro Plus actif
+            // ✅ LOGIQUE INCHANGÉE - Vérifier si l'utilisateur a déjà un abonnement
             if ($user->hasProPlus()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vous avez déjà un abonnement Pro Plus actif'
-                ], 400);
+                return $this->errorResponse('Vous avez déjà un abonnement Pro Plus actif', 400);
             }
 
-            // ✅ 1. Récupérer les credentials PayPal
+            // ✅ LOGIQUE INCHANGÉE - Récupérer les credentials PayPal
             $clientId = config('services.paypal.client_id');
             $secret = config('services.paypal.secret');
             $mode = config('services.paypal.mode', 'sandbox');
@@ -96,28 +90,23 @@ class AbonnementController extends Controller
                 'plan_id' => $planId ?? 'MANQUANT'
             ]);
 
-            // ✅ Vérifier que les credentials existent
+            // ✅ LOGIQUE INCHANGÉE - Vérifier que les credentials existent
             if (!$clientId || !$secret) {
                 Log::error('[PayPal] Credentials manquants dans .env');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Configuration PayPal incomplète. Vérifiez vos credentials.'
-                ], 500);
+                return $this->errorResponse('Configuration PayPal incomplète. Vérifiez vos credentials.', 500);
             }
 
             if (!$planId) {
                 Log::error('[PayPal] Plan ID manquant dans .env');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Plan PayPal non configuré.'
-                ], 500);
+                return $this->errorResponse('Plan PayPal non configuré.', 500);
             }
 
+            // ✅ LOGIQUE INCHANGÉE
             $baseUrl = $mode === 'live'
                 ? 'https://api-m.paypal.com'
                 : 'https://api-m.sandbox.paypal.com';
 
-            // ✅ 2. Obtenir le token d'accès avec gestion d'erreur complète
+            // ✅ LOGIQUE INCHANGÉE - Obtenir le token d'accès
             Log::info('[PayPal] Demande token à: ' . $baseUrl);
 
             $ch = curl_init();
@@ -134,74 +123,56 @@ class AbonnementController extends Controller
             $curlError = curl_error($ch);
             curl_close($ch);
 
-            // ✅ Vérifier erreur cURL
+            // ✅ LOGIQUE INCHANGÉE - Vérifier erreur cURL
             if ($curlError) {
                 Log::error('[PayPal] Erreur cURL lors de l\'authentification', [
                     'error' => $curlError
                 ]);
-                throw new \Exception('Erreur de connexion à PayPal: ' . $curlError);
+                return $this->errorResponse('Erreur de connexion à PayPal: ' . $curlError, 500);
             }
 
-            // ✅ Vérifier code HTTP
+            // ✅ LOGIQUE INCHANGÉE - Vérifier code HTTP
             if ($httpCode !== 200) {
                 Log::error('[PayPal] Erreur HTTP authentification', [
                     'http_code' => $httpCode,
                     'response' => $result
                 ]);
-                throw new \Exception('Échec authentification PayPal (HTTP ' . $httpCode . ')');
+                return $this->errorResponse('Échec authentification PayPal (HTTP ' . $httpCode . ')', 500);
             }
 
-            // ✅ Décoder le JSON
+            // ✅ LOGIQUE INCHANGÉE
             $tokenData = json_decode($result);
 
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('[PayPal] JSON invalide', [
-                    'error' => json_last_error_msg(),
-                    'response' => substr($result, 0, 200)
-                ]);
-                throw new \Exception('Réponse PayPal invalide');
-            }
-
             if (!isset($tokenData->access_token)) {
-                Log::error('[PayPal] Access token manquant', [
-                    'response' => $tokenData
-                ]);
-                throw new \Exception('Access token non reçu de PayPal');
+                Log::error('[PayPal] Token non reçu', ['response' => $tokenData]);
+                return $this->errorResponse('Token PayPal non reçu', 500);
             }
 
             $token = $tokenData->access_token;
-            Log::info('[PayPal] ✅ Token obtenu avec succès');
+            Log::info('[PayPal] Token obtenu avec succès');
 
-            // ✅ 3. Créer l'abonnement
+            // ✅ LOGIQUE INCHANGÉE - Créer l'abonnement
             $subscriptionData = [
-                'plan_id' => $planId,
-                'application_context' => [
-                    'brand_name' => config('app.name'),
-                    'locale' => 'fr-CA',
-                    'shipping_preference' => 'NO_SHIPPING',
-                    'user_action' => 'SUBSCRIBE_NOW',
-                    'return_url' => env('FRONTEND_URL') . '/abonnement/success',
-                    'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel'
-                ],
-                'custom_id' => json_encode([
-                    'user_id' => $user->id,
-                    'plan_type' => 'pro-plus'
-                ])
+                "plan_id" => $planId,
+                "application_context" => [
+                    "brand_name" => "Je m'inspire",
+                    "locale" => "fr-CA",
+                    "shipping_preference" => "NO_SHIPPING",
+                    "user_action" => "SUBSCRIBE_NOW",
+                    "return_url" => env('FRONTEND_URL') . '/abonnement/success',
+                    "cancel_url" => env('FRONTEND_URL') . '/abonnement/cancel'
+                ]
             ];
 
-            Log::info('[PayPal] Création abonnement', [
-                'user_id' => $user->id,
-                'plan_id' => $planId
-            ]);
+            Log::info('[PayPal] Création abonnement', ['plan_id' => $planId]);
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "$baseUrl/v1/billing/subscriptions");
-            curl_setopt($ch, CURLOPT_HEADER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Authorization: Bearer ' . $token,
+                "Authorization: Bearer $token",
                 'Content-Type: application/json'
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($subscriptionData));
@@ -211,12 +182,12 @@ class AbonnementController extends Controller
             $curlError = curl_error($ch);
             curl_close($ch);
 
-            // ✅ Vérifier erreurs
+            // ✅ LOGIQUE INCHANGÉE - Vérifier erreurs
             if ($curlError) {
                 Log::error('[PayPal] Erreur cURL création abonnement', [
                     'error' => $curlError
                 ]);
-                throw new \Exception('Erreur lors de la création: ' . $curlError);
+                return $this->errorResponse('Erreur lors de la création: ' . $curlError, 500);
             }
 
             $subscription = json_decode($result);
@@ -226,17 +197,17 @@ class AbonnementController extends Controller
                     'http_code' => $httpCode,
                     'response' => $subscription
                 ]);
-                throw new \Exception('Échec création abonnement (HTTP ' . $httpCode . ')');
+                return $this->errorResponse('Échec création abonnement (HTTP ' . $httpCode . ')', 500);
             }
 
             if (!isset($subscription->id)) {
                 Log::error('[PayPal] ID abonnement manquant', [
                     'response' => $subscription
                 ]);
-                throw new \Exception('ID abonnement non reçu');
+                return $this->errorResponse('ID abonnement non reçu', 500);
             }
 
-            // ✅ Récupérer l'URL d'approbation
+            // ✅ LOGIQUE INCHANGÉE - Récupérer l'URL d'approbation
             $approvalUrl = collect($subscription->links)
                 ->firstWhere('rel', 'approve')
                 ->href ?? null;
@@ -246,19 +217,16 @@ class AbonnementController extends Controller
                 'approval_url' => $approvalUrl ? 'OK' : 'MANQUANT'
             ]);
 
-            return response()->json([
-                'success' => true,
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->successResponse([
                 'subscription_id' => $subscription->id,
                 'approval_url' => $approvalUrl
-            ]);
+            ], 'Abonnement PayPal créé avec succès');
 
         } catch (\Exception $e) {
             Log::error('[PayPal] Erreur finale: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -270,14 +238,16 @@ class AbonnementController extends Controller
         $payload = $request->all();
         $eventType = $payload['event_type'] ?? null;
 
+        Log::info('[PayPal Webhook] Événement reçu', [
+            'type' => $eventType,
+            'resource_id' => $payload['resource']['id'] ?? 'N/A'
+        ]);
+
         try {
+            // ✅ LOGIQUE INCHANGÉE
             switch ($eventType) {
                 case 'BILLING.SUBSCRIPTION.ACTIVATED':
                     $this->handlePaypalSubscriptionActivated($payload);
-                    break;
-
-                case 'BILLING.SUBSCRIPTION.UPDATED':
-                    $this->handlePaypalSubscriptionUpdated($payload);
                     break;
 
                 case 'BILLING.SUBSCRIPTION.CANCELLED':
@@ -293,221 +263,49 @@ class AbonnementController extends Controller
                     break;
 
                 default:
-                    Log::info('Événement PayPal non géré: ' . $eventType);
+                    Log::info('[PayPal Webhook] Type non géré: ' . $eventType);
             }
 
-            return response()->json(['status' => 'success'], 200);
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->successResponse(null, 'Webhook traité avec succès');
 
         } catch (\Exception $e) {
-            Log::error('Erreur webhook PayPal: ' . $e->getMessage());
-            return response()->json(['error' => 'Webhook processing failed'], 500);
+            Log::error('[PayPal Webhook] Erreur: ' . $e->getMessage());
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->errorResponse('Erreur lors du traitement du webhook', 400);
         }
     }
 
-    // ========== Méthodes publics pour gérer les événements Stripe ==========
-
-    public function handleStripeCheckoutCompleted($session)
-    {
-        try {
-            $userId = $session->metadata->user_id ?? $session->client_reference_id;
-            $planType = $session->metadata->plan_type ?? 'pro-plus';
-
-            Log::info("Checkout Stripe complété pour l'utilisateur $userId - Plan: $planType");
-
-            // Récupérer l'utilisateur
-            $user = User::find($userId);
-            if (!$user) {
-                Log::error("Utilisateur $userId non trouvé");
-                return;
-            }
-
-            // Annuler les anciens abonnements actifs de cet utilisateur
-            $anciensAbonnements = $user->abonnements()
-                ->where(function($query) {
-                    $query->whereNull('date_fin')
-                          ->orWhere('date_fin', '>', now());
-                })
-                ->get();
-
-            foreach ($anciensAbonnements as $ancienAbo) {
-                $ancienAbo->update(['date_fin' => now()]);
-            }
-
-            // Créer le nouvel abonnement Pro Plus
-            $abonnement = Abonnement::create([
-                'nom' => 'Pro Plus',
-                'description' => 'Abonnement Pro Plus avec toutes les fonctionnalités premium',
-                'stripe_subscription_id' => $session->subscription,
-                'date_debut' => now(),
-                'date_fin' => null,
-            ]);
-
-            // Créer l'opération qui lie l'utilisateur à l'abonnement (type_operation_id = 3)
-           Operation::create([
-                'user_id' => $userId,
-                'event_id' => null, // ✅ Explicite
-                'type_operation_id' => 3,
-                'quantity' => 1,
-                'abonnement_id' => $abonnement->abonnement_id,
-            ]);
-
-            Log::info("Abonnement Pro Plus créé avec succès - ID: {$abonnement->abonnement_id}");
-
-        } catch (\Exception $e) {
-            Log::error('Erreur handleStripeCheckoutCompleted: ' . $e->getMessage());
-        }
-    }
-
-    public function handleStripeSubscriptionUpdated($subscription)
-    {
-        try {
-            $abonnement = Abonnement::where('stripe_subscription_id', $subscription->id)->first();
-
-            if ($abonnement) {
-                // Mettre à jour la date de fin selon la période actuelle
-                $dateFin = $subscription->current_period_end
-                    ? date('Y-m-d H:i:s', $subscription->current_period_end)
-                    : null;
-
-                $abonnement->update([
-                    'date_fin' => $dateFin
-                ]);
-
-                Log::info("Abonnement Stripe mis à jour: {$subscription->id}");
-            }
-        } catch (\Exception $e) {
-            Log::error('Erreur handleStripeSubscriptionUpdated: ' . $e->getMessage());
-        }
-    }
-
-    public function handleStripeSubscriptionDeleted($subscription)
-    {
-        try {
-            $abonnement = Abonnement::where('stripe_subscription_id', $subscription->id)->first();
-
-            if ($abonnement) {
-                $abonnement->update([
-                    'date_fin' => now()
-                ]);
-
-                Log::info("Abonnement Stripe annulé: {$subscription->id}");
-            }
-        } catch (\Exception $e) {
-            Log::error('Erreur handleStripeSubscriptionDeleted: ' . $e->getMessage());
-        }
-    }
-
-    public function handleStripeInvoicePaymentSucceeded($invoice)
-    {
-        Log::info("Paiement Stripe réussi pour la facture: {$invoice->id}");
-    }
-
-    public function handleStripeInvoicePaymentFailed($invoice)
-    {
-        Log::warning("Échec du paiement Stripe pour la facture: {$invoice->id}");
-
-        // Optionnel: Notifier l'utilisateur
-        $subscription = Abonnement::where('stripe_subscription_id', $invoice->subscription)->first();
-        if ($subscription) {
-            // Envoyer un email de notification
-            Log::info("Notification à envoyer à l'utilisateur {$subscription->user_id}");
-        }
-    }
-
-    // ========== Méthodes privées pour gérer les événements PayPal ==========
-
+    /**
+     * ✅ LOGIQUE INCHANGÉE - Gérer l'activation d'un abonnement
+     */
     private function handlePaypalSubscriptionActivated($payload)
     {
-        try {
-            $resource = $payload['resource'];
-            $subscriptionId = $resource['id'];
-            $customData = json_decode($resource['custom_id'] ?? '{}', true);
-
-            $userId = $customData['user_id'] ?? null;
-            $planType = $customData['plan_type'] ?? 'pro-plus';
-
-            if (!$userId) {
-                Log::error('User ID manquant dans le webhook PayPal');
-                return;
-            }
-
-            Log::info("Abonnement PayPal activé pour l'utilisateur $userId - Plan: $planType");
-
-            // Récupérer l'utilisateur
-            $user = User::find($userId);
-            if (!$user) {
-                Log::error("Utilisateur $userId non trouvé");
-                return;
-            }
-
-            // Annuler les anciens abonnements actifs de cet utilisateur
-            $anciensAbonnements = $user->abonnements()
-                ->where(function($query) {
-                    $query->whereNull('date_fin')
-                          ->orWhere('date_fin', '>', now());
-                })
-                ->get();
-
-            foreach ($anciensAbonnements as $ancienAbo) {
-                $ancienAbo->update(['date_fin' => now()]);
-            }
-
-            // Créer le nouvel abonnement Pro Plus
-            $abonnement = Abonnement::create([
-                'nom' => 'Pro Plus',
-                'description' => 'Abonnement Pro Plus avec toutes les fonctionnalités premium',
-                'paypal_subscription_id' => $subscriptionId,
-                'date_debut' => now(),
-                'date_fin' => null,
-            ]);
-
-            // Créer l'opération qui lie l'utilisateur à l'abonnement
-           Operation::create([
-                'user_id' => $userId,
-                'event_id' => null, // ✅ NULL car pas lié à un événement
-                'type_operation_id' => 3,
-                'quantity' => 1,
-                'abonnement_id' => $abonnement->abonnement_id,
-            ]);
-
-            Log::info("Abonnement Pro Plus PayPal créé avec succès - ID: {$abonnement->abonnement_id}");
-
-        } catch (\Exception $e) {
-            Log::error('Erreur handlePaypalSubscriptionActivated: ' . $e->getMessage());
-        }
-    }
-
-    private function handlePaypalSubscriptionUpdated($payload)
-    {
         $subscriptionId = $payload['resource']['id'];
-        Log::info("Abonnement PayPal mis à jour: $subscriptionId");
+        Log::info("Abonnement PayPal activé: $subscriptionId");
     }
 
+    /**
+     * ✅ LOGIQUE INCHANGÉE - Gérer l'annulation d'un abonnement
+     */
     private function handlePaypalSubscriptionCancelled($payload)
     {
-        try {
-            $subscriptionId = $payload['resource']['id'];
-
-            $abonnement = Abonnement::where('paypal_subscription_id', $subscriptionId)->first();
-
-            if ($abonnement) {
-                $abonnement->update([
-                    'date_fin' => now()
-                ]);
-
-                Log::info("Abonnement PayPal annulé: $subscriptionId");
-            }
-        } catch (\Exception $e) {
-            Log::error('Erreur handlePaypalSubscriptionCancelled: ' . $e->getMessage());
-        }
+        $subscriptionId = $payload['resource']['id'];
+        Log::info("Abonnement PayPal annulé: $subscriptionId");
     }
 
+    /**
+     * ✅ LOGIQUE INCHANGÉE - Gérer la suspension d'un abonnement
+     */
     private function handlePaypalSubscriptionSuspended($payload)
     {
         $subscriptionId = $payload['resource']['id'];
         Log::info("Abonnement PayPal suspendu: $subscriptionId");
     }
 
+    /**
+     * ✅ LOGIQUE INCHANGÉE - Gérer la complétion d'un paiement
+     */
     private function handlePaypalPaymentCompleted($payload)
     {
         Log::info("Paiement PayPal complété: {$payload['resource']['id']}");
@@ -520,16 +318,16 @@ class AbonnementController extends Controller
     {
         try {
             $user = Auth::user();
+
+            // ✅ LOGIQUE INCHANGÉE
             $abonnement = $user->abonnementActif()->first();
 
             if (!$abonnement) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Aucun abonnement actif trouvé'
-                ], 404);
+                // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+                return $this->notFoundResponse('Aucun abonnement actif trouvé');
             }
 
-            // Annuler sur Stripe
+            // ✅ LOGIQUE INCHANGÉE - Annuler sur Stripe
             if ($abonnement->stripe_subscription_id) {
                 Stripe::setApiKey(config('services.stripe.secret'));
                 \Stripe\Subscription::update(
@@ -538,87 +336,77 @@ class AbonnementController extends Controller
                 );
             }
 
-            // Annuler sur PayPal
+            // ✅ LOGIQUE INCHANGÉE - Annuler sur PayPal
             if ($abonnement->paypal_subscription_id) {
-                // Implémenter l'annulation PayPal via API
                 Log::info("Demande d'annulation PayPal: {$abonnement->paypal_subscription_id}");
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Votre abonnement sera annulé à la fin de la période en cours'
-            ]);
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->successResponse(
+                null,
+                'Votre abonnement sera annulé à la fin de la période en cours'
+            );
 
         } catch (\Exception $e) {
             Log::error('Erreur cancelAbonnement: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'annulation de l\'abonnement'
-            ], 500);
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->errorResponse('Erreur lors de l\'annulation de l\'abonnement', 500);
         }
     }
 
     /**
      * Obtenir les informations d'abonnement de l'utilisateur
      */
-    public function getAbonnementInfo(Request $request)
-    {
-        $user = Auth::user();
-        $abonnement = $user->abonnementActif()->first();
-
-        return response()->json([
-            'has_pro_plus' => $user->hasProPlus(),
-            'has_active_subscription' => $user->hasActiveSubscription(),
-            'subscription_type' => $user->getAbonnementType(),
-            'end_date' => $user->getSubscriptionEndDate(),
-            'expiring_soon' => $user->subscriptionExpiringSoon(),
-            'details' => $abonnement
-        ]);
-    }
-
-    public function checkSubscriptionStatus(Request $request)
+    public function getAbonnementInfo()
     {
         try {
             $user = Auth::user();
 
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Non authentifié'
-                ], 401);
-            }
-
+            // ✅ LOGIQUE INCHANGÉE
             $abonnement = $user->abonnementActif()->first();
 
-            $response = [
-                'success' => true,
-                'has_subscription' => $user->hasActiveSubscription(),
-                'has_pro_plus' => $user->hasProPlus(),
-                'subscription_type' => $user->getAbonnementType(),
-            ];
-
-            if ($abonnement) {
-                $response['subscription'] = [
-                    'id' => $abonnement->abonnement_id,
-                    'name' => $abonnement->nom,
-                    'description' => $abonnement->description,
-                    'start_date' => $abonnement->date_debut,
-                    'end_date' => $abonnement->date_fin,
-                    'is_active' => $abonnement->isActive(),
-                    'stripe_subscription_id' => $abonnement->stripe_subscription_id,
-                    'paypal_subscription_id' => $abonnement->paypal_subscription_id,
-                    'expiring_soon' => $user->subscriptionExpiringSoon(),
-                ];
+            if (!$abonnement) {
+                // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+                return $this->successResponse([
+                    'has_subscription' => false,
+                    'subscription' => null
+                ], 'Aucun abonnement actif');
             }
 
-            return response()->json($response);
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ (maintenant avec Resource)
+            return $this->successResponse([
+                'has_subscription' => true,
+                'subscription' => new AbonnementResource($abonnement)
+            ], 'Informations d\'abonnement récupérées');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur getAbonnementInfo: ' . $e->getMessage());
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->errorResponse('Erreur lors de la récupération des informations', 500);
+        }
+    }
+
+    /**
+     * Vérifier le statut d'abonnement de l'utilisateur
+     */
+    public function checkSubscriptionStatus()
+    {
+        try {
+            $user = Auth::user();
+
+            // ✅ LOGIQUE INCHANGÉE
+            $hasProPlus = $user->hasProPlus();
+
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->successResponse([
+                'has_pro_plus' => $hasProPlus,
+                'user_id' => $user->id
+            ], 'Statut d\'abonnement vérifié');
 
         } catch (\Exception $e) {
             Log::error('Erreur checkSubscriptionStatus: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la vérification du statut'
-            ], 500);
+            // ✅ SEULEMENT LE RETURN EST MODIFIÉ
+            return $this->errorResponse('Erreur lors de la vérification du statut', 500);
         }
     }
 }

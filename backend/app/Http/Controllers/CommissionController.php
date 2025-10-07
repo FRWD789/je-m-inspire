@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CommissionController extends Controller
 {
+    use ApiResponse;
+
     /**
-     * Récupérer tous les utilisateurs professionnels avec leur taux de commission
+     * Récupérer tous les professionnels avec leur taux de commission
      */
     public function index()
     {
@@ -29,24 +33,20 @@ class CommissionController extends Controller
                     'last_name' => $user->last_name,
                     'full_name' => $user->name . ' ' . $user->last_name,
                     'email' => $user->email,
-                    'commission_rate' => $user->commission_rate ?? 0,
+                    'commission_rate' => (float) ($user->commission_rate ?? 0),
                     'has_stripe' => !empty($user->stripeAccount_id),
                     'has_paypal' => !empty($user->paypalAccount_id),
                 ];
             });
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'data' => $professionals,
                 'total' => $professionals->count()
-            ]);
+            ], 'Professionnels récupérés avec succès');
 
         } catch (\Exception $e) {
             Log::error('Erreur récupération professionnels: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des professionnels'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la récupération des professionnels', 500);
         }
     }
 
@@ -55,27 +55,19 @@ class CommissionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $validator = Validator::make($request->all(), [
+            'commission_rate' => 'required|numeric|min:0|max:100'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
         try {
-            $validator = Validator::make($request->all(), [
-                'commission_rate' => 'required|numeric|min:0|max:100'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation échouée',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
             $user = User::findOrFail($id);
 
-            // Vérifier que c'est bien un professionnel
             if (!$user->roles()->where('role', 'professionnel')->exists()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cet utilisateur n\'est pas un professionnel'
-                ], 400);
+                return $this->errorResponse('Cet utilisateur n\'est pas un professionnel', 400);
             }
 
             $oldRate = $user->commission_rate;
@@ -84,52 +76,38 @@ class CommissionController extends Controller
 
             Log::info("Commission mise à jour pour {$user->email}: {$oldRate}% → {$user->commission_rate}%");
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Taux de commission mis à jour avec succès',
-                'data' => [
-                    'id' => $user->id,
-                    'full_name' => $user->name . ' ' . $user->last_name,
-                    'email' => $user->email,
-                    'commission_rate' => $user->commission_rate,
-                    'old_rate' => $oldRate
-                ]
-            ]);
+            return $this->successResponse([
+                'id' => $user->id,
+                'full_name' => $user->name . ' ' . $user->last_name,
+                'email' => $user->email,
+                'commission_rate' => (float) $user->commission_rate,
+                'old_rate' => (float) $oldRate
+            ], 'Taux de commission mis à jour avec succès');
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Utilisateur non trouvé'
-            ], 404);
+            return $this->notFoundResponse('Utilisateur non trouvé');
         } catch (\Exception $e) {
             Log::error('Erreur mise à jour commission: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la mise à jour'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la mise à jour', 500);
         }
     }
 
     /**
-     * Mettre à jour plusieurs taux de commission en une fois
+     * Mise à jour groupée des taux de commission
      */
     public function bulkUpdate(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'updates' => 'required|array',
+            'updates.*.user_id' => 'required|exists:users,id',
+            'updates.*.commission_rate' => 'required|numeric|min:0|max:100'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
         try {
-            $validator = Validator::make($request->all(), [
-                'updates' => 'required|array|min:1',
-                'updates.*.user_id' => 'required|exists:users,id',
-                'updates.*.commission_rate' => 'required|numeric|min:0|max:100'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation échouée',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
             $updated = [];
             $errors = [];
 
@@ -139,19 +117,21 @@ class CommissionController extends Controller
 
                     if (!$user->roles()->where('role', 'professionnel')->exists()) {
                         $errors[] = [
-                            'user_id' => $user->id,
-                            'message' => 'Non professionnel'
+                            'user_id' => $update['user_id'],
+                            'message' => 'N\'est pas un professionnel'
                         ];
                         continue;
                     }
 
+                    $oldRate = $user->commission_rate;
                     $user->commission_rate = $update['commission_rate'];
                     $user->save();
 
                     $updated[] = [
                         'user_id' => $user->id,
-                        'full_name' => $user->name . ' ' . $user->last_name,
-                        'new_rate' => $user->commission_rate
+                        'email' => $user->email,
+                        'old_rate' => (float) $oldRate,
+                        'new_rate' => (float) $user->commission_rate
                     ];
 
                 } catch (\Exception $e) {
@@ -162,24 +142,21 @@ class CommissionController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => count($updated) . ' taux mis à jour',
+            return $this->successResponse([
                 'updated' => $updated,
-                'errors' => $errors
-            ]);
+                'errors' => $errors,
+                'total_updated' => count($updated),
+                'total_errors' => count($errors)
+            ], count($updated) . ' taux mis à jour avec succès');
 
         } catch (\Exception $e) {
             Log::error('Erreur bulk update commission: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la mise à jour groupée'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la mise à jour groupée', 500);
         }
     }
 
     /**
-     * Obtenir les statistiques sur les commissions
+     * Statistiques sur les commissions
      */
     public function statistics()
     {
@@ -191,8 +168,8 @@ class CommissionController extends Controller
             $stats = [
                 'total_professionals' => $professionals->count(),
                 'average_rate' => round($professionals->avg('commission_rate') ?? 0, 2),
-                'min_rate' => $professionals->min('commission_rate') ?? 0,
-                'max_rate' => $professionals->max('commission_rate') ?? 0,
+                'min_rate' => (float) ($professionals->min('commission_rate') ?? 0),
+                'max_rate' => (float) ($professionals->max('commission_rate') ?? 0),
                 'with_stripe' => $professionals->where('stripeAccount_id', '!=', null)->count(),
                 'with_paypal' => $professionals->where('paypalAccount_id', '!=', null)->count(),
                 'rate_distribution' => [
@@ -204,17 +181,11 @@ class CommissionController extends Controller
                 ]
             ];
 
-            return response()->json([
-                'success' => true,
-                'data' => $stats
-            ]);
+            return $this->successResponse($stats, 'Statistiques récupérées avec succès');
 
         } catch (\Exception $e) {
             Log::error('Erreur statistiques commission: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des statistiques'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la récupération des statistiques', 500);
         }
     }
 }
