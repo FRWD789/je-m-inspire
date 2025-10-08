@@ -21,6 +21,7 @@ import {AdminRemboursements} from './components/remboursements/AdminRemboursemen
 import RegisterUserForm from "./components/auth/RegisterUserForm";
 import RegisterProfessionalForm from "./components/auth/RegisterProfessionnalForm";
 import AdminApprovalPage from "./components/admin/AdminApprovalPage";
+import EventCalendar from "./components/events/EventCalendar";
 
 // Helper pour logs conditionnels
 const DEBUG = import.meta.env.DEV;
@@ -244,6 +245,8 @@ function AppContent() {
             <VendorEarningsPage />
           </ProtectedRoute>
         } />
+
+        <Route path="/calendar" element={<EventCalendar />} />
       </Routes>
     </div>
   );
