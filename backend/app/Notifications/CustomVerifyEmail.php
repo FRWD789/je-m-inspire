@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Notifications;
+
 use Illuminate\Support\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,9 +31,9 @@ class CustomVerifyEmail extends Notification
         );
 
         $query = parse_url($signedUrl, PHP_URL_QUERY);
-        $frontendUrl = config('app.frontend_url') 
-            . '/verify-email?id=' . $notifiable->getKey() 
-            . '&hash=' . sha1($notifiable->email) 
+        $frontendUrl = config('app.frontend_url')
+            . '/verify-email?id=' . $notifiable->getKey()
+            . '&hash=' . sha1($notifiable->email)
             . '&' . $query;
 
         return $frontendUrl;
@@ -53,13 +54,37 @@ class CustomVerifyEmail extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = $this->verificationUrl($notifiable); // your custom frontend URL
+        $url = $this->verificationUrl($notifiable);
 
+        // ✅ Vérifier si c'est un professionnel approuvé
+        $isProfessional = $notifiable->roles()->where('role', 'professionnel')->exists();
+
+        if ($isProfessional && $notifiable->is_approved) {
+            return (new MailMessage)
+                ->subject('🎉 Félicitations ! Votre compte professionnel a été approuvé')
+                ->greeting('Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',')
+                ->line('Excellente nouvelle ! Votre demande d\'inscription en tant que professionnel a été **approuvée** par notre équipe.')
+                ->line('Pour finaliser l\'activation de votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :')
+                ->action('Vérifier mon email', $url)
+                ->line('Ce lien est valide pendant 60 minutes.')
+                ->line('**Prochaines étapes après vérification :**')
+                ->line('• Vous pourrez vous connecter à votre compte')
+                ->line('• Compléter votre profil professionnel')
+                ->line('• Commencer à créer et gérer vos événements')
+                ->line('Si vous n\'avez pas créé de compte, aucune action n\'est requise.')
+                ->salutation('Bienvenue dans notre communauté ! L\'équipe ' . config('app.name'));
+        }
+
+        // Email de vérification standard
         return (new MailMessage)
-            ->subject('Verify Your Email Address')
-            ->line('Please click the button below to verify your email address.')
-            ->action('Verify Email', $url) // <- point to React frontend
-            ->line('If you did not create an account, no further action is required.');
+            ->subject('Vérifiez votre adresse email')
+            ->greeting('Bonjour ' . $notifiable->name . ',')
+            ->line('Merci de vous être inscrit sur notre plateforme !')
+            ->line('Veuillez cliquer sur le bouton ci-dessous pour vérifier votre adresse email.')
+            ->action('Vérifier mon email', $url)
+            ->line('Ce lien est valide pendant 60 minutes.')
+            ->line('Si vous n\'avez pas créé de compte, aucune action n\'est requise.')
+            ->salutation('Cordialement, L\'équipe ' . config('app.name'));
     }
 
     /**
@@ -70,7 +95,8 @@ class CustomVerifyEmail extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'message' => 'Vérification email requise',
+            'email' => $notifiable->email
         ];
     }
 }

@@ -16,11 +16,14 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\ProfessionalApprovedNotification;
+use App\Notifications\ProfessionalRejectedNotification;
+
 
 class AuthController extends Controller
 {
-    use ApiResponse;
-
+  
+   use ApiResponse;
     /**
      * Inscription pour les utilisateurs réguliers
      */

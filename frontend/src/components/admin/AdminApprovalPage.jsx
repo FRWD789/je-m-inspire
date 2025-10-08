@@ -77,6 +77,7 @@ const AdminApprovalPage = () => {
       setRejectionReason('');
       fetchData();
     } catch (error) {
+      console.error('Erreur rejet:', error);
       alert(error.response?.data?.message || 'Erreur lors du rejet');
     } finally {
       setProcessing(null);
@@ -158,6 +159,74 @@ const AdminApprovalPage = () => {
         </table>
       )}
 
+      {/* ✅ Modal lettre de motivation */}
+      {showModal?.type === 'motivation' && (
+        <div style={modalOverlay} onClick={() => setShowModal(null)}>
+          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>📝 Lettre de motivation</h3>
+              <button 
+                onClick={() => setShowModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+              <p style={{ margin: '5px 0' }}><strong>Nom:</strong> {showModal.user.name} {showModal.user.last_name}</p>
+              <p style={{ margin: '5px 0' }}><strong>Email:</strong> {showModal.user.email}</p>
+              <p style={{ margin: '5px 0' }}><strong>Ville:</strong> {showModal.user.city || 'N/A'}</p>
+              <p style={{ margin: '5px 0' }}><strong>Date de naissance:</strong> {new Date(showModal.user.date_of_birth).toLocaleDateString('fr-FR')}</p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ marginBottom: '10px', color: '#333' }}>Lettre de motivation:</h4>
+              <div style={{
+                padding: '15px',
+                backgroundColor: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: '5px',
+                minHeight: '150px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                whiteSpace: 'pre-wrap',
+                lineHeight: '1.6',
+                fontSize: '14px'
+              }}>
+                {showModal.user.motivation_letter || 'Aucune lettre de motivation fournie'}
+              </div>
+            </div>
+
+            {!showModal.user.is_approved && !showModal.user.rejection_reason && (
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button 
+                  onClick={() => {
+                    setShowModal(null);
+                    handleApprove(showModal.user.id, showModal.user.last_name);
+                  }}
+                  style={btn('#28a745')}
+                >
+                  ✓ Approuver
+                </button>
+                <button
+                  onClick={() => setShowModal({ type: 'reject', user: showModal.user })}
+                  style={btn('#dc3545')}
+                >
+                  ✗ Rejeter
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Modal rejet */}
       {showModal?.type === 'reject' && (
         <div style={modalOverlay}>
@@ -175,6 +244,9 @@ const AdminApprovalPage = () => {
               rows={4}
               style={textarea}
             />
+            <small style={{ color: '#666', display: 'block', marginBottom: '15px' }}>
+              {rejectionReason.length}/500 caractères
+            </small>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(null)} style={btn('#6c757d')}>
                 Annuler
