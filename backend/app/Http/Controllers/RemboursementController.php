@@ -27,8 +27,8 @@ class RemboursementController extends Controller
         try {
             $validated = $request->validate([
                 'operation_id' => 'required|exists:operations,id',
-                'raison' => 'required|string|max:500',
-                'montant_demande' => 'required|numeric|min:0.01'
+                'motif' => 'required|string|max:500',
+                'montant' => 'required|numeric|min:0.01'
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
@@ -58,37 +58,37 @@ class RemboursementController extends Controller
 
             $montantMax = $operation->paiement->total;
 
-            if ($validated['montant_demande'] > $montantMax) {
+            if ($validated['montant'] > $montantMax) {
                 return $this->errorResponse("Le montant demandé ne peut pas dépasser {$montantMax} CAD", 400);
             }
 
             $remboursement = Remboursement::create([
                 'user_id' => Auth::id(),
                 'operation_id' => $validated['operation_id'],
-                'montant' => $validated['montant_demande'],
-                'raison' => $validated['raison'],
+                'montant' => $validated['montant'],
+                'motif' => $validated['motif'],
                 'statut' => 'en_attente'
             ]);
 
             DB::commit();
 
             if ($debug) {
-                Log::info('Demande de remboursement créée', [
+                Log::info('[Remboursement] Demande créée', [
                     'remboursement_id' => $remboursement->id,
                     'user_id' => Auth::id(),
-                    'montant' => $validated['montant_demande']
+                    'montant' => $validated['montant']
                 ]);
             }
 
             return $this->resourceResponse(
-                new RemboursementResource($remboursement->load(['operation.event'])),
+                new RemboursementResource($remboursement->load(['user', 'operation.event'])),
                 'Demande de remboursement créée avec succès',
                 201
             );
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur création remboursement: ' . $e->getMessage());
+            Log::error('[Remboursement] Erreur création: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la création de la demande', 500);
         }
     }
@@ -100,7 +100,7 @@ class RemboursementController extends Controller
     {
         try {
             $demandes = Remboursement::where('user_id', Auth::id())
-                ->with('operation.event')
+                ->with(['user', 'operation.event'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -110,7 +110,7 @@ class RemboursementController extends Controller
             );
 
         } catch (\Exception $e) {
-            Log::error('Erreur récupération demandes: ' . $e->getMessage());
+            Log::error('[Remboursement] Erreur récupération demandes: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la récupération des demandes', 500);
         }
     }
@@ -131,7 +131,7 @@ class RemboursementController extends Controller
             );
 
         } catch (\Exception $e) {
-            Log::error('Erreur récupération toutes demandes: ' . $e->getMessage());
+            Log::error('[Remboursement] Erreur récupération toutes demandes: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la récupération des demandes', 500);
         }
     }
@@ -145,7 +145,7 @@ class RemboursementController extends Controller
 
         try {
             $validated = $request->validate([
-                'statut' => 'required|in:approuve,rejete',
+                'statut' => 'required|in:approuve,refuse',
                 'commentaire_admin' => 'nullable|string|max:500'
             ]);
         } catch (ValidationException $e) {
@@ -178,10 +178,18 @@ class RemboursementController extends Controller
                 }
 
                 if ($debug) {
-                    Log::info('Remboursement approuvé', [
+                    Log::info('[Remboursement] Demande approuvée', [
                         'remboursement_id' => $remboursement->id,
                         'montant' => $remboursement->montant,
                         'user_id' => $remboursement->user_id
+                    ]);
+                }
+            } else {
+                if ($debug) {
+                    Log::info('[Remboursement] Demande refusée', [
+                        'remboursement_id' => $remboursement->id,
+                        'user_id' => $remboursement->user_id,
+                        'raison' => $validated['commentaire_admin'] ?? 'Non spécifiée'
                     ]);
                 }
             }
@@ -190,7 +198,7 @@ class RemboursementController extends Controller
 
             $message = $validated['statut'] === 'approuve'
                 ? 'Demande de remboursement approuvée'
-                : 'Demande de remboursement rejetée';
+                : 'Demande de remboursement refusée';
 
             return $this->resourceResponse(
                 new RemboursementResource($remboursement->load(['user', 'operation.event'])),
@@ -201,7 +209,7 @@ class RemboursementController extends Controller
             return $this->notFoundResponse('Demande de remboursement non trouvée');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur traitement remboursement: ' . $e->getMessage());
+            Log::error('[Remboursement] Erreur traitement: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors du traitement de la demande', 500);
         }
     }

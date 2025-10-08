@@ -3,7 +3,6 @@ import { useApi } from '../../contexts/AuthContext';
 import { EventImageUploader } from './EventImageUploader';
 
 export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
-    // Supporter les deux noms de props pour la compatibilité
     const handleCancel = onClose || onCancel;
     const [formData, setFormData] = useState({
         name: event.name || '',
@@ -25,7 +24,7 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
     });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const { put } = useApi();
+    const { post } = useApi();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,10 +32,12 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
         setErrors({});
 
         try {
-            // Créer FormData pour envoyer les fichiers
             const eventFormData = new FormData();
 
-            // Ajouter les champs de l'événement qui ont changé
+            // IMPORTANT: Ajouter _method pour simuler PUT avec POST
+            eventFormData.append('_method', 'PUT');
+
+            // Ajouter les champs de l'événement
             Object.keys(formData).forEach(key => {
                 if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
                     eventFormData.append(key, formData[key]);
@@ -59,12 +60,14 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
             });
 
             console.log('📤 Envoi des modifications:', {
+                method: 'POST with _method=PUT',
                 newImagesCount: imageData.newFiles.length,
                 imagesToDelete: imageData.imagesToDelete,
                 imagesOrder: imageData.existingImages.map(img => img.id)
             });
 
-            await put(`/api/events/${event.id}`, eventFormData, {
+            // Utiliser POST au lieu de PUT pour supporter les fichiers
+            await post(`/api/events/${event.id}`, eventFormData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -98,6 +101,7 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
     };
 
     const handleImagesChange = (data) => {
+        console.log('🔄 Images changées:', data);
         setImageData(data);
     };
 
@@ -180,7 +184,7 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
                         maxImages={5}
                     />
 
-                    {/* Nom et Description */}
+                    {/* Nom et Niveau */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
@@ -219,6 +223,7 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
                         </div>
                     </div>
 
+                    {/* Description */}
                     <div style={{ marginBottom: '15px' }}>
                         <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                             Description *
