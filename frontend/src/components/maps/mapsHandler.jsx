@@ -65,9 +65,24 @@ export const MapHandler = ({events, onMapReady}) =>
                 });
 
                 marker.addEventListener('mouseover', () => {
+                    // Get the first image URL if available
+                    let firstImageUrl = null;
+                    
+                    if (event.images && event.images.length > 0) {
+                        // The image is an object with a url property
+                        firstImageUrl = event.images[0].url;
+                    }
+                    
+                    debug('First image URL:', firstImageUrl);
+                    
+                    const imageHtml = firstImageUrl ? 
+                        `<img src="${firstImageUrl}" alt="${event.name}" style="width: 100%; max-width: 200px; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;" onerror="this.style.display='none'" />` : 
+                        '';
+
                     // Ouvre l'info-bulle avec les détails de l'événement
                     const infoWindow = new google.maps.InfoWindow({
                         content: `<div style="max-width:200px;">
+                                    ${imageHtml}
                                     <h3>${event.name}</h3>
                                     <p>${event.description || 'Pas de description disponible.'}</p>
                                     <p><strong>Date:</strong> ${new Date(event.start_date).toLocaleDateString()}</p>
@@ -77,6 +92,7 @@ export const MapHandler = ({events, onMapReady}) =>
                     infoWindow.open(map, marker);
                 });
 
+                /*
                 marker.addEventListener('mouseout', () => {
                     // Fermer l'info-bulle lorsque la souris quitte le marqueur
                     const infoWindows = document.getElementsByClassName('gm-style-iw');
@@ -84,7 +100,7 @@ export const MapHandler = ({events, onMapReady}) =>
                         infoWindows[i].style.display = 'none';
                     }
                 });
-
+                */
                 marker.addEventListener('click', () => {
                     const element = document.getElementById(`event-${event.id}`);
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
