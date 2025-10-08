@@ -215,4 +215,6 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
     {
         return $this->stripeAccount_id != null;
     }
+
+
 }

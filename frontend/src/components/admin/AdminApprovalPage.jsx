@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, useApi } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const AdminApprovalPage = () => {
   const { user, hasRole } = useAuth();
   const { get, post, del } = useApi(); // del pour DELETE
@@ -59,7 +73,7 @@ const fetchData = async () => {
       });
     }
   } catch (error) {
-    console.error('Erreur chargement:', error);
+    debugError('Erreur chargement:', error);
     alert('Erreur lors du chargement des données');
     setProfessionals([]); // ✅ Assurer que c'est toujours un tableau
   } finally {

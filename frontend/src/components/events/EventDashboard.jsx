@@ -5,8 +5,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import { EventList } from './EventList';
 import { CreateEventForm } from './CreateEventForm';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 export const EventDashboard = () => {
-  console.log('🎪 EventDashboard: Début du composant');
+  debug('🎪 EventDashboard: Début du composant');
   
   const { isAuthenticated, isInitialized, loading, user, isProfessional } = useAuth();
   const navigate = useNavigate();
@@ -15,7 +29,7 @@ export const EventDashboard = () => {
 
   const isPro = isProfessional();
 
-  console.log('🎪 EventDashboard state:', {
+  debug('🎪 EventDashboard state:', {
     isAuthenticated,
     isInitialized,
     loading,
@@ -25,7 +39,7 @@ export const EventDashboard = () => {
   });
 
   if (loading || !isInitialized) {
-    console.log('🎪 EventDashboard: En attente d\'initialisation...');
+    debug('🎪 EventDashboard: En attente d\'initialisation...');
     return (
       <div style={{
         display: 'flex',
@@ -39,11 +53,11 @@ export const EventDashboard = () => {
   }
 
   if (!isAuthenticated) {
-    console.log('🎪 EventDashboard: Non authentifié, redirection vers /login');
+    debug('🎪 EventDashboard: Non authentifié, redirection vers /login');
     return <Navigate to="/login" replace />;
   }
 
-  console.log('🎪 EventDashboard: Rendu du composant');
+  debug('🎪 EventDashboard: Rendu du composant');
 
   return (
     <div style={{
@@ -69,7 +83,7 @@ export const EventDashboard = () => {
       }}>
         <button
           onClick={() => {
-            console.log('🔄 Changement onglet: all');
+            debug('🔄 Changement onglet: all');
             setActiveTab('all');
           }}
           style={{
@@ -89,7 +103,7 @@ export const EventDashboard = () => {
 
         <button
           onClick={() => {
-            console.log('🔄 Changement onglet: my-events');
+            debug('🔄 Changement onglet: my-events');
             setActiveTab('my-events');
           }}
           style={{
@@ -110,7 +124,7 @@ export const EventDashboard = () => {
         {isPro && (
           <button
             onClick={() => {
-              console.log('🚀 Navigation vers /abonnement');
+              debug('🚀 Navigation vers /abonnement');
               navigate('/abonnement');
             }}
             style={{
@@ -137,7 +151,7 @@ export const EventDashboard = () => {
         <div style={{ marginBottom: '20px' }}>
           <button
             onClick={() => {
-              console.log('🔄 Toggle form:', !showCreateForm);
+              debug('🔄 Toggle form:', !showCreateForm);
               setShowCreateForm(!showCreateForm);
             }}
             style={{
@@ -168,7 +182,7 @@ export const EventDashboard = () => {
         }}>
           <CreateEventForm 
             onEventCreated={() => {
-              console.log('✅ Événement créé, fermeture formulaire');
+              debug('✅ Événement créé, fermeture formulaire');
               setShowCreateForm(false);
             }}
           />
@@ -202,7 +216,7 @@ export const EventDashboard = () => {
               </p>
             </div>
             
-            {console.log('🔄 Rendu EventList pour /api/events')}
+            {debug('🔄 Rendu EventList pour /api/events')}
             <EventList 
               endpoint="/api/events" 
               showReserveButton={true}
@@ -240,7 +254,7 @@ export const EventDashboard = () => {
               </p>
             </div>
             
-            {console.log('🔄 Rendu EventList pour /api/my-events')}
+            {debug('🔄 Rendu EventList pour /api/my-events')}
             <EventList 
               endpoint="/api/my-events" 
               showReserveButton={false}

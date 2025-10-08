@@ -6,6 +6,20 @@ import { useEvents } from '../../hooks/useEvents';
 import { EditEventForm } from './EditEventForm';
 import { MapHandler } from '../maps/mapsHandler';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 export const EventList = ({ 
     endpoint = '/api/events', 
     showReserveButton = true, 
@@ -22,7 +36,7 @@ export const EventList = ({
     const [editingEvent, setEditingEvent] = useState(null);
 
     const handleReserve = useCallback((event) => {
-        console.log('Navigation vers:', `/payment/${event.id}`);
+        debug('Navigation vers:', `/payment/${event.id}`);
         navigate(`/payment/${event.id}`);
     }, [navigate]);
 
@@ -39,7 +53,7 @@ export const EventList = ({
     }, [deleteApi, refetch]);
 
     const handleRefund = useCallback((event) => {
-        console.log('Navigation vers remboursement pour operation_id:', event.operation_id);
+        debug('Navigation vers remboursement pour operation_id:', event.operation_id);
         navigate(`/mes-remboursements?operation_id=${event.operation_id}`);
     }, [navigate]);
 

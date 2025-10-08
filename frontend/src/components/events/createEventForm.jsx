@@ -3,6 +3,20 @@ import { useApi } from '../../contexts/AuthContext';
 import { geocode } from '../maps/mapsHandler';
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const CreateEventFormContent = ({ onEventCreated }) => {
     const [formData, setFormData] = useState({
         name: '',
@@ -30,7 +44,7 @@ const CreateEventFormContent = ({ onEventCreated }) => {
     useEffect(() => {
         if (geocodingLib) {
             setGeocoderReady(true);
-            console.log('✅ Bibliothèque de géolocalisation chargée');
+            debug('✅ Bibliothèque de géolocalisation chargée');
         }
     }, [geocodingLib]);
 
@@ -61,11 +75,11 @@ const CreateEventFormContent = ({ onEventCreated }) => {
                 throw new Error('Service de géolocalisation en cours de chargement. Veuillez réessayer dans quelques secondes.');
             }
 
-            console.log('Démarrage du géocodage pour:', formData.localisation_address);
+            debug('Démarrage du géocodage pour:', formData.localisation_address);
             
             const location = await geocode(formData.localisation_address, geocodingLib);
             
-            console.log('Géocodage réussi:', location);
+            debug('Géocodage réussi:', location);
 
             // ✅ MISE À JOUR DES COORDONNÉES
             const eventData = {
@@ -103,7 +117,7 @@ const CreateEventFormContent = ({ onEventCreated }) => {
             }
 
         } catch (error) {
-            console.error('Erreur lors de la création:', error);
+            debugError('Erreur lors de la création:', error);
             
             // Gérer les erreurs de géocodage spécifiquement
             if (error.message && (

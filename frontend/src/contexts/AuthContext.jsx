@@ -10,6 +10,20 @@ import React, {
 } from "react";
 import axios from "axios";
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const AuthContext = createContext(null);
 
 // ✅ Base URL
@@ -46,24 +60,24 @@ export const AuthProvider = ({ children }) => {
   // 1️⃣ INITIALISATION
   // ===============================
   useEffect(() => {
-    console.log('🚀 useEffect Initialisation DÉMARRE');
+    debug('🚀 useEffect Initialisation DÉMARRE');
     let isMounted = true;
 
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('access_token');
       
-      console.log('1️⃣ Token trouvé:', !!storedToken);
+      debug('1️⃣ Token trouvé:', !!storedToken);
       
       // ✅ Nouvelle logique : Si pas de token, tenter un refresh d'abord
       if (!storedToken) {
-        console.log('2️⃣ Pas d\'access token - Tentative de refresh avec le cookie...');
+        debug('2️⃣ Pas d\'access token - Tentative de refresh avec le cookie...');
         
         try {
           // Essayer de refresh avec le cookie refresh_token
           const refreshResponse = await apiSimple.post('/api/refresh');
           const newToken = refreshResponse.data.access_token;
           
-          console.log('✅ Refresh réussi au démarrage !');
+          debug('✅ Refresh réussi au démarrage !');
           localStorage.setItem('access_token', newToken);
           
           // Maintenant on peut charger l'utilisateur
@@ -76,7 +90,7 @@ export const AuthProvider = ({ children }) => {
             setToken(newToken);
           }
         } catch (error) {
-          console.log('⚠️ Pas de session valide (refresh échoué)');
+          debug('⚠️ Pas de session valide (refresh échoué)');
           // Pas de session valide, l'utilisateur doit se reconnecter
           if (isMounted) {
             localStorage.removeItem('access_token');
@@ -94,19 +108,19 @@ export const AuthProvider = ({ children }) => {
 
       // Si on a un access token, on continue comme avant
       try {
-        console.log('3️⃣ Appel /api/me avec access token existant');
+        debug('3️⃣ Appel /api/me avec access token existant');
         const response = await api.get('/api/me', {
           headers: { Authorization: `Bearer ${storedToken}` }
         });
         
-        console.log('4️⃣ Réponse reçue:', response.data);
+        debug('4️⃣ Réponse reçue:', response.data);
         
         if (isMounted) {
           setUser(response.data);
           setToken(storedToken);
         }
       } catch (error) {
-        console.error('5️⃣ Erreur:', error.message);
+        debugError('5️⃣ Erreur:', error.message);
         if (isMounted) {
           localStorage.removeItem('access_token');
           setToken(null);
@@ -114,11 +128,11 @@ export const AuthProvider = ({ children }) => {
         }
       } finally {
         if (isMounted) {
-          console.log('6️⃣ AVANT setLoading(false)');
+          debug('6️⃣ AVANT setLoading(false)');
           setLoading(false);
-          console.log('7️⃣ APRÈS setLoading(false)');
+          debug('7️⃣ APRÈS setLoading(false)');
           setIsInitialized(true);
-          console.log('8️⃣ Initialisation terminée');
+          debug('8️⃣ Initialisation terminée');
         }
       }
     };
@@ -126,7 +140,7 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
 
     return () => {
-      console.log('🧹 Cleanup useEffect');
+      debug('🧹 Cleanup useEffect');
       isMounted = false;
     };
   }, []);
@@ -165,19 +179,19 @@ export const AuthProvider = ({ children }) => {
   // 3️⃣ INTERCEPTEUR RESPONSE (REFRESH)
   // ===============================
   useLayoutEffect(() => {
-    console.log('🔧 AuthContext: Installation intercepteur RESPONSE');
+    debug('🔧 AuthContext: Installation intercepteur RESPONSE');
     
     const responseInterceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
 
-        console.group('❌ [RESPONSE INTERCEPTOR] Erreur détectée');
-        console.log('📍 Status:', error.response?.status);
-        console.log('📍 URL:', originalRequest?.url);
-        console.log('📍 Retry flag:', originalRequest?._retry);
-        console.log('📍 Response data:', error.response?.data);
-        console.groupEnd();
+        debugGroup('❌ [RESPONSE INTERCEPTOR] Erreur détectée');
+        debug('📍 Status:', error.response?.status);
+        debug('📍 URL:', originalRequest?.url);
+        debug('📍 Retry flag:', originalRequest?._retry);
+        debug('📍 Response data:', error.response?.data);
+        debugGroupEnd();
 
         // URLs qui ne déclenchent pas de refresh
         const noRefreshUrls = [
@@ -194,7 +208,7 @@ export const AuthProvider = ({ children }) => {
           originalRequest._retry ||
           noRefreshUrls.includes(originalRequest.url)
         ) {
-          console.log('⏭️ Skip refresh - Conditions non remplies');
+          debug('⏭️ Skip refresh - Conditions non remplies');
           return Promise.reject(error);
         }
 
@@ -203,7 +217,7 @@ export const AuthProvider = ({ children }) => {
 
         // ✅ Si un refresh est déjà en cours
         if (isRefreshingRef.current) {
-          console.log('⏳ Refresh déjà en cours, mise en file d\'attente');
+          debug('⏳ Refresh déjà en cours, mise en file d\'attente');
           return new Promise((resolve, reject) => {
             failedQueueRef.current.push({ resolve, reject });
           })
@@ -218,37 +232,37 @@ export const AuthProvider = ({ children }) => {
 
         // ✅ Démarrer le refresh
         isRefreshingRef.current = true;
-        console.group('🔄 ========== REFRESH TOKEN PROCESS START ==========');
-        console.log('⏰ Timestamp:', new Date().toLocaleTimeString());
+        debugGroup('🔄 ========== REFRESH TOKEN PROCESS START ==========');
+        debug('⏰ Timestamp:', new Date().toLocaleTimeString());
         
         try {
           // Vérifier les cookies avant l'appel
-          console.log('🍪 Cookies disponibles:', document.cookie);
+          debug('🍪 Cookies disponibles:', document.cookie);
           
-          console.log('📤 Appel /api/refresh avec withCredentials');
+          debug('📤 Appel /api/refresh avec withCredentials');
           const response = await apiSimple.post('/api/refresh');
           
-          console.group('✅ Réponse reçue');
-          console.log('📦 Response data:', response.data);
-          console.log('🍪 Response headers:', response.headers);
-          console.groupEnd();
+          debugGroup('✅ Réponse reçue');
+          debug('📦 Response data:', response.data);
+          debug('🍪 Response headers:', response.headers);
+          debugGroupEnd();
           
           const newToken = response.data.access_token;
 
           if (!newToken) {
-            console.error('❌ ERREUR: access_token manquant dans la réponse');
+            debugError('❌ ERREUR: access_token manquant dans la réponse');
             throw new Error('Access token manquant dans la réponse');
           }
 
-          console.log('✅ Nouveau access token reçu:', newToken.substring(0, 50) + '...');
+          debug('✅ Nouveau access token reçu:', newToken.substring(0, 50) + '...');
 
           // Mettre à jour le token
           localStorage.setItem('access_token', newToken);
           setToken(newToken);
-          console.log('💾 Token sauvegardé dans localStorage');
+          debug('💾 Token sauvegardé dans localStorage');
 
           // Résoudre toutes les requêtes en attente
-          console.log('📨 Résolution de', failedQueueRef.current.length, 'requêtes en attente');
+          debug('📨 Résolution de', failedQueueRef.current.length, 'requêtes en attente');
           failedQueueRef.current.forEach((callback) => {
             callback.resolve(newToken);
           });
@@ -256,19 +270,19 @@ export const AuthProvider = ({ children }) => {
 
           // Retry la requête originale
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          console.log('🔁 Retry de la requête originale:', originalRequest.url);
-          console.groupEnd();
+          debug('🔁 Retry de la requête originale:', originalRequest.url);
+          debugGroupEnd();
           
           return api(originalRequest);
 
         } catch (refreshError) {
-          console.group('❌ ========== REFRESH TOKEN ERROR ==========');
-          console.error('Type d\'erreur:', refreshError.name);
-          console.error('Message:', refreshError.message);
-          console.error('Status:', refreshError.response?.status);
-          console.error('Response data:', refreshError.response?.data);
-          console.error('🍪 Cookies actuels:', document.cookie);
-          console.groupEnd();
+          debugGroup('❌ ========== REFRESH TOKEN ERROR ==========');
+          debugError('Type d\'erreur:', refreshError.name);
+          debugError('Message:', refreshError.message);
+          debugError('Status:', refreshError.response?.status);
+          debugError('Response data:', refreshError.response?.data);
+          debugError('🍪 Cookies actuels:', document.cookie);
+          debugGroupEnd();
 
           // Rejeter toutes les requêtes en attente
           failedQueueRef.current.forEach((callback) => {
@@ -277,13 +291,13 @@ export const AuthProvider = ({ children }) => {
           failedQueueRef.current = [];
 
           // Déconnecter l'utilisateur
-          console.log('🚪 Déconnexion de l\'utilisateur');
+          debug('🚪 Déconnexion de l\'utilisateur');
           localStorage.removeItem('access_token');
           setToken(null);
           setUser(null);
 
           // Rediriger vers login
-          console.log('↪️ Redirection vers /login');
+          debug('↪️ Redirection vers /login');
           window.location.href = '/login';
 
           return Promise.reject(refreshError);
@@ -291,13 +305,13 @@ export const AuthProvider = ({ children }) => {
         } finally {
           // Réinitialiser le flag
           isRefreshingRef.current = false;
-          console.log('🏁 Refresh terminé - Flag réinitialisé');
+          debug('🏁 Refresh terminé - Flag réinitialisé');
         }
       }
     );
 
     return () => {
-      console.log('🔧 AuthContext: Désinstallation intercepteur RESPONSE');
+      debug('🔧 AuthContext: Désinstallation intercepteur RESPONSE');
       api.interceptors.response.eject(responseInterceptor);
     };
   }, []);
@@ -334,7 +348,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post("/api/logout");
     } catch (e) {
-      console.error("Logout error:", e.message);
+      debugError("Logout error:", e.message);
     } finally {
       setUser(null);
       setToken(null);

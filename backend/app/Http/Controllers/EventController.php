@@ -10,6 +10,7 @@ use App\Models\Localisation;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -20,7 +21,7 @@ class EventController extends Controller
     /**
      * Liste tous les événements futurs
      */
-   public function index()
+    public function index()
     {
         $events = Event::with(['localisation', 'categorie'])
             ->where('start_date', '>', now())
@@ -38,7 +39,6 @@ class EventController extends Controller
      */
     public function show($id)
     {
-        // ✅ Charger TOUTES les relations nécessaires
         $event = Event::with(['localisation', 'categorie', 'creator.roles'])->find($id);
 
         if (!$event) {
@@ -54,8 +54,9 @@ class EventController extends Controller
     /**
      * Créer un événement (professionnels uniquement)
      */
-   public function store(Request $request)
+    public function store(Request $request)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -66,7 +67,6 @@ class EventController extends Controller
             return $this->unauthorizedResponse('Seuls les professionnels peuvent créer des événements');
         }
 
-        // ✅ LOGIQUE INCHANGÉE
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -87,7 +87,6 @@ class EventController extends Controller
             return $this->validationErrorResponse($e->errors());
         }
 
-        // ✅ LOGIQUE INCHANGÉE
         if ($validated['capacity'] > $validated['max_places']) {
             return $this->errorResponse('La capacité ne peut pas dépasser le nombre maximum de places', 422);
         }
@@ -97,7 +96,6 @@ class EventController extends Controller
         try {
             DB::beginTransaction();
 
-            // ✅ LOGIQUE INCHANGÉE
             $existingLocalisation = Localisation::where(function($query) use ($validated) {
                 $query->whereBetween('latitude', [
                     $validated['localisation_lat'] - 0.0001,
@@ -120,7 +118,6 @@ class EventController extends Controller
                 ]);
             }
 
-            // ✅ LOGIQUE INCHANGÉE
             $event = Event::create([
                 'name' => $validated['name'],
                 'description' => $validated['description'],
@@ -136,7 +133,6 @@ class EventController extends Controller
                 'categorie_event_id' => $validated['categorie_event_id'],
             ]);
 
-            // ✅ LOGIQUE INCHANGÉE
             Operation::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
@@ -146,7 +142,14 @@ class EventController extends Controller
 
             DB::commit();
 
-            // ✅ SEULEMENT LE RETURN MODIFIÉ
+            if ($debug) {
+                Log::info('Événement créé', [
+                    'event_id' => $event->id,
+                    'user_id' => $user->id,
+                    'name' => $event->name
+                ]);
+            }
+
             return $this->resourceResponse(
                 new EventResource($event->load(['localisation', 'categorie'])),
                 'Événement créé avec succès',
@@ -155,6 +158,7 @@ class EventController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur création événement: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la création de l\'événement', 500);
         }
     }
@@ -164,6 +168,7 @@ class EventController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -214,6 +219,13 @@ class EventController extends Controller
 
             $event->update($validated);
 
+            if ($debug) {
+                Log::info('Événement mis à jour', [
+                    'event_id' => $event->id,
+                    'updated_by' => $user->id
+                ]);
+            }
+
             return $this->resourceResponse(
                 new EventResource($event->load(['localisation', 'categorie'])),
                 'Événement mis à jour avec succès'
@@ -222,6 +234,7 @@ class EventController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
+            Log::error('Erreur mise à jour événement: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la mise à jour de l\'événement', 500);
         }
     }
@@ -231,6 +244,7 @@ class EventController extends Controller
      */
     public function destroy($id)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -274,10 +288,18 @@ class EventController extends Controller
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('Événement supprimé', [
+                    'event_id' => $id,
+                    'deleted_by' => $user->id
+                ]);
+            }
+
             return $this->successResponse(null, 'Événement supprimé avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur suppression événement: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la suppression de l\'événement', 500);
         }
     }
@@ -287,6 +309,7 @@ class EventController extends Controller
      */
     public function reserve(Request $request, $eventId)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -340,6 +363,15 @@ class EventController extends Controller
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('Réservation créée', [
+                    'operation_id' => $operation->id,
+                    'event_id' => $eventId,
+                    'user_id' => $user->id,
+                    'quantity' => $validated['quantity']
+                ]);
+            }
+
             return $this->successResponse([
                 'operation' => $operation,
                 'event' => new EventResource($event->load(['localisation', 'categorie'])),
@@ -348,6 +380,7 @@ class EventController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur réservation: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la réservation', 500);
         }
     }
@@ -357,6 +390,7 @@ class EventController extends Controller
      */
     public function cancelReservation($eventId)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -389,12 +423,21 @@ class EventController extends Controller
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('Réservation annulée', [
+                    'event_id' => $eventId,
+                    'user_id' => $user->id,
+                    'restored_places' => $operation->quantity
+                ]);
+            }
+
             return $this->successResponse([
                 'restored_places' => $operation->quantity
             ], 'Réservation annulée avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur annulation réservation: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de l\'annulation', 500);
         }
     }
@@ -414,7 +457,6 @@ class EventController extends Controller
             $userOperations = Operation::where('user_id', $user->id)->get();
             $eventIds = $userOperations->pluck('event_id')->unique();
 
-            // ✅ Charger les relations
             $events = Event::with(['localisation', 'categorie'])
                 ->whereIn('id', $eventIds)
                 ->orderBy('start_date')
@@ -458,6 +500,7 @@ class EventController extends Controller
             ], 'Événements de l\'utilisateur récupérés');
 
         } catch (\Exception $e) {
+            Log::error('Erreur récupération événements utilisateur: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la récupération des événements', 500);
         }
     }

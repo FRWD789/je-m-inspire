@@ -25,6 +25,8 @@ class AuthController extends Controller
      */
     public function registerUser(Request $request)
     {
+        $debug = config('app.debug');
+
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -84,7 +86,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Inscription pour les professionnels (nécessite approbation)
+     * Inscription pour les professionnels
      */
     public function registerProfessional(Request $request)
     {
@@ -96,7 +98,6 @@ class AuthController extends Controller
                 'date_of_birth' => 'required|date|before:today',
                 'city' => 'nullable|string|max:255',
                 'password' => 'required|string|min:6|confirmed',
-                'motivation_letter' => 'required|string|min:50|max:2000',
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
@@ -110,9 +111,7 @@ class AuthController extends Controller
                 'date_of_birth' => $validated['date_of_birth'],
                 'city' => $validated['city'] ?? null,
                 'password' => Hash::make($validated['password']),
-                'motivation_letter' => $validated['motivation_letter'],
                 'is_approved' => false,
-                'approved_at' => null,
             ]);
 
             $role = Role::where('role', 'professionnel')->first();
@@ -123,15 +122,9 @@ class AuthController extends Controller
             $user->load('roles');
 
             return $this->successResponse([
-                'status' => 'pending',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'last_name' => $user->last_name,
-                    'email' => $user->email,
-                    'is_approved' => false
-                ]
-            ], 'Votre demande d\'inscription a été envoyée. Un administrateur examinera votre candidature.', 201);
+                'user' => new UserResource($user),
+                'message' => 'Demande envoyée. En attente d\'approbation.'
+            ], 'Demande envoyée', 201);
 
         } catch (\Exception $e) {
             Log::error('Erreur inscription professionnel: ' . $e->getMessage());
@@ -144,17 +137,22 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $debug = config('app.debug');
 
         try {
+            $credentials = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
+
             $user = User::where('email', $credentials['email'])->first();
 
-            if (!$user || !Hash::check($credentials['password'], $user->password)) {
-                return $this->errorResponse('Email ou mot de passe incorrect', 401);
+            if (!$user) {
+                return $this->errorResponse('Identifiants invalides', 401);
             }
 
             if (!$user->is_approved) {
-                return $this->unauthorizedResponse('Votre compte est en attente d\'approbation par un administrateur.');
+                return $this->errorResponse('Compte en attente d\'approbation', 403);
             }
 
             if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) {
@@ -172,18 +170,18 @@ class AuthController extends Controller
             ], 'Connexion réussie')->cookie(
                 'refresh_token',
                 $refreshToken,
-                7*24*60,           // 7 jours
-                '/',               // path
-                null,              // domain (auto)
-                false,             // secure (false en local HTTP)
-                true,              // httpOnly
-                false,             // raw
-                'lax'              // SameSite
+                7*24*60,
+                '/',
+                null,
+                false,
+                true,
+                false,
+                'lax'
             );
 
         } catch (JWTException $e) {
-            Log::error('Erreur JWT: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la création du token', 500);
+            Log::error('Erreur JWT login: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la connexion', 500);
         }
     }
 
@@ -227,6 +225,7 @@ class AuthController extends Controller
             )->cookie('refresh_token', '', -1);
 
         } catch (\Exception $e) {
+            Log::error('Erreur logout: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la déconnexion', 500);
         }
     }
@@ -236,78 +235,101 @@ class AuthController extends Controller
      */
     public function refresh(Request $request)
     {
-        Log::info('🔄 ========== REFRESH TOKEN START ==========');
+        $debug = config('app.debug');
+
+        if ($debug) {
+            Log::info('🔄 ========== REFRESH TOKEN START ==========');
+        }
 
         try {
-            // 1. Vérifier si le cookie existe
             $refreshToken = $request->cookie('refresh_token');
-            Log::info('🍪 Cookie refresh_token:', [
-                'exists' => !empty($refreshToken),
-                'preview' => $refreshToken ? substr($refreshToken, 0, 50) . '...' : 'NULL'
-            ]);
+
+            if ($debug) {
+                Log::info('🍪 Cookie refresh_token:', [
+                    'exists' => !empty($refreshToken),
+                    'preview' => $refreshToken ? substr($refreshToken, 0, 50) . '...' : 'NULL'
+                ]);
+            }
 
             if (!$refreshToken) {
-                Log::error('❌ ERREUR: Refresh token manquant dans le cookie');
-                Log::info('📋 Tous les cookies reçus:', $request->cookies->all());
+                if ($debug) {
+                    Log::error('❌ ERREUR: Refresh token manquant');
+                }
                 return $this->errorResponse('Refresh token manquant', 401);
             }
 
-            // 2. Décoder le token
-            Log::info('🔓 Décodage du refresh token...');
+            if ($debug) {
+                Log::info('🔓 Décodage du refresh token...');
+            }
+
             $payload = JWTAuth::setToken($refreshToken)->getPayload();
             $jti = $payload->get('jti');
             $userId = $payload->get('sub');
 
-            Log::info('✅ Token décodé:', [
-                'jti' => $jti,
-                'user_id' => $userId,
-                'type' => $payload->get('type'),
-                'exp' => date('Y-m-d H:i:s', $payload->get('exp'))
-            ]);
+            if ($debug) {
+                Log::info('✅ Token décodé:', [
+                    'jti' => $jti,
+                    'user_id' => $userId,
+                    'type' => $payload->get('type'),
+                    'exp' => date('Y-m-d H:i:s', $payload->get('exp'))
+                ]);
 
-            // 3. Vérifier dans le cache
-            Log::info('🔍 Vérification dans le cache...');
+                Log::info('🔍 Vérification dans le cache...');
+            }
+
             $cacheKey = "refresh_token:$jti";
             $cacheExists = Cache::has($cacheKey);
 
-            Log::info('💾 Cache status:', [
-                'key' => $cacheKey,
-                'exists' => $cacheExists,
-                'value' => $cacheExists ? Cache::get($cacheKey) : 'N/A'
-            ]);
+            if ($debug) {
+                Log::info('💾 Cache status:', [
+                    'key' => $cacheKey,
+                    'exists' => $cacheExists,
+                    'value' => $cacheExists ? Cache::get($cacheKey) : 'N/A'
+                ]);
+            }
 
             if (!$cacheExists) {
-                Log::error('❌ ERREUR: Refresh token non trouvé dans le cache (expiré ou invalide)');
+                if ($debug) {
+                    Log::error('❌ ERREUR: Refresh token non trouvé dans le cache');
+                }
                 return $this->errorResponse('Refresh token invalide ou expiré', 401);
             }
 
-            // 4. Authentifier l'utilisateur
-            Log::info('👤 Authentification de l\'utilisateur...');
+            if ($debug) {
+                Log::info('👤 Authentification de l\'utilisateur...');
+            }
+
             $user = JWTAuth::setToken($refreshToken)->authenticate();
-            Log::info('✅ Utilisateur authentifié:', [
-                'id' => $user->id,
-                'email' => $user->email
-            ]);
 
-            // 5. Invalider l'ancien refresh token
-            Log::info('🗑️ Suppression de l\'ancien refresh token du cache...');
+            if ($debug) {
+                Log::info('✅ Utilisateur authentifié:', [
+                    'id' => $user->id,
+                    'email' => $user->email
+                ]);
+
+                Log::info('🗑️ Suppression de l\'ancien refresh token...');
+            }
+
             Cache::forget($cacheKey);
-            Log::info('✅ Ancien token supprimé');
 
-            // 6. Générer les nouveaux tokens
-            Log::info('🔨 Génération de nouveaux tokens...');
+            if ($debug) {
+                Log::info('✅ Ancien token supprimé');
+                Log::info('🔨 Génération de nouveaux tokens...');
+            }
+
             $newRefreshToken = $this->generateRefreshToken($user);
             $newAccessToken = $this->generateAccessToken($user);
 
-            Log::info('✅ Nouveaux tokens générés:', [
-                'access_token_preview' => substr($newAccessToken, 0, 50) . '...',
-                'refresh_token_preview' => substr($newRefreshToken, 0, 50) . '...',
-                'expires_in' => JWTAuth::factory()->getTTL() * 60 . ' secondes'
-            ]);
+            if ($debug) {
+                Log::info('✅ Nouveaux tokens générés:', [
+                    'access_token_preview' => substr($newAccessToken, 0, 50) . '...',
+                    'refresh_token_preview' => substr($newRefreshToken, 0, 50) . '...',
+                    'expires_in' => JWTAuth::factory()->getTTL() * 60 . ' secondes'
+                ]);
 
-            Log::info('✅ ========== REFRESH TOKEN SUCCESS ==========');
+                Log::info('✅ ========== REFRESH TOKEN SUCCESS ==========');
+            }
 
-            // 7. Retourner la réponse avec le nouveau cookie
             return $this->successResponse([
                 'access_token' => $newAccessToken,
                 'expires_in' => JWTAuth::factory()->getTTL() * 60,
@@ -324,19 +346,11 @@ class AuthController extends Controller
             );
 
         } catch (JWTException $e) {
-            Log::error('❌ ========== REFRESH TOKEN ERROR ==========');
-            Log::error('JWTException:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $this->errorResponse('Refresh token invalide: ' . $e->getMessage(), 401);
+            Log::error('Erreur JWT refresh:', ['message' => $e->getMessage()]);
+            return $this->errorResponse('Refresh token invalide', 401);
         } catch (\Exception $e) {
-            Log::error('❌ ========== REFRESH TOKEN ERROR ==========');
-            Log::error('Exception générale:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $this->errorResponse('Erreur lors du refresh: ' . $e->getMessage(), 500);
+            Log::error('Erreur refresh:', ['message' => $e->getMessage()]);
+            return $this->errorResponse('Erreur lors du refresh', 500);
         }
     }
 
@@ -367,6 +381,7 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
+            Log::error('Erreur update profile: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la mise à jour du profil', 500);
         }
     }
@@ -405,45 +420,25 @@ class AuthController extends Controller
     }
 
     /**
-     * Récupérer les professionnels rejetés
-     */
-    public function getRejectedProfessionals()
-    {
-        $users = User::whereNotNull('rejection_reason')
-            ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
-            ->with('roles')
-            ->get();
-
-        return $this->collectionResponse(
-            UserResource::collection($users),
-            'Professionnels rejetés récupérés'
-        );
-    }
-
-    /**
      * Approuver un professionnel
      */
     public function approveProfessional($id)
     {
         try {
             $user = User::findOrFail($id);
+            $user->is_approved = true;
+            $user->approved_at = now();
+            $user->save();
 
-            $user->update([
-                'is_approved' => true,
-                'approved_at' => now(),
-                'rejection_reason' => null
-            ]);
-
-            // TODO: Envoyer un email de confirmation
-
-            return $this->resourceResponse(
-                new UserResource($user->load('roles')),
+            return $this->successResponse(
+                ['user' => new UserResource($user)],
                 'Professionnel approuvé avec succès'
             );
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->notFoundResponse('Professionnel non trouvé');
+            return $this->notFoundResponse('Utilisateur non trouvé');
         } catch (\Exception $e) {
+            Log::error('Erreur approbation: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de l\'approbation', 500);
         }
     }
@@ -451,60 +446,29 @@ class AuthController extends Controller
     /**
      * Rejeter un professionnel
      */
-    public function rejectProfessional($id, Request $request)
+    public function rejectProfessional($id)
     {
         try {
-            $validated = $request->validate([
-                'reason' => 'required|string|min:10|max:500'
-            ]);
-
             $user = User::findOrFail($id);
+            $user->delete();
 
-            if (!$user->roles()->where('role', 'professionnel')->exists()) {
-                return $this->errorResponse('Cet utilisateur n\'est pas un professionnel', 400);
-            }
-
-            $user->update([
-                'is_approved' => false,
-                'approved_at' => now(),
-                'rejection_reason' => $validated['reason']
-            ]);
-
-            Log::info("Professionnel rejeté: {$user->email} - Raison: {$validated['reason']}");
-
-            return $this->resourceResponse(
-                new UserResource($user->load('roles')),
-                'Demande rejetée avec succès'
+            return $this->successResponse(
+                null,
+                'Professionnel rejeté avec succès'
             );
 
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->notFoundResponse('Professionnel non trouvé');
+            return $this->notFoundResponse('Utilisateur non trouvé');
         } catch (\Exception $e) {
+            Log::error('Erreur rejet: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors du rejet', 500);
         }
     }
 
     /**
-     * Récupérer tous les professionnels
+     * Récupérer les utilisateurs réguliers
      */
-    public function getProfessionnels()
-    {
-        $professionnels = User::whereHas('roles', fn($query) => $query->where('role', 'professionnel'))
-            ->with('roles')
-            ->get();
-
-        return $this->collectionResponse(
-            UserResource::collection($professionnels),
-            'Professionnels récupérés'
-        );
-    }
-
-    /**
-     * Récupérer tous les utilisateurs
-     */
-    public function getUtilisateurs()
+    public function getUsers()
     {
         $utilisateurs = User::whereHas('roles', fn($query) => $query->where('role', 'utilisateur'))
             ->withCount('operations')
@@ -535,6 +499,7 @@ class AuthController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return $this->notFoundResponse('Utilisateur non trouvé');
         } catch (\Exception $e) {
+            Log::error('Erreur toggle status: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la modification du statut', 500);
         }
     }
@@ -542,14 +507,19 @@ class AuthController extends Controller
     /**
      * Générer un refresh token
      */
-   private function generateRefreshToken(User $user): string
+    private function generateRefreshToken(User $user): string
     {
+        $debug = config('app.debug');
+
         $jti = Str::uuid()->toString();
-        Log::info('🎫 Génération refresh token:', [
-            'jti' => $jti,
-            'user_id' => $user->id,
-            'cache_duration' => '7 jours (10080 minutes)'
-        ]);
+
+        if ($debug) {
+            Log::info('🎫 Génération refresh token:', [
+                'jti' => $jti,
+                'user_id' => $user->id,
+                'cache_duration' => '7 jours'
+            ]);
+        }
 
         $refreshToken = JWTAuth::claims([
             'type' => 'refresh',
@@ -557,7 +527,10 @@ class AuthController extends Controller
         ])->fromUser($user);
 
         Cache::put("refresh_token:$jti", $user->id, 7*24*60);
-        Log::info('✅ Refresh token stocké dans le cache');
+
+        if ($debug) {
+            Log::info('✅ Refresh token stocké dans le cache');
+        }
 
         return $refreshToken;
     }

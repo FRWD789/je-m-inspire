@@ -1,6 +1,15 @@
-// hooks/useEvents.js - VERSION CORRIGÉE
+// frontend/src/hooks/useEvents.js
 import { useState, useEffect, useRef } from 'react';
 import { useApi } from '../contexts/AuthContext';
+
+// Helper pour logs conditionnels
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
 
 export const useEvents = (endpoint = '/api/events') => {
     const [events, setEvents] = useState([]);
@@ -12,15 +21,13 @@ export const useEvents = (endpoint = '/api/events') => {
     const lastEndpointRef = useRef(null);
 
     const fetchEvents = async () => {
-        // ✅ Empêcher les appels simultanés
         if (isFetchingRef.current) {
-            console.log('⚠️ Fetch déjà en cours, ignoré');
+            debug('⚠️ Fetch déjà en cours, ignoré');
             return;
         }
 
-        // ✅ CORRECTION : Vérifier le cache SANS bloquer le loading
         if (lastEndpointRef.current === endpoint && events.length > 0) {
-            console.log('📋 Données déjà en cache pour', endpoint);
+            debug('📋 Données déjà en cache pour', endpoint);
             setLoading(false);
             return;
         }
@@ -31,13 +38,12 @@ export const useEvents = (endpoint = '/api/events') => {
             setLoading(true);
             setError(null);
             
-            console.log('🔄 Fetching events from:', endpoint);
+            debug('🔄 Fetching events from:', endpoint);
             const response = await get(endpoint);
-            console.log('✅ API Response:', response.data);
+            debug('✅ API Response:', response.data);
             
             let eventsData = [];
             
-            // Gérer les différents formats de réponse
             if (endpoint.includes('/my-events')) {
                 const { created_events = [], reserved_events = [] } = response.data;
                 eventsData = [...created_events, ...reserved_events];
@@ -45,16 +51,16 @@ export const useEvents = (endpoint = '/api/events') => {
                 eventsData = response.data.events || response.data || [];
             }
             
-            console.log('📊 Processed events:', eventsData.length, 'événements');
+            debug('📊 Processed events:', eventsData.length, 'événements');
             setEvents(eventsData);
             lastEndpointRef.current = endpoint;
             
         } catch (error) {
-            console.error('❌ Erreur lors du chargement des événements:', error);
-            setError(error.response?.data?.error || error.message || 'Erreur lors du chargement des événements');
+            debugError('❌ Erreur lors du chargement des événements:', error);
+            setError(error.response?.data?.error || error.message || 'Erreur lors du chargement');
             setEvents([]);
         } finally {
-            console.log('🏁 FINALLY: setLoading(false)'); // ✅ LOG AJOUTÉ
+            debug('🏁 setLoading(false)');
             setLoading(false);
             isFetchingRef.current = false;
         }
@@ -63,7 +69,7 @@ export const useEvents = (endpoint = '/api/events') => {
     useEffect(() => {
         let isMounted = true;
         
-        console.log('🚀 useEvents useEffect pour endpoint:', endpoint);
+        debug('🚀 useEvents useEffect pour endpoint:', endpoint);
 
         const loadEvents = async () => {
             if (isMounted) {
@@ -74,13 +80,13 @@ export const useEvents = (endpoint = '/api/events') => {
         loadEvents();
 
         return () => {
-            console.log('🧹 useEvents cleanup');
+            debug('🧹 useEvents cleanup');
             isMounted = false;
         };
     }, [endpoint]);
 
     const refetch = () => {
-        console.log('🔄 Refetch manuel demandé');
+        debug('🔄 Refetch manuel demandé');
         lastEndpointRef.current = null;
         fetchEvents();
     };

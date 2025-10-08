@@ -2,190 +2,311 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\UserResource;
-use App\Models\User;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use App\Models\Commission;
+use App\Models\Operation;
 
 class CommissionController extends Controller
 {
-    use ApiResponse;
-
-    /**
-     * Récupérer tous les professionnels avec leur taux de commission
-     */
     public function index()
     {
-        try {
-            $professionals = User::whereHas('roles', function ($query) {
-                $query->where('role', 'professionnel');
-            })
-            ->with('roles')
-            ->select('id', 'name', 'last_name', 'email', 'commission_rate', 'stripeAccount_id', 'paypalAccount_id')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'last_name' => $user->last_name,
-                    'full_name' => $user->name . ' ' . $user->last_name,
-                    'email' => $user->email,
-                    'commission_rate' => (float) ($user->commission_rate ?? 0),
-                    'has_stripe' => !empty($user->stripeAccount_id),
-                    'has_paypal' => !empty($user->paypalAccount_id),
-                ];
-            });
+        $debug = config('app.debug');
 
-            return $this->successResponse([
-                'data' => $professionals,
-                'total' => $professionals->count()
-            ], 'Professionnels récupérés avec succès');
+        try {
+            $user = Auth::user();
+
+            if ($debug) {
+                Log::info('Récupération des commissions', [
+                    'user_id' => $user->id,
+                    'is_admin' => $user->is_admin
+                ]);
+            }
+
+            // Si admin, récupérer toutes les commissions
+            if ($user->is_admin) {
+                $commissions = Commission::with(['operation', 'vendor'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            } else {
+                // Sinon, récupérer uniquement les commissions du vendeur
+                $commissions = Commission::with(['operation'])
+                    ->where('vendor_id', $user->id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+
+            if ($debug) {
+                Log::info('Commissions récupérées', [
+                    'count' => $commissions->count()
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'commissions' => $commissions
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Erreur récupération professionnels: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la récupération des professionnels', 500);
+            Log::error('Erreur lors de la récupération des commissions', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des commissions'
+            ], 500);
         }
     }
 
-    /**
-     * Mettre à jour le taux de commission d'un utilisateur
-     */
+    public function store(Request $request)
+    {
+        $debug = config('app.debug');
+
+        try {
+            if ($debug) {
+                Log::info('Création d\'une commission', [
+                    'data' => $request->all()
+                ]);
+            }
+
+            $validatedData = $request->validate([
+                'operation_id' => 'required|exists:operations,id',
+                'vendor_id' => 'required|exists:users,id',
+                'montant' => 'required|numeric|min:0',
+                'pourcentage' => 'required|numeric|min:0|max:100',
+                'statut' => 'sometimes|in:en_attente,payee,annulee'
+            ]);
+
+            $commission = Commission::create($validatedData);
+
+            if ($debug) {
+                Log::info('Commission créée', [
+                    'commission_id' => $commission->id,
+                    'montant' => $commission->montant
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Commission créée avec succès',
+                'commission' => $commission->load(['operation', 'vendor'])
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la création de la commission', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de la commission'
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        $debug = config('app.debug');
+
+        try {
+            $user = Auth::user();
+            $commission = Commission::with(['operation', 'vendor'])->findOrFail($id);
+
+            // Vérifier les permissions
+            if (!$user->is_admin && $commission->vendor_id !== $user->id) {
+                if ($debug) {
+                    Log::info('Accès refusé à la commission', [
+                        'user_id' => $user->id,
+                        'commission_id' => $id
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès non autorisé'
+                ], 403);
+            }
+
+            if ($debug) {
+                Log::info('Commission récupérée', [
+                    'commission_id' => $id
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'commission' => $commission
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération de la commission', [
+                'commission_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Commission non trouvée'
+            ], 404);
+        }
+    }
+
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'commission_rate' => 'required|numeric|min:0|max:100'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors()->toArray());
-        }
+        $debug = config('app.debug');
 
         try {
-            $user = User::findOrFail($id);
+            $user = Auth::user();
 
-            if (!$user->roles()->where('role', 'professionnel')->exists()) {
-                return $this->errorResponse('Cet utilisateur n\'est pas un professionnel', 400);
+            if (!$user->is_admin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Action réservée aux administrateurs'
+                ], 403);
             }
 
-            $oldRate = $user->commission_rate;
-            $user->commission_rate = $request->commission_rate;
-            $user->save();
+            $commission = Commission::findOrFail($id);
 
-            Log::info("Commission mise à jour pour {$user->email}: {$oldRate}% → {$user->commission_rate}%");
+            if ($debug) {
+                Log::info('Mise à jour de la commission', [
+                    'commission_id' => $id,
+                    'data' => $request->all()
+                ]);
+            }
 
-            return $this->successResponse([
-                'id' => $user->id,
-                'full_name' => $user->name . ' ' . $user->last_name,
-                'email' => $user->email,
-                'commission_rate' => (float) $user->commission_rate,
-                'old_rate' => (float) $oldRate
-            ], 'Taux de commission mis à jour avec succès');
+            $validatedData = $request->validate([
+                'montant' => 'sometimes|numeric|min:0',
+                'pourcentage' => 'sometimes|numeric|min:0|max:100',
+                'statut' => 'sometimes|in:en_attente,payee,annulee'
+            ]);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->notFoundResponse('Utilisateur non trouvé');
+            $commission->update($validatedData);
+
+            if ($debug) {
+                Log::info('Commission mise à jour', [
+                    'commission_id' => $id
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Commission mise à jour avec succès',
+                'commission' => $commission->load(['operation', 'vendor'])
+            ]);
+
         } catch (\Exception $e) {
-            Log::error('Erreur mise à jour commission: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la mise à jour', 500);
+            Log::error('Erreur lors de la mise à jour de la commission', [
+                'commission_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour de la commission'
+            ], 500);
         }
     }
 
-    /**
-     * Mise à jour groupée des taux de commission
-     */
-    public function bulkUpdate(Request $request)
+    public function markAsPaid($id)
     {
-        $validator = Validator::make($request->all(), [
-            'updates' => 'required|array',
-            'updates.*.user_id' => 'required|exists:users,id',
-            'updates.*.commission_rate' => 'required|numeric|min:0|max:100'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors()->toArray());
-        }
+        $debug = config('app.debug');
 
         try {
-            $updated = [];
-            $errors = [];
+            $user = Auth::user();
 
-            foreach ($request->updates as $update) {
-                try {
-                    $user = User::findOrFail($update['user_id']);
-
-                    if (!$user->roles()->where('role', 'professionnel')->exists()) {
-                        $errors[] = [
-                            'user_id' => $update['user_id'],
-                            'message' => 'N\'est pas un professionnel'
-                        ];
-                        continue;
-                    }
-
-                    $oldRate = $user->commission_rate;
-                    $user->commission_rate = $update['commission_rate'];
-                    $user->save();
-
-                    $updated[] = [
-                        'user_id' => $user->id,
-                        'email' => $user->email,
-                        'old_rate' => (float) $oldRate,
-                        'new_rate' => (float) $user->commission_rate
-                    ];
-
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'user_id' => $update['user_id'],
-                        'message' => $e->getMessage()
-                    ];
-                }
+            if (!$user->is_admin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Action réservée aux administrateurs'
+                ], 403);
             }
 
-            return $this->successResponse([
-                'updated' => $updated,
-                'errors' => $errors,
-                'total_updated' => count($updated),
-                'total_errors' => count($errors)
-            ], count($updated) . ' taux mis à jour avec succès');
+            $commission = Commission::findOrFail($id);
+            $commission->statut = 'payee';
+            $commission->save();
+
+            if ($debug) {
+                Log::info('Commission marquée comme payée', [
+                    'commission_id' => $id,
+                    'montant' => $commission->montant
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Commission marquée comme payée',
+                'commission' => $commission->load(['operation', 'vendor'])
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Erreur bulk update commission: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la mise à jour groupée', 500);
+            Log::error('Erreur lors du marquage de la commission comme payée', [
+                'commission_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du marquage de la commission'
+            ], 500);
         }
     }
 
-    /**
-     * Statistiques sur les commissions
-     */
-    public function statistics()
+    public function getStats()
     {
+        $debug = config('app.debug');
+
         try {
-            $professionals = User::whereHas('roles', function ($query) {
-                $query->where('role', 'professionnel');
-            })->get();
+            $user = Auth::user();
+
+            if ($debug) {
+                Log::info('Récupération des statistiques des commissions', [
+                    'user_id' => $user->id
+                ]);
+            }
+
+            $query = Commission::query();
+
+            if (!$user->is_admin) {
+                $query->where('vendor_id', $user->id);
+            }
 
             $stats = [
-                'total_professionals' => $professionals->count(),
-                'average_rate' => round($professionals->avg('commission_rate') ?? 0, 2),
-                'min_rate' => (float) ($professionals->min('commission_rate') ?? 0),
-                'max_rate' => (float) ($professionals->max('commission_rate') ?? 0),
-                'with_stripe' => $professionals->where('stripeAccount_id', '!=', null)->count(),
-                'with_paypal' => $professionals->where('paypalAccount_id', '!=', null)->count(),
-                'rate_distribution' => [
-                    '0-5%' => $professionals->whereBetween('commission_rate', [0, 5])->count(),
-                    '5-10%' => $professionals->whereBetween('commission_rate', [5, 10])->count(),
-                    '10-15%' => $professionals->whereBetween('commission_rate', [10, 15])->count(),
-                    '15-20%' => $professionals->whereBetween('commission_rate', [15, 20])->count(),
-                    '20%+' => $professionals->where('commission_rate', '>', 20)->count(),
-                ]
+                'total' => $query->sum('montant'),
+                'en_attente' => $query->where('statut', 'en_attente')->sum('montant'),
+                'payees' => $query->where('statut', 'payee')->sum('montant'),
+                'count_total' => $query->count(),
+                'count_en_attente' => $query->where('statut', 'en_attente')->count(),
+                'count_payees' => $query->where('statut', 'payee')->count()
             ];
 
-            return $this->successResponse($stats, 'Statistiques récupérées avec succès');
+            if ($debug) {
+                Log::info('Statistiques calculées', $stats);
+            }
+
+            return response()->json([
+                'success' => true,
+                'stats' => $stats
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Erreur statistiques commission: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la récupération des statistiques', 500);
+            Log::error('Erreur lors du calcul des statistiques', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul des statistiques'
+            ], 500);
         }
     }
 }

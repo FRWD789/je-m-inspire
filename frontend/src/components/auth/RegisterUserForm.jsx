@@ -2,6 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const RegisterUserForm = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -25,13 +39,13 @@ const RegisterUserForm = () => {
 
         try {
             const response = await registerUser(formData);
-            console.log('✅ Inscription réussie:', response);
+            debug('✅ Inscription réussie:', response);
             
             // ✅ Redirection vers la page d'accueil après inscription
             navigate('/', { replace: true });
             
         } catch (error) {
-            console.error('❌ Erreur inscription:', error);
+            debugError('❌ Erreur inscription:', error);
             if (error.isValidation && error.message) {
                 setErrors(error.message);
             } else {

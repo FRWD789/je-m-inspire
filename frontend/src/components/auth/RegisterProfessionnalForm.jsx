@@ -2,6 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const RegisterProfessionalForm = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -27,7 +41,7 @@ const RegisterProfessionalForm = () => {
 
         try {
             const response = await registerProfessional(formData);
-            console.log('✅ Inscription professionnel:', response);
+            debug('✅ Inscription professionnel:', response);
             
             if (response.status === 'pending') {
                 // ✅ Afficher le message de succès
@@ -44,7 +58,7 @@ const RegisterProfessionalForm = () => {
                 }, 5000);
             }
         } catch (error) {
-            console.error('❌ Erreur inscription professionnel:', error);
+            debugError('❌ Erreur inscription professionnel:', error);
             if (error.isValidation && error.message) {
                 setErrors(error.message);
             } else if (typeof error.message === 'object') {

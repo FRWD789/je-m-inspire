@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\RemboursementResource;
-use App\Models\Remboursement;
+use App\Models\Event;
 use App\Models\Operation;
+use App\Models\Remboursement;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,64 +22,72 @@ class RemboursementController extends Controller
      */
     public function store(Request $request)
     {
+        $debug = config('app.debug');
+
         try {
             $validated = $request->validate([
                 'operation_id' => 'required|exists:operations,id',
-                'motif' => 'required|string|min:10',
-                'montant' => 'required|numeric|min:0.01'
+                'raison' => 'required|string|max:500',
+                'montant_demande' => 'required|numeric|min:0.01'
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
 
-        $user = Auth::user();
-
         try {
-            $operation = Operation::with('paiement')
-                ->where('id', $validated['operation_id'])
-                ->where('user_id', $user->id)
-                ->firstOrFail();
+            DB::beginTransaction();
 
-            if (!$operation->paiement) {
-                return $this->errorResponse('Cette réservation n\'a pas de paiement associé', 400);
+            $operation = Operation::with(['event', 'paiement'])
+                ->findOrFail($validated['operation_id']);
+
+            if ($operation->user_id !== Auth::id()) {
+                return $this->unauthorizedResponse('Cette opération ne vous appartient pas');
             }
 
-            if ($operation->paiement->status !== 'paid') {
+            if (!$operation->paiement || $operation->paiement->status !== 'paid') {
                 return $this->errorResponse('Seules les réservations payées peuvent être remboursées', 400);
             }
 
-            $demandeExistante = Remboursement::where('operation_id', $operation->id)
-                ->where('statut', 'en_attente')
+            $existingRemboursement = Remboursement::where('operation_id', $validated['operation_id'])
+                ->whereIn('statut', ['en_attente', 'approuve'])
                 ->first();
 
-            if ($demandeExistante) {
-                return $this->errorResponse('Une demande de remboursement est déjà en cours pour cette réservation', 400);
+            if ($existingRemboursement) {
+                return $this->errorResponse('Une demande de remboursement existe déjà pour cette réservation', 400);
             }
 
-            $montantPaiement = floatval($operation->paiement->total);
-            $montantDemande = floatval($validated['montant']);
+            $montantMax = $operation->paiement->total;
 
-            if (abs($montantPaiement - $montantDemande) > 0.01) {
-                return $this->errorResponse('Le montant demandé ne correspond pas au montant payé', 400);
+            if ($validated['montant_demande'] > $montantMax) {
+                return $this->errorResponse("Le montant demandé ne peut pas dépasser {$montantMax} CAD", 400);
             }
 
             $remboursement = Remboursement::create([
-                'user_id' => $user->id,
-                'operation_id' => $operation->id,
-                'montant' => $montantPaiement,
-                'motif' => $validated['motif'],
+                'user_id' => Auth::id(),
+                'operation_id' => $validated['operation_id'],
+                'montant' => $validated['montant_demande'],
+                'raison' => $validated['raison'],
                 'statut' => 'en_attente'
             ]);
 
+            DB::commit();
+
+            if ($debug) {
+                Log::info('Demande de remboursement créée', [
+                    'remboursement_id' => $remboursement->id,
+                    'user_id' => Auth::id(),
+                    'montant' => $validated['montant_demande']
+                ]);
+            }
+
             return $this->resourceResponse(
-                new RemboursementResource($remboursement->load('operation.event')),
+                new RemboursementResource($remboursement->load(['operation.event'])),
                 'Demande de remboursement créée avec succès',
                 201
             );
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->notFoundResponse('Réservation non trouvée');
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Erreur création remboursement: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la création de la demande', 500);
         }
@@ -132,6 +141,8 @@ class RemboursementController extends Controller
      */
     public function traiter(Request $request, $id)
     {
+        $debug = config('app.debug');
+
         try {
             $validated = $request->validate([
                 'statut' => 'required|in:approuve,rejete',
@@ -166,11 +177,13 @@ class RemboursementController extends Controller
                     $remboursement->operation->paiement->update(['status' => 'refunded']);
                 }
 
-                Log::info('Remboursement approuvé', [
-                    'remboursement_id' => $remboursement->id,
-                    'montant' => $remboursement->montant,
-                    'user_id' => $remboursement->user_id
-                ]);
+                if ($debug) {
+                    Log::info('Remboursement approuvé', [
+                        'remboursement_id' => $remboursement->id,
+                        'montant' => $remboursement->montant,
+                        'user_id' => $remboursement->user_id
+                    ]);
+                }
             }
 
             DB::commit();

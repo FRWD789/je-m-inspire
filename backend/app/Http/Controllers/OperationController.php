@@ -1,4 +1,7 @@
 <?php
+// ========================================
+// OperationController.php - Version production
+// ========================================
 
 namespace App\Http\Controllers;
 
@@ -8,6 +11,7 @@ use App\Models\Operation;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class OperationController extends Controller
@@ -78,6 +82,7 @@ class OperationController extends Controller
             ], 'Réservations récupérées avec succès');
 
         } catch (\Exception $e) {
+            Log::error('Erreur récupération réservations: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la récupération des réservations', 500);
         }
     }
@@ -87,6 +92,7 @@ class OperationController extends Controller
      */
     public function destroy($id)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -126,10 +132,19 @@ class OperationController extends Controller
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('Réservation annulée', [
+                    'operation_id' => $id,
+                    'user_id' => $user->id,
+                    'event_id' => $event->id
+                ]);
+            }
+
             return $this->successResponse(null, 'Réservation annulée avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur annulation réservation: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de l\'annulation', 500);
         }
     }
@@ -139,6 +154,7 @@ class OperationController extends Controller
      */
     public function store(Request $request)
     {
+        $debug = config('app.debug');
         $user = JWTAuth::user();
 
         if (!$user) {
@@ -174,6 +190,14 @@ class OperationController extends Controller
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('Opération créée', [
+                    'operation_id' => $operation->id,
+                    'type' => $validated['type_operation_id'],
+                    'user_id' => $user->id
+                ]);
+            }
+
             return $this->resourceResponse(
                 new OperationResource($operation->load(['event', 'user'])),
                 'Opération effectuée avec succès',
@@ -184,7 +208,112 @@ class OperationController extends Controller
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur création opération: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de l\'opération', 500);
+        }
+    }
+}
+
+// ========================================
+// CommissionController.php - Version production
+// ========================================
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+
+class CommissionController extends Controller
+{
+    use ApiResponse;
+
+    /**
+     * Récupérer tous les professionnels avec leur taux de commission
+     */
+    public function index()
+    {
+        try {
+            $professionals = User::whereHas('roles', function ($query) {
+                $query->where('role', 'professionnel');
+            })
+            ->with('roles')
+            ->select('id', 'name', 'last_name', 'email', 'commission_rate', 'stripeAccount_id', 'paypalAccount_id')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'last_name' => $user->last_name,
+                    'full_name' => $user->name . ' ' . $user->last_name,
+                    'email' => $user->email,
+                    'commission_rate' => (float) ($user->commission_rate ?? 0),
+                    'has_stripe' => !empty($user->stripeAccount_id),
+                    'has_paypal' => !empty($user->paypalAccount_id),
+                ];
+            });
+
+            return $this->successResponse([
+                'data' => $professionals,
+                'total' => $professionals->count()
+            ], 'Professionnels récupérés avec succès');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur récupération professionnels: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la récupération des professionnels', 500);
+        }
+    }
+
+    /**
+     * Mettre à jour le taux de commission d'un utilisateur
+     */
+    public function update(Request $request, $id)
+    {
+        $debug = config('app.debug');
+
+        $validator = Validator::make($request->all(), [
+            'commission_rate' => 'required|numeric|min:0|max:100'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
+        try {
+            $user = User::findOrFail($id);
+
+            if (!$user->roles()->where('role', 'professionnel')->exists()) {
+                return $this->errorResponse('Cet utilisateur n\'est pas un professionnel', 400);
+            }
+
+            $oldRate = $user->commission_rate;
+            $user->commission_rate = $request->commission_rate;
+            $user->save();
+
+            if ($debug) {
+                Log::info("Commission mise à jour", [
+                    'user_id' => $user->id,
+                    'old_rate' => $oldRate,
+                    'new_rate' => $user->commission_rate
+                ]);
+            }
+
+            return $this->successResponse([
+                'id' => $user->id,
+                'full_name' => $user->name . ' ' . $user->last_name,
+                'email' => $user->email,
+                'commission_rate' => (float) $user->commission_rate
+            ], 'Taux de commission mis à jour avec succès');
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Utilisateur non trouvé');
+        } catch (\Exception $e) {
+            Log::error('Erreur update commission: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la mise à jour', 500);
         }
     }
 }
