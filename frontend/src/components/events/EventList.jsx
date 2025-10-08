@@ -114,6 +114,8 @@ export const EventList = ({
             );
         }
 
+        const map = document.getElementById('map');
+
         return (
             <div>
                 {/* Carte uniquement si showMap est true */}
@@ -135,7 +137,7 @@ export const EventList = ({
                         const hasPlaces = event.available_places > 0;
 
                         return (
-                            <div 
+                            <div id={`event-${event.id}`}
                                 key={`${event.id}-${index}`} 
                                 style={{
                                     border: '1px solid #e0e0e0',

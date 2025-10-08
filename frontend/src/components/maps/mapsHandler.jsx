@@ -102,9 +102,10 @@ export const MapHandler = ({events}) =>
     return (
         
         <>
-        <div>
-            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => debug('Maps API has loaded.')}>
+        <div id='map'>
+            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => console.log('Maps API has loaded.')}>
                 <Map
+                    
                     mapId='DEMO_MAP_ID'
                     style={{height: '50vh'}}
                     defaultZoom={13}
