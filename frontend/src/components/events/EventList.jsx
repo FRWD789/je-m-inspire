@@ -62,9 +62,10 @@ export const EventList = ({
                 {events.map((event, index) => {
                     const isCreator = event.is_creator || false;
                     const isReserved = event.is_reserved || false;
-
                     return (
-                        <div key={`${event.id}-${index}`} style={{
+                        <div
+                            id={`event-${event.id}`}
+                            key={`${event.id}-${index}`} style={{
                             border: '1px solid #ddd',
                             borderRadius: '8px',
                             padding: '20px',

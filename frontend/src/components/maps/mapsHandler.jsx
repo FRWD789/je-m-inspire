@@ -44,6 +44,33 @@ export const MapHandler = ({events}) =>
                     position: { lat, lng },
                     title: event.name
                 });
+
+                marker.addEventListener('mouseover', () => {
+                    // Ouvre l'info-bulle avec les détails de l'événement
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<div style="max-width:200px;">
+                                    <h3>${event.name}</h3>
+                                    <p>${event.description || 'Pas de description disponible.'}</p>
+                                    <p><strong>Date:</strong> ${new Date(event.start_date).toLocaleDateString()}</p>
+                                    <p><strong>Adresse:</strong> ${event.localisation.address || 'Adresse non disponible'}</p>
+                                  </div>`
+                    });
+                    infoWindow.open(map, marker);
+                });
+
+                marker.addEventListener('mouseout', () => {
+                    // Fermer l'info-bulle lorsque la souris quitte le marqueur
+                    const infoWindows = document.getElementsByClassName('gm-style-iw');
+                    for (let i = 0; i < infoWindows.length; i++) {
+                        infoWindows[i].style.display = 'none';
+                    }
+                });
+
+                marker.addEventListener('click', () => {
+                    const element = document.getElementById(`event-${event.id}`);
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    element.classList.add('highlight');
+                });
             });
 
             // Centrer la carte sur le premier événement valide
@@ -67,7 +94,7 @@ export const MapHandler = ({events}) =>
                     mapId='DEMO_MAP_ID'
                     style={{height: '50vh'}}
                     defaultZoom={13}
-                    defaultCenter={ { lat: 45.40124220000001, lng: -71.8899362 } }
+                    defaultCenter={ { lat: 45.40124220000001, lng: -71.8899362 } } // Centre par défaut (Sherbrooke)
                     mapTypeControl={false}
                     streetView={false}
                     streetViewControl={false}
