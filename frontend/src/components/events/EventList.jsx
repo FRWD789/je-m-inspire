@@ -1,5 +1,5 @@
 // components/events/EventList.jsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi, useAuth } from "../../contexts/AuthContext";
 import { useEvents } from '../../hooks/useEvents';
@@ -21,6 +21,8 @@ const debugGroupEnd = () => {
   if (DEBUG) console.groupEnd();
 };
 
+
+
 export const EventList = ({ 
     endpoint = '/api/events', 
     showReserveButton = true, 
@@ -35,6 +37,12 @@ export const EventList = ({
     const { isAdmin } = useAuth();
     const navigate = useNavigate();
     const [editingEvent, setEditingEvent] = useState(null);
+
+    const mapInstanceRef = useRef(null);
+
+    const handleMapReady = (mapInstance) => {
+        mapInstanceRef.current = mapInstance;
+    };
 
     const handleReserve = useCallback((event) => {
         debug('Navigation vers:', `/payment/${event.id}`);
@@ -121,7 +129,10 @@ export const EventList = ({
                 {/* Carte uniquement si showMap est true */}
                 {showMap && events.length > 0 && (
                     <div style={{ marginBottom: '30px' }}>
-                        <MapHandler events={events}></MapHandler>
+                        <MapHandler 
+                            events={events}
+                            onMapReady={handleMapReady}>
+                        </MapHandler>
                     </div>
                 )}
                 
@@ -138,6 +149,24 @@ export const EventList = ({
 
                         return (
                             <div id={`event-${event.id}`}
+                        
+                                onClick = {() => {
+                                    if (mapInstanceRef.current && showMap && event.localisation && event.localisation.lat && event.localisation.lng) 
+                                    {
+                                        const lat = parseFloat(event.localisation.lat);
+                                        const lng = parseFloat(event.localisation.lng);
+                                        
+                                        const mapElement = document.getElementById('map');
+                                        if (mapElement) {
+                                            mapElement.style.display = 'block';
+                                            mapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }
+                                        
+                                        // Use the stored map instance
+                                        mapInstanceRef.current.panTo({ lat, lng });
+                                        mapInstanceRef.current.setZoom(12); // Optional: zoom in when focusing on event
+                                    }
+                                }}
                                 key={`${event.id}-${index}`} 
                                 style={{
                                     border: '1px solid #e0e0e0',

@@ -15,9 +15,9 @@ const debugGroupEnd = () => {
   if (DEBUG) console.groupEnd();
 };
 
-export const MapHandler = ({events}) => 
+export const MapHandler = ({events, onMapReady}) => 
 {
-    const MarkersComponent = ({events}) =>
+    const MarkersComponent = ({events, onMapReady}) =>
     {
         const map = useMap();
         const markerLib = useMapsLibrary('marker');
@@ -26,6 +26,11 @@ export const MapHandler = ({events}) =>
         {          
             if (!map || !markerLib) return;
             
+            // Pass the map instance to parent component
+            if (onMapReady && typeof onMapReady === 'function') {
+                onMapReady(map);
+            }
+
             debug('Événements reçus:', events);
             
             // ✅ FILTRER LES ÉVÉNEMENTS AVEC COORDONNÉES VALIDES
@@ -93,7 +98,7 @@ export const MapHandler = ({events}) =>
             const firstLng = parseFloat(firstEvent.localisation.lng);
             map.panTo({ lat: firstLat, lng: firstLng });
             
-        }, [markerLib, map]);
+        }, [markerLib, map, onMapReady]);
         
 
         return <></>;
@@ -104,7 +109,7 @@ export const MapHandler = ({events}) =>
         <>
         <div id='map'>
             <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => console.log('Maps API has loaded.')}>
-                <Map
+                <Map 
                     
                     mapId='DEMO_MAP_ID'
                     style={{height: '50vh'}}
@@ -118,7 +123,8 @@ export const MapHandler = ({events}) =>
                 </Map>
                 {events && events.length > 0 && (
                     <MarkersComponent 
-                        events={events}>    
+                        events={events}
+                        onMapReady={onMapReady}>
                     </MarkersComponent>
                 )}
             </APIProvider>          
