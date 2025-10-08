@@ -1,21 +1,18 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Http\Resources\PaiementResource;
+use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\Operation;
 use App\Models\Paiement;
 use App\Models\User;
+use App\Http\Resources\PaiementResource;
+use App\Http\Resources\OperationResource;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Stripe\Stripe;
-use Stripe\Checkout\Session;
-use Stripe\Webhook;
 
 class PaiementController extends Controller
 {
@@ -24,10 +21,9 @@ class PaiementController extends Controller
     /**
      * Créer une session de paiement Stripe
      */
-   public function stripeCheckout(Request $request)
+    public function stripeCheckout(Request $request)
     {
         try {
-            // ✅ LOGIQUE INCHANGÉE
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
                 'quantity' => 'required|integer|min:1|max:20',
@@ -40,7 +36,7 @@ class PaiementController extends Controller
             $quantity = $validated['quantity'];
             $vendor = $event->creator;
 
-            // ✅ LOGIQUE INCHANGÉE - Vérifications métier
+            // Vérifications métier
             if ($event->available_places < $quantity) {
                 return $this->errorResponse('Pas assez de places disponibles', 400);
             }
@@ -49,13 +45,13 @@ class PaiementController extends Controller
                 return $this->errorResponse('Impossible de réserver un événement déjà commencé', 400);
             }
 
-            // ✅ LOGIQUE INCHANGÉE - Calcul du montant
+            // Calcul du montant
             $totalAmount = $quantity * $event->base_price;
             $amountCents = intval(round($totalAmount * 100));
 
             DB::beginTransaction();
 
-            // ✅ LOGIQUE INCHANGÉE - Créer le paiement
+            // Créer le paiement
             $paiement = Paiement::create([
                 'total' => $totalAmount,
                 'status' => 'pending',
@@ -63,9 +59,11 @@ class PaiementController extends Controller
                 'taux_commission' => $vendor->commission_rate ?? 0,
                 'vendor_id' => $vendor->id ?? null,
                 'session_id' => '',
+                'paypal_id' => null,
+                'paypal_capture_id' => null,
             ]);
 
-            // ✅ LOGIQUE INCHANGÉE - Créer l'opération
+            // Créer l'opération
             $operation = Operation::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
@@ -74,15 +72,15 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // ✅ LOGIQUE INCHANGÉE - Créer la session Stripe
-            $session = \Stripe\Checkout\Session::create([
+            // Configuration de base pour la session Stripe
+            $sessionParams = [
                 'payment_method_types' => ['card'],
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'cad',
                         'product_data' => [
                             'name' => $event->name,
-                            'description' => substr($event->description, 0, 200),
+                            'description' => "$quantity place(s) pour {$event->name}",
                         ],
                         'unit_amount' => intval(round($event->base_price * 100)),
                     ],
@@ -91,37 +89,51 @@ class PaiementController extends Controller
                 'mode' => 'payment',
                 'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
-                'client_reference_id' => $operation->id,
                 'metadata' => [
-                    'operation_id' => $operation->id,
-                    'event_id' => $event->id,
                     'user_id' => $user->id,
-                ]
-            ]);
+                    'event_id' => $event->id,
+                    'operation_id' => $operation->id,
+                    'payment_id' => $paiement->paiement_id,
+                    'quantity' => $quantity,
+                ],
+            ];
 
-            // ✅ LOGIQUE INCHANGÉE - Mettre à jour le paiement
+            // ✅ STRIPE CONNECT : Si le vendor a Pro Plus + compte Stripe lié
+            if ($vendor && $vendor->hasProPlus() && $vendor->stripeAccount_id) {
+                $commissionAmount = intval(round($totalAmount * ($vendor->commission_rate / 100) * 100));
+
+                // Paiement direct au vendor avec prélèvement de la commission
+                $sessionParams['payment_intent_data'] = [
+                    'application_fee_amount' => $commissionAmount,
+                    'transfer_data' => [
+                        'destination' => $vendor->stripeAccount_id,
+                    ],
+                ];
+
+                Log::info('[Stripe Connect] Paiement avec commission', [
+                    'vendor_id' => $vendor->id,
+                    'total' => $totalAmount,
+                    'commission' => $commissionAmount / 100,
+                    'vendor_reçoit' => ($amountCents - $commissionAmount) / 100,
+                ]);
+            }
+
+            // Créer la session Stripe
+            $session = \Stripe\Checkout\Session::create($sessionParams);
+
             $paiement->update(['session_id' => $session->id]);
 
             DB::commit();
 
-            Log::info('Session Stripe créée', [
-                'session_id' => $session->id,
-                'operation_id' => $operation->id,
-                'amount' => $totalAmount
-            ]);
-
-            // ✅ SEULEMENT LE RETURN MODIFIÉ
             return $this->successResponse([
                 'session_id' => $session->id,
                 'url' => $session->url,
-                'operation_id' => $operation->id
-            ], 'Session de paiement créée avec succès', 201);
+                'payment_id' => $paiement->paiement_id,
+            ], 'Session de paiement créée avec succès');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur Stripe checkout: ' . $e->getMessage());
+            Log::error('Erreur Stripe Checkout: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la création de la session de paiement', 500);
         }
     }
@@ -142,6 +154,7 @@ class PaiementController extends Controller
             $quantity = $validated['quantity'];
             $vendor = $event->creator;
 
+            // Vérifications métier
             if ($event->available_places < $quantity) {
                 return $this->errorResponse('Pas assez de places disponibles', 400);
             }
@@ -154,11 +167,13 @@ class PaiementController extends Controller
 
             $totalAmount = $quantity * $event->base_price;
 
+            // Configuration PayPal
             $paypal = new PayPalClient;
             $paypal->setApiCredentials(config('paypal'));
             $token = $paypal->getAccessToken();
             $paypal->setAccessToken($token);
 
+            // Créer le paiement
             $paiement = Paiement::create([
                 'total' => $totalAmount,
                 'status' => 'pending',
@@ -170,6 +185,7 @@ class PaiementController extends Controller
                 'paypal_capture_id' => null,
             ]);
 
+            // Créer l'opération
             $operation = Operation::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
@@ -183,51 +199,62 @@ class PaiementController extends Controller
                     "currency_code" => "CAD",
                     "value" => number_format($totalAmount, 2, '.', '')
                 ],
-                "description" => substr($event->name, 0, 127)
             ];
 
-            $order = $paypal->createOrder([
-                "intent" => "CAPTURE",
-                "purchase_units" => [$purchaseUnit],
-                "application_context" => [
-                    "return_url" => env('FRONTEND_URL') . '/payment/success',
-                    "cancel_url" => env('FRONTEND_URL') . '/payment/cancel',
-                ]
-            ]);
+            // Si vendor avec Pro Plus et compte PayPal
+            if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
+                $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
 
-            if (isset($order['id'])) {
-                $paiement->update(['paypal_id' => $order['id']]);
-                DB::commit();
+                $purchaseUnit["payee"] = [
+                    "merchant_id" => $vendor->paypalAccount_id,
+                ];
 
-                $approvalUrl = null;
-                foreach ($order['links'] as $link) {
-                    if ($link['rel'] === 'approve') {
-                        $approvalUrl = $link['href'];
-                        break;
-                    }
-                }
-
-                Log::info('Commande PayPal créée', [
-                    'order_id' => $order['id'],
-                    'operation_id' => $operation->id
-                ]);
-
-                return $this->successResponse([
-                    'order_id' => $order['id'],
-                    'approval_url' => $approvalUrl,
-                    'operation_id' => $operation->id
-                ], 'Commande PayPal créée avec succès', 201);
+                $purchaseUnit["payment_instruction"] = [
+                    "disbursement_mode" => "INSTANT",
+                    "platform_fees" => [
+                        [
+                            "amount" => [
+                                "currency_code" => "CAD",
+                                "value" => number_format($commissionAmount, 2, '.', '')
+                            ]
+                        ]
+                    ]
+                ];
             }
 
-            DB::rollBack();
-            return $this->errorResponse('Erreur lors de la création de la commande PayPal', 500);
+            $response = $paypal->createOrder([
+                "intent" => "CAPTURE",
+                "application_context" => [
+                    'return_url' => env('FRONTEND_URL') . '/payment/success?payment_id=' . $paiement->paiement_id,
+                    'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
+                ],
+                "purchase_units" => [$purchaseUnit]
+            ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
+            if (isset($response['id'])) {
+                $paiement->update(['paypal_id' => $response['id']]);
+            }
+
+            $approveUrl = null;
+            foreach ($response['links'] ?? [] as $link) {
+                if ($link['rel'] === 'approve') {
+                    $approveUrl = $link['href'];
+                    break;
+                }
+            }
+
+            DB::commit();
+
+            return $this->successResponse([
+                'order_id' => $response['id'],
+                'approval_url' => $approveUrl,
+                'payment_id' => $paiement->paiement_id,
+            ], 'Commande PayPal créée avec succès');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur PayPal checkout: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la création de la commande', 500);
+            Log::error('Erreur PayPal Checkout: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la création de la commande PayPal', 500);
         }
     }
 
@@ -236,86 +263,36 @@ class PaiementController extends Controller
      */
     public function stripeWebhook(Request $request)
     {
+        $endpoint_secret = env('STRIPE_WEBHOOK_SECRET');
         $payload = $request->getContent();
-        $sigHeader = $request->header('Stripe-Signature');
-        $webhookSecret = env('STRIPE_WEBHOOK_SECRET');
+        $sig_header = $request->header('Stripe-Signature');
 
         try {
-            $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
-
-            Log::info('Webhook Stripe reçu', ['type' => $event->type]);
-
-            switch ($event->type) {
-                case 'checkout.session.completed':
-                    $this->handleStripeCheckoutCompleted($event->data->object);
-                    break;
-
-                case 'payment_intent.succeeded':
-                    Log::info('PaymentIntent succeeded', ['id' => $event->data->object->id]);
-                    break;
-
-                case 'payment_intent.payment_failed':
-                    $this->handleStripePaymentFailed($event->data->object);
-                    break;
-
-                default:
-                    Log::info('Type de webhook non géré', ['type' => $event->type]);
-            }
-
-            return $this->successResponse(null, 'Webhook traité');
-
+            $event = \Stripe\Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
         } catch (\Exception $e) {
-            Log::error('Erreur webhook Stripe: ' . $e->getMessage());
-            return $this->errorResponse('Erreur webhook', 400);
+            Log::error('Webhook Stripe signature invalide: ' . $e->getMessage());
+            return response('Webhook signature verification failed', 400);
         }
-    }
 
-    /**
-     * Gérer la complétion du checkout Stripe
-     */
-    private function handleStripeCheckoutCompleted($session)
-    {
-        try {
-            DB::beginTransaction();
+        Log::info("Webhook Stripe reçu: {$event->type}");
 
-            $paiement = Paiement::where('session_id', $session->id)->first();
+        switch ($event->type) {
+            case 'checkout.session.completed':
+                $session = $event->data->object;
+                $this->handleStripeCheckoutCompleted($session);
+                break;
 
-            if (!$paiement) {
-                Log::warning('Paiement non trouvé pour session', ['session_id' => $session->id]);
-                return;
-            }
+            case 'checkout.session.expired':
+                $session = $event->data->object;
+                $this->handleStripeCheckoutExpired($session);
+                break;
 
-            $paiement->update(['status' => 'paid']);
-
-            $operation = Operation::where('paiement_id', $paiement->paiement_id)->first();
-
-            if ($operation) {
-                $event = Event::find($operation->event_id);
-                if ($event && $event->available_places >= $operation->quantity) {
-                    $event->available_places -= $operation->quantity;
-                    $event->save();
-                }
-            }
-
-            DB::commit();
-
-            Log::info('Paiement Stripe confirmé', [
-                'paiement_id' => $paiement->paiement_id,
-                'session_id' => $session->id
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Erreur handleStripeCheckoutCompleted: ' . $e->getMessage());
+            default:
+                Log::info("Événement Stripe non géré: {$event->type}");
+                break;
         }
-    }
 
-    /**
-     * Gérer l'échec du paiement Stripe
-     */
-    private function handleStripePaymentFailed($paymentIntent)
-    {
-        Log::error('Paiement Stripe échoué', ['payment_intent_id' => $paymentIntent->id]);
+        return response('Webhook traité', 200);
     }
 
     /**
@@ -323,99 +300,312 @@ class PaiementController extends Controller
      */
     public function paypalWebhook(Request $request)
     {
-        try {
-            $payload = $request->all();
-            $eventType = $payload['event_type'] ?? null;
+        $payload = $request->all();
+        Log::info("Webhook PayPal reçu : " . json_encode($payload));
 
-            Log::info('Webhook PayPal reçu', ['type' => $eventType]);
+        response()->json(['status' => 'success'], 200)->send();
 
-            switch ($eventType) {
-                case 'CHECKOUT.ORDER.APPROVED':
-                    $this->handlePaypalOrderApproved($payload);
-                    break;
+        $event = $payload['event_type'] ?? null;
 
-                case 'PAYMENT.CAPTURE.COMPLETED':
-                    $this->handlePaypalCaptureCompleted($payload);
-                    break;
+        switch ($event) {
+            case 'CHECKOUT.ORDER.APPROVED':
+                $this->handlePaypalOrderApproved($payload);
+                break;
 
-                case 'PAYMENT.CAPTURE.DENIED':
-                    $this->handlePaypalCaptureDenied($payload);
-                    break;
+            case 'PAYMENT.CAPTURE.COMPLETED':
+                $this->handlePaypalCaptureCompleted($payload);
+                break;
 
-                default:
-                    Log::info('Type de webhook PayPal non géré', ['type' => $eventType]);
-            }
-
-            return $this->successResponse(null, 'Webhook traité');
-
-        } catch (\Exception $e) {
-            Log::error('Erreur webhook PayPal: ' . $e->getMessage());
-            return $this->errorResponse('Erreur webhook', 400);
+            default:
+                Log::info('Événement PayPal non géré: ' . $event);
         }
+
+        return response()->json(['status' => 'success'], 200);
     }
 
     /**
-     * Gérer l'approbation d'une commande PayPal
+     * Gérer l'ordre PayPal approuvé et capturer automatiquement
      */
     private function handlePaypalOrderApproved($payload)
     {
-        $orderId = $payload['resource']['id'] ?? null;
-        Log::info('Commande PayPal approuvée', ['order_id' => $orderId]);
-    }
-
-    /**
-     * Gérer la complétion d'une capture PayPal
-     */
-    private function handlePaypalCaptureCompleted($payload)
-    {
         try {
-            DB::beginTransaction();
+            $orderId = $payload['resource']['id'] ?? null;
 
-            $captureId = $payload['resource']['id'] ?? null;
-            $orderId = $payload['resource']['supplementary_data']['related_ids']['order_id'] ?? null;
+            if (!$orderId) {
+                Log::error('[PayPal] Order ID manquant dans le webhook');
+                return;
+            }
 
+            Log::info("[PayPal] Commande approuvée: $orderId");
+
+            // Mettre à jour le statut à "pending"
             $paiement = Paiement::where('paypal_id', $orderId)->first();
 
             if (!$paiement) {
-                Log::warning('Paiement PayPal non trouvé', ['order_id' => $orderId]);
+                Log::warning("[PayPal] Paiement non trouvé pour order_id: $orderId");
                 return;
             }
 
             $paiement->update([
-                'status' => 'paid',
-                'paypal_capture_id' => $captureId
+                'status' => 'pending',
+                'updated_at' => now(),
             ]);
 
-            $operation = Operation::where('paiement_id', $paiement->paiement_id)->first();
+            Log::info("Paiement $orderId en pending");
 
-            if ($operation) {
-                $event = Event::find($operation->event_id);
-                if ($event && $event->available_places >= $operation->quantity) {
-                    $event->available_places -= $operation->quantity;
-                    $event->save();
-                }
+            // ✅ Capturer automatiquement le paiement
+            $paypal = new PayPalClient;
+            $paypal->setApiCredentials(config('paypal'));
+            $token = $paypal->getAccessToken();
+            $paypal->setAccessToken($token);
+
+            $capture = $paypal->capturePaymentOrder($orderId);
+
+            if ($capture['status'] === 'COMPLETED') {
+                $captureId = $capture['purchase_units'][0]['payments']['captures'][0]['id'] ?? null;
+                $amount = $capture['purchase_units'][0]['payments']['captures'][0]['amount']['value'] ?? 0;
+
+                // ✅ Traiter le paiement immédiatement
+                $this->handlePaypalPaymentSuccess($paiement, $capture, $captureId);
+
+                Log::info("✅ Paiement $orderId capturé automatiquement pour $amount", [
+                    'capture_id' => $captureId
+                ]);
             }
 
-            DB::commit();
-
-            Log::info('Paiement PayPal confirmé', [
-                'paiement_id' => $paiement->paiement_id,
-                'order_id' => $orderId
-            ]);
-
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Erreur handlePaypalCaptureCompleted: ' . $e->getMessage());
+            Log::error('[PayPal] Erreur handlePaypalOrderApproved: ' . $e->getMessage());
         }
     }
 
     /**
-     * Gérer le refus d'une capture PayPal
+     * Gérer la capture PayPal complétée (webhook final de confirmation)
      */
-    private function handlePaypalCaptureDenied($payload)
+    private function handlePaypalCaptureCompleted($payload)
     {
-        $orderId = $payload['resource']['supplementary_data']['related_ids']['order_id'] ?? null;
-        Log::error('Capture PayPal refusée', ['order_id' => $orderId]);
+        try {
+            $captureId = $payload['resource']['id'] ?? null;
+            $orderId = $payload['resource']['supplementary_data']['related_ids']['order_id'] ?? null;
+            $amount = $payload['resource']['amount']['value'] ?? 0;
+
+            Log::info("[PayPal] Capture complétée", [
+                'capture_id' => $captureId,
+                'order_id' => $orderId,
+                'amount' => $amount
+            ]);
+
+            // ✅ Chercher par ORDER_ID ou CAPTURE_ID
+            $paiement = Paiement::where('paypal_id', $orderId)
+                ->orWhere('paypal_capture_id', $captureId)
+                ->first();
+
+            if (!$paiement) {
+                Log::warning("[PayPal] Paiement non trouvé pour order: $orderId / capture: $captureId");
+                return;
+            }
+
+            // ✅ Si déjà payé, juste mettre à jour le capture_id si nécessaire
+            if ($paiement->status === 'paid') {
+                if (!$paiement->paypal_capture_id) {
+                    $paiement->update([
+                        'paypal_capture_id' => $captureId,
+                        'updated_at' => now(),
+                    ]);
+                    Log::info("[PayPal] Capture ID ajouté au paiement déjà traité: {$paiement->paiement_id}");
+                } else {
+                    Log::info("[PayPal] Paiement déjà traité et complet: {$paiement->paiement_id}");
+                }
+                return;
+            }
+
+            // ✅ Si pas encore payé (cas où la capture automatique a échoué), traiter maintenant
+            Log::warning("[PayPal] Paiement pas encore traité, traitement via webhook CAPTURE.COMPLETED");
+
+            $this->handlePaypalPaymentSuccess($paiement, $payload, $captureId);
+
+        } catch (\Exception $e) {
+            Log::error('[PayPal] Erreur handlePaypalCaptureCompleted: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Traiter le succès du paiement PayPal (appelé UNE SEULE FOIS)
+     */
+    private function handlePaypalPaymentSuccess(Paiement $paiement, $payload, $captureId = null)
+    {
+        try {
+            DB::beginTransaction();
+
+            // ✅ PROTECTION : Vérifier si déjà traité
+            if ($paiement->status === 'paid') {
+                DB::rollBack();
+                Log::info("[PayPal] Paiement déjà traité, skip: {$paiement->paiement_id}");
+                return;
+            }
+
+            $operation = Operation::where('paiement_id', $paiement->paiement_id)->first();
+
+            if (!$operation) {
+                Log::error('[PayPal] Opération non trouvée', [
+                    'payment_id' => $paiement->paiement_id
+                ]);
+                DB::rollBack();
+                return;
+            }
+
+            $event = $operation->event;
+
+            // Vérifier les places disponibles
+            if ($event->available_places >= $operation->quantity) {
+                // Déduire les places
+                $event->available_places -= $operation->quantity;
+                $event->save();
+
+                // Extraire le montant selon le format du payload
+                $amount = null;
+                if (isset($payload['purchase_units'][0]['payments']['captures'][0]['amount']['value'])) {
+                    // Format: réponse de capture API
+                    $amount = $payload['purchase_units'][0]['payments']['captures'][0]['amount']['value'];
+                } elseif (isset($payload['resource']['amount']['value'])) {
+                    // Format: webhook PAYMENT.CAPTURE.COMPLETED
+                    $amount = $payload['resource']['amount']['value'];
+                }
+
+                // Marquer comme payé
+                $paiement->update([
+                    'status' => 'paid',
+                    'paypal_capture_id' => $captureId,
+                    'total' => $amount ?? $paiement->total,
+                    'updated_at' => now(),
+                ]);
+
+                Log::info('✅ Paiement PayPal confirmé', [
+                    'payment_id' => $paiement->paiement_id,
+                    'operation_id' => $operation->id,
+                    'quantity' => $operation->quantity,
+                    'event_id' => $event->id,
+                    'capture_id' => $captureId
+                ]);
+            } else {
+                // Pas assez de places : remboursement
+                $paiement->update([
+                    'status' => 'refunded',
+                    'updated_at' => now(),
+                ]);
+                $operation->delete();
+
+                Log::warning('⚠️ Remboursement automatique PayPal - pas assez de places', [
+                    'payment_id' => $paiement->paiement_id,
+                    'places_demandees' => $operation->quantity,
+                    'places_disponibles' => $event->available_places
+                ]);
+            }
+
+            DB::commit();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('[PayPal] Erreur traitement paiement', [
+                'payment_id' => $paiement->paiement_id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Gérer le succès du paiement Stripe
+     */
+    private function handleStripeCheckoutCompleted($session)
+    {
+        try {
+            DB::beginTransaction();
+
+            $paymentId = $session->metadata->payment_id ?? null;
+
+            if (!$paymentId) {
+                Log::error('[Stripe] Payment ID manquant dans metadata');
+                DB::rollBack();
+                return;
+            }
+
+            $paiement = Paiement::find($paymentId);
+
+            if (!$paiement) {
+                Log::error('[Stripe] Paiement non trouvé', ['payment_id' => $paymentId]);
+                DB::rollBack();
+                return;
+            }
+
+            if ($paiement->status === 'paid') {
+                DB::rollBack();
+                Log::info("[Stripe] Paiement déjà traité: $paymentId");
+                return;
+            }
+
+            $operation = Operation::where('paiement_id', $paiement->paiement_id)->first();
+
+            if (!$operation) {
+                Log::error('[Stripe] Opération non trouvée', ['payment_id' => $paymentId]);
+                DB::rollBack();
+                return;
+            }
+
+            $event = $operation->event;
+
+            // Vérifier les places disponibles
+            if ($event->available_places >= $operation->quantity) {
+                $event->available_places -= $operation->quantity;
+                $event->save();
+
+                $paiement->update([
+                    'status' => 'paid',
+                    'total' => ($session->amount_total ?? 0) / 100,
+                ]);
+
+                Log::info('✅ Paiement Stripe confirmé', [
+                    'payment_id' => $paiement->paiement_id,
+                    'session_id' => $session->id,
+                    'quantity' => $operation->quantity
+                ]);
+            } else {
+                $paiement->update(['status' => 'refunded']);
+                $operation->delete();
+
+                Log::warning('⚠️ Remboursement automatique Stripe - pas assez de places', [
+                    'payment_id' => $paymentId
+                ]);
+            }
+
+            DB::commit();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('[Stripe] Erreur handleStripeCheckoutCompleted: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Gérer l'expiration de la session Stripe
+     */
+    private function handleStripeCheckoutExpired($session)
+    {
+        try {
+            $paymentId = $session->metadata->payment_id ?? null;
+
+            if (!$paymentId) {
+                return;
+            }
+
+            $paiement = Paiement::find($paymentId);
+
+            if ($paiement && $paiement->status === 'pending') {
+                $paiement->update(['status' => 'expired']);
+                Log::info("Session Stripe expirée: $paymentId");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('[Stripe] Erreur handleStripeCheckoutExpired: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -424,35 +614,28 @@ class PaiementController extends Controller
     public function getPaymentStatus(Request $request)
     {
         try {
+            $paymentId = $request->query('payment_id');
             $sessionId = $request->query('session_id');
-            $orderId = $request->query('order_id');
 
-            if (!$sessionId && !$orderId) {
-                return $this->errorResponse('session_id ou order_id requis', 400);
-            }
-
-            $paiement = null;
-
-            if ($sessionId) {
-                $paiement = Paiement::where('session_id', $sessionId)->first();
-            } elseif ($orderId) {
-                $paiement = Paiement::where('paypal_id', $orderId)->first();
+            if ($paymentId) {
+                $paiement = Paiement::with(['operation.event.localisation', 'operation.event.categorie'])->find($paymentId);
+            } elseif ($sessionId) {
+                $paiement = Paiement::with(['operation.event.localisation', 'operation.event.categorie'])
+                    ->where('session_id', $sessionId)
+                    ->first();
+            } else {
+                return $this->errorResponse('payment_id ou session_id requis', 400);
             }
 
             if (!$paiement) {
                 return $this->notFoundResponse('Paiement non trouvé');
             }
 
-            $operation = $paiement->operation;
-            $event = $operation ? $operation->event : null;
-
             return $this->successResponse([
-                'paiement' => new PaiementResource($paiement),
-                'operation' => $operation ? [
-                    'id' => $operation->id,
-                    'quantity' => $operation->quantity,
-                    'event_name' => $event?->name,
-                ] : null
+                'payment' => new PaiementResource($paiement),
+                'operation' => $paiement->operation
+                    ? new OperationResource($paiement->operation)
+                    : null
             ], 'Statut du paiement récupéré');
 
         } catch (\Exception $e) {

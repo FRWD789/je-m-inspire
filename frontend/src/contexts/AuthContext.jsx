@@ -360,26 +360,54 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerUser = async (data) => {
-    const response = await apiSimple.post("/api/register/user", data);
-    const { token: accessToken, refresh_token, user: newUser } = response.data;
+  // Créer FormData pour supporter l'upload de fichiers
+  const formData = new FormData();
+  
+  Object.keys(data).forEach(key => {
+    if (data[key] !== null && data[key] !== undefined) {
+      formData.append(key, data[key]);
+    }
+  });
 
-    localStorage.setItem("access_token", accessToken);
-    if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
+  const response = await apiSimple.post("/api/register/user", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  
+  const { token: accessToken, refresh_token, user: newUser } = response.data;
 
-    setToken(accessToken);
-    setUser(newUser);
+  localStorage.setItem("access_token", accessToken);
+  if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
 
-    return response.data;
+  setToken(accessToken);
+  setUser(newUser);
+
+  return response.data;
+};
+
+ const registerProfessional = async (data) => {
+  // Créer FormData pour supporter l'upload de fichiers
+  const formData = new FormData();
+  
+  Object.keys(data).forEach(key => {
+    if (data[key] !== null && data[key] !== undefined) {
+      formData.append(key, data[key]);
+    }
+  });
+
+  const response = await apiSimple.post("/api/register/professional", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  
+  return {
+    status: "pending",
+    message: response.data.message,
+    user: response.data.user,
   };
-
-  const registerProfessional = async (data) => {
-    const response = await apiSimple.post("/api/register/professional", data);
-    return {
-      status: "pending",
-      message: response.data.message,
-      user: response.data.user,
-    };
-  };
+};
 
   const refreshUser = async () => {
     const response = await api.get("/api/me");

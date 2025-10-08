@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -23,10 +24,8 @@ class AuthController extends Controller
     /**
      * Inscription pour les utilisateurs réguliers
      */
-    public function registerUser(Request $request)
+   public function registerUser(Request $request)
     {
-        $debug = config('app.debug');
-
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -35,12 +34,37 @@ class AuthController extends Controller
                 'date_of_birth' => 'required|date|before:today',
                 'city' => 'nullable|string|max:255',
                 'password' => 'required|string|min:6|confirmed',
+                'profile_picture' => 'nullable|file|max:2048',
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
 
         try {
+            $profilePicturePath = null;
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                Log::info('[Auth] Image de profil uploadée lors de l\'inscription', [
+                    'filename' => $filename,
+                    'path' => $profilePicturePath,
+                    'mime' => $file->getMimeType()
+                ]);
+            }
+
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -48,6 +72,7 @@ class AuthController extends Controller
                 'date_of_birth' => $validated['date_of_birth'],
                 'city' => $validated['city'] ?? null,
                 'password' => Hash::make($validated['password']),
+                'profile_picture' => $profilePicturePath,
                 'is_approved' => true,
                 'approved_at' => now(),
             ]);
@@ -80,13 +105,18 @@ class AuthController extends Controller
             );
 
         } catch (\Exception $e) {
-            Log::error('Erreur inscription utilisateur: ' . $e->getMessage());
+            Log::error('[Auth] Erreur inscription utilisateur: ' . $e->getMessage());
+
+            if (isset($profilePicturePath) && Storage::disk('public')->exists($profilePicturePath)) {
+                Storage::disk('public')->delete($profilePicturePath);
+            }
+
             return $this->errorResponse('Erreur lors de l\'inscription', 500);
         }
     }
 
     /**
-     * Inscription pour les professionnels
+     * Inscription pour les professionnels (nécessite approbation)
      */
     public function registerProfessional(Request $request)
     {
@@ -98,12 +128,38 @@ class AuthController extends Controller
                 'date_of_birth' => 'required|date|before:today',
                 'city' => 'nullable|string|max:255',
                 'password' => 'required|string|min:6|confirmed',
+                'motivation_letter' => 'required|string|min:50|max:2000',
+                'profile_picture' => 'nullable|file|max:2048',
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
 
         try {
+            $profilePicturePath = null;
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                Log::info('[Auth] Image de profil uploadée lors de l\'inscription pro', [
+                    'filename' => $filename,
+                    'path' => $profilePicturePath,
+                    'mime' => $file->getMimeType()
+                ]);
+            }
+
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -111,7 +167,10 @@ class AuthController extends Controller
                 'date_of_birth' => $validated['date_of_birth'],
                 'city' => $validated['city'] ?? null,
                 'password' => Hash::make($validated['password']),
+                'motivation_letter' => $validated['motivation_letter'],
+                'profile_picture' => $profilePicturePath,
                 'is_approved' => false,
+                'approved_at' => null,
             ]);
 
             $role = Role::where('role', 'professionnel')->first();
@@ -122,12 +181,23 @@ class AuthController extends Controller
             $user->load('roles');
 
             return $this->successResponse([
-                'user' => new UserResource($user),
-                'message' => 'Demande envoyée. En attente d\'approbation.'
-            ], 'Demande envoyée', 201);
+                'status' => 'pending',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'is_approved' => false
+                ]
+            ], 'Votre demande d\'inscription a été envoyée. Un administrateur examinera votre candidature.', 201);
 
         } catch (\Exception $e) {
-            Log::error('Erreur inscription professionnel: ' . $e->getMessage());
+            Log::error('[Auth] Erreur inscription professionnel: ' . $e->getMessage());
+
+            if (isset($profilePicturePath) && Storage::disk('public')->exists($profilePicturePath)) {
+                Storage::disk('public')->delete($profilePicturePath);
+            }
+
             return $this->errorResponse('Erreur lors de l\'inscription', 500);
         }
     }
@@ -367,8 +437,43 @@ class AuthController extends Controller
                 'last_name' => 'sometimes|string|max:255',
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'city' => 'nullable|string|max:255',
-                'date_of_birth' => 'sometimes|date|before:today'
+                'date_of_birth' => 'sometimes|date|before:today',
+                'profile_picture' => 'nullable|file|max:2048',
             ]);
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                // Supprimer l'ancienne image si elle existe
+                if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                    Log::info('[Auth] Ancienne image de profil supprimée', [
+                        'user_id' => $user->id,
+                        'old_path' => $user->profile_picture
+                    ]);
+                }
+
+                // Uploader la nouvelle image
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                $validated['profile_picture'] = $profilePicturePath;
+
+                Log::info('[Auth] Nouvelle image de profil uploadée', [
+                    'user_id' => $user->id,
+                    'filename' => $filename,
+                    'path' => $profilePicturePath
+                ]);
+            }
 
             $user->update($validated);
             $user->load('roles');
@@ -381,7 +486,7 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
-            Log::error('Erreur update profile: ' . $e->getMessage());
+            Log::error('[Auth] Erreur lors de la mise à jour du profil: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la mise à jour du profil', 500);
         }
     }

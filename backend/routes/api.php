@@ -101,7 +101,7 @@ Route::middleware(['auth:api'])->group(function () {
     // AUTHENTIFICATION & PROFIL
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::put('/profile/update', [AuthController::class, 'updateProfile']);
+    Route::post('/profile/update', [AuthController::class, 'updateProfile']);
 
     // ÉVÉNEMENTS
     Route::post('/events', [EventController::class, 'store']);
