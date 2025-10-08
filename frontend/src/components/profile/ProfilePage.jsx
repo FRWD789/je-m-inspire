@@ -653,7 +653,7 @@ const ProfilePage = () => {
                                     Souscrivez à Pro Plus pour lier vos comptes Stripe et PayPal et recevoir des paiements directement.
                                 </p>
                                 <button
-                                    onClick={() => navigate('/abonnement/pro-plus')}
+                                    onClick={() => navigate('/abonnement')}
                                     style={{
                                         marginTop: '10px',
                                         padding: '8px 16px',
