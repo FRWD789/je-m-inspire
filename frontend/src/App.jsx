@@ -183,19 +183,19 @@ function AppContent() {
           </ProtectedRoute>
         } />
         
-        <Route path="/pro-plus" element={
+        <Route path="/abonnement" element={
           <ProtectedRoute>
             <ProPlusPage />
           </ProtectedRoute>
         } />
         
-        <Route path="/subscription-success" element={
+        <Route path="/abonnement/success" element={
           <ProtectedRoute>
             <SubscriptionSuccess />
           </ProtectedRoute>
         } />
         
-        <Route path="/subscription-cancel" element={
+        <Route path="/abonnement/cancel" element={
           <ProtectedRoute>
             <SubscriptionCancel />
           </ProtectedRoute>

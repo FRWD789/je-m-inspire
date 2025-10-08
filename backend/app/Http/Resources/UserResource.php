@@ -16,6 +16,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'city' => $this->city,
             'date_of_birth' => $this->date_of_birth,
+            'profile_picture' => $this->profile_picture, // ✅ AJOUTÉ
             'is_approved' => (bool) $this->is_approved,
             'approved_at' => $this->approved_at?->toIso8601String(),
             'commission_rate' => $this->when(

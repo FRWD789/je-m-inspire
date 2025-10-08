@@ -43,7 +43,8 @@ const ProfilePage = () => {
                 last_name: user.last_name || '',
                 email: user.email || '',
                 city: user.city || '',
-                date_of_birth: user.date_of_birth || ''
+                // ✅ Formater la date pour l'input type="date"
+                date_of_birth: user.date_of_birth ? user.date_of_birth.split('T')[0] : '',
             });
             checkProPlusStatus();
             fetchLinkedAccounts();
@@ -631,6 +632,45 @@ const ProfilePage = () => {
                 }}>
                     <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Comptes de paiement</h2>
                     
+                    {/* Message si pas Pro Plus */}
+                    {!hasProPlus && (
+                        <div style={{
+                            backgroundColor: '#fff3cd',
+                            border: '1px solid #ffc107',
+                            borderRadius: '8px',
+                            padding: '15px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px'
+                        }}>
+                            <div style={{ fontSize: '32px' }}>🔒</div>
+                            <div>
+                                <strong style={{ color: '#856404', fontSize: '16px' }}>
+                                    Abonnement Pro Plus requis
+                                </strong>
+                                <p style={{ margin: '5px 0 0 0', color: '#856404', fontSize: '14px' }}>
+                                    Souscrivez à Pro Plus pour lier vos comptes Stripe et PayPal et recevoir des paiements directement.
+                                </p>
+                                <button
+                                    onClick={() => navigate('/abonnement/pro-plus')}
+                                    style={{
+                                        marginTop: '10px',
+                                        padding: '8px 16px',
+                                        backgroundColor: '#ffc107',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    Découvrir Pro Plus →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         {/* Stripe */}
                         <div style={{
@@ -639,7 +679,8 @@ const ProfilePage = () => {
                             borderRadius: '8px',
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            opacity: !hasProPlus && !linkedAccounts.stripe.linked ? 0.6 : 1
                         }}>
                             <div>
                                 <h3 style={{ margin: '0 0 5px 0' }}>💳 Stripe</h3>
@@ -664,7 +705,7 @@ const ProfilePage = () => {
                                 >
                                     {linkingProvider === 'stripe' ? 'Chargement...' : 'Délier'}
                                 </button>
-                            ) : (
+                            ) : hasProPlus ? (
                                 <button
                                     onClick={() => handleLinkAccount('stripe')}
                                     disabled={linkingProvider === 'stripe'}
@@ -679,6 +720,20 @@ const ProfilePage = () => {
                                 >
                                     {linkingProvider === 'stripe' ? 'Chargement...' : 'Lier Stripe'}
                                 </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#ccc',
+                                        color: '#666',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'not-allowed'
+                                    }}
+                                >
+                                    Pro Plus requis
+                                </button>
                             )}
                         </div>
 
@@ -689,13 +744,14 @@ const ProfilePage = () => {
                             borderRadius: '8px',
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            opacity: !hasProPlus && !linkedAccounts.paypal.linked ? 0.6 : 1
                         }}>
                             <div>
                                 <h3 style={{ margin: '0 0 5px 0' }}>💰 PayPal</h3>
                                 <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
                                     {linkedAccounts.paypal.linked 
-                                        ? `Email : ${linkedAccounts.paypal.email || linkedAccounts.paypal.account_id}`
+                                        ? `Compte lié : ${linkedAccounts.paypal.email || linkedAccounts.paypal.account_id}`
                                         : 'Aucun compte lié'}
                                 </p>
                             </div>
@@ -714,7 +770,7 @@ const ProfilePage = () => {
                                 >
                                     {linkingProvider === 'paypal' ? 'Chargement...' : 'Délier'}
                                 </button>
-                            ) : (
+                            ) : hasProPlus ? (
                                 <button
                                     onClick={() => handleLinkAccount('paypal')}
                                     disabled={linkingProvider === 'paypal'}
@@ -729,9 +785,38 @@ const ProfilePage = () => {
                                 >
                                     {linkingProvider === 'paypal' ? 'Chargement...' : 'Lier PayPal'}
                                 </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#ccc',
+                                        color: '#666',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'not-allowed'
+                                    }}
+                                >
+                                    Pro Plus requis
+                                </button>
                             )}
                         </div>
                     </div>
+
+                    {/* Information Pro Plus */}
+                    {hasProPlus && (
+                        <div style={{
+                            marginTop: '15px',
+                            padding: '12px',
+                            backgroundColor: '#d4edda',
+                            border: '1px solid #c3e6cb',
+                            borderRadius: '5px',
+                            fontSize: '14px',
+                            color: '#155724'
+                        }}>
+                            ✅ <strong>Pro Plus actif :</strong> Vous pouvez lier vos comptes pour recevoir les paiements directement avec une commission automatique de {user?.commission_rate || 10}%.
+                        </div>
+                    )}
                 </div>
             )}
 

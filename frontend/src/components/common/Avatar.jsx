@@ -48,7 +48,7 @@ const Avatar = ({ user, size = 40, showName = false }) => {
         <div style={containerStyle}>
             {user?.profile_picture ? (
                 <img 
-                    src={`${API_URL}/storage/app/public/profile_pictures/${user.profile_picture}`}
+                    src={`${API_URL}/storage/${user.profile_picture}`}
                     alt={`${user.name} ${user.last_name}`}
                     style={avatarStyle}
                     onError={(e) => {

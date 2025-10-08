@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Operation;
 use App\Models\Paiement;
 use App\Models\User;
+use App\Http\Controllers\AbonnementController;
 use App\Http\Resources\PaiementResource;
 use App\Http\Resources\OperationResource;
 use App\Traits\ApiResponse;
@@ -520,14 +521,31 @@ class PaiementController extends Controller
         try {
             DB::beginTransaction();
 
+            // ✅ Distinguer entre paiement d'événement et abonnement
+            $planType = $session->metadata->plan_type ?? null;
             $paymentId = $session->metadata->payment_id ?? null;
 
+            // Si c'est un abonnement, déléguer à AbonnementController
+            if ($planType) {
+                DB::rollBack();
+                Log::info('[Stripe] Session d\'abonnement détectée, délégation à AbonnementController');
+
+                $abonnementController = app(AbonnementController::class);
+                $abonnementController->handleStripeCheckoutCompleted($session);
+                return;
+            }
+
+            // Si pas de payment_id, c'est invalide
             if (!$paymentId) {
-                Log::error('[Stripe] Payment ID manquant dans metadata');
+                Log::warning('[Stripe] Session sans payment_id ni plan_type - ignorée', [
+                    'session_id' => $session->id,
+                    'metadata' => (array) $session->metadata
+                ]);
                 DB::rollBack();
                 return;
             }
 
+            // ✅ Traiter le paiement d'événement normalement
             $paiement = Paiement::find($paymentId);
 
             if (!$paiement) {
@@ -559,7 +577,7 @@ class PaiementController extends Controller
 
                 $paiement->update([
                     'status' => 'paid',
-                    'total' => ($session->amount_total ?? 0) / 100,
+                    'total' => ($session->amount_total ?? $paiement->total) / 100,
                 ]);
 
                 Log::info('✅ Paiement Stripe confirmé', [
