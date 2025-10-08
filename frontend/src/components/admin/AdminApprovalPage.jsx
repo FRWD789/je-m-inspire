@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const AdminApprovalPage = () => {
   const { user, hasRole } = useAuth();
-  const { get, post, del } = useApi(); // del pour DELETE
+  const { get, post, del } = useApi();
   const navigate = useNavigate();
 
   const [professionals, setProfessionals] = useState([]);
@@ -23,57 +23,53 @@ const AdminApprovalPage = () => {
     fetchData();
   }, [activeFilter]);
 
-// AdminApprovalPage.jsx
-const fetchData = async () => {
-  try {
-    setLoading(true);
-    let endpoint = '';
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      let endpoint = '';
 
-    switch (activeFilter) {
-      case 'pending':
-        endpoint = '/api/admin/pending-professionals';
-        break;
-      case 'approved':
-        endpoint = '/api/admin/approved-professionals';
-        break;
-      case 'rejected':
-        endpoint = '/api/admin/rejected-professionals';
-        break;
-      default:
-        endpoint = '/api/admin/pending-professionals';
-    }
+      switch (activeFilter) {
+        case 'pending':
+          endpoint = '/api/admin/pending-professionals';
+          break;
+        case 'approved':
+          endpoint = '/api/admin/approved-professionals';
+          break;
+        case 'rejected':
+          endpoint = '/api/admin/rejected-professionals';
+          break;
+        default:
+          endpoint = '/api/admin/pending-professionals';
+      }
 
-    const response = await get(endpoint);
-    
-    // ✅ Vérifier si la réponse a une structure {success, data}
-    const profData = response.data?.data || response.data || [];
-    
-    setProfessionals(Array.isArray(profData) ? profData : []);
-    
-    // Calculer les stats à partir des données reçues
-    if (Array.isArray(profData)) {
-      setStats({
-        pending: profData.filter(u => !u.is_approved && !u.rejection_reason).length,
-        approved: profData.filter(u => u.is_approved).length,
-        rejected: profData.filter(u => u.rejection_reason).length
-      });
+      const response = await get(endpoint);
+      
+      const profData = response.data?.data || response.data || [];
+      
+      setProfessionals(Array.isArray(profData) ? profData : []);
+      
+      if (Array.isArray(profData)) {
+        setStats({
+          pending: profData.filter(u => !u.is_approved && !u.rejection_reason).length,
+          approved: profData.filter(u => u.is_approved).length,
+          rejected: profData.filter(u => u.rejection_reason).length
+        });
+      }
+    } catch (error) {
+      console.error('Erreur chargement:', error);
+      alert('Erreur lors du chargement des données');
+      setProfessionals([]);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Erreur chargement:', error);
-    alert('Erreur lors du chargement des données');
-    setProfessionals([]); // ✅ Assurer que c'est toujours un tableau
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleApprove = async (userId, userName) => {
     if (!window.confirm(`Approuver ${userName} ?`)) return;
 
     setProcessing(userId);
     try {
-      const response = await post(`/api/admin/approve-professional/${userId}`);
-
+      await post(`/api/admin/approve-professional/${userId}`);
       alert('Professionnel approuvé avec succès !');
       fetchData();
     } catch (error) {
@@ -91,19 +87,26 @@ const fetchData = async () => {
 
     setProcessing(userId);
     try {
-      const response = await del(`/api/admin/reject-professional/${userId}`, {
+      // ✅ Utiliser POST avec la bonne URL
+      await post(`/api/admin/reject-professional/${userId}`, {
         reason: rejectionReason
       });
 
-      alert('Professionnel rejeté');
+      alert('Professionnel rejeté et supprimé avec succès');
       setShowModal(null);
       setRejectionReason('');
       fetchData();
     } catch (error) {
+      console.error('Erreur rejet:', error);
       alert(error.response?.data?.message || 'Erreur lors du rejet');
     } finally {
       setProcessing(null);
     }
+  };
+
+  // ✅ Fonction pour afficher la lettre de motivation
+  const showMotivationLetter = (pro) => {
+    setShowModal({ type: 'motivation', user: pro });
   };
 
   const getStatusBadge = (pro) => {
@@ -166,8 +169,18 @@ const fetchData = async () => {
           </thead>
           <tbody>
             {professionals.map((pro) => (
-              <tr key={pro.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={td}>{pro.last_name}</td>
+              <tr 
+                key={pro.id} 
+                style={{ 
+                  borderBottom: '1px solid #eee',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                onClick={() => showMotivationLetter(pro)}
+              >
+                <td style={td}>{pro.name} {pro.last_name}</td>
                 <td style={td}>{pro.email}</td>
                 <td style={td}>{pro.city || 'N/A'}</td>
                 <td style={td}>{new Date(pro.created_at).toLocaleDateString('fr-FR')}</td>
@@ -177,7 +190,7 @@ const fetchData = async () => {
                     <div style={reasonBox}><strong>Raison:</strong> {pro.rejection_reason}</div>
                   )}
                 </td>
-                <td style={td}>
+                <td style={td} onClick={(e) => e.stopPropagation()}>
                   {!pro.is_approved && !pro.rejection_reason && (
                     <>
                       <button
@@ -202,18 +215,89 @@ const fetchData = async () => {
         </table>
       )}
 
+      {/* ✅ Modal lettre de motivation */}
+      {showModal?.type === 'motivation' && (
+        <div style={modalOverlay} onClick={() => setShowModal(null)}>
+          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>📝 Lettre de motivation</h3>
+              <button 
+                onClick={() => setShowModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+              <p style={{ margin: '5px 0' }}><strong>Nom:</strong> {showModal.user.name} {showModal.user.last_name}</p>
+              <p style={{ margin: '5px 0' }}><strong>Email:</strong> {showModal.user.email}</p>
+              <p style={{ margin: '5px 0' }}><strong>Ville:</strong> {showModal.user.city || 'N/A'}</p>
+              <p style={{ margin: '5px 0' }}><strong>Date de naissance:</strong> {new Date(showModal.user.date_of_birth).toLocaleDateString('fr-FR')}</p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ marginBottom: '10px', color: '#333' }}>Lettre de motivation:</h4>
+              <div style={{
+                padding: '15px',
+                backgroundColor: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: '5px',
+                minHeight: '150px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                whiteSpace: 'pre-wrap',
+                lineHeight: '1.6',
+                fontSize: '14px'
+              }}>
+                {showModal.user.motivation_letter || 'Aucune lettre de motivation fournie'}
+              </div>
+            </div>
+
+            {!showModal.user.is_approved && !showModal.user.rejection_reason && (
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button 
+                  onClick={() => {
+                    setShowModal(null);
+                    handleApprove(showModal.user.id, showModal.user.last_name);
+                  }}
+                  style={btn('#28a745')}
+                >
+                  ✓ Approuver
+                </button>
+                <button
+                  onClick={() => setShowModal({ type: 'reject', user: showModal.user })}
+                  style={btn('#dc3545')}
+                >
+                  ✗ Rejeter
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Modal rejet */}
       {showModal?.type === 'reject' && (
-        <div style={modalOverlay}>
-          <div style={modalBox}>
-            <h3>Rejeter {showModal.user.last_name}</h3>
+        <div style={modalOverlay} onClick={() => setShowModal(null)}>
+          <div style={modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3>Rejeter {showModal.user.name} {showModal.user.last_name}</h3>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Raison du rejet..."
+              placeholder="Raison du rejet (minimum 10 caractères)..."
               rows={4}
               style={textarea}
             />
+            <small style={{ color: '#666', display: 'block', marginBottom: '15px' }}>
+              {rejectionReason.length}/500 caractères
+            </small>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(null)} style={btn('#6c757d')}>Annuler</button>
               <button
@@ -221,7 +305,7 @@ const fetchData = async () => {
                 style={btn('#dc3545')}
                 disabled={rejectionReason.length < 10}
               >
-                Confirmer
+                Confirmer le rejet
               </button>
             </div>
           </div>
@@ -246,7 +330,8 @@ const badgeStyle = (bg, color) => ({
   color,
   padding: '6px 12px',
   borderRadius: '20px',
-  fontWeight: 'bold'
+  fontWeight: 'bold',
+  fontSize: '12px'
 });
 
 const th = { padding: '12px', borderBottom: '2px solid #dee2e6', textAlign: 'left' };
@@ -254,8 +339,37 @@ const td = { padding: '12px' };
 const emptyBox = { padding: '40px', textAlign: 'center', backgroundColor: '#f8f9fa', borderRadius: '8px' };
 const reasonBox = { marginTop: '6px', backgroundColor: '#f8d7da', borderRadius: '5px', padding: '6px', fontSize: '13px' };
 const actionBtn = (bg) => ({ ...btn(bg), marginRight: '5px', fontSize: '13px' });
-const modalOverlay = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-const modalBox = { backgroundColor: 'white', padding: '30px', borderRadius: '10px', width: '90%', maxWidth: '500px' };
-const textarea = { width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', marginBottom: '20px' };
+const modalOverlay = { 
+  position: 'fixed', 
+  top: 0, 
+  left: 0, 
+  right: 0, 
+  bottom: 0, 
+  backgroundColor: 'rgba(0,0,0,0.5)', 
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'center',
+  zIndex: 1000
+};
+const modalBox = { 
+  backgroundColor: 'white', 
+  padding: '30px', 
+  borderRadius: '10px', 
+  width: '90%', 
+  maxWidth: '600px',
+  maxHeight: '90vh',
+  overflowY: 'auto',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+};
+const textarea = { 
+  width: '100%', 
+  padding: '10px', 
+  borderRadius: '5px', 
+  border: '1px solid #ccc', 
+  marginBottom: '10px',
+  fontFamily: 'Arial, sans-serif',
+  fontSize: '14px',
+  resize: 'vertical'
+};
 
 export default AdminApprovalPage;

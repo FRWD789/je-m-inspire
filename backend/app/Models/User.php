@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject; // AJOUT IMPORTANT
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\CustomVerifyEmail;
 
-class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOUT IMPORTANT
 {
     use HasFactory, Notifiable;
 
@@ -214,5 +216,9 @@ class User extends Authenticatable implements JWTSubject // AJOUT IMPORTANT
     public function hasStripeLinked()
     {
         return $this->stripeAccount_id != null;
+    }
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new CustomVerifyEmail());
     }
 }
