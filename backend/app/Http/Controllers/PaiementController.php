@@ -6,6 +6,10 @@ use App\Models\Event;
 use App\Models\Operation;
 use App\Models\Paiement;
 use App\Models\User;
+use App\Http\Controllers\AbonnementController;
+use App\Http\Resources\PaiementResource;
+use App\Http\Resources\OperationResource;
+use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
@@ -13,6 +17,8 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class PaiementController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Créer une session de paiement Stripe
      */
@@ -33,19 +39,11 @@ class PaiementController extends Controller
 
             // Vérifications métier
             if ($event->available_places < $quantity) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pas assez de places disponibles',
-                    'available_places' => $event->available_places,
-                    'requested_places' => $quantity
-                ], 400);
+                return $this->errorResponse('Pas assez de places disponibles', 400);
             }
 
             if ($event->start_date <= now()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Impossible de réserver un événement déjà commencé'
-                ], 400);
+                return $this->errorResponse('Impossible de réserver un événement déjà commencé', 400);
             }
 
             // Calcul du montant
@@ -75,8 +73,8 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // Créer la session Stripe
-            $session = \Stripe\Checkout\Session::create([
+            // Configuration de base pour la session Stripe
+            $sessionParams = [
                 'payment_method_types' => ['card'],
                 'line_items' => [[
                     'price_data' => [
@@ -99,26 +97,45 @@ class PaiementController extends Controller
                     'payment_id' => $paiement->paiement_id,
                     'quantity' => $quantity,
                 ],
-            ]);
+            ];
+
+            // ✅ STRIPE CONNECT : Si le vendor a Pro Plus + compte Stripe lié
+            if ($vendor && $vendor->hasProPlus() && $vendor->stripeAccount_id) {
+                $commissionAmount = intval(round($totalAmount * ($vendor->commission_rate / 100) * 100));
+
+                // Paiement direct au vendor avec prélèvement de la commission
+                $sessionParams['payment_intent_data'] = [
+                    'application_fee_amount' => $commissionAmount,
+                    'transfer_data' => [
+                        'destination' => $vendor->stripeAccount_id,
+                    ],
+                ];
+
+                Log::info('[Stripe Connect] Paiement avec commission', [
+                    'vendor_id' => $vendor->id,
+                    'total' => $totalAmount,
+                    'commission' => $commissionAmount / 100,
+                    'vendor_reçoit' => ($amountCents - $commissionAmount) / 100,
+                ]);
+            }
+
+            // Créer la session Stripe
+            $session = \Stripe\Checkout\Session::create($sessionParams);
 
             $paiement->update(['session_id' => $session->id]);
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'session_id' => $session->id,
                 'url' => $session->url,
                 'payment_id' => $paiement->paiement_id,
-            ]);
+            ], 'Session de paiement créée avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur Stripe Checkout: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création de la session de paiement'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la création de la session de paiement', 500);
         }
     }
 
@@ -140,19 +157,11 @@ class PaiementController extends Controller
 
             // Vérifications métier
             if ($event->available_places < $quantity) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pas assez de places disponibles',
-                    'available_places' => $event->available_places,
-                    'requested_places' => $quantity
-                ], 400);
+                return $this->errorResponse('Pas assez de places disponibles', 400);
             }
 
             if ($event->start_date <= now()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Impossible de réserver un événement déjà commencé'
-                ], 400);
+                return $this->errorResponse('Impossible de réserver un événement déjà commencé', 400);
             }
 
             DB::beginTransaction();
@@ -237,20 +246,16 @@ class PaiementController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'order_id' => $response['id'],
                 'approval_url' => $approveUrl,
                 'payment_id' => $paiement->paiement_id,
-            ]);
+            ], 'Commande PayPal créée avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur PayPal Checkout: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création de la commande PayPal'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la création de la commande PayPal', 500);
         }
     }
 
@@ -516,14 +521,31 @@ class PaiementController extends Controller
         try {
             DB::beginTransaction();
 
+            // ✅ Distinguer entre paiement d'événement et abonnement
+            $planType = $session->metadata->plan_type ?? null;
             $paymentId = $session->metadata->payment_id ?? null;
 
+            // Si c'est un abonnement, déléguer à AbonnementController
+            if ($planType) {
+                DB::rollBack();
+                Log::info('[Stripe] Session d\'abonnement détectée, délégation à AbonnementController');
+
+                $abonnementController = app(AbonnementController::class);
+                $abonnementController->handleStripeCheckoutCompleted($session);
+                return;
+            }
+
+            // Si pas de payment_id, c'est invalide
             if (!$paymentId) {
-                Log::error('[Stripe] Payment ID manquant dans metadata');
+                Log::warning('[Stripe] Session sans payment_id ni plan_type - ignorée', [
+                    'session_id' => $session->id,
+                    'metadata' => (array) $session->metadata
+                ]);
                 DB::rollBack();
                 return;
             }
 
+            // ✅ Traiter le paiement d'événement normalement
             $paiement = Paiement::find($paymentId);
 
             if (!$paiement) {
@@ -555,7 +577,7 @@ class PaiementController extends Controller
 
                 $paiement->update([
                     'status' => 'paid',
-                    'total' => ($session->amount_total ?? 0) / 100,
+                    'total' => ($session->amount_total ?? $paiement->total) / 100,
                 ]);
 
                 Log::info('✅ Paiement Stripe confirmé', [
@@ -614,42 +636,29 @@ class PaiementController extends Controller
             $sessionId = $request->query('session_id');
 
             if ($paymentId) {
-                $paiement = Paiement::with('operation.event')->find($paymentId);
+                $paiement = Paiement::with(['operation.event.localisation', 'operation.event.categorie'])->find($paymentId);
             } elseif ($sessionId) {
-                $paiement = Paiement::with('operation.event')
+                $paiement = Paiement::with(['operation.event.localisation', 'operation.event.categorie'])
                     ->where('session_id', $sessionId)
                     ->first();
             } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'payment_id ou session_id requis'
-                ], 400);
+                return $this->errorResponse('payment_id ou session_id requis', 400);
             }
 
             if (!$paiement) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Paiement non trouvé'
-                ], 404);
+                return $this->notFoundResponse('Paiement non trouvé');
             }
 
-            return response()->json([
-                'success' => true,
-                'payment' => [
-                    'id' => $paiement->paiement_id,
-                    'status' => $paiement->status,
-                    'total' => $paiement->total,
-                    'event' => $paiement->operation->event ?? null,
-                    'quantity' => $paiement->operation->quantity ?? 0,
-                ]
-            ]);
+            return $this->successResponse([
+                'payment' => new PaiementResource($paiement),
+                'operation' => $paiement->operation
+                    ? new OperationResource($paiement->operation)
+                    : null
+            ], 'Statut du paiement récupéré');
 
         } catch (\Exception $e) {
             Log::error('Erreur getPaymentStatus: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération du statut'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la récupération du statut', 500);
         }
     }
 }

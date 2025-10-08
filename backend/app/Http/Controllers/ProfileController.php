@@ -7,8 +7,10 @@ use App\Models\Event;
 use App\Models\Operation;
 use App\Models\Paiement;
 use App\Models\Abonnement;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -18,52 +20,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
-    {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
-    }
-
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
-    }
-
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
-
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
-    }
+    use ApiResponse;
 
     /**
      * Initier la liaison Stripe OAuth
@@ -74,10 +31,10 @@ class ProfileController extends Controller
             $user = Auth::user();
 
             if (!$user) {
-                return response()->json(['error' => 'Non authentifié'], 401);
+                return $this->unauthenticatedResponse('Non authentifié');
             }
 
-            // ✅ Créer un state sécurisé
+            // Créer un state sécurisé
             $state = base64_encode(json_encode([
                 'user_id' => $user->id,
                 'timestamp' => now()->timestamp
@@ -98,20 +55,16 @@ class ProfileController extends Controller
                 'state' => substr($state, 0, 20) . '...'
             ]);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'url' => $url
-            ]);
+            ], 'URL Stripe générée avec succès');
 
         } catch (\Exception $e) {
             Log::error('[Stripe] Erreur initiation OAuth', [
                 'message' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'initiation de la liaison Stripe'
-            ], 500);
+            return $this->errorResponse('Erreur lors de l\'initiation de la liaison Stripe', 500);
         }
     }
 
@@ -124,7 +77,7 @@ class ProfileController extends Controller
             $user = Auth::user();
 
             if (!$user) {
-                return response()->json(['error' => 'Non authentifié'], 401);
+                return $this->unauthenticatedResponse('Non authentifié');
             }
 
             $clientId = env('PAYPAL_SANDBOX_CLIENT_ID');
@@ -140,20 +93,16 @@ class ProfileController extends Controller
                 'user_id' => $user->id
             ]);
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'url' => $url
-            ]);
+            ], 'URL PayPal générée avec succès');
 
         } catch (\Exception $e) {
             Log::error('[PayPal] Erreur initiation OAuth', [
                 'message' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'initiation de la liaison PayPal'
-            ], 500);
+            return $this->errorResponse('Erreur lors de l\'initiation de la liaison PayPal', 500);
         }
     }
 
@@ -167,13 +116,10 @@ class ProfileController extends Controller
             $state = $request->input('state');
 
             if (!$code) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Code d\'autorisation manquant'
-                ], 400);
+                return $this->errorResponse('Code d\'autorisation manquant', 400);
             }
 
-            // ✅ PROTECTION : Vérifier si ce code a déjà été traité
+            // PROTECTION : Vérifier si ce code a déjà été traité
             $cacheKey = "stripe_oauth_code_{$code}";
 
             if (Cache::has($cacheKey)) {
@@ -185,7 +131,7 @@ class ProfileController extends Controller
                 return response()->json($cachedResult);
             }
 
-            // ✅ Valider le state
+            // Valider le state
             if ($state) {
                 $stateCacheKey = "stripe_oauth_state_{$state}";
                 $userId = Cache::get($stateCacheKey);
@@ -195,10 +141,7 @@ class ProfileController extends Controller
                         'state' => substr($state, 0, 20) . '...'
                     ]);
 
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'State invalide ou expiré. Veuillez réessayer.'
-                    ], 400);
+                    return $this->errorResponse('State invalide ou expiré. Veuillez réessayer.', 400);
                 }
 
                 // Supprimer le state (usage unique)
@@ -211,10 +154,7 @@ class ProfileController extends Controller
             }
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Utilisateur non trouvé'
-                ], 404);
+                return $this->notFoundResponse('Utilisateur non trouvé');
             }
 
             // Échanger le code contre un access token
@@ -237,7 +177,7 @@ class ProfileController extends Controller
                 'stripe_user_id' => $stripeUserId
             ];
 
-            // ✅ Mettre en cache (10 minutes)
+            // Mettre en cache (10 minutes)
             Cache::put($cacheKey, $result, 600);
 
             Log::info('[Stripe] Compte lié avec succès', [
@@ -250,19 +190,14 @@ class ProfileController extends Controller
         } catch (\Stripe\Exception\OAuth\OAuthErrorException $e) {
             Log::error('[Stripe] Erreur OAuth : ' . $e->getMessage());
 
-            // ✅ Si code déjà utilisé, retourner succès
+            // Si code déjà utilisé, retourner succès
             if (str_contains($e->getMessage(), 'already been used')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Compte déjà lié précédemment',
+                return $this->successResponse([
                     'already_processed' => true
-                ]);
+                ], 'Compte déjà lié précédemment');
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            return $this->errorResponse($e->getMessage(), 400);
 
         } catch (\Exception $e) {
             Log::error('[Stripe] Erreur callback OAuth', [
@@ -270,10 +205,7 @@ class ProfileController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la liaison : ' . $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Erreur lors de la liaison : ' . $e->getMessage(), 500);
         }
     }
 
@@ -291,13 +223,10 @@ class ProfileController extends Controller
 
             if (!$code) {
                 Log::error('[PayPal] Code manquant');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Code PayPal manquant'
-                ], 400);
+                return $this->errorResponse('Code PayPal manquant', 400);
             }
 
-            // ✅ PROTECTION : Vérifier si ce code a déjà été traité
+            // PROTECTION : Vérifier si ce code a déjà été traité
             $cacheKey = "paypal_oauth_code_{$code}";
 
             if (Cache::has($cacheKey)) {
@@ -310,10 +239,7 @@ class ProfileController extends Controller
 
             if (!$user) {
                 Log::error('[PayPal] Utilisateur non connecté');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vous devez être connecté pour lier PayPal'
-                ], 401);
+                return $this->unauthenticatedResponse('Vous devez être connecté pour lier PayPal');
             }
 
             // Échanger le code contre un access token
@@ -337,11 +263,7 @@ class ProfileController extends Controller
 
             if (!$accessToken) {
                 Log::error('[PayPal] Access token manquant', $data);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Impossible de récupérer l\'access token',
-                    'details' => $data
-                ], 400);
+                return $this->errorResponse('Impossible de récupérer l\'access token', 400);
             }
 
             // Récupérer les infos du compte PayPal
@@ -367,7 +289,7 @@ class ProfileController extends Controller
                 'payer_id' => $user->paypalAccount_id
             ];
 
-            // ✅ Mettre en cache (10 minutes)
+            // Mettre en cache (10 minutes)
             Cache::put($cacheKey, $result, 600);
 
             Log::info('[PayPal] Compte lié avec succès', [
@@ -383,28 +305,23 @@ class ProfileController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la liaison du compte PayPal',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Erreur lors de la liaison du compte PayPal', 500);
         }
     }
 
-   public function getLinkedAccounts(Request $request)
+    /**
+     * Récupérer les comptes liés
+     */
+    public function getLinkedAccounts(Request $request)
     {
         try {
             $user = auth()->user();
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Utilisateur non authentifié'
-                ], 401);
+                return $this->unauthenticatedResponse('Utilisateur non authentifié');
             }
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'stripe' => [
                     'linked' => !empty($user->stripeAccount_id),
                     'account_id' => $user->stripeAccount_id,
@@ -414,17 +331,14 @@ class ProfileController extends Controller
                     'account_id' => $user->paypalAccount_id,
                     'email' => $user->paypalEmail,
                 ]
-            ]);
+            ], 'Comptes liés récupérés');
 
         } catch (\Exception $e) {
             Log::error('[Profile] Erreur récupération comptes liés', [
                 'message' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des comptes liés'
-            ], 500);
+            return $this->errorResponse('Erreur lors de la récupération des comptes liés', 500);
         }
     }
 
@@ -437,17 +351,11 @@ class ProfileController extends Controller
             $user = auth()->user();
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Utilisateur non authentifié'
-                ], 401);
+                return $this->unauthenticatedResponse('Utilisateur non authentifié');
             }
 
             if (!$user->stripeAccount_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Aucun compte Stripe lié'
-                ], 404);
+                return $this->notFoundResponse('Aucun compte Stripe lié');
             }
 
             $stripeAccountId = $user->stripeAccount_id;
@@ -461,21 +369,14 @@ class ProfileController extends Controller
                 'stripe_account_id' => $stripeAccountId
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Compte Stripe délié avec succès'
-            ]);
+            return $this->successResponse(null, 'Compte Stripe délié avec succès');
 
         } catch (\Exception $e) {
             Log::error('[Stripe] Erreur déliaison', [
                 'message' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la déliaison du compte Stripe',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Erreur lors de la déliaison du compte Stripe', 500);
         }
     }
 
@@ -488,17 +389,11 @@ class ProfileController extends Controller
             $user = auth()->user();
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Utilisateur non authentifié'
-                ], 401);
+                return $this->unauthenticatedResponse('Utilisateur non authentifié');
             }
 
             if (!$user->paypalAccount_id && !$user->paypalEmail) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Aucun compte PayPal lié'
-                ], 404);
+                return $this->notFoundResponse('Aucun compte PayPal lié');
             }
 
             // Supprimer les informations PayPal
@@ -510,27 +405,20 @@ class ProfileController extends Controller
                 'user_id' => $user->id
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Compte PayPal délié avec succès'
-            ]);
+            return $this->successResponse(null, 'Compte PayPal délié avec succès');
 
         } catch (\Exception $e) {
             Log::error('[PayPal] Erreur déliaison', [
                 'message' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la déliaison du compte PayPal',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Erreur lors de la déliaison du compte PayPal', 500);
         }
     }
 
     /**
- * Supprimer le compte utilisateur et toutes ses données
- */
+     * Supprimer le compte utilisateur et toutes ses données
+     */
     public function deleteAccount(Request $request)
     {
         try {
@@ -543,10 +431,7 @@ class ProfileController extends Controller
 
             // Vérifier le mot de passe
             if (!Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Mot de passe incorrect'
-                ], 401);
+                return $this->unauthorizedResponse('Mot de passe incorrect');
             }
 
             DB::beginTransaction();
@@ -666,11 +551,7 @@ class ProfileController extends Controller
 
             DB::commit();
 
-            // ✅ PAS DE Auth::logout() ni de session->invalidate() en JWT !
-            return response()->json([
-                'success' => true,
-                'message' => 'Votre compte a été supprimé avec succès'
-            ]);
+            return $this->successResponse(null, 'Votre compte a été supprimé avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -681,13 +562,7 @@ class ProfileController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la suppression du compte',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Erreur lors de la suppression du compte', 500);
         }
     }
-
-
 }

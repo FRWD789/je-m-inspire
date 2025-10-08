@@ -35,12 +35,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
         'remember_token',
     ];
 
-    protected function casts(): array
+   protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'date_of_birth' => 'date',
+            'approved_at' => 'datetime', // ✅ AJOUT
         ];
     }
 

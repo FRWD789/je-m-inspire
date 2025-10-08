@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from "../../contexts/AuthContext";
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 export const AdminRemboursements = () => {
     const { get, put } = useApi();
     const [demandes, setDemandes] = useState([]);
@@ -24,11 +38,11 @@ export const AdminRemboursements = () => {
             const response = await get('/api/remboursements');
             const data = response.data || response;
             
-            console.log('Réponse API admin remboursements:', data);
+            debug('Réponse API admin remboursements:', data);
             
             setDemandes(Array.isArray(data) ? data : []);
         } catch (err) {
-            console.error('Erreur:', err);
+            debugError('Erreur:', err);
             setError('Impossible de charger les demandes de remboursement');
             setDemandes([]);
         } finally {
@@ -49,7 +63,7 @@ export const AdminRemboursements = () => {
             setCommentaire('');
             fetchDemandes();
         } catch (err) {
-            console.error('Erreur:', err);
+            debugError('Erreur:', err);
             alert(err.response?.data?.error || 'Erreur lors du traitement');
         } finally {
             setProcessingId(null);

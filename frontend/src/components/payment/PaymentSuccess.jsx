@@ -3,6 +3,20 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApi } from '../../contexts/AuthContext';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const PaymentSuccess = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -23,11 +37,11 @@ const PaymentSuccess = () => {
                 if (paymentId) params.append('payment_id', paymentId);
                 
                 const response = await get(`/api/payment/status?${params.toString()}`);
-                console.log(response);
+                debug(response);
                 setPaymentDetails(response.data);
             }
         } catch (error) {
-            console.error('Erreur vérification paiement:', error);
+            debugError('Erreur vérification paiement:', error);
             setError('Erreur lors de la vérification du paiement');
         } finally {
             setLoading(false);

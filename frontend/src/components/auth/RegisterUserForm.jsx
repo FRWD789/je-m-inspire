@@ -12,8 +12,10 @@ const RegisterUserForm = () => {
         city: '',
         password: '',
         password_confirmation: '',
-        role: 'utilisateur'
+        role: 'utilisateur',
+        profile_picture: null
     });
+    const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const { registerUser } = useAuth();
@@ -26,10 +28,7 @@ const RegisterUserForm = () => {
         try {
             const response = await registerUser(formData);
             console.log('✅ Inscription réussie:', response);
-            
-            // ✅ Redirection vers la page d'accueil après inscription
             navigate('/', { replace: true });
-            
         } catch (error) {
             console.error('❌ Erreur inscription:', error);
             if (error.isValidation && error.message) {
@@ -57,13 +56,65 @@ const RegisterUserForm = () => {
         }
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        
+        if (file) {
+            // Validation
+            if (!file.type.startsWith('image/')) {
+                setErrors(prev => ({
+                    ...prev,
+                    profile_picture: 'Le fichier doit être une image'
+                }));
+                return;
+            }
+            
+            if (file.size > 2048 * 1024) { // 2MB
+                setErrors(prev => ({
+                    ...prev,
+                    profile_picture: 'L\'image ne doit pas dépasser 2MB'
+                }));
+                return;
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                profile_picture: file
+            }));
+
+            // Prévisualisation
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+
+            // Effacer l'erreur
+            if (errors.profile_picture) {
+                setErrors(prev => ({
+                    ...prev,
+                    profile_picture: null
+                }));
+            }
+        }
+    };
+
+    const removeImage = () => {
+        setFormData(prev => ({
+            ...prev,
+            profile_picture: null
+        }));
+        setImagePreview(null);
+    };
+
     const inputStyle = {
         width: '100%',
         padding: '12px',
         marginBottom: '8px',
         border: '1px solid #ddd',
         borderRadius: '4px',
-        fontSize: '14px'
+        fontSize: '14px',
+        boxSizing: 'border-box'
     };
 
     const errorStyle = {
@@ -85,180 +136,235 @@ const RegisterUserForm = () => {
     };
 
     return (
-        <div style={{ 
-            minHeight: '100vh',
+        <div style={{
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100vh',
             backgroundColor: '#f5f5f5',
             padding: '20px'
         }}>
-            <div style={{ 
-                maxWidth: '450px', 
-                width: '100%',
+            <div style={{
                 backgroundColor: 'white',
                 padding: '40px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                borderRadius: '10px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                maxWidth: '500px',
+                width: '100%'
             }}>
                 <h2 style={{ 
                     textAlign: 'center', 
-                    marginBottom: '10px',
-                    color: '#2c3e50',
-                    fontSize: '28px'
-                }}>
-                    Créer un compte
-                </h2>
-                <p style={{
-                    textAlign: 'center',
-                    color: '#7f8c8d',
                     marginBottom: '30px',
-                    fontSize: '14px'
+                    color: '#2c3e50'
                 }}>
-                    Inscription en tant qu'utilisateur
-                </p>
-                
+                    Inscription Utilisateur
+                </h2>
+
+                {errors.general && (
+                    <div style={{
+                        ...errorStyle,
+                        padding: '10px',
+                        backgroundColor: '#fee',
+                        borderRadius: '4px',
+                        marginBottom: '15px'
+                    }}>
+                        {errors.general}
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit}>
-                    <div>
+                    {/* Image de profil */}
+                    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                        <label style={{ 
+                            display: 'block', 
+                            marginBottom: '8px',
+                            fontWeight: 'bold',
+                            color: '#34495e'
+                        }}>
+                            Photo de profil (optionnel)
+                        </label>
+                        
+                        {imagePreview ? (
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                                <img 
+                                    src={imagePreview} 
+                                    alt="Prévisualisation" 
+                                    style={{
+                                        width: '120px',
+                                        height: '120px',
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        border: '3px solid #3498db'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeImage}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '0',
+                                        right: '0',
+                                        backgroundColor: '#e74c3c',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '50%',
+                                        width: '30px',
+                                        height: '30px',
+                                        cursor: 'pointer',
+                                        fontSize: '18px'
+                                    }}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ) : (
+                            <label style={{
+                                display: 'inline-block',
+                                width: '120px',
+                                height: '120px',
+                                borderRadius: '50%',
+                                border: '2px dashed #bdc3c7',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: '#ecf0f1',
+                                transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => e.target.style.borderColor = '#3498db'}
+                            onMouseLeave={(e) => e.target.style.borderColor = '#bdc3c7'}
+                            >
+                                <span style={{ fontSize: '40px', color: '#95a5a6' }}>📷</span>
+                                <input 
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    style={{ display: 'none' }}
+                                />
+                            </label>
+                        )}
+                        
+                        {errors.profile_picture && (
+                            <div style={errorStyle}>{errors.profile_picture}</div>
+                        )}
+                        <p style={{ fontSize: '12px', color: '#7f8c8d', marginTop: '8px' }}>
+                            JPG, PNG, GIF - Max 2MB
+                        </p>
+                    </div>
+
+                    {/* Prénom */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Prénom *
+                        </label>
                         <input
                             type="text"
                             name="name"
-                            placeholder="Prénom"
                             value={formData.name}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.name ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                             required
                         />
-                        {errors.name && Array.isArray(errors.name) && (
-                            <div style={errorStyle}>{errors.name[0]}</div>
-                        )}
+                        {errors.name && <div style={errorStyle}>{errors.name}</div>}
                     </div>
 
-                    <div>
+                    {/* Nom */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Nom *
+                        </label>
                         <input
                             type="text"
                             name="last_name"
-                            placeholder="Nom de famille"
                             value={formData.last_name}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.last_name ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                             required
                         />
-                        {errors.last_name && Array.isArray(errors.last_name) && (
-                            <div style={errorStyle}>{errors.last_name[0]}</div>
-                        )}
+                        {errors.last_name && <div style={errorStyle}>{errors.last_name}</div>}
                     </div>
 
-                    <div>
+                    {/* Email */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Email *
+                        </label>
                         <input
                             type="email"
                             name="email"
-                            placeholder="Adresse email"
                             value={formData.email}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.email ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                             required
                         />
-                        {errors.email && Array.isArray(errors.email) && (
-                            <div style={errorStyle}>{errors.email[0]}</div>
-                        )}
+                        {errors.email && <div style={errorStyle}>{errors.email}</div>}
                     </div>
 
-                    <div>
+                    {/* Date de naissance */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Date de naissance *
+                        </label>
                         <input
                             type="date"
                             name="date_of_birth"
-                            placeholder="Date de naissance"
                             value={formData.date_of_birth}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.date_of_birth ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                             required
                         />
-                        {errors.date_of_birth && Array.isArray(errors.date_of_birth) && (
-                            <div style={errorStyle}>{errors.date_of_birth[0]}</div>
-                        )}
+                        {errors.date_of_birth && <div style={errorStyle}>{errors.date_of_birth}</div>}
                     </div>
 
-                    <div>
+                    {/* Ville */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Ville
+                        </label>
                         <input
                             type="text"
                             name="city"
-                            placeholder="Ville (optionnel)"
                             value={formData.city}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.city ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                         />
-                        {errors.city && Array.isArray(errors.city) && (
-                            <div style={errorStyle}>{errors.city[0]}</div>
-                        )}
+                        {errors.city && <div style={errorStyle}>{errors.city}</div>}
                     </div>
 
-                    <div>
+                    {/* Mot de passe */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Mot de passe *
+                        </label>
                         <input
                             type="password"
                             name="password"
-                            placeholder="Mot de passe (min. 6 caractères)"
                             value={formData.password}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.password ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                             required
                         />
-                        {errors.password && Array.isArray(errors.password) && (
-                            <div style={errorStyle}>{errors.password[0]}</div>
-                        )}
+                        {errors.password && <div style={errorStyle}>{errors.password}</div>}
                     </div>
 
-                    <div>
+                    {/* Confirmation mot de passe */}
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Confirmer le mot de passe *
+                        </label>
                         <input
                             type="password"
                             name="password_confirmation"
-                            placeholder="Confirmer le mot de passe"
                             value={formData.password_confirmation}
                             onChange={handleInputChange}
-                            style={{
-                                ...inputStyle,
-                                borderColor: errors.password_confirmation ? '#e74c3c' : '#ddd'
-                            }}
+                            style={inputStyle}
                             required
                         />
-                        {errors.password_confirmation && Array.isArray(errors.password_confirmation) && (
-                            <div style={errorStyle}>{errors.password_confirmation[0]}</div>
-                        )}
+                        {errors.password_confirmation && <div style={errorStyle}>{errors.password_confirmation}</div>}
                     </div>
 
-                    {errors.general && (
-                        <div style={{ 
-                            ...errorStyle, 
-                            textAlign: 'center', 
-                            marginBottom: '15px',
-                            padding: '10px',
-                            backgroundColor: '#fee',
-                            borderRadius: '4px'
-                        }}>
-                            {errors.general}
-                        </div>
-                    )}
-
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         disabled={loading}
                         style={buttonStyle}
                     >

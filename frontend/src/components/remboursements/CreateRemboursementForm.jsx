@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useApi } from "../../contexts/AuthContext";
 import { useSearchParams } from 'react-router-dom';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 export const CreateRemboursementForm = ({ onSuccess }) => {
     const { get, post } = useApi();
     const [searchParams] = useSearchParams();
@@ -42,18 +56,18 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
             const response = await get('/api/mes-reservations');
             const data = response.data || response;
 
-            console.log('=== DEBUG RÉSERVATIONS ===');
-            console.log('Response complète:', data);
-            console.log('Nombre total:', data.reservations?.length || 0);
+            debug('=== DEBUG RÉSERVATIONS ===');
+            debug('Response complète:', data);
+            debug('Nombre total:', data.reservations?.length || 0);
             
             const allReservations = data.reservations || [];
             
             allReservations.forEach((r, index) => {
-                console.log(`\n📋 Réservation ${index + 1}:`);
-                console.log('  ID:', r.id);
-                console.log('  Event:', r.event_name);
-                console.log('  Statut paiement:', r.statut_paiement);
-                console.log('  Type:', typeof r.statut_paiement);
+                debug(`\n📋 Réservation ${index + 1}:`);
+                debug('  ID:', r.id);
+                debug('  Event:', r.event_name);
+                debug('  Statut paiement:', r.statut_paiement);
+                debug('  Type:', typeof r.statut_paiement);
             });
 
             // Filtrer uniquement les réservations payées
@@ -63,12 +77,12 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
                 r.statut_paiement === 'payé'
             );
 
-            console.log('\n✅ Réservations payées filtrées:', reservationsPaye.length);
-            console.log('======================\n');
+            debug('\n✅ Réservations payées filtrées:', reservationsPaye.length);
+            debug('======================\n');
 
             setReservations(reservationsPaye);
         } catch (err) {
-            console.error('❌ Erreur lors du chargement des réservations:', err);
+            debugError('❌ Erreur lors du chargement des réservations:', err);
             setError('Impossible de charger vos réservations');
         } finally {
             setLoadingReservations(false);
@@ -96,7 +110,7 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
         try {
             const reservation = reservations.find(r => r.id === parseInt(formData.operation_id));
             
-            console.log('Réservation sélectionnée:', reservation);
+            debug('Réservation sélectionnée:', reservation);
             
             if (!reservation) {
                 setError('Réservation introuvable');
@@ -106,8 +120,8 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
 
             const montant = parseFloat(reservation.total_price);
             
-            console.log('Montant extrait:', montant);
-            console.log('Type du montant:', typeof montant);
+            debug('Montant extrait:', montant);
+            debug('Type du montant:', typeof montant);
             
             if (!montant || isNaN(montant) || montant <= 0) {
                 setError('Montant invalide pour cette réservation');
@@ -121,11 +135,11 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
                 montant: montant
             };
 
-            console.log('Données à envoyer:', dataToSend);
+            debug('Données à envoyer:', dataToSend);
 
             const response = await post('/api/remboursements', dataToSend);
             
-            console.log('Réponse du serveur:', response);
+            debug('Réponse du serveur:', response);
             
             setSuccess('Demande de remboursement créée avec succès !');
             setFormData({ operation_id: '', motif: '' });
@@ -136,8 +150,8 @@ export const CreateRemboursementForm = ({ onSuccess }) => {
                 if (onSuccess) onSuccess();
             }, 1500);
         } catch (err) {
-            console.error('Erreur complète:', err);
-            console.error('Réponse erreur:', err.response?.data);
+            debugError('Erreur complète:', err);
+            debugError('Réponse erreur:', err.response?.data);
             
             const errorMessage = err.response?.data?.message || 
                                 err.response?.data?.error || 

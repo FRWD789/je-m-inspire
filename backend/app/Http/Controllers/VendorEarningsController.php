@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Paiement;
 use App\Models\Event;
+use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class VendorEarningsController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Obtenir le résumé des revenus du vendeur
      */
@@ -20,10 +23,7 @@ class VendorEarningsController extends Controller
 
         // Vérifier que c'est un professionnel
         if (!$user->roles()->where('role', 'professionnel')->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Accès réservé aux professionnels'
-            ], 403);
+            return $this->unauthorizedResponse('Accès réservé aux professionnels');
         }
 
         // Période (par défaut : tout)
@@ -59,35 +59,32 @@ class VendorEarningsController extends Controller
         // Nombre de transactions
         $transactionCount = $paiements->count();
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'summary' => [
-                    'total_sales' => round($totalSales, 2),
-                    'total_commission' => round($totalCommission, 2),
-                    'net_earnings' => round($netEarnings, 2),
-                    'transaction_count' => $transactionCount,
-                    'commission_rate' => $user->commission_rate,
-                    'period' => $period
-                ],
-                'transactions' => $paiements->map(function($p) {
-                    $commission = $p->total * ($p->taux_commission / 100);
-                    return [
-                        'id' => $p->paiement_id,
-                        'date' => $p->created_at->format('d/m/Y H:i'),
-                        'event_name' => $p->operation->event->name ?? 'N/A',
-                        'event_id' => $p->operation->event_id ?? null,
-                        'customer_name' => $p->operation->user->name ?? 'Anonyme',
-                        'amount' => round($p->total, 2),
-                        'commission_rate' => $p->taux_commission,
-                        'commission_amount' => round($commission, 2),
-                        'net_amount' => round($p->total - $commission, 2),
-                        'payment_method' => $p->session_id ? 'Stripe' : ($p->paypal_id ? 'PayPal' : 'N/A'),
-                        'status' => $p->status
-                    ];
-                })
-            ]
-        ]);
+        return $this->successResponse([
+            'summary' => [
+                'total_sales' => round($totalSales, 2),
+                'total_commission' => round($totalCommission, 2),
+                'net_earnings' => round($netEarnings, 2),
+                'transaction_count' => $transactionCount,
+                'commission_rate' => $user->commission_rate,
+                'period' => $period
+            ],
+            'transactions' => $paiements->map(function($p) {
+                $commission = $p->total * ($p->taux_commission / 100);
+                return [
+                    'id' => $p->paiement_id,
+                    'date' => $p->created_at->format('d/m/Y H:i'),
+                    'event_name' => $p->operation->event->name ?? 'N/A',
+                    'event_id' => $p->operation->event_id ?? null,
+                    'customer_name' => $p->operation->user->name ?? 'Anonyme',
+                    'amount' => round($p->total, 2),
+                    'commission_rate' => $p->taux_commission,
+                    'commission_amount' => round($commission, 2),
+                    'net_amount' => round($p->total - $commission, 2),
+                    'payment_method' => $p->session_id ? 'Stripe' : ($p->paypal_id ? 'PayPal' : 'N/A'),
+                    'status' => $p->status
+                ];
+            })
+        ], 'Revenus récupérés avec succès');
     }
 
     /**
@@ -98,10 +95,7 @@ class VendorEarningsController extends Controller
         $user = Auth::user();
 
         if (!$user->roles()->where('role', 'professionnel')->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Accès réservé aux professionnels'
-            ], 403);
+            return $this->unauthorizedResponse('Accès réservé aux professionnels');
         }
 
         // Revenus par mois (12 derniers mois)
@@ -172,14 +166,11 @@ class VendorEarningsController extends Controller
             })
             ->values();
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'monthly_earnings' => $monthlyEarnings,
-                'top_events' => $topEvents,
-                'payment_methods' => $paymentMethods
-            ]
-        ]);
+        return $this->successResponse([
+            'monthly_earnings' => $monthlyEarnings,
+            'top_events' => $topEvents,
+            'payment_methods' => $paymentMethods
+        ], 'Statistiques récupérées avec succès');
     }
 
     /**
@@ -190,10 +181,7 @@ class VendorEarningsController extends Controller
         $user = Auth::user();
 
         if (!$user->roles()->where('role', 'professionnel')->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Accès réservé aux professionnels'
-            ], 403);
+            return $this->unauthorizedResponse('Accès réservé aux professionnels');
         }
 
         $paiements = Paiement::where('vendor_id', $user->id)

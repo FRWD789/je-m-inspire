@@ -1,6 +1,20 @@
 import React, { useEffect } from 'react';
 import {APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary} from '@vis.gl/react-google-maps';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 export const MapHandler = ({events}) => 
 {
     const MarkersComponent = ({events}) =>
@@ -12,7 +26,7 @@ export const MapHandler = ({events}) =>
         {          
             if (!map || !markerLib) return;
             
-            console.log('Événements reçus:', events);
+            debug('Événements reçus:', events);
             
             // ✅ FILTRER LES ÉVÉNEMENTS AVEC COORDONNÉES VALIDES
             const validEvents = events.filter(event => {
@@ -27,7 +41,7 @@ export const MapHandler = ({events}) =>
                 return isValid;
             });
 
-            console.log(`✅ ${validEvents.length}/${events.length} événements avec coordonnées valides`);
+            debug(`✅ ${validEvents.length}/${events.length} événements avec coordonnées valides`);
 
             if (validEvents.length === 0) {
                 console.warn('❌ Aucun événement avec coordonnées valides à afficher sur la carte');
@@ -89,7 +103,7 @@ export const MapHandler = ({events}) =>
         
         <>
         <div>
-            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => console.log('Maps API has loaded.')}>
+            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => debug('Maps API has loaded.')}>
                 <Map
                     mapId='DEMO_MAP_ID'
                     style={{height: '50vh'}}
@@ -140,7 +154,7 @@ export function geocode(address, geocodingLib) {
                 }
             })
             .catch((error) => {
-                console.error("Erreur de géocodage:", error);
+                debugError("Erreur de géocodage:", error);
                 
                 // Messages d'erreur personnalisés selon le type d'erreur
                 if (error.message && error.message.includes('ZERO_RESULTS')) {

@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from "../../contexts/AuthContext";
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 export const MesRemboursements = () => {
     const { get } = useApi(); // Utilisez le hook
     const [demandes, setDemandes] = useState([]);
@@ -19,9 +33,9 @@ export const MesRemboursements = () => {
             const data = response.data || response;
             
             // 🔍 DEBUG - Ajoutez ces logs temporairement
-            console.log('Réponse API remboursements:', data);
-            console.log('Type:', typeof data);
-            console.log('Est un tableau?', Array.isArray(data));
+            debug('Réponse API remboursements:', data);
+            debug('Type:', typeof data);
+            debug('Est un tableau?', Array.isArray(data));
             
             // Adaptez selon la structure de votre réponse
             // Si l'API renvoie { remboursements: [...] }
@@ -37,7 +51,7 @@ export const MesRemboursements = () => {
                 setDemandes([]);
             }
         } catch (err) {
-            console.error('Erreur lors du chargement des demandes:', err);
+            debugError('Erreur lors du chargement des demandes:', err);
             setError('Impossible de charger vos demandes de remboursement');
             setDemandes([]); // Important : toujours initialiser avec un tableau vide
         } finally {

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useApi } from '../../contexts/AuthContext';
+import Avatar from '../common/Avatar';
 
 const ProfilePage = () => {
     const navigate = useNavigate();
-    const { user, setUser, logout } = useAuth();
+    const { user, refreshUser, logout } = useAuth();
     const { get, post, put, delete: deleteApi } = useApi();
     
     const [editing, setEditing] = useState(false);
@@ -23,14 +24,16 @@ const ProfilePage = () => {
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
     const [deleting, setDeleting] = useState(false);
     
+    // États pour l'image de profil
+    const [profilePicture, setProfilePicture] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    
     const [formData, setFormData] = useState({
         name: '',
         last_name: '',
         email: '',
-        numero_de_telephone: '',
-        adresse: '',
-        date_de_naissance: '',
-        description: ''
+        city: '',
+        date_of_birth: ''
     });
 
     useEffect(() => {
@@ -39,10 +42,9 @@ const ProfilePage = () => {
                 name: user.name || '',
                 last_name: user.last_name || '',
                 email: user.email || '',
-                numero_de_telephone: user.numero_de_telephone || '',
-                adresse: user.adresse || '',
-                date_de_naissance: user.date_de_naissance || '',
-                description: user.description || ''
+                city: user.city || '',
+                // ✅ Formater la date pour l'input type="date"
+                date_of_birth: user.date_of_birth ? user.date_of_birth.split('T')[0] : '',
             });
             checkProPlusStatus();
             fetchLinkedAccounts();
@@ -84,16 +86,76 @@ const ProfilePage = () => {
         });
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        
+        if (file) {
+            // Validation
+            if (!file.type.startsWith('image/')) {
+                setMessage({ 
+                    type: 'error', 
+                    text: 'Le fichier doit être une image' 
+                });
+                return;
+            }
+            
+            if (file.size > 2048 * 1024) { // 2MB
+                setMessage({ 
+                    type: 'error', 
+                    text: 'L\'image ne doit pas dépasser 2MB' 
+                });
+                return;
+            }
+
+            setProfilePicture(file);
+
+            // Prévisualisation
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+
+            setMessage({ type: '', text: '' });
+        }
+    };
+
+    const removeProfilePicture = () => {
+        setProfilePicture(null);
+        setImagePreview(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         setMessage({ type: '', text: '' });
 
         try {
-            const response = await put('/api/profile/update', formData);
-            setUser(response.data.user);
+            const formDataToSend = new FormData();
+            
+            // Ajouter tous les champs texte
+            Object.keys(formData).forEach(key => {
+                if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+                    formDataToSend.append(key, formData[key]);
+                }
+            });
+
+            // Ajouter l'image si elle a été modifiée
+            if (profilePicture) {
+                formDataToSend.append('profile_picture', profilePicture);
+            }
+
+            const response = await post('/api/profile/update', formDataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            await refreshUser();
             setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
             setEditing(false);
+            setProfilePicture(null);
+            setImagePreview(null);
         } catch (error) {
             setMessage({ 
                 type: 'error', 
@@ -197,26 +259,31 @@ const ProfilePage = () => {
                 borderRadius: '10px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-                <div>
-                    <h1 style={{ margin: '0 0 5px 0', fontSize: '28px' }}>
-                        {user.name} {user.last_name}
-                    </h1>
-                    <p style={{ margin: 0, color: '#666' }}>
-                        {user.roles?.map(role => {
-                            const roleNames = {
-                                'admin': 'Administrateur',
-                                'professionnel': 'Professionnel',
-                                'utilisateur': 'Utilisateur'
-                            };
-                            return roleNames[role.role] || role.role;
-                        }).join(', ')}
-                    </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    {/* Avatar dans l'en-tête */}
+                    <Avatar user={user} size={80} />
+                    
+                    <div>
+                        <h1 style={{ margin: '0 0 5px 0', fontSize: '28px' }}>
+                            {user.name} {user.last_name}
+                        </h1>
+                        <p style={{ margin: 0, color: '#666' }}>
+                            {user.roles?.map(role => {
+                                const roleNames = {
+                                    'admin': 'Administrateur',
+                                    'professionnel': 'Professionnel',
+                                    'utilisateur': 'Utilisateur'
+                                };
+                                return roleNames[role.role] || role.role;
+                            }).join(', ')}
+                        </p>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {isProfessional() && !hasProPlus && (
                         <button
-                            onClick={() => navigate('/pro-plus')}
+                            onClick={() => navigate('/abonnement')}
                             style={{
                                 padding: '10px 20px',
                                 backgroundColor: '#ffd700',
@@ -265,6 +332,8 @@ const ProfilePage = () => {
                             <button
                                 onClick={() => {
                                     setEditing(false);
+                                    setProfilePicture(null);
+                                    setImagePreview(null);
                                     setMessage({ type: '', text: '' });
                                 }}
                                 style={{
@@ -297,6 +366,142 @@ const ProfilePage = () => {
                 </div>
             )}
 
+            {/* === SECTION IMAGE DE PROFIL === */}
+            <div style={{
+                backgroundColor: 'white',
+                padding: '30px',
+                borderRadius: '10px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                marginBottom: '20px'
+            }}>
+                <h3 style={{ 
+                    marginBottom: '20px',
+                    color: '#2c3e50',
+                    borderBottom: '2px solid #3498db',
+                    paddingBottom: '10px'
+                }}>
+                    Photo de profil
+                </h3>
+
+                <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '30px',
+                    flexWrap: 'wrap'
+                }}>
+                    {/* Image actuelle ou prévisualisation */}
+                    <div style={{ position: 'relative' }}>
+                        {imagePreview ? (
+                            // Nouvelle image en prévisualisation
+                            <img 
+                                src={imagePreview} 
+                                alt="Prévisualisation" 
+                                style={{
+                                    width: '150px',
+                                    height: '150px',
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    border: '4px solid #3498db'
+                                }}
+                            />
+                        ) : user?.profile_picture ? (
+                            // Image existante
+                            <img 
+                                src={`http://localhost:8000/storage/${user.profile_picture}`}
+                                alt="Photo de profil" 
+                                style={{
+                                    width: '150px',
+                                    height: '150px',
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    border: '4px solid #ecf0f1'
+                                }}
+                            />
+                        ) : (
+                            // Placeholder
+                            <div style={{
+                                width: '150px',
+                                height: '150px',
+                                borderRadius: '50%',
+                                backgroundColor: '#ecf0f1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '60px',
+                                color: '#95a5a6'
+                            }}>
+                                👤
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Boutons de gestion */}
+                    <div style={{ flex: 1 }}>
+                        {editing ? (
+                            <div>
+                                <label style={{
+                                    display: 'inline-block',
+                                    padding: '10px 20px',
+                                    backgroundColor: '#3498db',
+                                    color: 'white',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    marginBottom: '10px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    📷 Choisir une photo
+                                    <input 
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
+
+                                {(imagePreview || user?.profile_picture) && (
+                                    <button
+                                        type="button"
+                                        onClick={removeProfilePicture}
+                                        style={{
+                                            display: 'block',
+                                            padding: '8px 16px',
+                                            backgroundColor: '#e74c3c',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '5px',
+                                            cursor: 'pointer',
+                                            fontSize: '14px'
+                                        }}
+                                    >
+                                        🗑️ Supprimer la photo
+                                    </button>
+                                )}
+
+                                <p style={{ 
+                                    fontSize: '12px', 
+                                    color: '#7f8c8d', 
+                                    marginTop: '10px' 
+                                }}>
+                                    Formats acceptés : JPG, PNG, GIF<br/>
+                                    Taille max : 2MB
+                                </p>
+                            </div>
+                        ) : (
+                            <div>
+                                <p style={{ color: '#555', marginBottom: '10px' }}>
+                                    {user?.profile_picture 
+                                        ? 'Votre photo de profil est configurée' 
+                                        : 'Aucune photo de profil'}
+                                </p>
+                                <p style={{ fontSize: '12px', color: '#7f8c8d' }}>
+                                    Cliquez sur "Modifier le profil" pour changer votre photo
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Formulaire de profil */}
             <div style={{
                 backgroundColor: 'white',
@@ -323,7 +528,8 @@ const ProfilePage = () => {
                                     padding: '10px',
                                     border: '1px solid #ddd',
                                     borderRadius: '5px',
-                                    backgroundColor: editing ? 'white' : '#f5f5f5'
+                                    backgroundColor: editing ? 'white' : '#f5f5f5',
+                                    boxSizing: 'border-box'
                                 }}
                             />
                         </div>
@@ -343,7 +549,8 @@ const ProfilePage = () => {
                                     padding: '10px',
                                     border: '1px solid #ddd',
                                     borderRadius: '5px',
-                                    backgroundColor: editing ? 'white' : '#f5f5f5'
+                                    backgroundColor: editing ? 'white' : '#f5f5f5',
+                                    boxSizing: 'border-box'
                                 }}
                             />
                         </div>
@@ -363,7 +570,29 @@ const ProfilePage = () => {
                                     padding: '10px',
                                     border: '1px solid #ddd',
                                     borderRadius: '5px',
-                                    backgroundColor: editing ? 'white' : '#f5f5f5'
+                                    backgroundColor: editing ? 'white' : '#f5f5f5',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Ville
+                            </label>
+                            <input
+                                type="text"
+                                name="city"
+                                value={formData.city}
+                                onChange={handleChange}
+                                disabled={!editing}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '5px',
+                                    backgroundColor: editing ? 'white' : '#f5f5f5',
+                                    boxSizing: 'border-box'
                                 }}
                             />
                         </div>
@@ -374,8 +603,8 @@ const ProfilePage = () => {
                             </label>
                             <input
                                 type="date"
-                                name="date_de_naissance"
-                                value={formData.date_de_naissance}
+                                name="date_of_birth"
+                                value={formData.date_of_birth}
                                 onChange={handleChange}
                                 disabled={!editing}
                                 style={{
@@ -383,7 +612,8 @@ const ProfilePage = () => {
                                     padding: '10px',
                                     border: '1px solid #ddd',
                                     borderRadius: '5px',
-                                    backgroundColor: editing ? 'white' : '#f5f5f5'
+                                    backgroundColor: editing ? 'white' : '#f5f5f5',
+                                    boxSizing: 'border-box'
                                 }}
                             />
                         </div>
@@ -391,7 +621,7 @@ const ProfilePage = () => {
                 </form>
             </div>
 
-            {/* Comptes liés */}
+            {/* Section comptes liés (pour les professionnels) */}
             {isProfessional() && (
                 <div style={{
                     backgroundColor: 'white',
@@ -400,149 +630,225 @@ const ProfilePage = () => {
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     marginBottom: '20px'
                 }}>
-                    <h2 style={{ marginTop: 0 }}>Comptes de paiement liés</h2>
+                    <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Comptes de paiement</h2>
                     
-                    {/* Stripe */}
-                    <div style={{
-                        padding: '15px',
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        marginBottom: '15px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>
-                        <div>
-                            <h3 style={{ margin: '0 0 5px 0' }}>💳 Stripe</h3>
-                            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-                                {linkedAccounts.stripe.linked 
-                                    ? `Compte lié : ${linkedAccounts.stripe.account_id}`
-                                    : 'Aucun compte lié'}
-                            </p>
+                    {/* Message si pas Pro Plus */}
+                    {!hasProPlus && (
+                        <div style={{
+                            backgroundColor: '#fff3cd',
+                            border: '1px solid #ffc107',
+                            borderRadius: '8px',
+                            padding: '15px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px'
+                        }}>
+                            <div style={{ fontSize: '32px' }}>🔒</div>
+                            <div>
+                                <strong style={{ color: '#856404', fontSize: '16px' }}>
+                                    Abonnement Pro Plus requis
+                                </strong>
+                                <p style={{ margin: '5px 0 0 0', color: '#856404', fontSize: '14px' }}>
+                                    Souscrivez à Pro Plus pour lier vos comptes Stripe et PayPal et recevoir des paiements directement.
+                                </p>
+                                <button
+                                    onClick={() => navigate('/abonnement/pro-plus')}
+                                    style={{
+                                        marginTop: '10px',
+                                        padding: '8px 16px',
+                                        backgroundColor: '#ffc107',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    Découvrir Pro Plus →
+                                </button>
+                            </div>
                         </div>
-                        {linkedAccounts.stripe.linked ? (
-                            <button
-                                onClick={() => handleUnlinkAccount('stripe')}
-                                disabled={linkingProvider === 'stripe'}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#dc3545',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '5px',
-                                    cursor: linkingProvider === 'stripe' ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                {linkingProvider === 'stripe' ? 'Chargement...' : 'Délier'}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleLinkAccount('stripe')}
-                                disabled={linkingProvider === 'stripe'}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#635bff',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '5px',
-                                    cursor: linkingProvider === 'stripe' ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                {linkingProvider === 'stripe' ? 'Chargement...' : 'Lier Stripe'}
-                            </button>
-                        )}
+                    )}
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        {/* Stripe */}
+                        <div style={{
+                            padding: '15px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            opacity: !hasProPlus && !linkedAccounts.stripe.linked ? 0.6 : 1
+                        }}>
+                            <div>
+                                <h3 style={{ margin: '0 0 5px 0' }}>💳 Stripe</h3>
+                                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                                    {linkedAccounts.stripe.linked 
+                                        ? `Compte lié : ${linkedAccounts.stripe.account_id}`
+                                        : 'Aucun compte lié'}
+                                </p>
+                            </div>
+                            {linkedAccounts.stripe.linked ? (
+                                <button
+                                    onClick={() => handleUnlinkAccount('stripe')}
+                                    disabled={linkingProvider === 'stripe'}
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#dc3545',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: linkingProvider === 'stripe' ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    {linkingProvider === 'stripe' ? 'Chargement...' : 'Délier'}
+                                </button>
+                            ) : hasProPlus ? (
+                                <button
+                                    onClick={() => handleLinkAccount('stripe')}
+                                    disabled={linkingProvider === 'stripe'}
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#635bff',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: linkingProvider === 'stripe' ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    {linkingProvider === 'stripe' ? 'Chargement...' : 'Lier Stripe'}
+                                </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#ccc',
+                                        color: '#666',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'not-allowed'
+                                    }}
+                                >
+                                    Pro Plus requis
+                                </button>
+                            )}
+                        </div>
+
+                        {/* PayPal */}
+                        <div style={{
+                            padding: '15px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            opacity: !hasProPlus && !linkedAccounts.paypal.linked ? 0.6 : 1
+                        }}>
+                            <div>
+                                <h3 style={{ margin: '0 0 5px 0' }}>💰 PayPal</h3>
+                                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                                    {linkedAccounts.paypal.linked 
+                                        ? `Compte lié : ${linkedAccounts.paypal.email || linkedAccounts.paypal.account_id}`
+                                        : 'Aucun compte lié'}
+                                </p>
+                            </div>
+                            {linkedAccounts.paypal.linked ? (
+                                <button
+                                    onClick={() => handleUnlinkAccount('paypal')}
+                                    disabled={linkingProvider === 'paypal'}
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#dc3545',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: linkingProvider === 'paypal' ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    {linkingProvider === 'paypal' ? 'Chargement...' : 'Délier'}
+                                </button>
+                            ) : hasProPlus ? (
+                                <button
+                                    onClick={() => handleLinkAccount('paypal')}
+                                    disabled={linkingProvider === 'paypal'}
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#0070ba',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: linkingProvider === 'paypal' ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    {linkingProvider === 'paypal' ? 'Chargement...' : 'Lier PayPal'}
+                                </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#ccc',
+                                        color: '#666',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'not-allowed'
+                                    }}
+                                >
+                                    Pro Plus requis
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* PayPal */}
-                    <div style={{
-                        padding: '15px',
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>
-                        <div>
-                            <h3 style={{ margin: '0 0 5px 0' }}>💰 PayPal</h3>
-                            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-                                {linkedAccounts.paypal.linked 
-                                    ? `Email : ${linkedAccounts.paypal.email || linkedAccounts.paypal.account_id}`
-                                    : 'Aucun compte lié'}
-                            </p>
+                    {/* Information Pro Plus */}
+                    {hasProPlus && (
+                        <div style={{
+                            marginTop: '15px',
+                            padding: '12px',
+                            backgroundColor: '#d4edda',
+                            border: '1px solid #c3e6cb',
+                            borderRadius: '5px',
+                            fontSize: '14px',
+                            color: '#155724'
+                        }}>
+                            ✅ <strong>Pro Plus actif :</strong> Vous pouvez lier vos comptes pour recevoir les paiements directement avec une commission automatique de {user?.commission_rate || 10}%.
                         </div>
-                        {linkedAccounts.paypal.linked ? (
-                            <button
-                                onClick={() => handleUnlinkAccount('paypal')}
-                                disabled={linkingProvider === 'paypal'}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#dc3545',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '5px',
-                                    cursor: linkingProvider === 'paypal' ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                {linkingProvider === 'paypal' ? 'Chargement...' : 'Délier'}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleLinkAccount('paypal')}
-                                disabled={linkingProvider === 'paypal'}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#0070ba',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '5px',
-                                    cursor: linkingProvider === 'paypal' ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                {linkingProvider === 'paypal' ? 'Chargement...' : 'Lier PayPal'}
-                            </button>
-                        )}
-                    </div>
+                    )}
                 </div>
             )}
 
-            {/* Zone de danger - Suppression de compte */}
+            {/* Zone dangereuse - Suppression de compte */}
             <div style={{
                 backgroundColor: '#fff5f5',
                 padding: '30px',
                 borderRadius: '10px',
-                border: '2px solid #fee',
-                boxShadow: '0 2px 8px rgba(220,53,69,0.1)'
+                border: '2px solid #ffebee',
+                marginTop: '30px'
             }}>
-                <h2 style={{ marginTop: 0, color: '#dc3545' }}>⚠️ Zone de danger</h2>
+                <h2 style={{ color: '#d32f2f', marginTop: 0 }}>Zone dangereuse</h2>
                 <p style={{ color: '#666', marginBottom: '15px' }}>
-                    La suppression de votre compte est <strong>irréversible</strong>. Toutes vos données seront 
-                    définitivement supprimées, incluant :
+                    La suppression de votre compte est irréversible. Toutes vos données seront définitivement perdues.
                 </p>
-                <ul style={{ color: '#666', marginBottom: '20px', marginLeft: '20px' }}>
-                    <li>Vos événements créés</li>
-                    <li>Vos réservations</li>
-                    <li>Vos paiements et historique de transactions</li>
-                    <li>Vos abonnements (ils seront annulés automatiquement)</li>
-                    <li>Toutes vos informations personnelles</li>
-                </ul>
                 <button
                     onClick={() => setShowDeleteModal(true)}
                     style={{
-                        padding: '12px 24px',
-                        backgroundColor: '#dc3545',
+                        padding: '10px 20px',
+                        backgroundColor: '#d32f2f',
                         color: 'white',
                         border: 'none',
                         borderRadius: '5px',
                         cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '14px'
+                        fontWeight: 'bold'
                     }}
                 >
-                    🗑️ Supprimer définitivement mon compte
+                    Supprimer mon compte
                 </button>
             </div>
 
-            {/* Modal de confirmation de suppression */}
+            {/* Modal de suppression */}
             {showDeleteModal && (
                 <div style={{
                     position: 'fixed',
@@ -550,7 +856,7 @@ const ProfilePage = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -561,109 +867,77 @@ const ProfilePage = () => {
                         padding: '30px',
                         borderRadius: '10px',
                         maxWidth: '500px',
-                        width: '90%',
-                        maxHeight: '90vh',
-                        overflowY: 'auto'
+                        width: '90%'
                     }}>
-                        <h2 style={{ marginTop: 0, color: '#dc3545' }}>
-                            ⚠️ Confirmer la suppression
-                        </h2>
-                        <p style={{ marginBottom: '20px', lineHeight: '1.6' }}>
-                            Cette action est <strong style={{ color: '#dc3545' }}>IRRÉVERSIBLE</strong>. 
-                            Une fois votre compte supprimé, il sera impossible de le récupérer.
-                        </p>
-
-                        <div style={{ 
-                            backgroundColor: '#fff3cd', 
-                            padding: '15px', 
-                            borderRadius: '5px',
-                            marginBottom: '20px',
-                            border: '1px solid #ffc107'
-                        }}>
-                            <strong>⚠️ Attention :</strong>
-                            <ul style={{ marginTop: '10px', marginBottom: 0, paddingLeft: '20px' }}>
-                                <li>Tous vos événements seront supprimés</li>
-                                <li>Vos abonnements actifs seront annulés</li>
-                                <li>Vos données ne pourront pas être récupérées</li>
-                            </ul>
-                        </div>
-
+                        <h2 style={{ color: '#d32f2f', marginTop: 0 }}>⚠️ Confirmer la suppression</h2>
+                        <p>Cette action est irréversible. Veuillez confirmer la suppression de votre compte.</p>
+                        
                         <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                                1️⃣ Entrez votre mot de passe :
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Mot de passe
                             </label>
                             <input
                                 type="password"
                                 value={deletePassword}
                                 onChange={(e) => setDeletePassword(e.target.value)}
-                                placeholder="Votre mot de passe"
-                                disabled={deleting}
                                 style={{
                                     width: '100%',
-                                    padding: '12px',
+                                    padding: '10px',
                                     border: '1px solid #ddd',
                                     borderRadius: '5px',
-                                    fontSize: '14px'
+                                    boxSizing: 'border-box'
                                 }}
                             />
                         </div>
 
-                        <div style={{ marginBottom: '25px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                                2️⃣ Tapez "SUPPRIMER" pour confirmer :
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Tapez "SUPPRIMER" pour confirmer
                             </label>
                             <input
                                 type="text"
                                 value={deleteConfirmation}
                                 onChange={(e) => setDeleteConfirmation(e.target.value)}
-                                placeholder="Tapez SUPPRIMER en majuscules"
-                                disabled={deleting}
                                 style={{
                                     width: '100%',
-                                    padding: '12px',
-                                    border: deleteConfirmation === 'SUPPRIMER' ? '2px solid #28a745' : '1px solid #ddd',
+                                    padding: '10px',
+                                    border: '1px solid #ddd',
                                     borderRadius: '5px',
-                                    fontSize: '14px'
+                                    boxSizing: 'border-box'
                                 }}
                             />
-                            {deleteConfirmation && deleteConfirmation !== 'SUPPRIMER' && (
-                                <small style={{ color: '#dc3545', display: 'block', marginTop: '5px' }}>
-                                    ⚠️ Vous devez taper exactement "SUPPRIMER" en majuscules
-                                </small>
-                            )}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '10px' }}>
                             <button
                                 onClick={() => {
                                     setShowDeleteModal(false);
                                     setDeletePassword('');
                                     setDeleteConfirmation('');
                                 }}
-                                disabled={deleting}
                                 style={{
-                                    padding: '12px 24px',
+                                    flex: 1,
+                                    padding: '10px',
                                     backgroundColor: '#6c757d',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '5px',
-                                    cursor: deleting ? 'not-allowed' : 'pointer',
-                                    fontSize: '14px',
-                                    fontWeight: 'bold'
+                                    cursor: 'pointer'
                                 }}
                             >
-                                ← Annuler
+                                Annuler
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
-                                disabled={deleting || deletePassword === '' || deleteConfirmation !== 'SUPPRIMER'}
+                                disabled={!deletePassword || deleteConfirmation !== 'SUPPRIMER' || deleting}
                                 style={{
-                                    padding: '12px 24px',
-                                    backgroundColor: deletePassword && deleteConfirmation === 'SUPPRIMER' ? '#dc3545' : '#ccc',
+                                    flex: 1,
+                                    padding: '10px',
+                                    backgroundColor: '#d32f2f',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '5px',
-                                    cursor: (deleting || deletePassword === '' || deleteConfirmation !== 'SUPPRIMER') ? 'not-allowed' : 'pointer',
+                                    cursor: (deletePassword && deleteConfirmation === 'SUPPRIMER') ? 'pointer' : 'not-allowed',
                                     fontSize: '14px',
                                     fontWeight: 'bold',
                                     opacity: (deletePassword && deleteConfirmation === 'SUPPRIMER') ? 1 : 0.5
