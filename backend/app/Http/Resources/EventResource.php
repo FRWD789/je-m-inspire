@@ -22,7 +22,17 @@ class EventResource extends JsonResource
             'level' => $this->level,
             'priority' => $this->priority,
 
-            // ✅ Utiliser whenLoaded pour les relations
+            // Images triées par ordre d'affichage
+            'images' => $this->whenLoaded('images', function() {
+                return $this->images->map(function($image) {
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->image_url,
+                        'display_order' => $image->display_order,
+                    ];
+                });
+            }),
+
             'localisation' => $this->whenLoaded('localisation', function() {
                 return [
                     'id' => $this->localisation->id,
@@ -40,7 +50,6 @@ class EventResource extends JsonResource
                 ];
             }),
 
-            // ✅ Créateur de l'événement (relation optionnelle)
             'creator' => $this->whenLoaded('creator', function() {
                 return new UserResource($this->creator);
             }),

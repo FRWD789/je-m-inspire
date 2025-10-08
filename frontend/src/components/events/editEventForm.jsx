@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useApi } from '../../contexts/AuthContext';
+import { EventImageUploader } from './EventImageUploader';
 
-export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
+export const EditEventForm = ({ event, onEventUpdated, onCancel, onClose }) => {
+    // Supporter les deux noms de props pour la compatibilité
+    const handleCancel = onClose || onCancel;
     const [formData, setFormData] = useState({
         name: event.name || '',
         description: event.description || '',
@@ -12,8 +15,13 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
         max_places: event.max_places || '',
         level: event.level || '',
         priority: event.priority || '5',
-        localisation_id: event.localisation_id || '1',
-        categorie_event_id: event.categorie_event_id || '1'
+        localisation_id: event.localisation?.id || event.localisation_id || '1',
+        categorie_event_id: event.categorie?.id || event.categorie_event_id || '1'
+    });
+    const [imageData, setImageData] = useState({
+        existingImages: event.images || [],
+        newFiles: [],
+        imagesToDelete: []
     });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -25,12 +33,54 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
         setErrors({});
 
         try {
-            await put(`/api/events/${event.id}`, formData);
+            // Créer FormData pour envoyer les fichiers
+            const eventFormData = new FormData();
+
+            // Ajouter les champs de l'événement qui ont changé
+            Object.keys(formData).forEach(key => {
+                if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+                    eventFormData.append(key, formData[key]);
+                }
+            });
+
+            // Ajouter les nouvelles images
+            imageData.newFiles.forEach((file, index) => {
+                eventFormData.append(`images[${index}]`, file);
+            });
+
+            // Ajouter les IDs des images à supprimer
+            imageData.imagesToDelete.forEach((id, index) => {
+                eventFormData.append(`delete_images[${index}]`, id);
+            });
+
+            // Ajouter le nouvel ordre des images existantes
+            imageData.existingImages.forEach((img, index) => {
+                eventFormData.append(`images_order[${index}]`, img.id);
+            });
+
+            console.log('📤 Envoi des modifications:', {
+                newImagesCount: imageData.newFiles.length,
+                imagesToDelete: imageData.imagesToDelete,
+                imagesOrder: imageData.existingImages.map(img => img.id)
+            });
+
+            await put(`/api/events/${event.id}`, eventFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
             alert('Événement modifié avec succès !');
-            if (onEventUpdated) onEventUpdated();
+            
+            if (onEventUpdated) {
+                onEventUpdated();
+            }
         } catch (error) {
+            console.error('❌ Erreur:', error);
+            
             if (error.response?.status === 422) {
-                setErrors(error.response.data);
+                setErrors(error.response.data.errors || {});
+                alert('Erreur de validation. Vérifiez les champs.');
             } else {
                 alert(error.response?.data?.error || 'Erreur lors de la modification');
             }
@@ -45,6 +95,10 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }));
         }
+    };
+
+    const handleImagesChange = (data) => {
+        setImageData(data);
     };
 
     const inputStyle = {
@@ -63,31 +117,71 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
     };
 
     return (
-        <div style={{ 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            backgroundColor: 'rgba(0,0,0,0.5)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            zIndex: 1000
-        }}>
-            <div style={{ 
-                backgroundColor: 'white', 
-                padding: '30px', 
-                borderRadius: '8px', 
-                maxWidth: '600px', 
-                width: '90%',
-                maxHeight: '90vh',
-                overflow: 'auto'
-            }}>
+        <div 
+            style={{ 
+                position: 'fixed', 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                bottom: 0, 
+                backgroundColor: 'rgba(0,0,0,0.5)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                zIndex: 1000,
+                overflowY: 'auto',
+                padding: '20px'
+            }}
+            onClick={handleCancel}
+        >
+            <div 
+                style={{ 
+                    backgroundColor: 'white', 
+                    padding: '30px', 
+                    borderRadius: '8px', 
+                    maxWidth: '800px', 
+                    width: '100%',
+                    maxHeight: '90vh',
+                    overflowY: 'auto',
+                    position: 'relative'
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Bouton fermer */}
+                <button
+                    onClick={handleCancel}
+                    disabled={loading}
+                    style={{
+                        position: 'absolute',
+                        top: '15px',
+                        right: '15px',
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: '24px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        color: '#999',
+                        padding: '5px 10px',
+                        lineHeight: '1',
+                        transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = '#333'}
+                    onMouseLeave={(e) => e.target.style.color = '#999'}
+                >
+                    ✕
+                </button>
+
                 <h2 style={{ marginBottom: '20px' }}>Modifier l'événement</h2>
                 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Gestion des images */}
+                    <EventImageUploader
+                        existingImages={event.images || []}
+                        onImagesChange={handleImagesChange}
+                        maxImages={5}
+                    />
+
+                    {/* Nom et Description */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                                 Nom de l'événement *
@@ -115,16 +209,17 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
                                 required
                             >
                                 <option value="">Sélectionner un niveau</option>
-                                <option value="débutant">Débutant</option>
-                                <option value="intermédiaire">Intermédiaire</option>
-                                <option value="avancé">Avancé</option>
-                                <option value="expert">Expert</option>
+                                <option value="Débutant">Débutant</option>
+                                <option value="Intermédiaire">Intermédiaire</option>
+                                <option value="Avancé">Avancé</option>
+                                <option value="Expert">Expert</option>
+                                <option value="Tous niveaux">Tous niveaux</option>
                             </select>
                             {errors.level && <div style={errorStyle}>{errors.level[0]}</div>}
                         </div>
                     </div>
 
-                    <div>
+                    <div style={{ marginBottom: '15px' }}>
                         <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                             Description *
                         </label>
@@ -132,14 +227,15 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
                             name="description"
                             value={formData.description}
                             onChange={handleInputChange}
-                            rows="4"
-                            style={{ ...inputStyle, borderColor: errors.description ? '#e74c3c' : '#ddd', resize: 'vertical' }}
+                            rows={4}
+                            style={{ ...inputStyle, borderColor: errors.description ? '#e74c3c' : '#ddd' }}
                             required
                         />
                         {errors.description && <div style={errorStyle}>{errors.description[0]}</div>}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Dates */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                                 Date de début *
@@ -171,7 +267,8 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                    {/* Prix, Capacité, Places */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '15px' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                                 Prix (€) *
@@ -207,7 +304,7 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                                Places disponibles *
+                                Places max *
                             </label>
                             <input
                                 type="number"
@@ -222,34 +319,38 @@ export const EditEventForm = ({ event, onEventUpdated, onCancel }) => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                    {/* Boutons */}
+                    <div style={{ display: 'flex', gap: '10px' }}>
                         <button
                             type="submit"
                             disabled={loading}
                             style={{
-                                padding: '12px 24px',
-                                backgroundColor: loading ? '#bdc3c7' : '#28a745',
+                                flex: 1,
+                                padding: '12px',
+                                backgroundColor: loading ? '#95a5a6' : '#27ae60',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '4px',
+                                borderRadius: '6px',
                                 fontSize: '16px',
+                                fontWeight: 'bold',
                                 cursor: loading ? 'not-allowed' : 'pointer'
                             }}
                         >
-                            {loading ? 'Modification en cours...' : 'Modifier l\'événement'}
+                            {loading ? '⏳ Enregistrement...' : '✅ Enregistrer les modifications'}
                         </button>
-                        
                         <button
                             type="button"
-                            onClick={onCancel}
+                            onClick={handleCancel}
+                            disabled={loading}
                             style={{
                                 padding: '12px 24px',
-                                backgroundColor: '#6c757d',
+                                backgroundColor: '#95a5a6',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '4px',
+                                borderRadius: '6px',
                                 fontSize: '16px',
-                                cursor: 'pointer'
+                                fontWeight: 'bold',
+                                cursor: loading ? 'not-allowed' : 'pointer'
                             }}
                         >
                             Annuler
