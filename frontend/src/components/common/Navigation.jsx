@@ -40,6 +40,10 @@ const Navigation = () => {
                             🏠 Accueil
                         </Link>
 
+                        <Link to="/calendar" style={navLinkStyle}>
+                            📅 Calendrier
+                        </Link>
+
                         {hasRole('utilisateur') && (
                             <Link to="/mes-remboursements" style={navLinkStyle}>
                                 💸 Mes Remboursements
