@@ -22,7 +22,7 @@ use App\Notifications\ProfessionalRejectedNotification;
 
 class AuthController extends Controller
 {
-  
+
    use ApiResponse;
     /**
      * Inscription pour les utilisateurs réguliers
@@ -228,9 +228,36 @@ class AuthController extends Controller
                 return $this->errorResponse('Compte en attente d\'approbation', 403);
             }
 
+            if ($user->last_login_at) {
+                $daysInactive = now()->diffInDays($user->last_login_at);
+
+                if ($daysInactive > 90) {
+                    $user->is_active = false;
+                    $user->save();
+
+                    Log::warning('[Inactivity] Compte désactivé lors de la tentative de connexion', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'last_login' => $user->last_login_at,
+                        'days_inactive' => $daysInactive
+                    ]);
+
+                    return $this->errorResponse(
+                        'Votre compte a été désactivé en raison d\'une inactivité de plus de 90 jours. Veuillez contacter le support.',
+                        403
+                    );
+                }
+            }
+            // if (!$user->is_active) {
+            //     return $this->errorResponse('Votre compte est désactivé. Veuillez contacter le support.', 403);
+            // }
+
             if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) {
                 return $this->errorResponse('Identifiants invalides', 401);
             }
+
+            $user->last_login_at = now();
+            $user->save();
 
             $user->load('roles');
             $refreshToken = $this->generateRefreshToken($user);
