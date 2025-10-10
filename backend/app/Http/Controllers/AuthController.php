@@ -232,25 +232,33 @@ class AuthController extends Controller
                 $daysInactive = now()->diffInDays($user->last_login_at);
 
                 if ($daysInactive > 90) {
-                    $user->is_active = false;
-                    $user->save();
+                    if (!$user->hasRole('admin')) {
+                        $user->is_active = false;
+                        $user->save();
 
-                    Log::warning('[Inactivity] Compte désactivé lors de la tentative de connexion', [
-                        'user_id' => $user->id,
-                        'email' => $user->email,
-                        'last_login' => $user->last_login_at,
-                        'days_inactive' => $daysInactive
-                    ]);
+                        Log::warning('[Inactivity] Compte désactivé lors de la tentative de connexion', [
+                            'user_id' => $user->id,
+                            'email' => $user->email,
+                            'last_login' => $user->last_login_at,
+                            'days_inactive' => $daysInactive
+                        ]);
 
-                    return $this->errorResponse(
-                        'Votre compte a été désactivé en raison d\'une inactivité de plus de 90 jours. Veuillez contacter le support.',
-                        403
-                    );
+                        return $this->errorResponse(
+                            'Votre compte a été désactivé en raison d\'une inactivité de plus de 90 jours. Veuillez contacter le support.',
+                            403
+                        );
+                    }
                 }
             }
             // if (!$user->is_active) {
             //     return $this->errorResponse('Votre compte est désactivé. Veuillez contacter le support.', 403);
             // }
+            try {
+                $user->notify(new \App\Notifications\AccountDeactivatedNotification($daysInactive));
+                Log::info('[Inactivity] Email de désactivation envoyé', ['user_id' => $user->id]);
+            } catch (\Exception $e) {
+                Log::error('[Inactivity] Erreur envoi email: ' . $e->getMessage());
+            }
 
             if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) {
                 return $this->errorResponse('Identifiants invalides', 401);
