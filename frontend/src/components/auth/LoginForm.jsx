@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const LoginForm = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -26,13 +40,13 @@ const LoginForm = () => {
 
         try {
             await login(credentials.email, credentials.password);
-            console.log('✅ Connexion réussie');
+            debug('✅ Connexion réussie');
             
             // ✅ Redirection vers la page d'accueil après connexion
             navigate('/', { replace: true });
             
         } catch (err) {
-            console.error('❌ Erreur connexion:', err);
+            debugError('❌ Erreur connexion:', err);
             setError(err.message || 'Erreur de connexion');
         } finally {
             setLoading(false);

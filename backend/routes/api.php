@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
@@ -25,7 +26,6 @@ Route::get('/test-mail', function() {
 
         return response()->json(['message' => 'Test email sent successfully!']);
     } catch (\Exception $e) {
-        // Catch any exception and return the error message for debugging
         return response()->json([
             'message' => 'Failed to send test email',
             'error' => $e->getMessage(),
@@ -33,9 +33,23 @@ Route::get('/test-mail', function() {
     }
 });
 
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+
+    return response()->json([
+        'message' => 'Email vérifié avec succès!'
+    ]);
+})->middleware(['auth:api', 'signed'])->name('verification.verify');
+
+Route::post('/email/resend', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+
+    return response()->json([
+        'message' => 'Lien de vérification envoyé!'
+    ]);
+})->middleware(['auth:api', 'throttle:6,1'])->name('verification.resend');
 
 Route::post('/forgot-password', function (Request $request) {
-
     $request->validate(['email' => 'required|email']);
 
     $status = Password::sendResetLink($request->only('email'));
@@ -44,7 +58,6 @@ Route::post('/forgot-password', function (Request $request) {
         ? response()->json(['message' => ($status)], 200)
         : response()->json(['message' => ($status)], 400);
 });
-
 
 Route::post('/reset-password', function (Request $request) {
     $request->validate([
@@ -65,12 +78,11 @@ Route::post('/reset-password', function (Request $request) {
     return $status === Password::PASSWORD_RESET
         ? response()->json(['message' => ($status)], 200)
         : response()->json(['message' => ($status)], 400);
-})->name('password.reset');;
+})->name('password.reset');
 
 // ==========================================
 // ROUTES PUBLIQUES
 // ==========================================
-// Nouvelles routes principales
 Route::post('/register/user', [AuthController::class, 'registerUser']);
 Route::post('/register/professional', [AuthController::class, 'registerProfessional']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -101,7 +113,7 @@ Route::middleware(['auth:api'])->group(function () {
     // AUTHENTIFICATION & PROFIL
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::put('/profile/update', [AuthController::class, 'updateProfile']);
+    Route::post('/profile/update', [AuthController::class, 'updateProfile']);
 
     // ÉVÉNEMENTS
     Route::post('/events', [EventController::class, 'store']);
@@ -161,19 +173,20 @@ Route::middleware(['auth:api'])->group(function () {
         Route::put('/commissions/{id}', [CommissionController::class, 'update']);
         Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
 
+        // ✅ PROFESSIONNELS - Gestion des approbations/rejets
+        Route::get('/pending-professionals', [AuthController::class, 'getPendingProfessionals']);
+        Route::get('/approved-professionals', [AuthController::class, 'getApprovedProfessionals']);
+        Route::get('/rejected-professionals', [AuthController::class, 'getRejectedProfessionals']);
+
+        // ✅ IMPORTANT: Les deux routes en POST car on envoie des données
+        Route::post('/approve-professional/{id}', [AuthController::class, 'approveProfessional']);
+        Route::post('/reject-professional/{id}', [AuthController::class, 'rejectProfessional']);
+
         // Approbations - Nouveau système (AdminApprovalController)
         Route::get('/approvals', [AdminApprovalController::class, 'index']);
         Route::post('/approvals/{id}/approve', [AdminApprovalController::class, 'approve']);
         Route::post('/approvals/{id}/reject', [AdminApprovalController::class, 'reject']);
         Route::post('/approvals/{id}/revoke', [AdminApprovalController::class, 'revoke']);
-
-        // Professionnels - Ancien système (AuthController) - ROUTES UTILISÉES PAR LE FRONTEND
-        Route::get('/pending-professionals', [AuthController::class, 'getPendingProfessionals']);
-        Route::get('/approved-professionals', [AuthController::class, 'getApprovedProfessionals']); // ⭐ MANQUANTE
-        Route::get('/rejected-professionals', [AuthController::class, 'getRejectedProfessionals']); // ⭐ MANQUANTE
-
-        Route::post('/approve-professional/{id}', [AuthController::class, 'approveProfessional']);
-        Route::delete('/reject-professional/{id}', [AuthController::class, 'rejectProfessional']);
     });
 
     // VENDEUR - REVENUS

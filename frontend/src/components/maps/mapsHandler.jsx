@@ -1,9 +1,23 @@
 import React, { useEffect } from 'react';
 import {APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary} from '@vis.gl/react-google-maps';
 
-export const MapHandler = ({events}) => 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
+export const MapHandler = ({events, onMapReady}) => 
 {
-    const MarkersComponent = ({events}) =>
+    const MarkersComponent = ({events, onMapReady}) =>
     {
         const map = useMap();
         const markerLib = useMapsLibrary('marker');
@@ -12,7 +26,12 @@ export const MapHandler = ({events}) =>
         {          
             if (!map || !markerLib) return;
             
-            console.log('Événements reçus:', events);
+            // Pass the map instance to parent component
+            if (onMapReady && typeof onMapReady === 'function') {
+                onMapReady(map);
+            }
+
+            debug('Événements reçus:', events);
             
             // ✅ FILTRER LES ÉVÉNEMENTS AVEC COORDONNÉES VALIDES
             const validEvents = events.filter(event => {
@@ -27,7 +46,7 @@ export const MapHandler = ({events}) =>
                 return isValid;
             });
 
-            console.log(`✅ ${validEvents.length}/${events.length} événements avec coordonnées valides`);
+            debug(`✅ ${validEvents.length}/${events.length} événements avec coordonnées valides`);
 
             if (validEvents.length === 0) {
                 console.warn('❌ Aucun événement avec coordonnées valides à afficher sur la carte');
@@ -44,6 +63,49 @@ export const MapHandler = ({events}) =>
                     position: { lat, lng },
                     title: event.name
                 });
+
+                marker.addEventListener('mouseover', () => {
+                    // Get the first image URL if available
+                    let firstImageUrl = null;
+                    
+                    if (event.images && event.images.length > 0) {
+                        // The image is an object with a url property
+                        firstImageUrl = event.images[0].url;
+                    }
+                    
+                    debug('First image URL:', firstImageUrl);
+                    
+                    const imageHtml = firstImageUrl ? 
+                        `<img src="${firstImageUrl}" alt="${event.name}" style="width: 100%; max-width: 200px; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;" onerror="this.style.display='none'" />` : 
+                        '';
+
+                    // Ouvre l'info-bulle avec les détails de l'événement
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<div style="max-width:200px;">
+                                    ${imageHtml}
+                                    <h3>${event.name}</h3>
+                                    <p>${event.description || 'Pas de description disponible.'}</p>
+                                    <p><strong>Date:</strong> ${new Date(event.start_date).toLocaleDateString()}</p>
+                                    <p><strong>Adresse:</strong> ${event.localisation.address || 'Adresse non disponible'}</p>
+                                  </div>`
+                    });
+                    infoWindow.open(map, marker);
+                });
+
+                /*
+                marker.addEventListener('mouseout', () => {
+                    // Fermer l'info-bulle lorsque la souris quitte le marqueur
+                    const infoWindows = document.getElementsByClassName('gm-style-iw');
+                    for (let i = 0; i < infoWindows.length; i++) {
+                        infoWindows[i].style.display = 'none';
+                    }
+                });
+                */
+                marker.addEventListener('click', () => {
+                    const element = document.getElementById(`event-${event.id}`);
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    element.classList.add('highlight');
+                });
             });
 
             // Centrer la carte sur le premier événement valide
@@ -52,7 +114,7 @@ export const MapHandler = ({events}) =>
             const firstLng = parseFloat(firstEvent.localisation.lng);
             map.panTo({ lat: firstLat, lng: firstLng });
             
-        }, [markerLib, map]);
+        }, [markerLib, map, onMapReady]);
         
 
         return <></>;
@@ -61,13 +123,14 @@ export const MapHandler = ({events}) =>
     return (
         
         <>
-        <div>
+        <div id='map'>
             <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} onLoad={() => console.log('Maps API has loaded.')}>
-                <Map
+                <Map 
+                    
                     mapId='DEMO_MAP_ID'
                     style={{height: '50vh'}}
                     defaultZoom={13}
-                    defaultCenter={ { lat: 45.40124220000001, lng: -71.8899362 } }
+                    defaultCenter={ { lat: 45.40124220000001, lng: -71.8899362 } } // Centre par défaut (Sherbrooke)
                     mapTypeControl={false}
                     streetView={false}
                     streetViewControl={false}
@@ -76,7 +139,8 @@ export const MapHandler = ({events}) =>
                 </Map>
                 {events && events.length > 0 && (
                     <MarkersComponent 
-                        events={events}>    
+                        events={events}
+                        onMapReady={onMapReady}>
                     </MarkersComponent>
                 )}
             </APIProvider>          
@@ -113,7 +177,7 @@ export function geocode(address, geocodingLib) {
                 }
             })
             .catch((error) => {
-                console.error("Erreur de géocodage:", error);
+                debugError("Erreur de géocodage:", error);
                 
                 // Messages d'erreur personnalisés selon le type d'erreur
                 if (error.message && error.message.includes('ZERO_RESULTS')) {

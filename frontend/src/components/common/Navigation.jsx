@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Avatar from './Avatar';
 
 const Navigation = () => {
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Navigation = () => {
         }}>
 
             <div>
-                 {/* Logo */}
+                {/* Logo */}
                 <img
                     src="/assets/img/logo.png"
                     style={{ height: '120px', width: 'auto' }}
@@ -39,15 +40,15 @@ const Navigation = () => {
                             🏠 Accueil
                         </Link>
 
+                        <Link to="/calendar" style={navLinkStyle}>
+                            📅 Calendrier
+                        </Link>
+
                         {hasRole('utilisateur') && (
-                            <>
-                                {/* ✅ REMBOURSEMENTS - Visible pour tous les utilisateurs */}
-                                <Link to="/mes-remboursements" style={navLinkStyle}>
-                                    💸 Mes Remboursements
-                                </Link>
-                            </>
+                            <Link to="/mes-remboursements" style={navLinkStyle}>
+                                💸 Mes Remboursements
+                            </Link>
                         )}
-                        
 
                         {/* Liens spécifiques aux professionnels */}
                         {isProfessional() && (
@@ -61,7 +62,7 @@ const Navigation = () => {
                             </>
                         )}
 
-                        {/* ✅ LIENS ADMIN */}
+                        {/* Liens admin */}
                         {hasRole('admin') && (
                             <>
                                 <Link to="/admin/commissions" style={{
@@ -73,7 +74,6 @@ const Navigation = () => {
                                     💰 Commissions
                                 </Link>
                                 
-                                {/* ✅ NOUVEAU LIEN APPROBATION PROFESSIONNELS */}
                                 <Link to="/admin/approvals" style={{
                                     ...navLinkStyle,
                                     backgroundColor: '#dc3545',
@@ -83,7 +83,6 @@ const Navigation = () => {
                                     👤 Approbations
                                 </Link>
                                 
-                                {/* ✅ LIEN ADMIN REMBOURSEMENTS */}
                                 <Link to="/admin/remboursements" style={{
                                     ...navLinkStyle,
                                     backgroundColor: '#dc3545',
@@ -102,11 +101,10 @@ const Navigation = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 {isAuthenticated ? (
                     <>
-                        <span style={{ color: 'white', fontSize: '14px' }}>
+                        <span style={{ color: 'white', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             Bonjour, <strong>{user?.name}</strong>
                             {hasRole('admin') && (
                                 <span style={{
-                                    marginLeft: '8px',
                                     padding: '2px 8px',
                                     backgroundColor: '#dc3545',
                                     borderRadius: '3px',
@@ -117,7 +115,6 @@ const Navigation = () => {
                             )}
                             {isProfessional() && (
                                 <span style={{
-                                    marginLeft: '8px',
                                     padding: '2px 8px',
                                     backgroundColor: '#28a745',
                                     borderRadius: '3px',
@@ -128,8 +125,22 @@ const Navigation = () => {
                             )}
                         </span>
                         
-                        <Link to="/profile" style={navLinkStyle}>
-                            👤 Profil
+                        {/* Avatar + Lien Profil */}
+                        <Link to="/profile" style={{
+                            ...navLinkStyle,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '5px 12px',
+                            borderRadius: '20px',
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            transition: 'background-color 0.3s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                        >
+                            <Avatar user={user} size={32} />
+                            <span>Profil</span>
                         </Link>
                         
                         <button
@@ -161,7 +172,7 @@ const Navigation = () => {
                             Connexion
                         </Link>
                         <Link 
-                            to="/register" 
+                            to="/register-user" 
                             style={{
                                 ...navLinkStyle,
                                 backgroundColor: '#28a745',

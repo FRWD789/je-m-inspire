@@ -3,8 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../../contexts/AuthContext';
 
+
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const PaymentPage = () => {
-    console.log('💳 PaymentPage: MOUNTED');
+    debug('💳 PaymentPage: MOUNTED');
     
     const { eventId } = useParams();  // ✅ CHANGÉ ICI
     const navigate = useNavigate();
@@ -15,27 +30,27 @@ const PaymentPage = () => {
     const [quantity, setQuantity] = useState(1);
     const [paymentLoading, setPaymentLoading] = useState(false);
 
-    console.log('💳 PaymentPage state:', { eventId, loading, hasEvent: !!event });
+    debug('💳 PaymentPage state:', { eventId, loading, hasEvent: !!event });
 
     useEffect(() => {
-        console.log('💳 PaymentPage useEffect START, eventId=', eventId);
+        debug('💳 PaymentPage useEffect START, eventId=', eventId);
         
         const fetchEvent = async () => {
             try {
-                console.log('💳 Fetching event:', eventId);
+                debug('💳 Fetching event:', eventId);
                 const response = await get(`/api/events/${eventId}`);
-                console.log('💳 Response complète:', response);
-                console.log('💳 Response.data:', response.data);
+                debug('💳 Response complète:', response);
+                debug('💳 Response.data:', response.data);
                 
                 const eventData = response.data.event || response.data;
-                console.log('💳 Event data:', eventData);
+                debug('💳 Event data:', eventData);
                 
                 setEvent(eventData);
             } catch (error) {
-                console.error('💳 Error loading event:', error);
+                debugError('💳 Error loading event:', error);
                 setError('Événement non trouvé');
             } finally {
-                console.log('💳 setLoading(false)');
+                debug('💳 setLoading(false)');
                 setLoading(false);
             }
         };
@@ -43,13 +58,13 @@ const PaymentPage = () => {
         if (eventId) {
             fetchEvent();
         } else {
-            console.error('💳 Pas d\'ID fourni');
+            debugError('💳 Pas d\'ID fourni');
             setLoading(false);
         }
     }, [eventId, get]);
 
     const handleGoBack = () => {
-        console.log('💳 Retour à la page précédente');
+        debug('💳 Retour à la page précédente');
         navigate('/');
     };
 
@@ -65,7 +80,7 @@ const PaymentPage = () => {
         
         setPaymentLoading(true);
         try {
-            console.log('Initiation paiement Stripe:', {
+            debug('Initiation paiement Stripe:', {
                 event_id: eventId,  // ✅ CHANGÉ ICI
                 quantity: quantity,
                 total_amount: totalPrice
@@ -77,7 +92,7 @@ const PaymentPage = () => {
                 total_amount: totalPrice
             });
             
-            console.log('Réponse Stripe:', response);
+            debug('Réponse Stripe:', response);
             
             if (response.data.url) {
                 window.location.href = response.data.url;
@@ -85,7 +100,7 @@ const PaymentPage = () => {
                 alert('Erreur lors de l\'initialisation du paiement Stripe');
             }
         } catch (error) {
-            console.error('Erreur paiement Stripe:', error);
+            debugError('Erreur paiement Stripe:', error);
             alert(error.response?.data?.error || error.response?.data?.message || 'Erreur lors du paiement Stripe');
         } finally {
             setPaymentLoading(false);
@@ -97,7 +112,7 @@ const PaymentPage = () => {
         
         setPaymentLoading(true);
         try {
-            console.log('Initiation paiement PayPal:', {
+            debug('Initiation paiement PayPal:', {
                 event_id: eventId,  // ✅ CHANGÉ ICI
                 quantity: quantity,
                 total_amount: totalPrice
@@ -109,7 +124,7 @@ const PaymentPage = () => {
                 total_amount: totalPrice
             });
             
-            console.log('Réponse PayPal:', response);
+            debug('Réponse PayPal:', response);
             
             if (response.data.approval_url) {
                 window.location.href = response.data.approval_url;
@@ -117,7 +132,7 @@ const PaymentPage = () => {
                 alert('Erreur lors de l\'initialisation du paiement PayPal');
             }
         } catch (error) {
-            console.error('Erreur paiement PayPal:', error);
+            debugError('Erreur paiement PayPal:', error);
             alert(error.response?.data?.error || error.response?.data?.message || 'Erreur lors du paiement PayPal');
         } finally {
             setPaymentLoading(false);
@@ -126,10 +141,10 @@ const PaymentPage = () => {
 
     const totalPrice = event ? (event.base_price * quantity).toFixed(2) : 0;
 
-    console.log('💳 Avant render, loading=', loading, 'error=', error, 'event=', !!event);
+    debug('💳 Avant render, loading=', loading, 'error=', error, 'event=', !!event);
 
     if (loading) {
-        console.log('💳 Affichage loader');
+        debug('💳 Affichage loader');
         return (
             <div style={{ 
                 display: 'flex', 
@@ -143,7 +158,7 @@ const PaymentPage = () => {
     }
 
     if (error || !event) {
-        console.log('💳 Affichage erreur');
+        debug('💳 Affichage erreur');
         return (
             <div style={{ 
                 textAlign: 'center', 
@@ -169,7 +184,7 @@ const PaymentPage = () => {
         );
     }
 
-    console.log('💳 Affichage formulaire paiement');
+    debug('💳 Affichage formulaire paiement');
 
     return (
         <div style={{ 

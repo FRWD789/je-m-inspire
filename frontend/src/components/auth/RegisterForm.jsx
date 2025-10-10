@@ -3,6 +3,20 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoles } from '../../hooks/useRoles';
 
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+  if (DEBUG) console.error(...args);
+};
+const debugGroup = (...args) => {
+  if (DEBUG) console.group(...args);
+};
+const debugGroupEnd = () => {
+  if (DEBUG) console.groupEnd();
+};
+
 const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
     const [formData, setFormData] = useState({
         name: '',
@@ -29,10 +43,10 @@ const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
             const response = await register(formData);
             onRegistrationSuccess(response);
         } catch (error) {
-            console.error('Registration failed:', error);
+            debugError('Registration failed:', error);
             
             if (error.isValidation && error.message) {
-                console.log('Erreurs de validation reçues:', error.message);
+                debug('Erreurs de validation reçues:', error.message);
                 setErrors(error.message);
             } else if (typeof error.message === 'object') {
                 setErrors(error.message);

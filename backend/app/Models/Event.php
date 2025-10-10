@@ -23,7 +23,7 @@ class Event extends Model
         'priority',
         'localisation_id',
         'categorie_event_id',
-        'user_id' // Si vous avez ajouté cette colonne
+        'user_id'
     ];
 
     protected $casts = [
@@ -31,6 +31,14 @@ class Event extends Model
         'end_date' => 'datetime',
         'base_price' => 'decimal:2',
     ];
+
+    /**
+     * Relation avec les images de l'événement
+     */
+    public function images()
+    {
+        return $this->hasMany(EventImage::class)->orderBy('display_order');
+    }
 
     /**
      * Relation avec la localisation
@@ -59,12 +67,12 @@ class Event extends Model
     public function creator()
     {
         return $this->hasOneThrough(
-            User::class,       // modèle final
-            Operation::class,  // modèle pivot
-            'event_id',        // clé étrangère dans operations (vers events)
-            'id',              // clé primaire dans users
-            'id',              // clé primaire dans events
-            'user_id'          // clé étrangère dans operations (vers users)
+            User::class,
+            Operation::class,
+            'event_id',
+            'id',
+            'id',
+            'user_id'
         )->where('operations.type_operation_id', 1);
     }
 

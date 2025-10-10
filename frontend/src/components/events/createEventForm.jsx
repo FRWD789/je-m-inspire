@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useApi } from '../../contexts/AuthContext';
 import { geocode } from '../maps/mapsHandler';
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
+import { EventImageUploader } from './EventImageUploader';
+
+const DEBUG = import.meta.env.DEV;
+const debug = (...args) => {
+    if (DEBUG) console.log(...args);
+};
+const debugError = (...args) => {
+    if (DEBUG) console.error(...args);
+};
 
 const CreateEventFormContent = ({ onEventCreated }) => {
     const [formData, setFormData] = useState({
@@ -19,6 +28,11 @@ const CreateEventFormContent = ({ onEventCreated }) => {
         localisation_lng: '',
         categorie_event_id: '1'
     });
+    const [imageData, setImageData] = useState({
+        existingImages: [],
+        newFiles: [],
+        imagesToDelete: []
+    });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
@@ -26,11 +40,10 @@ const CreateEventFormContent = ({ onEventCreated }) => {
     const { post } = useApi();
     const geocodingLib = useMapsLibrary("geocoding");
 
-    // Vérifier quand la bibliothèque de géocodage est prête
     useEffect(() => {
         if (geocodingLib) {
             setGeocoderReady(true);
-            console.log('✅ Bibliothèque de géolocalisation chargée');
+            debug('✅ Bibliothèque de géolocalisation chargée');
         }
     }, [geocodingLib]);
 
@@ -49,6 +62,10 @@ const CreateEventFormContent = ({ onEventCreated }) => {
         }
     };
 
+    const handleImagesChange = (data) => {
+        setImageData(data);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -56,84 +73,70 @@ const CreateEventFormContent = ({ onEventCreated }) => {
         setErrors({});
 
         try {
-            // ✅ VÉRIFICATION DE LA BIBLIOTHÈQUE DE GÉOCODAGE
             if (!geocodingLib || !geocoderReady) {
                 throw new Error('Service de géolocalisation en cours de chargement. Veuillez réessayer dans quelques secondes.');
             }
 
-            console.log('Démarrage du géocodage pour:', formData.localisation_address);
+            debug('Démarrage du géocodage pour:', formData.localisation_address);
             
             const location = await geocode(formData.localisation_address, geocodingLib);
             
-            console.log('Géocodage réussi:', location);
+            debug('Géocodage réussi:', location);
 
-            // ✅ MISE À JOUR DES COORDONNÉES
-            const eventData = {
-                ...formData,
-                localisation_lat: location.lat,
-                localisation_lng: location.lng
-            };
+            // Créer FormData pour envoyer les fichiers
+            const eventFormData = new FormData();
+            
+            // Ajouter tous les champs de l'événement
+            Object.keys(formData).forEach(key => {
+                eventFormData.append(key, formData[key]);
+            });
+
+            // Ajouter les coordonnées
+            eventFormData.append('localisation_lat', location.lat);
+            eventFormData.append('localisation_lng', location.lng);
+
+            // Ajouter les images
+            imageData.newFiles.forEach((file, index) => {
+                eventFormData.append(`images[${index}]`, file);
+            });
 
             setGeocoding(false);
 
-            // ✅ ENVOI DE L'ÉVÉNEMENT AVEC LES COORDONNÉES
-            await post('/api/events', eventData);
+            debug('📤 Envoi de l\'événement avec images:', {
+                imagesCount: imageData.newFiles.length
+            });
+
+            await post('/api/events', eventFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             
             alert('Événement créé avec succès !');
             
-            // Réinitialiser le formulaire
-            setFormData({
-                name: '',
-                description: '',
-                start_date: '',
-                end_date: '',
-                base_price: '',
-                capacity: '',
-                max_places: '',
-                level: '',
-                priority: '5',
-                localisation_address: '',
-                localisation_lat: '',
-                localisation_lng: '',
-                categorie_event_id: '1'
-            });
-
             if (onEventCreated) {
                 onEventCreated();
             }
 
         } catch (error) {
-            console.error('Erreur lors de la création:', error);
+            debugError('❌ Erreur:', error);
+            setGeocoding(false);
             
-            // Gérer les erreurs de géocodage spécifiquement
-            if (error.message && (
-                error.message.includes('Adresse introuvable') || 
-                error.message.includes('géolocaliser') ||
-                error.message.includes('Format d\'adresse') ||
-                error.message.includes('service de géolocalisation')
-            )) {
-                // Erreur de géocodage - message spécifique
-                setErrors({
-                    localisation_address: [error.message]
-                });
-                alert(`❌ Problème avec l'adresse:\n\n${error.message}\n\nVeuillez corriger l'adresse et réessayer.`);
-            } else if (error.response?.data?.errors) {
-                // Erreurs de validation backend
-                setErrors(error.response.data.errors);
-            } else if (error.message) {
-                alert(`Erreur: ${error.message}`);
+            if (error.response?.status === 422) {
+                setErrors(error.response.data.errors || {});
+                alert('Erreur de validation. Vérifiez les champs.');
             } else {
-                alert('Erreur lors de la création de l\'événement');
+                alert(error.message || error.response?.data?.error || 'Erreur lors de la création de l\'événement');
             }
         } finally {
             setLoading(false);
-            setGeocoding(false);
         }
     };
 
     const inputStyle = {
         width: '100%',
-        padding: '10px',
+        padding: '12px',
+        marginBottom: '8px',
         border: '1px solid #ddd',
         borderRadius: '4px',
         fontSize: '14px'
@@ -142,27 +145,21 @@ const CreateEventFormContent = ({ onEventCreated }) => {
     const errorStyle = {
         color: '#e74c3c',
         fontSize: '12px',
-        marginTop: '5px'
+        marginBottom: '10px'
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+        <form onSubmit={handleSubmit} style={{ maxWidth: '800px', margin: '0 auto' }}>
             <h2 style={{ marginBottom: '20px' }}>Créer un nouvel événement</h2>
 
-            {/* Indicateur de chargement du service */}
-            {!geocoderReady && (
-                <div style={{
-                    padding: '10px',
-                    backgroundColor: '#fff3cd',
-                    border: '1px solid #ffc107',
-                    borderRadius: '4px',
-                    marginBottom: '15px',
-                    color: '#856404'
-                }}>
-                    ⏳ Chargement du service de géolocalisation...
-                </div>
-            )}
+            {/* Images */}
+            <EventImageUploader
+                existingImages={[]}
+                onImagesChange={handleImagesChange}
+                maxImages={5}
+            />
 
+            {/* Nom */}
             <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                     Nom de l'événement *
@@ -178,44 +175,7 @@ const CreateEventFormContent = ({ onEventCreated }) => {
                 {errors.name && <div style={errorStyle}>{errors.name[0]}</div>}
             </div>
 
-            <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                    Adresse * (sera géolocalisée automatiquement)
-                </label>
-                <input
-                    type="text"
-                    name="localisation_address"
-                    value={formData.localisation_address}
-                    onChange={handleInputChange}
-                    placeholder="Ex: 123 Rue de la Paix, Paris, France"
-                    style={{ ...inputStyle, borderColor: errors.localisation_address ? '#e74c3c' : '#ddd' }}
-                    required
-                />
-                {errors.localisation_address && <div style={errorStyle}>{errors.localisation_address[0]}</div>}
-                {geocoding && (
-                    <div style={{ color: '#3498db', fontSize: '12px', marginTop: '5px' }}>
-                        🌍 Géolocalisation en cours...
-                    </div>
-                )}
-                <div style={{ 
-                    fontSize: '12px', 
-                    color: '#666', 
-                    marginTop: '5px',
-                    padding: '8px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '4px'
-                }}>
-                    💡 <strong>Conseil:</strong> Entrez une adresse complète et réelle avec la rue, ville et pays
-                    <br />
-                    ✅ Exemples valides:
-                    <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                        <li>"Tour Eiffel, Paris, France"</li>
-                        <li>"1600 Amphitheatre Parkway, Mountain View, CA, USA"</li>
-                        <li>"Big Ben, London, UK"</li>
-                    </ul>
-                </div>
-            </div>
-
+            {/* Description */}
             <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                     Description *
@@ -224,13 +184,14 @@ const CreateEventFormContent = ({ onEventCreated }) => {
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    rows="4"
-                    style={{ ...inputStyle, borderColor: errors.description ? '#e74c3c' : '#ddd', resize: 'vertical' }}
+                    rows={4}
+                    style={{ ...inputStyle, borderColor: errors.description ? '#e74c3c' : '#ddd' }}
                     required
                 />
                 {errors.description && <div style={errorStyle}>{errors.description[0]}</div>}
             </div>
 
+            {/* Dates */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
                 <div>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
@@ -263,6 +224,7 @@ const CreateEventFormContent = ({ onEventCreated }) => {
                 </div>
             </div>
 
+            {/* Prix, Capacité, Places */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '15px' }}>
                 <div>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
@@ -314,6 +276,7 @@ const CreateEventFormContent = ({ onEventCreated }) => {
                 </div>
             </div>
 
+            {/* Niveau */}
             <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                     Niveau *
@@ -326,42 +289,81 @@ const CreateEventFormContent = ({ onEventCreated }) => {
                     required
                 >
                     <option value="">Sélectionner un niveau</option>
-                    <option value="débutant">Débutant</option>
-                    <option value="intermédiaire">Intermédiaire</option>
-                    <option value="avancé">Avancé</option>
-                    <option value="expert">Expert</option>
+                    <option value="Débutant">Débutant</option>
+                    <option value="Intermédiaire">Intermédiaire</option>
+                    <option value="Avancé">Avancé</option>
+                    <option value="Expert">Expert</option>
+                    <option value="Tous niveaux">Tous niveaux</option>
                 </select>
                 {errors.level && <div style={errorStyle}>{errors.level[0]}</div>}
             </div>
 
+            {/* Adresse */}
+            <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Adresse complète *
+                </label>
+                <input
+                    type="text"
+                    name="localisation_address"
+                    value={formData.localisation_address}
+                    onChange={handleInputChange}
+                    style={{ ...inputStyle, borderColor: errors.localisation_address ? '#e74c3c' : '#ddd' }}
+                    placeholder="Ex: 123 Rue de la Paix, 75001 Paris, France"
+                    required
+                />
+                {errors.localisation_address && <div style={errorStyle}>{errors.localisation_address[0]}</div>}
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    L'adresse sera géolocalisée automatiquement
+                </div>
+            </div>
+
+            {/* Catégorie */}
+            <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Catégorie *
+                </label>
+                <select
+                    name="categorie_event_id"
+                    value={formData.categorie_event_id}
+                    onChange={handleInputChange}
+                    style={{ ...inputStyle, borderColor: errors.categorie_event_id ? '#e74c3c' : '#ddd' }}
+                    required
+                >
+                    <option value="1">Yoga</option>
+                    <option value="2">Méditation</option>
+                    <option value="3">Bien-être</option>
+                </select>
+                {errors.categorie_event_id && <div style={errorStyle}>{errors.categorie_event_id[0]}</div>}
+            </div>
+
+            {/* Bouton Submit */}
             <button
                 type="submit"
-                disabled={loading || geocoding || !geocoderReady}
+                disabled={loading || geocoding}
                 style={{
-                    padding: '12px 24px',
-                    backgroundColor: (loading || geocoding || !geocoderReady) ? '#bdc3c7' : '#28a745',
+                    width: '100%',
+                    padding: '15px',
+                    backgroundColor: loading || geocoding ? '#95a5a6' : '#27ae60',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '4px',
+                    borderRadius: '6px',
                     fontSize: '16px',
-                    cursor: (loading || geocoding || !geocoderReady) ? 'not-allowed' : 'pointer',
-                    marginTop: '20px',
-                    width: '100%'
+                    fontWeight: 'bold',
+                    cursor: loading || geocoding ? 'not-allowed' : 'pointer'
                 }}
             >
-                {!geocoderReady ? '⏳ Chargement du service...' : 
-                 geocoding ? '🌍 Géolocalisation...' : 
-                 loading ? 'Création en cours...' : 
-                 'Créer l\'événement'}
+                {geocoding ? '📍 Géolocalisation en cours...' : loading ? '⏳ Création en cours...' : '✅ Créer l\'événement'}
             </button>
         </form>
     );
 };
 
-// Wrapper avec APIProvider
 export const CreateEventForm = ({ onEventCreated }) => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
     return (
-        <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+        <APIProvider apiKey={apiKey}>
             <CreateEventFormContent onEventCreated={onEventCreated} />
         </APIProvider>
     );
