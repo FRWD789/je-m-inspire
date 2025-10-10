@@ -1,0 +1,12 @@
+import React from 'react'
+import { useAuth } from '../context/AuthContext'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+
+export default function PrivateRoute() {
+
+    const {accessToken} = useAuth()
+    const location = useLocation()
+    console.log(accessToken)
+    
+    return accessToken? <Outlet/> : <Navigate to ="/login" state={{from:location}} replace />
+}

@@ -74,7 +74,7 @@ Route::post('/reset-password', function (Request $request) {
 Route::post('/register/user', [AuthController::class, 'registerUser']);
 Route::post('/register/professional', [AuthController::class, 'registerProfessional']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/refresh', [AuthController::class, 'refresh']);
+Route::get('/refresh', [AuthController::class, 'refresh']);
 
 // Événements publics
 Route::get('/events', [EventController::class, 'index']);

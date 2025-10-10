@@ -277,7 +277,6 @@ class AuthController extends Controller
     private function generateRefreshToken(User $user): string
     {
         $jti = Str::uuid()->toString();
-
         $token = JWTAuth::claims([
             'type' => 'refresh',
             'jti'  => $jti,
@@ -320,7 +319,8 @@ class AuthController extends Controller
             return response()->json([
                 "refreshToken"=>$refreshToken,
                 'access_token' => $newAccessToken,
-                'expires_in'   => JWTAuth::factory()->getTTL() * 60,
+                'user'=>$user,
+                'expires_in'   => 7*24*60,
             ])->cookie(
                 'refresh_token',
                 $newRefreshToken,
