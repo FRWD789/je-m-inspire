@@ -9,13 +9,14 @@ use App\Models\Event;
 use App\Models\Localisation;
 use App\Models\CategorieEvent;
 use App\Models\Operation;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class EventCancelReservationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     /**
      * Désactiver les transactions pour éviter le conflit avec DB::beginTransaction()

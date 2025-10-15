@@ -8,13 +8,14 @@ use App\Models\Operation;
 use App\Models\Role;
 use App\Models\Localisation;
 use App\Models\CategorieEvent;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class MyEventTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     protected $user;
     protected $professionalUser;

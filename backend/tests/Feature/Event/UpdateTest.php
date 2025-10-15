@@ -9,6 +9,7 @@ use App\Models\Operation;
 use App\Models\Role;
 use App\Models\Localisation;
 use App\Models\CategorieEvent;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class EventUpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     protected $creator;
     protected $otherUser;

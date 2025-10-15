@@ -10,6 +10,7 @@ use App\Models\Localisation;
 use App\Models\CategorieEvent;
 use App\Models\Operation;
 use App\Models\EventImage;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,16 +19,22 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class EventStoreTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         // Créer les rôles
+        /*
         Role::factory()->create(['role' => 'utilisateur']);
         Role::factory()->create(['role' => 'professionnel']);
-        Role::factory()->create(['role' => 'admin']);
+        Role::factory()->create(['role' => 'admin']);*/
+
+        // Créer les rôles
+        Role::create(['id' => 1, 'role' => 'client', 'description' => 'Client standard']);
+        Role::create(['id' => 2, 'role' => 'professionnel', 'description' => 'Professionnel']);
+        Role::create(['id' => 3, 'role' => 'admin', 'description' => 'Administrateur']);
 
         // Créer les types d'opérations (nécessaires pour les events)
         DB::table('type_operations')->insert([
