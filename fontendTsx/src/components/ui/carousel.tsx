@@ -4,8 +4,9 @@ import useEmblaCarousel, {
 } from "embla-carousel-react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
+
+import  Button from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -160,7 +161,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       aria-roledescription="slide"
       data-slot="carousel-item"
       className={cn(
-        "min-w-0 shrink-0 grow-0 basis-full",
+        "min-w-0 shrink-0 grow-0 basis-1/3",
         orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
@@ -172,56 +173,49 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
 function CarouselPrevious({
   className,
   variant = "outline",
-  size = "icon",
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { scrollPrev, canScrollPrev } = useCarousel()
 
   return (
-    <Button
+     <button
+      type="button"
       data-slot="carousel-previous"
-      variant={variant}
-      size={size}
-      className={cn(
-        "size-8 rounded-full bg-white shadow-md",
-        className
-      )}
       disabled={!canScrollPrev}
       onClick={scrollPrev}
+      className="bg-gray-100/70  border-primary/20 border-[1px]  hover:bg-gray-100/90 transition text-primary shadow-2xl backdrop-blur-3xl p-4 rounded-full disabled:cursor-not-allowed"
       {...props}
     >
-      <ArrowLeft />
-      <span className="sr-only">Previous slide</span>
-    </Button>
-  )
+      <ArrowLeft className="w-4 h-4" />
+    </button>
+
+  );
 }
 
 function CarouselNext({
   className,
   variant = "outline",
-  size = "icon",
+
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { scrollNext, canScrollNext } = useCarousel()
+  const {  scrollNext, canScrollNext } = useCarousel()
 
   return (
-    <Button
+    <button
       data-slot="carousel-next"
-      variant={variant}
-      size={size}
-      className={cn(
-        "size-8 rounded-full bg-white shadow-md",
-        className
-      )}
+      className="bg-gray-100/70  border-primary/20 border-[1px]  hover:bg-gray-100/90 transition text-primary shadow-2xl backdrop-blur-3xl p-4 rounded-full disabled:cursor-not-allowed"
+
+      
       disabled={!canScrollNext}
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
-      <span className="sr-only">Next slide</span>
-    </Button>
+      <ArrowRight className="w-4 h-4"/>
+     
+    </button>
   )
 }
+
 export {
   type CarouselApi,
   Carousel,

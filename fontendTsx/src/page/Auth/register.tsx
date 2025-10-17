@@ -64,7 +64,7 @@ export const registerSchema = z.object({
 export default function Register() {
 
 
-    const { register}= useAuth()
+    const {registerUser}= useAuth()
 
 
 const options= [
@@ -97,7 +97,7 @@ const options= [
                            </p>
                        </div>
                        <div className=' '>
-                           <Form schema={registerSchema} onSubmit={register} >
+                           <Form schema={registerSchema} onSubmit={registerUser}  >
                                <div className='flex gap-x-[8px]'>
                                    <FormFiled label='Name'>
                                         <Input name='name'  />

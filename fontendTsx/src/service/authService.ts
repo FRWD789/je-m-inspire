@@ -1,51 +1,81 @@
-import axios from "axios";
-import type { LoginCredentials, RegisterCredentials, ResetPasswordData } from "../types/auth";
-import { api, privateApi } from "../api/api";
+// services/authService.js
+import { privateApi, publicApi } from "../api/api";
 
-
-// --- Auth endpoints ---
-const authService = {
-  // Login user
-  login: async (credentials:LoginCredentials) => {
-    // credentials = { email, password }
-    const response = await api.post("/login", credentials);
-    return response.data;
-  },
-
-  // Register user
-  register: async (userData:RegisterCredentials) => {
-    // userData = { name, email, password, password_confirmation }
-    const response = await api.post("/register", userData);
-    return response.data.access_token
-  },
-
-  // Logout user
-  logout: async () => {
-    const response = await privateApi.post("/logout");
-    return response.data;
-  },
-
-  // Refresh token
-  refresh: async () => {
-    const response = await api.get("/refresh");
-    return response.data.access_token;
-  },
-
-  // forgot password
-  forgotPassword : async (email: string) => {
-  const res = await api.post("/forgot-password", { email });
-  return res.data;
-  },
-
-  // reset password
-  resetPassword : async (data: ResetPasswordData) => {
-  const res = await api.post("/reset-password", data);
-  return res.data;
+export type Credentials = {
+    email:string,
+    password:string
+}
+ export interface RegisterCredentials {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation:string
 }
 
 
+
+
+export const authService = {
+  // Refresh token endpoint
+  refresh: async (): Promise<any> => {
+    try {
+      const response = await publicApi.get("/refresh");
+      return response.data; // Return only data
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      throw error; // Let the caller handle it
+    }
+  },
+
+  // Login endpoint
+  register: async (registerCredentials:RegisterCredentials,type:'user'|'professional'='user') => {
+    try {
+      const response = await publicApi.post(`/register/${type}`, registerCredentials);
+      return response.data;
+    } catch (error) {
+      console.error("Error logging in:", error);
+      throw error;
+    }
+  },
+  // Login endpoint
+  login: async (credentials:Credentials) => {
+    try {
+      const response = await publicApi.post("/login", credentials);
+      return response.data;
+    } catch (error) {
+      console.error("Error logging in:", error);
+      throw error;
+    }
+  },
+
+  // Logout endpoint
+  logout: async () => {
+    try {
+      const response = await privateApi.post("/logout");
+      return response.data;
+    } catch (error) {
+      console.error("Error logging out:", error);
+      throw error;
+    }
+  },
+  updateProfile: async (data:any) => {
+    try {
+      const response = await privateApi.put("/profile/update",data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
+  },
+
+  // Optional: Get user profile
+  getProfile: async () => {
+    try {
+      const response = await privateApi.get("/me");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      throw error;
+    }
+  },
 };
-
-export default authService;
-
-

@@ -113,7 +113,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
 
       {/* Settings popup card */}
       {showUserSettings && (
-         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-20">
+         <div className="fixed inset-0 backdrop-blur-lg z-999  bg-black/30 flex justify-center items-center">
           <div
             ref={settingsRef}
             className="bg-white rounded-xl shadow-lg p-6 w-[400px] max-w-[90%] animate-fadeIn"

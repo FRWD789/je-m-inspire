@@ -1,9 +1,9 @@
-import React from 'react'
 import Form from '../../components/From'
 import z from 'zod'
 import FormFiled from '../../components/utils/form/formFiled';
 import Input from '../../components/ui/input';
 import { useAuth } from '../../context/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 export const LoginSchema = z.object({
   email: z
     .string()
@@ -17,13 +17,26 @@ export const LoginSchema = z.object({
 
 
 
-
 export default function Login() {
-
+    const location = useLocation()
+    const navigate = useNavigate()
+    const from = location.state?.from?.pathname || "/dashboard/profile"; 
     const {login} = useAuth()
+    const handelLogin = async (data:any)=>{
+        try {
+            await login(data)
+            navigate(from,{replace:true})
+
+        }catch(error){
+            console.log(error)
+
+        }
+
+    }
+
   return (
  
-            <section className=' w-full h-screen grid justify-center  items-center py-[24px] px-[16px]  gap-y-[32px] '>
+            <section className=' w-full min-h-full flex flex-col flex-1 justify-center  items-center   '>
                <div className='max-w-xl grid gap-y-[32px]'>
                     <div className='text-center  '>
                         <h1>
@@ -34,7 +47,7 @@ export default function Login() {
                         </p>
                     </div>
                     <div className=' '>
-                        <Form schema={LoginSchema} onSubmit={login}>
+                        <Form schema={LoginSchema} onSubmit={handelLogin}>
                         <FormFiled label='Email'>
                             <Input name='email' />
                         </FormFiled>

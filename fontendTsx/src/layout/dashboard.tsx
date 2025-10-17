@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Home, Calendar, Settings, PanelRight, PanelLeft, CalendarPlus2 } from 'lucide-react';
 import { Link, Outlet } from 'react-router-dom';
 import SideNav from '@/components/sideNav';
 
 export default function Dashboard() {
   const [open, setOpen] = useState(true);
-
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-open");
+    if (saved) setOpen(JSON.parse(saved));
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("sidebar-open", JSON.stringify(open));
+  }, [open]);
   const menuItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Home',path:"/profile" },
     { icon: <Calendar className="w-5 h-5" />, label: 'Events',path:"/events" },
@@ -29,20 +35,24 @@ export default function Dashboard() {
       </SideNav>
 
           <main
-        className="flex-1 flex flex-col px-6 py-[8px] transition-all duration-300"
-        style={{ marginLeft: open ? '16rem' : '0rem', height: '100vh' }}
+        className="flex-1 flex flex-col px-6 py-[8px] shadow-sm min-h-screen transition-all duration-300"
+        style={{ marginLeft: open ? '16rem' : '0rem' }}
       >
-        <button
-          onClick={() => setOpen(!open)}
-          className="mb-4  p-2 bg-primary w-fit text-white rounded-lg shadow hover:bg-text transition-colors"
-        >
-          <PanelLeft/>
-        </button>
+       <div className='flex mb-4 sticky top-2 z-100  p-2 bg-[#F8F6F2]  rounded-lg shadow-sm w-full  te items-center gap-x-[24px]'>
+          <button
+            onClick={() => setOpen(!open)}
+            className=" p-2  w-fit text-primary rounded-lg shadow  transition-colors"
+          >
+              {open ? <PanelLeft size={20} /> : <PanelRight size={20} />}
+          </button>
+           <h2 className="text-lg text-left font-semibold">Tableau de bord</h2>
+       </div>
 
-        <div className="bg-[#F8F6F2] rounded-xl p-6 shadow flex-1 overflow-hidden">
+        <div className="bg-[#F8F6F2] rounded-xl p-6 shadow flex-1 ">
           <Outlet />
         </div>
       </main>
     </div>
+    
   );
 }

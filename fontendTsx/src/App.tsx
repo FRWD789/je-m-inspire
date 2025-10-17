@@ -1,43 +1,49 @@
-import React, { useState } from 'react'
-import Login from './pages/Login'
-import {Routes,Route} from "react-router-dom"
-import Home from './pages/Home';
-import { useAuth } from './context/AuthContext';
-import Register from './pages/Register';
-import ProtectedRoutes from './components/ProtectedRoutes';
-import VerifyEmail from './components/VerifyEmail';
-import ForgotPassword from './components/ForgotPassword';
-import ResetPassword from './components/ResetPassword';
-import Layout from './layout/Layout';
-import Events from './pages/Events';
+import React from 'react'
+import Login from './page/Auth/login'
+import { Routes ,Route} from 'react-router-dom'
+import Layout from './layout/layout'
+import Home from './page/home'
+import User from './page/user'
+import PrivateRoute from './components/privateRoute'
+import PersistLogin from './components/persistLogin'
+import Register from './page/Auth/register'
+import Dashboard from './layout/dashboard'
+import Events from './page/Events/Events'
+import { EventProvider } from './context/EventContext'
+import MyEvents from './page/Events/MyEvents'
+import PublicEvents from './page/publicEvents'
+import EventDetail from './page/eventDeatail'
+import AdminApprovalPage from './components/userAprrobation'
+import RegisterPro from './page/Auth/registerPro'
 
-function App() {
 
-      
-      
+export default function App() {
   return (
 
-    <Routes>
-       <Route path='/events' element={<Events/>} />
-      <Route path='/login' element={<Login/>} />
+      <EventProvider>
+        <Routes>
+          <Route element={<PersistLogin/>}>
+            <Route path='/' element={<Layout />}>
+                  <Route index element={<Home/>}/>
+                  <Route path='login' element={<Login/>}/>
+                  <Route path='register' element={<Register/>}/>
+                  <Route path='register-pro' element={<RegisterPro/>}/>
+                  <Route path='events' element={<PublicEvents/>}/>
+                  <Route path="events/:id" element={<EventDetail />} />
+            </Route>
+            <Route element={<PrivateRoute/>}>
+                    <Route path='/dashboard' element={<Dashboard/>}>
+                          <Route path='profile' element={<User/>}/>
+                          <Route path='events' element={<Events/>}/>
+                          <Route path='my-events' element={<MyEvents/>}/>
+                           <Route path='approbation' element={<AdminApprovalPage/>}/>
+                    </Route>
+                </Route>    
+          </Route >
+        </Routes>
+ 
+      </EventProvider>
+   
 
-      <Route path='/register' element={<Register/>} />
-
-      <Route path="/verify-email" element={<VerifyEmail />} />
-
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-
-      <Route path="/reset-password" element={<ResetPassword />} />
-
-      <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-      </Route>
-    </Routes>
-
-
-    
-      
   )
 }
-
-export default App

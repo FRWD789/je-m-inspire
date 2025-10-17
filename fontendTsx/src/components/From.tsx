@@ -4,17 +4,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { type ZodType, type TypeOf } from "zod";
 
 type FormProps<T extends ZodType<any, any, any>> = {
+  type?:'user'|'professional'
   schema: T;
   children: ReactNode;
   onSubmit?: (data: TypeOf<T>) => void;
   defaultValues?: DefaultValues<TypeOf<T>>
-};
+}
 
 export default function Form<T extends ZodType<any, any, any>>({
   schema,
   children,
   onSubmit,
-  defaultValues
+  defaultValues,
+
 }: FormProps<T>) {
 
   console.log(defaultValues)
@@ -40,7 +42,7 @@ export default function Form<T extends ZodType<any, any, any>>({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(handleFormSubmit)} className="grid  gap-y-[12px]">{children}</form>
+      <form onSubmit={methods.handleSubmit(handleFormSubmit)}  className="grid  gap-y-[12px]">{children}</form>
     </FormProvider>
   );
 }

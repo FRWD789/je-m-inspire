@@ -1,25 +1,49 @@
-import { api, privateApi } from "@/api/api";
+import { publicApi } from "../api/api";
+import type { AxiosInstance } from "axios";
 
 
-const API_URL="/events"
 
 
-export const getEvents = async () => {
-  const response = await api.get(API_URL);
-  return response.data;
-};
 
-export const createEvent = async (eventData:Event) => {
-  const response = await privateApi.post(API_URL, eventData);
-  return response.data;
-};
 
-export const updateEvent = async (id:number, eventData:Partial<Event>) => {
-  const response = await privateApi.put(`${API_URL}/${id}`, eventData);
-  return response.data;
-};
+export const eventService = (privateApi: AxiosInstance) => ( {
+  // Fetch all events (public)
+  getAll: async () => {
+    const response = await publicApi.get("/events");
+    return response.data;
+  },
 
-export const deleteEvent = async (id:number) => {
-  const response = await privateApi.delete(`${API_URL}/${id}`);
-  return response.data;
-};
+  // Fetch my events (private)
+  getMyEvents: async () => {
+    const response = await privateApi.get(`/my-events`);
+    return response.data;
+  },
+
+  // Fetch a single event by ID (public)
+  getById: async (id: string | number) => {
+    const response = await publicApi.get(`/events/${id}`);
+    return response.data;
+  },
+
+  // Create a new event (private)
+  create: async (eventData: any):Promise<{ event: any; }> => {
+    console.log(eventData)
+    const response = await privateApi.post("/events", eventData);
+    return response.data;
+  },
+
+  // Update an event by ID (private)
+  update: async (id: string | number, eventData: any) => {
+    const response = await privateApi.put(`/events/${id}`, eventData);
+    return response.data;
+  },
+
+  // Delete an event by ID (private)
+  delete: async (id: string | number) => {
+    const response = await privateApi.delete(`/events/${id}`);
+    return response.data;
+  },
+
+
+  
+});

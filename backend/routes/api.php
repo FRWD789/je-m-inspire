@@ -108,7 +108,7 @@ Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonneme
 // ==========================================
 // ROUTES PROTÉGÉES
 // ==========================================
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth.jwt'])->group(function () {
 
     // AUTHENTIFICATION & PROFIL
     Route::get('/me', [AuthController::class, 'me']);
@@ -172,16 +172,16 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/commissions/statistics', [CommissionController::class, 'statistics']);
         Route::put('/commissions/{id}', [CommissionController::class, 'update']);
         Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
+            //IMPORTANT:api v1 
+        // // ✅ PROFESSIONNELS - Gestion des approbations/rejets
+        // Route::get('/pending-professionals', [AuthController::class, 'getPendingProfessionals']);
+        // Route::get('/approved-professionals', [AuthController::class, 'getApprovedProfessionals']);
+        // Route::get('/rejected-professionals', [AuthController::class, 'getRejectedProfessionals']);
 
-        // ✅ PROFESSIONNELS - Gestion des approbations/rejets
-        Route::get('/pending-professionals', [AuthController::class, 'getPendingProfessionals']);
-        Route::get('/approved-professionals', [AuthController::class, 'getApprovedProfessionals']);
-        Route::get('/rejected-professionals', [AuthController::class, 'getRejectedProfessionals']);
-
-        // ✅ IMPORTANT: Les deux routes en POST car on envoie des données
-        Route::post('/approve-professional/{id}', [AuthController::class, 'approveProfessional']);
-        Route::post('/reject-professional/{id}', [AuthController::class, 'rejectProfessional']);
-
+        // // ✅ IMPORTANT: Les deux routes en POST car on envoie des données
+        // Route::post('/approve-professional/{id}', [AuthController::class, 'approveProfessional']);
+        // Route::post('/reject-professional/{id}', [AuthController::class, 'rejectProfessional']);
+         //IMPORTANT:api v1 
         // Approbations - Nouveau système (AdminApprovalController)
         Route::get('/approvals', [AdminApprovalController::class, 'index']);
         Route::post('/approvals/{id}/approve', [AdminApprovalController::class, 'approve']);

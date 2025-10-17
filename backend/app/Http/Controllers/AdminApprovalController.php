@@ -96,10 +96,10 @@ class AdminApprovalController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
-
+        
         try {
             $user = User::findOrFail($id);
-
+  
             $user->update([
                 'is_approved' => false,
                 'rejection_reason' => $validated['reason']

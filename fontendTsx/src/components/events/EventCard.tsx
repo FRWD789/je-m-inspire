@@ -2,16 +2,30 @@ import React from "react";
 import { Calendar, MapPin, Users } from "lucide-react";
 import Button from "../ui/button";
 import Card from "../ui/card";
-// or just use a <div> with same class if not
 
-export default function EventCard({ event, onEdit }: any) {
+type EventCardProps = {
+  orientation?:"horizontale"|"vertical",
+  event: any;
+  onEdit?: (event: any) => void;
+  isSelected?: boolean;
+  onDelete?: (event: any) => void;
+  className?: string; // optional, for carousel layout adjustments
+};
+
+export default function EventCard({
+  orientation="horizontale",
+  event,
+  onEdit,
+  onDelete,
+  className = "",
+}: EventCardProps) {
   return (
     <Card
       key={event.id}
-      className="flex items-start gap-4 p-4 hover:shadow-md transition-all duration-200 border border-gray-100 rounded-2xl bg-white"
+      className={`flex flex-col ${orientation=="horizontale"?"md:flex-row":""} items-start gap-4 p-4 hover:shadow-md transition-all duration-200 border border-gray-100 rounded-2xl bg-white ${className}`}
     >
-      {/* Image placeholder */}
-      <div className="w-[120px] h-[100px] flex-shrink-0 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-sm overflow-hidden">
+      {/* Image */}
+      <div className="w-full md:w-[120px] h-[100px] flex-shrink-0 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-sm overflow-hidden">
         {event.image_url ? (
           <img
             src={event.image_url}
@@ -24,11 +38,9 @@ export default function EventCard({ event, onEdit }: any) {
       </div>
 
       {/* Event info */}
-      <div className="flex flex-1 flex-col justify-between">
+      <div className="flex-1 flex flex-col justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-800">
-            {event.name}
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-800">{event.name}</h2>
           <p className="text-sm text-gray-500 mt-0.5">
             {event.categorie?.name} • {event.level}
           </p>
@@ -49,7 +61,7 @@ export default function EventCard({ event, onEdit }: any) {
       </div>
 
       {/* Right column */}
-      <div className="flex flex-col items-end justify-between h-full">
+      <div className="flex flex-col items-end justify-between h-full mt-2 md:mt-0">
         <div className="text-right">
           <p className="text-base font-semibold text-gray-800">
             {event.base_price} €
@@ -61,13 +73,22 @@ export default function EventCard({ event, onEdit }: any) {
         </div>
 
         {event.is_creator && (
-          <Button
-            onClick={() => onEdit(event)}
-            variant="outline"
-            className="text-xs font-medium mt-3 w-auto px-3 py-1"
-          >
-            Modifier
-          </Button>
+          <div className="mt-3 flex flex-col gap-2">
+            <Button
+              onClick={() => onEdit(event)}
+              variant="outline"
+              className="text-xs font-medium w-auto px-3 py-1"
+            >
+              Modifier
+            </Button>
+            <Button
+              onClick={() => onDelete(event)}
+             
+              className="text-xs font-medium w-auto px-3 py-1"
+            >
+              Supprimer
+            </Button>
+          </div>
         )}
       </div>
     </Card>

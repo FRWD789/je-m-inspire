@@ -28,6 +28,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
         'motivation_letter',
         'is_approved',
         'approved_at',
+        'rejection_reason'
     ];
 
     protected $hidden = [

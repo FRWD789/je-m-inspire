@@ -1,46 +1,63 @@
-import React, { useEffect } from 'react'
+import  { useEffect } from 'react'
 import { privateApi } from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import useRefreshToken from './useRefreshToken';
+import useRefresh from './useRefresh';
 
-function usePrivateApi() {
-const {accessToken,setAccessToken} = useAuth()
-const refresh = useRefreshToken()
+export default function usePrivateApi() {
 
-  useEffect(() => {
-    const requestIntercept = privateApi.interceptors.request.use(
-      async config => {
-        if (!config.headers["Authorization"]) {
-          config.headers["Authorization"] = `Bearer ${accessToken}`;
+    const {accessToken} = useAuth()
+    const refresh =  useRefresh()
+    useEffect(()=>{
+
+          const responseIntercept =  privateApi.interceptors.request.use(
+
+
+
+            async config=>{
+                console.log('🔑 Interceptor request - Token:', accessToken ? 'Présent' : 'Absent');
+                   if(accessToken &&!config.headers["Authorization"]){
+                                config.headers["Authorization"] = `Bearer ${accessToken}`
+                               console.log('✅ Token ajouté aux headers');
+                }
+             
+            return config
+            },
+            error=>{
+             return Promise.reject(error);
+            }
+
+
+
+        );
+
+
+        const requestIntercept = privateApi.interceptors.response.use(
+            res => res,
+        async error =>{
+            const prevReq = error?.config;
+            if(error?.response?.status === 401 && !prevReq?.sent){
+                prevReq.sent = true
+                try{
+                      console.log('🔄 401 détecté, tentative de refresh...');
+                    const newAccessToken = await refresh()
+                    prevReq.headers["Authorization"] = `Bearer ${newAccessToken}`
+                    return privateApi(prevReq)
+
+                }catch (error){
+                    console.log(error)
+                }
+           
+            }
+
+               return Promise.reject(error);
+
         }
-        return config;
-      },
-      error => Promise.reject(error)
-    );
-
-    const responseIntercept = privateApi.interceptors.response.use(
-      res => res,
-      async error => {
-        const prevReq = error?.config;
-        if (error?.response?.status === 401 && !prevReq?.sent) {
-          prevReq.sent = true;
-          const newAccessToken = await refresh();
-          prevReq.headers["Authorization"] = `Bearer ${newAccessToken}`;
-          return privateApi(prevReq);
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      privateApi.interceptors.response.eject(responseIntercept);
-      privateApi.interceptors.request.eject(requestIntercept);
-    };
-  }, [accessToken, refresh]);
-
-  return privateApi;
+    
+        );
+        return () => {
+            privateApi.interceptors.response.eject(responseIntercept);
+            privateApi.interceptors.request.eject(requestIntercept);
+        };
+    },[accessToken,refresh])
+  return privateApi
 }
-
-
-
-export default usePrivateApi

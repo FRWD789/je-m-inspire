@@ -42,7 +42,7 @@ class EventController extends Controller
      */
     public function show($id)
     {
-        $event = Event::with(['localisation', 'categorie', 'creator.roles', 'images'])->find($id);
+        $event = Event::with(['localisation', 'categorie', 'creator', 'images'])->find($id);
 
         if (!$event) {
             return $this->notFoundResponse('Événement non trouvé');

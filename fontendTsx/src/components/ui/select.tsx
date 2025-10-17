@@ -10,7 +10,7 @@ type SelectProps = Omit<
   React.SelectHTMLAttributes<HTMLSelectElement>,
   "name"
 > & {
-  name: string|number;
+  name: string;
   options: Option[];
 };
 

@@ -3,17 +3,21 @@ import { authService } from '../service/AuthService'
 
 function useRefresh() {
 
-    const {setAccessToken,setUser} = useAuth()
+    const {setAccessToken,setUser,user} = useAuth()
 
     const refresh = async()=>{
         try {
             const res = await authService.refresh()
-            setAccessToken(res.access_token)
-            setUser(res.user);
-            return res.access_token  
+            console.log(res)
+            return {new_access_token:res.access_token,ref_user:res.user } 
         } catch (error) {
+            setAccessToken(undefined);
+            setUser(undefined);
             console.log(error)
             throw error   
+        }finally{
+            console.log(user)
+
         }
     }
     return refresh
