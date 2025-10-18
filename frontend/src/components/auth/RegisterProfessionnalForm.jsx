@@ -44,7 +44,7 @@ const RegisterProfessionalForm = () => {
             });
             submitData.append('recaptcha_token', recaptchaToken);
 
-            const response = await registerProfessional(formData);
+            const response = await registerProfessional(submitData);
             console.log('✅ Inscription professionnel:', response);
             
             if (response.status === 'pending') {
