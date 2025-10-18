@@ -319,14 +319,15 @@ export const AuthProvider = ({ children }) => {
   // ===============================
   // 4️⃣ FONCTIONS AUTH
   // ===============================
-  const login = async (email, password) => {
+  const login = async (email, password, recaptchaToken) => {
     try {
-      const response = await apiSimple.post("/api/login", { email, password });
-      const {
-        token: accessToken,
-        refresh_token,
-        user: userData,
-      } = response.data;
+      const response = await apiSimple.post("/api/login", { 
+        email, 
+        password,
+        recaptcha_token: recaptchaToken 
+      });
+
+      const { token: accessToken, refresh_token, user: userData } = response.data;
 
       localStorage.setItem("access_token", accessToken);
       if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
@@ -336,10 +337,9 @@ export const AuthProvider = ({ children }) => {
 
       return response.data;
     } catch (error) {
-      if (error.code === "ERR_NETWORK")
-        throw new Error("Erreur réseau : impossible de contacter le serveur");
-      if (error.response?.status === 401)
-        throw new Error("Email ou mot de passe incorrect");
+      debugError("Login error:", error.response?.data || error.message);
+      if (error.response?.status === 403)
+        throw new Error("Compte en attente d'approbation");
       throw new Error(error.response?.data?.error || "Erreur de connexion");
     }
   };
@@ -359,55 +359,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const registerUser = async (data) => {
-  // Créer FormData pour supporter l'upload de fichiers
-  const formData = new FormData();
-  
-  Object.keys(data).forEach(key => {
-    if (data[key] !== null && data[key] !== undefined) {
-      formData.append(key, data[key]);
-    }
-  });
+  const registerUser = async (formData) => {
+    const response = await apiSimple.post("/api/register/user", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    const { token: accessToken, refresh_token, user: newUser } = response.data;
 
-  const response = await apiSimple.post("/api/register/user", formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  });
-  
-  const { token: accessToken, refresh_token, user: newUser } = response.data;
+    localStorage.setItem("access_token", accessToken);
+    if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
 
-  localStorage.setItem("access_token", accessToken);
-  if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
+    setToken(accessToken);
+    setUser(newUser);
 
-  setToken(accessToken);
-  setUser(newUser);
-
-  return response.data;
-};
-
- const registerProfessional = async (data) => {
-  // Créer FormData pour supporter l'upload de fichiers
-  const formData = new FormData();
-  
-  Object.keys(data).forEach(key => {
-    if (data[key] !== null && data[key] !== undefined) {
-      formData.append(key, data[key]);
-    }
-  });
-
-  const response = await apiSimple.post("/api/register/professional", formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  });
-  
-  return {
-    status: "pending",
-    message: response.data.message,
-    user: response.data.user,
+    return response.data;
   };
-};
+
+  const registerProfessional = async (formData) => {
+    // formData est déjà un FormData avec recaptcha_token inclus
+    const response = await apiSimple.post("/api/register/professional", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    return {
+      status: "pending",
+      message: response.data.message,
+      user: response.data.user,
+    };
+  };
 
   const refreshUser = async () => {
     const response = await api.get("/api/me");

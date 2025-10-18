@@ -28,6 +28,27 @@ class AuthController extends Controller
     /**
      * Inscription pour les utilisateurs réguliers
      */
+    private function verifyRecaptcha($token, $ip)
+    {
+        if (!$token) {
+            return false;
+        }
+
+        $response = \Illuminate\Support\Facades\Http::asForm()->post(config('recaptcha.verify_url'), [
+            'secret' => config('recaptcha.secret_key'),
+            'response' => $token,
+            'remoteip' => $ip
+        ]);
+
+        $result = $response->json();
+
+        Log::info('[reCAPTCHA] Vérification', [
+            'success' => $result['success'] ?? false,
+            'ip' => $ip
+        ]);
+
+        return $result['success'] ?? false;
+    }
    public function registerUser(Request $request)
     {
         try {
@@ -45,7 +66,37 @@ class AuthController extends Controller
         }
 
         try {
+<<<<<<< Updated upstream
             
+=======
+            $profilePicturePath = null;
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                Log::info('[Auth] Image de profil uploadée lors de l\'inscription', [
+                    'filename' => $filename,
+                    'path' => $profilePicturePath,
+                    'mime' => $file->getMimeType()
+                ]);
+            }
+
+            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            }
+>>>>>>> Stashed changes
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -95,8 +146,37 @@ class AuthController extends Controller
         }
 
         try {
+<<<<<<< Updated upstream
           
 
+=======
+            $profilePicturePath = null;
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                Log::info('[Auth] Image de profil uploadée lors de l\'inscription pro', [
+                    'filename' => $filename,
+                    'path' => $profilePicturePath,
+                    'mime' => $file->getMimeType()
+                ]);
+            }
+            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            }
+>>>>>>> Stashed changes
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -149,6 +229,9 @@ class AuthController extends Controller
                 'password' => 'required|string',
             ]);
 
+            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            }
             $user = User::where('email', $credentials['email'])->first();
 
             if (!$user) {

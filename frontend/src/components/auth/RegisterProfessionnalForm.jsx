@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import ReCaptcha from '../common/ReCaptcha';
 
 const RegisterProfessionalForm = () => {
     const navigate = useNavigate();
@@ -21,13 +22,28 @@ const RegisterProfessionalForm = () => {
     const [loading, setLoading] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const { registerProfessional } = useAuth();
+    const [recaptchaToken, setRecaptchaToken] = useState('');
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
 
+        if (!recaptchaToken) {
+            setErrors({ recaptcha: 'Veuillez valider le reCAPTCHA' });
+            setLoading(false);
+            return;
+        }
         try {
+            const submitData = new FormData();
+            Object.keys(formData).forEach(key => {
+                if (formData[key] !== null && formData[key] !== undefined) {
+                    submitData.append(key, formData[key]);
+                }
+            });
+            submitData.append('recaptcha_token', recaptchaToken);
+
             const response = await registerProfessional(formData);
             console.log('✅ Inscription professionnel:', response);
             
@@ -52,11 +68,32 @@ const RegisterProfessionalForm = () => {
             } else {
                 setErrors({ general: error.message || 'Une erreur est survenue lors de l\'inscription' });
             }
+            // Reset reCAPTCHA en cas d'erreur
+            setRecaptchaToken('');
+            if (window.grecaptcha) {
+                window.grecaptcha.reset();
+            }
         } finally {
             setLoading(false);
         }
     };
+    //callbacks reCAPTCHA
+    const handleRecaptchaVerify = (token) => {
+        setRecaptchaToken(token);
+        if (errors.recaptcha) {
+            setErrors(prev => ({ ...prev, recaptcha: null }));
+        }
+    };
 
+    const handleRecaptchaExpired = () => {
+        setRecaptchaToken('');
+        setErrors(prev => ({ ...prev, recaptcha: 'reCAPTCHA expiré, veuillez revalider' }));
+    };
+
+    const handleRecaptchaError = () => {
+        setRecaptchaToken('');
+        setErrors(prev => ({ ...prev, recaptcha: 'Erreur reCAPTCHA, veuillez recharger la page' }));
+    };
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -439,6 +476,21 @@ const RegisterProfessionalForm = () => {
                         {errors.password_confirmation && <div style={errorStyle}>{errors.password_confirmation}</div>}
                     </div>
 
+                    <ReCaptcha 
+                        onVerify={handleRecaptchaVerify}
+                        onExpired={handleRecaptchaExpired}
+                        onError={handleRecaptchaError}
+                    />
+                    {errors.recaptcha && (
+                        <div style={{ 
+                            color: '#e74c3c', 
+                            fontSize: '12px', 
+                            marginBottom: '10px',
+                            textAlign: 'center'
+                        }}>
+                            {errors.recaptcha}
+                        </div>
+                    )}
                     <button
                         type="submit"
                         disabled={loading}
