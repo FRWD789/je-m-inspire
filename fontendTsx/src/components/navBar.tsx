@@ -1,18 +1,17 @@
 import { Link, NavLink } from "react-router-dom";
 import { ChevronDown, LogIn, UserPlus, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function NavBar() {
-  const {user} = useAuth()
+  const { user, isAuthenticated } = useAuth(); // 👈 AJOUT isAuthenticated
   const [openDropdown, setOpenDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-
   const navLinks = [
     { name: "Accueil", path: "/" },
-    { name: "Événements", path: "/" },
-    { name: "Créer un événement", path: "/" },
+    { name: "Événements", path: "/events" },
+    { name: "Calendrier", path: "/calendar" },
     { name: "À propos", path: "/" },
   ];
 
@@ -30,12 +29,11 @@ export default function NavBar() {
         <div className="flex items-center gap-2">
           <Link to="/">
             <img
-            src="/assets/img/logo.png"
-            alt="Logo"
-            className="h-[clamp(2.5rem,5vw,6rem)] w-auto"
-          />
+              src="/assets/img/logo.png"
+              alt="Logo"
+              className="h-[clamp(2.5rem,5vw,6rem)] w-auto"
+            />
           </Link>
-        
         </div>
 
         {/* DESKTOP NAV LINKS */}
@@ -87,14 +85,19 @@ export default function NavBar() {
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden md:flex items-center gap-3">
-           {user ? (
-            <NavLink
-              to="/dashboard"
-              
-            >
-                <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-                 {user.profile_picture ?  <img src={`http://localhost:8000/storage/${user.profile_picture}`} alt="" />:user.name[0].toUpperCase()}
-                </div>
+          {isAuthenticated ? ( // 👈 CORRECTION : Utilise isAuthenticated
+            <NavLink to="/dashboard">
+              <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden hover:ring-2 hover:ring-accent transition-all">
+                {user?.profile_picture ? (
+                  <img
+                    src={`http://localhost:8000/storage/${user.profile_picture}`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user?.name[0]?.toUpperCase() || "U"
+                )}
+              </div>
             </NavLink>
           ) : (
             <>
@@ -111,7 +114,7 @@ export default function NavBar() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
               >
                 <UserPlus className="w-4 h-4" />
-                S’inscrire
+                S'inscrire
               </NavLink>
             </>
           )}
@@ -163,21 +166,44 @@ export default function NavBar() {
 
             {/* Auth links */}
             <div className="flex flex-col gap-2 mt-4 border-t border-gray-200 pt-2">
-              <NavLink
-                to="/login"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <LogIn className="w-4 h-4" /> Se connecter
-              </NavLink>
+              {isAuthenticated ? ( // 👈 CORRECTION : Utilise isAuthenticated
+                <NavLink
+                  to="/dashboard"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="w-8 h-8 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
+                    {user?.profile_picture ? (
+                      <img
+                        src={`http://localhost:8000/storage/${user.profile_picture}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      user?.name[0]?.toUpperCase() || "U"
+                    )}
+                  </div>
+                  Mon compte
+                </NavLink>
+              ) : (
+                <>
+                  <NavLink
+                    to="/login"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <LogIn className="w-4 h-4" /> Se connecter
+                  </NavLink>
 
-              <NavLink
-                to="/register"
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <UserPlus className="w-4 h-4" /> S’inscrire
-              </NavLink>
+                  <NavLink
+                    to="/register"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <UserPlus className="w-4 h-4" /> S'inscrire
+                  </NavLink>
+                </>
+              )}
             </div>
           </div>
         </div>
