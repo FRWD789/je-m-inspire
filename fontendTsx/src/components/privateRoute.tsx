@@ -1,11 +1,26 @@
-import React from 'react'
-import { useAuth } from '../context/AuthContext'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import React from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-export default function PrivateRoute() {
+interface PrivateRouteProps {
+  allowedRoles: string[];
+}
 
-    const {accessToken} = useAuth()
-    const location = useLocation()
-    
-    return accessToken? <Outlet/> : <Navigate to ="/login" state={{from:location}} replace />
+export default function PrivateRoute({ allowedRoles }: PrivateRouteProps) {
+  const { accessToken, user } = useAuth();
+  const location = useLocation();
+
+  // Not logged in → go to login
+  if (!accessToken || !user) {
+    console.log("here")
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Logged in but no permission → go to forbidden
+  if (!allowedRoles.includes(user.roles[0].role)) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
+  // Has access → render the route
+  return <Outlet />;
 }

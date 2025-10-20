@@ -5,7 +5,9 @@ import FormFiled from './utils/form/formFiled';
 import Button from './ui/button';
 import Input from './ui/input';
 import { Form } from 'react-hook-form';
-import From from './From';
+import From from './form';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogOut, Settings } from 'lucide-react';
 
 type SideNavProps = {
   open: boolean;
@@ -24,7 +26,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
   const menuRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const { user ,updateProfile,logout} = useAuth();
-
+  const navigate = useNavigate()
   // ✅ Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -71,96 +73,33 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
         >
           <div>{children}</div>
 
+               
           {user && (
-            <div className="relative" ref={menuRef}>
+            <div className="relative flex items-center" ref={menuRef}>
               <button
-                className="flex items-center gap-3 w-full hover:bg-gray-100 px-2 py-2 rounded-md transition"
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center  gap-1 w-full hover:bg-gray-100 px-2 py-2 rounded-md transition"
+                onClick={() => navigate("/dashboard/profile-settings")}
               >
-                <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300">
-                  {user.name[0].toUpperCase()}
+                
+                <div className="w-10 h-10 cursor-pointer rounded-full border hover:scale-110 transition flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
+                 {user.profile_picture ?  <img src={`http://localhost:8000/storage/${user.profile_picture}`} alt="" />:user.name[0].toUpperCase()}
+                </div>
+                <div>
+            
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="font-medium text-sm">{user.name}</span>
                   <span className="text-xs text-gray-500 truncate">{user.email}</span>
                 </div>
+               
               </button>
-
-              {/* Dropdown menu */}
-              {showUserMenu && (
-                <div className="absolute bottom-[120%] left-0 w-full bg-white rounded-md shadow-lg border border-gray-200 z-10 p-2 flex flex-col gap-1">
-                  <button
-                    className="text-left text-sm hover:bg-gray-100 rounded px-2 py-1"
-                    onClick={() => {
-                      setShowUserSettings(true);
-                      setShowUserMenu(false);
-                    }}
-                  >
-                    Settings
-                  </button>
-                  <button
-                    className="text-left text-sm hover:bg-gray-100 rounded px-2 py-1 text-red-500"
-                    onClick={() => logout()}
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
+              <LogOut onClick={() => logout()} className='hover:text-accent hover:scale-110 transition cursor-pointer' />
             </div>
           )}
         </div>
       </aside>
 
-      {/* Settings popup card */}
-      {showUserSettings && (
-         <div className="fixed inset-0 backdrop-blur-lg z-999  bg-black/30 flex justify-center items-center">
-          <div
-            ref={settingsRef}
-            className="bg-white rounded-xl shadow-lg p-6 w-[400px] max-w-[90%] animate-fadeIn"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Modifier votre profil</h2>
-              <button
-                onClick={() => setShowUserSettings(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <From
-              schema={userSettingsSchema}
-              defaultValues={{
-                name: user?.name,
-                email: user?.email,
-                city: user?.city || '',
-                date_of_birth: user?.date_of_birth || '',
-              }}
-              onSubmit={handleUpdate}
-            >
-              <FormFiled label="Nom">
-                <Input name="name" placeholder="Nom complet" />
-              </FormFiled>
-
-              <FormFiled label="Email">
-                <Input name="email" placeholder="Adresse e-mail" type="email" />
-              </FormFiled>
-
-              <FormFiled label="Ville">
-                <Input name="city" placeholder="Votre ville" />
-              </FormFiled>
-
-              <FormFiled label="Date de naissance">
-                <Input name="date_of_birth" type="date" />
-              </FormFiled>
-
-              <Button type="submit" variant="primary">
-                Sauvegarder
-              </Button>
-            </From>
-          </div>
-        </div>
-      )}
+    
     </>
   );
 }

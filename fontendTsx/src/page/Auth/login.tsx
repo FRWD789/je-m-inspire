@@ -1,4 +1,4 @@
-import Form from '../../components/From'
+import Form from '../../components/form'
 import z from 'zod'
 import FormFiled from '../../components/utils/form/formFiled';
 import Input from '../../components/ui/input';

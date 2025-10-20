@@ -25,6 +25,11 @@ class AuthController extends Controller
 {
   
    use ApiResponse,HandlesProfilePictures;
+
+
+
+
+
     /**
      * Inscription pour les utilisateurs réguliers
      */
@@ -165,37 +170,37 @@ class AuthController extends Controller
                 return $this->errorResponse($reason, 403);
             }
 
-            if ($user->last_login_at) {
-                $daysInactive = now()->diffInDays($user->last_login_at);
+            // if ($user->last_login_at) {
+            //     $daysInactive = now()->diffInDays($user->last_login_at);
 
-                if ($daysInactive > 90) {
-                    if (!$user->hasRole('admin')) {
-                        $user->is_active = false;
-                        $user->save();
+            //     if ($daysInactive > 90) {
+            //         if (!$user->hasRole('admin')) {
+            //             $user->is_active = false;
+            //             $user->save();
 
-                        Log::warning('[Inactivity] Compte désactivé lors de la tentative de connexion', [
-                            'user_id' => $user->id,
-                            'email' => $user->email,
-                            'last_login' => $user->last_login_at,
-                            'days_inactive' => $daysInactive
-                        ]);
+            //             Log::warning('[Inactivity] Compte désactivé lors de la tentative de connexion', [
+            //                 'user_id' => $user->id,
+            //                 'email' => $user->email,
+            //                 'last_login' => $user->last_login_at,
+            //                 'days_inactive' => $daysInactive
+            //             ]);
 
-                        return $this->errorResponse(
-                            'Votre compte a été désactivé en raison d\'une inactivité de plus de 90 jours. Veuillez contacter le support.',
-                            403
-                        );
-                    }
-                }
-            }
+            //             return $this->errorResponse(
+            //                 'Votre compte a été désactivé en raison d\'une inactivité de plus de 90 jours. Veuillez contacter le support.',
+            //                 403
+            //             );
+            //         }
+            //     }
+            // }
             // if (!$user->is_active) {
             //     return $this->errorResponse('Votre compte est désactivé. Veuillez contacter le support.', 403);
             // }
-            try {
-                $user->notify(new \App\Notifications\AccountDeactivatedNotification($daysInactive));
-                Log::info('[Inactivity] Email de désactivation envoyé', ['user_id' => $user->id]);
-            } catch (\Exception $e) {
-                Log::error('[Inactivity] Erreur envoi email: ' . $e->getMessage());
-            }
+            // try {
+            //     $user->notify(new \App\Notifications\AccountDeactivatedNotification($daysInactive));
+            //     Log::info('[Inactivity] Email de désactivation envoyé', ['user_id' => $user->id]);
+            // } catch (\Exception $e) {
+            //     Log::error('[Inactivity] Erreur envoi email: ' . $e->getMessage());
+            // }
 
             if (!$accessToken = JWTAuth::claims(['type' => 'access'])->attempt($credentials)) {
                 return $this->errorResponse('Identifiants invalides', 401);
@@ -345,7 +350,7 @@ class AuthController extends Controller
             }
 
             $user = JWTAuth::setToken($refreshToken)->authenticate();
-
+            $user->load('roles');
             if ($debug) {
                 Log::info('✅ Utilisateur authentifié:', [
                     'id' => $user->id,
@@ -399,21 +404,30 @@ class AuthController extends Controller
             return $this->errorResponse('Erreur lors du refresh', 500);
         }
     }
+        public function updatePassword(Request $request)
+        {
+            $user = Auth::user();
 
-    /**
-     * Mettre à jour le profil
-     */
-    public function updateProfile(Request $request)
-    {
-        try {
+            $request->validate([
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:6|confirmed',
+            ]);
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return $this->errorResponse('Mot de passe actuel incorrect', 400);
+            }
+
+            $user->password = Hash::make($request->new_password);
+            $user->save();
+
+            return $this->successResponse(null, 'Mot de passe mis à jour avec succès');
+        }
+
+    public function updateProfileImg(Request $request){
+         try {
             $user = Auth::user();
 
             $validated = $request->validate([
-                'name' => 'sometimes|string|max:255',
-                'last_name' => 'sometimes|string|max:255',
-                'email' => 'sometimes|email|unique:users,email,' . $user->id,
-                'city' => 'nullable|string|max:255',
-                'date_of_birth' => 'sometimes|date|before:today',
                 'profile_picture' => 'nullable|file|max:2048',
             ]);
 
@@ -433,6 +447,41 @@ class AuthController extends Controller
                         ]);
                     }
                 }
+
+             
+            $user->update($validated);
+            $user->load('roles');
+
+            return $this->resourceResponse(
+                new UserResource($user),
+                'Profil mis à jour avec succès'
+            );
+
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            Log::error('[Auth] Erreur lors de la mise à jour du profil: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la mise à jour du profil', 500);
+        }
+    }
+    /**
+     * Mettre à jour le profil
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'last_name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|unique:users,email,' . $user->id,
+                'city' => 'nullable|string|max:255',
+                'date_of_birth' => 'sometimes|date|before:today',
+               
+            ]);
+
+                 
 
              
             $user->update($validated);

@@ -114,6 +114,8 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/profile/update', [AuthController::class, 'updateProfile']);
+    Route::post('/profile/update-img', [AuthController::class, 'updateProfileImg']);
+    Route::put('/profile/update-password', [AuthController::class, 'updatePassword']);
 
     // ÉVÉNEMENTS
     Route::post('/events', [EventController::class, 'store']);
@@ -186,7 +188,7 @@ Route::middleware(['auth.jwt'])->group(function () {
         Route::get('/approvals', [AdminApprovalController::class, 'index']);
         Route::post('/approvals/{id}/approve', [AdminApprovalController::class, 'approve']);
         Route::post('/approvals/{id}/reject', [AdminApprovalController::class, 'reject']);
-        Route::post('/approvals/{id}/revoke', [AdminApprovalController::class, 'revoke']);
+        // Route::post('/approvals/{id}/revoke', [AdminApprovalController::class, 'revoke']);
     });
 
     // VENDEUR - REVENUS

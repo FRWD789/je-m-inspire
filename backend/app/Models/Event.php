@@ -23,7 +23,9 @@ class Event extends Model
         'priority',
         'localisation_id',
         'categorie_event_id',
-        'user_id'
+        'user_id',
+        'thumbnail_path',
+        'banner_path',
     ];
 
     protected $casts = [

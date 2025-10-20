@@ -112,9 +112,9 @@ const ClusteredEventMarkers = ({ events, selectedEventId, onEventSelect }) => {
           <div className="w-[260px] p-3 bg-white rounded-xl shadow-md border border-gray-100">
             {/* Image */}
             <div className="w-full h-[120px] rounded-lg overflow-hidden mb-3 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-sm">
-              {selectedEvent.image_url ? (
+              {selectedEvent.thumbnail ? (
                 <img
-                  src={selectedEvent.image_url}
+                  src={selectedEvent.thumbnail}
                   alt={selectedEvent.name}
                   className="w-full h-full object-cover"
                 />

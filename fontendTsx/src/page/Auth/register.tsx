@@ -9,7 +9,7 @@ import Input from '../../components/ui/input'
 
 
 import { z } from "zod";
-import Form from '../../components/From';
+import Form from '../../components/form';
 import Select from '../../components/ui/select';
 import { useAuth } from '../../context/AuthContext';
 

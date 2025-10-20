@@ -108,23 +108,15 @@ export const EventProvider = ({ children }: EventProviderProps) => {
   };
   const createEvent = async (data: Partial<Event>) => {
     setLoading(true);
+
+    console.log(data)
     try {  
-      const payload = {
-      ...data,
-      base_price: Number(data.base_price),
-      capacity: Number(data.capacity),
-      max_places: Number(data.max_places),
-      priority: user?.role ==="professionnel"?1:2,
-      localisation_lat: data.localisation_lat ? Number(data.localisation_lat) :  Number("48.8566") ,
-      localisation_lng: data.localisation_lng ? Number(data.localisation_lng ) :   Number("2.3522") ,
-
-    };
-
-      const newEvent = await eventService.create(payload);
-      console.log(newEvent.created_events)
-      const creatorUpdatedEvents= {...newEvent.created_events,is_creator:true}
-      setEvents(prev => [...prev, newEvent.created_events]);
-      setMyEvents(prev => [...prev, creatorUpdatedEvents.created_events]); 
+     
+      const newEvent = await eventService.create(data);
+      console.log(newEvent)
+      const creatorUpdatedEvents= {...newEvent,is_creator:true}
+      setEvents(prev => [...prev, newEvent]);
+      setMyEvents(prev => [...prev, creatorUpdatedEvents]); 
       setLastEventsFetch(Date.now());
       setLastMyEventsFetch(Date.now());
       
@@ -138,7 +130,6 @@ export const EventProvider = ({ children }: EventProviderProps) => {
     setLoading(true);
     try {
       const updated = await eventService.update(id, data);
-
       const creatorUpdatedEvents= {...updated,is_creator:true}
       setEvents(prev => prev.map(e => (e.id === id ? updated : e)));
       setMyEvents(prev => prev.map(e => (e.id === id ? creatorUpdatedEvents : e)));
