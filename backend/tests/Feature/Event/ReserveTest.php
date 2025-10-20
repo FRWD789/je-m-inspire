@@ -378,29 +378,39 @@ class EventReserveTest extends TestCase
         $auth2 = $this->createAuthenticatedUser();
         $event = $this->createFutureEvent(10);
 
+        $this->assertNotEquals($auth1['user']->id, $auth2['user']->id);
+
         // Première réservation
         $response1 = $this->withHeaders([
             'Authorization' => 'Bearer ' . $auth1['token'],
             'Accept' => 'application/json',
         ])->postJson("/api/events/{$event->id}/reserve", [
-            'quantity' => 3,
+            'quantity' => 1,
         ]);
-
         $response1->assertStatus(201);
+
+        // Vérifier qu'il n'y a pas de réservation pour l'autre utilisateur
+        $existingReservation = Operation::where([
+            'user_id' => $auth2['user']->id,
+            'event_id' => $event->id,
+            'type_operation_id' => 2
+        ])->first();
+        $this->assertNull($existingReservation, 'L\'utilisateur 2 ne devrait pas avoir de réservation existante.');
+
 
         // Deuxième réservation par un autre utilisateur
         $response2 = $this->withHeaders([
             'Authorization' => 'Bearer ' . $auth2['token'],
             'Accept' => 'application/json',
         ])->postJson("/api/events/{$event->id}/reserve", [
-            'quantity' => 2,
+            'quantity' => 1,
         ]);
 
         $response2->assertStatus(201);
 
         // Vérifier available_places
         $event->refresh();
-        $this->assertEquals(5, $event->available_places); // 10 - 3 - 2 = 5
+        $this->assertEquals(7, $event->available_places);
     }
 
     /**

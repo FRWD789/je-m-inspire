@@ -33,7 +33,7 @@ class AccountDeactivatedNotification extends Notification
             ->greeting('Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',')
             ->line('Nous vous informons que votre compte a été **désactivé** en raison d\'une inactivité prolongée.')
             ->line('**Détails :**')
-            ->line('• Dernière connexion : ' . $notifiable->last_login_at->format('d/m/Y à H:i'))
+            ->line('• Dernière connexion : ' . $notifiable->last_login_at)
             ->line('• Durée d\'inactivité : ' . $this->daysInactive . ' jours')
             ->line('• Seuil de désactivation : 90 jours')
             ->line('---')

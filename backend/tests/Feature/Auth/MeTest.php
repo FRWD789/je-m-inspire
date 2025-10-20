@@ -235,7 +235,7 @@ class MeTest extends TestCase
                 'last_name' => 'Martin',
                 'email' => 'pierre@example.com',
                 'city' => 'Paris',
-                'date_of_birth' => '1990-05-15',
+                'date_of_birth' => '1990-05-15T00:00:00.000000Z',
             ]);
     }
 

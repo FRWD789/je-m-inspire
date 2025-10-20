@@ -300,7 +300,7 @@ class MyEventTest extends TestCase
         $response->assertStatus(200);
 
         // L'utilisateur devrait voir 2 entrées pour le même événement
-        $reservedEvents = $response->json('data.reserved_events');
+        $reservedEvents = $response->json('reserved_events');
         $this->assertCount(2, $reservedEvents);
     }
 
@@ -321,11 +321,11 @@ class MyEventTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'success' => true,
-                'data' => [
-                    'total_created' => 0,
-                    'total_reserved' => 0,
-                    'total' => 0,
-                ]
+
+                'total_created' => 0,
+                'total_reserved' => 0,
+                'total' => 0,
+
             ]);
 
         $this->assertEmpty($response->json('data.created_events'));

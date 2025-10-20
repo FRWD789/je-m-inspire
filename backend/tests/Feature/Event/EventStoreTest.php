@@ -229,7 +229,7 @@ class EventStoreTest extends TestCase
             'approved_at' => now(),
         ]);
 
-        $role = Role::where('role', 'utilisateur')->first();
+        $role = Role::where('role', 'client')->first();
         $user->roles()->attach($role->id);
 
         $token = JWTAuth::claims(['type' => 'access'])->fromUser($user);
