@@ -2,8 +2,8 @@ import EventList from '@/components/events/EventList'
 import FormEvents from '@/components/events/formEvents'
 import MapEvents from '@/components/map'
 import { useEvent } from '@/context/EventContext'
-import { Loader, Plus, Search } from 'lucide-react'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import {  Loader2, Plus, Search } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 export default function MyEvents() {
   
@@ -112,8 +112,8 @@ export default function MyEvents() {
       {/* Events List */}
       <div className="px-4 ">
         {loading ? (
-          <div className="flex justify-center items-center p-8">
-            <Loader className="animate-spin w-8 h-8" />
+          <div className="flex justify-center h-full items-center p-8">
+            <Loader2 className="animate-spin w-8 h-8" />
           </div>
         ) : (
           <EventList

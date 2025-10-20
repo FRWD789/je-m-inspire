@@ -28,7 +28,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
         'motivation_letter',
         'is_approved',
         'approved_at',
-        'rejection_reason'
+        'rejection_reason',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -43,6 +44,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
             'password' => 'hashed',
             'date_of_birth' => 'date',
             'approved_at' => 'datetime', // ✅ AJOUT
+            'is_approved' => 'boolean', // ✅ AJOUT
+            'last_login_at' => 'datetime', // ✅ AJOUT
         ];
     }
 

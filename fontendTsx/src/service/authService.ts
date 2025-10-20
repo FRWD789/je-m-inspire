@@ -58,9 +58,20 @@ export const authService = {
       throw error;
     }
   },
-  updateProfile: async (data:any) => {
+  updatePassword: async (data:any) => {
     try {
-      const response = await privateApi.put("/profile/update",data);
+      const response = await privateApi.put("/profile/update-password",data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating password:", error);
+      throw error;
+    }
+  },
+
+  updateProfile: async (data:any,isImg:boolean=false) => {
+    try {
+       const endpoint = isImg ? "/profile/update-img" : "/profile/update";
+      const response = await privateApi.post(endpoint,data);
       return response.data;
     } catch (error) {
       console.error("Error updating profile:", error);

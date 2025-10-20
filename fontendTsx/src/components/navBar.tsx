@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { ChevronDown, LogIn, UserPlus, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -28,11 +28,14 @@ export default function NavBar() {
       <div className="mx-auto flex items-center justify-between py-3">
         {/* LOGO */}
         <div className="flex items-center gap-2">
-          <img
+          <Link to="/">
+            <img
             src="/assets/img/logo.png"
             alt="Logo"
             className="h-[clamp(2.5rem,5vw,6rem)] w-auto"
           />
+          </Link>
+        
         </div>
 
         {/* DESKTOP NAV LINKS */}
@@ -89,8 +92,8 @@ export default function NavBar() {
               to="/dashboard"
               
             >
-             <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300">
-                  {user.name[0].toUpperCase()}
+                <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
+                 {user.profile_picture ?  <img src={`http://localhost:8000/storage/${user.profile_picture}`} alt="" />:user.name[0].toUpperCase()}
                 </div>
             </NavLink>
           ) : (

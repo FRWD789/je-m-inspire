@@ -3,7 +3,7 @@
 import FormFiled from '../../components/utils/form/formFiled'
 import Input from '../../components/ui/input'
 import { z } from "zod";
-import Form from '../../components/From';
+import Form from '../../components/form';
 
 import { useAuth } from '../../context/AuthContext';
 import TextArea from '@/components/ui/textArea';

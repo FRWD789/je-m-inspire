@@ -85,6 +85,8 @@ class EventController extends Controller
                 'localisation_lat' => 'required|numeric|between:-90,90',
                 'localisation_lng' => 'required|numeric|between:-180,180',
                 'categorie_event_id' => 'required|exists:categorie_events,id',
+                'thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
+                'banner' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:4096',
                 'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
             ]);
         } catch (ValidationException $e) {
@@ -130,6 +132,22 @@ class EventController extends Controller
                 ]);
             }
 
+            // Upload thumbnail
+            $thumbnailPath = null;
+            if ($request->hasFile('thumbnail')) {
+                $thumbnailFile = $request->file('thumbnail');
+                $thumbnailName = time() . '_thumb_' . Str::random(10) . '.' . $thumbnailFile->getClientOriginalExtension();
+                $thumbnailPath = $thumbnailFile->storeAs('event_images', $thumbnailName, 'public');
+            }
+
+            // Upload banner
+            $bannerPath = null;
+            if ($request->hasFile('banner')) {
+                $bannerFile = $request->file('banner');
+                $bannerName = time() . '_banner_' . Str::random(10) . '.' . $bannerFile->getClientOriginalExtension();
+                $bannerPath = $bannerFile->storeAs('event_images', $bannerName, 'public');
+            }
+
             $event = Event::create([
                 'name' => $validated['name'],
                 'description' => $validated['description'],
@@ -143,8 +161,13 @@ class EventController extends Controller
                 'priority' => $validated['priority'],
                 'localisation_id' => $localisation->id,
                 'categorie_event_id' => $validated['categorie_event_id'],
+                'thumbnail_path' => $thumbnailPath,
+                'banner_path' => $bannerPath,
+        
             ]);
 
+            // Upload thumbnail
+     
             // Upload des images
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
@@ -196,7 +219,7 @@ class EventController extends Controller
             }
 
             return $this->resourceResponse(
-                new EventResource($event->load(['localisation', 'categorie', 'images'])),
+                new EventResource($event->load(['localisation', 'categorie'])),
                 'Événement créé avec succès',
                 201
             );

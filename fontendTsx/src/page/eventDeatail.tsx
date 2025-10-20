@@ -42,7 +42,7 @@ export default function EventDetail() {
       {/* Hero Section */}
       <div className="relative h-[40vh] w-full drop-shadow-xl overflow-hidden rounded-t-[12px]">
         <img
-          src={event.banner_url || "/assets/img/bg-hero.avif"}
+          src={event.thumbnail || "/assets/img/bg-hero.avif"}
           alt={event.name}
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -54,7 +54,7 @@ export default function EventDetail() {
             <ArrowLeft size={20} />
           </button>
 
-          <h1 className="text-4xl md:text-5xl text-white font-bold mb-2">{event.name}</h1>
+          <h1 className="text-4xl md:text-5xl text-white font-bold mb-4">{event.name}</h1>
           <div className="flex items-center gap-4 text-sm text-gray-200">
             <div className="flex items-center gap-1">
               <Calendar size={16} />{" "}
@@ -74,18 +74,20 @@ export default function EventDetail() {
       {/* Main Content */}
       <div className=" px-[42px] py-[24px]  flex gap-8">
         {/* Left: Description & Organizer */}
-        <div className="space-y-6 ">
+        <div className="space-y-6 flex-1 ">
           {/* Organizer */}
-          <div className="flex items-center gap-3">
-            {event.creator&&<img
-              src={event.creator?.avatar_url || "/assets/img/default-avatar.png"}
-              alt={event.creator?.name || "Organisateur"}
-              className="w-12 h-12 rounded-full object-cover"
-            />}
+          <div className="flex  items-center gap-3">
+            {event.creator?
+             <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
+                 {event.creator.profile_picture ?  <img src={`http://localhost:8000/storage/${event.creator.profile_picture}`} alt="" />:event.creator.name[0].toUpperCase()}
+                </div>
+            
+            
+           :
             <div className="w-12 h-12 flex items-center bg-primary text-white justify-center rounded-full object-cover">
               T
 
-            </div>
+            </div>}
             <div>
               <p className="text-sm text-gray-600">Organisé par</p>
               <p className="font-semibold text-gray-800">
@@ -107,17 +109,17 @@ export default function EventDetail() {
           </div>
 
           {/* Category Tag */}
-          {event.categorie_event_id && (
+          {event.categorie && (
             <div>
               <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
-                Catégorie #{event.categorie_event_id}
+                Catégorie #{event.categorie.name}
               </span>
             </div>
           )}
         </div>
 
         {/* Right: Reservation Card */}
-        <aside className="hover:bg-white transition rounded-2xl hover:shadow-md p-6 h-fit flex-1  space-y-4">
+        <aside className="hover:bg-white transition rounded-2xl hover:shadow-md p-6 h-fit   space-y-4">
           <h3 className="text-xl font-semibold">Réserver votre place</h3>
 
           <div className="flex items-center gap-2 ">

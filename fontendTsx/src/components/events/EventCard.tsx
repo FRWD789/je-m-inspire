@@ -26,9 +26,9 @@ export default function EventCard({
     >
       {/* Image */}
       <div className="w-full md:w-[120px] h-[100px] flex-shrink-0 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-sm overflow-hidden">
-        {event.image_url ? (
+        {event.thumbnail ? (
           <img
-            src={event.image_url}
+            src={event.thumbnail}
             alt={event.name}
             className="w-full h-full object-cover rounded-xl"
           />

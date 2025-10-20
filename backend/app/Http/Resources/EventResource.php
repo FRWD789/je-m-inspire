@@ -21,7 +21,8 @@ class EventResource extends JsonResource
             'available_places' => $this->available_places,
             'level' => $this->level,
             'priority' => $this->priority,
-
+            'thumbnail' => $this->thumbnail_path ? url('storage/' . $this->thumbnail_path) : null,
+            'banner' => $this->banner_path ? url('storage/' . $this->banner_path) : null,
             // Images triées par ordre d'affichage
             'images' => $this->whenLoaded('images', function() {
                 return $this->images->map(function($image) {

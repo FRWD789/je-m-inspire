@@ -162,9 +162,9 @@ const filteredEvents = useMemo(() => {
                 <CarouselItem key={event.id} className="w-full">
                     <div className='bg-white/60 hover:bg-white/90 cursor-pointer backdrop-blur-3xl overflow-hidden rounded-[8px] h-[250px] flex-col flex '>
                      <div className="w-full h-1/2 flex justify-center items-center bg-gradient-to-br from-gray-200 to-gray-500 text-white ">
-                        {event.image_url ? (
+                        {event.thumbnail ? (
                           <img
-                            src={event.image_url}
+                            src={event.thumbnail}
                             alt={event.name}
                             className="w-full h-full object-cover rounded-xl"
                           />

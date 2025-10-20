@@ -31,14 +31,17 @@ export default function App() {
                   <Route path='events' element={<PublicEvents/>}/>
                   <Route path="events/:id" element={<EventDetail />} />
             </Route>
-            <Route element={<PrivateRoute/>}>
+            <Route element={<PrivateRoute allowedRoles={["utilisateur","professionnel","admin"]} />}>
                     <Route path='/dashboard' element={<Dashboard/>}>
-                          <Route path='profile' element={<User/>}/>
+                          <Route path='profile-settings' element={<User/>}/>
                           <Route path='events' element={<Events/>}/>
                           <Route path='my-events' element={<MyEvents/>}/>
-                           <Route path='approbation' element={<AdminApprovalPage/>}/>
+                          <Route element={<PrivateRoute allowedRoles={["admin"]}/>}>
+                                <Route path='approbation' element={<AdminApprovalPage/>}/>
+                          </Route>
+                         
                     </Route>
-                </Route>    
+            </Route>    
           </Route >
         </Routes>
  

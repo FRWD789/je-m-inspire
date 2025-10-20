@@ -117,36 +117,36 @@ class AdminApprovalController extends Controller
         }
     }
 
-    /**
-     * Révoquer l'approbation d'un professionnel
-     */
-    public function revoke($id, Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'reason' => 'required|min:10'
-            ]);
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
-        }
+    // /**
+    //  * Révoquer l'approbation d'un professionnel
+    //  */
+    // public function revoke($id, Request $request)
+    // {
+    //     try {
+    //         $validated = $request->validate([
+    //             'reason' => 'required|min:10'
+    //         ]);
+    //     } catch (ValidationException $e) {
+    //         return $this->validationErrorResponse($e->errors());
+    //     }
 
-        try {
-            $user = User::findOrFail($id);
+    //     try {
+    //         $user = User::findOrFail($id);
 
-            $user->update([
-                'is_approved' => false,
-                'rejection_reason' => $validated['reason']
-            ]);
+    //         $user->update([
+    //             'is_approved' => false,
+    //             'rejection_reason' => $validated['reason']
+    //         ]);
 
-            return $this->resourceResponse(
-                new UserResource($user->load('roles')),
-                'Approbation révoquée avec succès'
-            );
+    //         return $this->resourceResponse(
+    //             new UserResource($user->load('roles')),
+    //             'Approbation révoquée avec succès'
+    //         );
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->notFoundResponse('Professionnel non trouvé');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Erreur lors de la révocation', 500);
-        }
-    }
+    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+    //         return $this->notFoundResponse('Professionnel non trouvé');
+    //     } catch (\Exception $e) {
+    //         return $this->errorResponse('Erreur lors de la révocation', 500);
+    //     }
+    // }
 }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authService, type Credentials, type RegisterCredentials } from "../service/AuthService";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 
 
 
@@ -12,6 +13,8 @@ interface AuthContextType {
     user:any |undefined
     accessToken:string |undefined
     loading:boolean,
+    updatePassword:(payload: any) => Promise<void>,
+    updateProfileImg:(payload: any) => Promise<void>
     registerPro: (credentials: RegisterCredentials) => Promise<void>
     logout: () => Promise<void>
     login: (credentials: Credentials) => Promise<void>
@@ -38,47 +41,97 @@ export const AuthContextProvider = ({children}:{children:ReactNode})=>{
     const [user, setUser] = useState<any | undefined>(undefined);
     const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate()
         useEffect(() => {
             if (accessToken) {
                 setLoading(false);
             }
         }, [accessToken]);
+
         const logout = async ()=>{
             try {
                 const data = await authService.logout();
                 setUser(undefined);
                 setAccessToken(undefined);
                 console.log("✅ utlusateur deconecter  avec succès");
+                navigate("/")
+
             } catch (err) {
             console.error("Erreur réseau:", err);
             }
         }
-    const updateProfile = async (payload:any) => {
-        
+
+
+      const updatePassword = async (payload:any) => {
         if (!accessToken) {
             console.error("Cannot update profile — no token found");
             return;
         }
 
         try {
-        const data = await authService.updateProfile(payload);
-
+        const data = await authService.updatePassword(payload);
+        console.log(data)
+            // if (data.success) {
+            //     setUser(data.user);
+            //     console.log("✅ Profil mis à jour avec succès");
+            // } else {
+            //     console.error("Erreur de mise à jour:", data.message);
+            // }
+        } catch (err) {
+        console.error("Erreur réseau:", err);
+        }
+    }
+      const updateProfileImg = async (payload:any) => {
+        
+        if (!accessToken) {
+            console.error("Cannot update profile — no token found");
+            return;
+        }
+  
+        try {
+        const data = await authService.updateProfile(payload,true)
             if (data.success) {
-                setUser(data.user);
+                setUser(data);
                 console.log("✅ Profil mis à jour avec succès");
             } else {
                 console.error("Erreur de mise à jour:", data.message);
             }
+            return data
         } catch (err) {
         console.error("Erreur réseau:", err);
         }
     }
 
-    const login = async (credentials:Credentials) => {
+    
+    const updateProfile = async (payload:any) => {
         
+        if (!accessToken) {
+            console.error("Cannot update profile — no token found");
+            return;
+        }
+        setLoading(true)
+        try {
+        const data = await authService.updateProfile(payload);
+
+            if (data.success) {
+                setUser(data);
+                console.log("✅ Profil mis à jour avec succès");
+            } else {
+                console.error("Erreur de mise à jour:", data.message);
+            }
+            return data
+        } catch (err) {
+        console.error("Erreur réseau:", err);
+        }finally{
+            setLoading(false)
+        }
+    }
+
+    const login = async (credentials:Credentials) => {
             const data = await authService.login(credentials);
             setAccessToken(data.token);
             setUser(data.user);
+            
    
       
     };
@@ -101,7 +154,7 @@ export const AuthContextProvider = ({children}:{children:ReactNode})=>{
     return (
 
 
-        <AuthContext.Provider value={{user,loading,accessToken,logout,setUser,updateProfile,login,registerUser,registerPro,setAccessToken}}>
+        <AuthContext.Provider value={{user,loading,accessToken,updatePassword,updateProfileImg,logout,setUser,updateProfile,login,registerUser,registerPro,setAccessToken}}>
             {children}
         </AuthContext.Provider>
 

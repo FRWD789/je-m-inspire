@@ -24,6 +24,7 @@ export const createEventSchema = z.object({
     message: 'Veuillez sélectionner un niveau valide',
   }),
   localisation_address: z.string().min(1, "L'adresse est requise"),
+    
   localisation_lat: z
     .union([z.string(), z.number()])
     .optional()
@@ -35,6 +36,41 @@ export const createEventSchema = z.object({
   categorie_event_id: z
     .union([z.string(), z.number()])
     .refine(val => !isNaN(Number(val)), { message: 'L’identifiant de catégorie est invalide' }),
+  thumbnail: z
+    .any()
+    .optional()
+    .refine(
+      (file) => {
+        if (!file) return true; // optional
+        const files = file instanceof FileList ? Array.from(file) : [];
+        return files.length === 0 || files[0].size <= 25 * 1024 * 1024;
+      },
+      { message: "L'image miniature doit être inférieure à 25 Mo" }
+    ),
+
+  banner: z
+    .any()
+    .optional()
+    .refine(
+      (file) => {
+        if (!file) return true; // optional
+        const files = file instanceof FileList ? Array.from(file) : [];
+        return files.length === 0 || files[0].size <= 25 * 1024 * 1024;
+      },
+      { message: "L'image de bannière doit être inférieure à 25 Mo" }
+    ),
+
+  images: z
+    .any()
+    .optional()
+    .refine(
+      (files) => {
+        if (!files) return true;
+        const arr = files instanceof FileList ? Array.from(files) : [];
+        return arr.length <= 5;
+      },
+      { message: "Vous pouvez télécharger jusqu'à 5 images maximum" }
+    ),
 });
 export const editEventSchema = z.object({
   name: z.string().min(1, "Le nom de l'événement est requis"),

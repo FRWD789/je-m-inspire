@@ -65,6 +65,9 @@
 
 
 @layer base{
+  button{
+    @apply cursor-pointer;
+  }
   h1,h2{
     @apply text-primary font-headings font-bold;
   }
