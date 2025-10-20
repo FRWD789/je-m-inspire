@@ -156,7 +156,7 @@ class UpdateProfileTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'id' => $auth['user']->id,
-            'date_of_birth' => '1992-05-15',
+            'date_of_birth' => '1992-05-15 00:00:00',
         ]);
     }
 

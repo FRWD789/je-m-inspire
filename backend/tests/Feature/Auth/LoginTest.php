@@ -168,7 +168,7 @@ class LoginTest extends TestCase
     }
 
     #[Test]
-    public function login_cannot_login_with_disabled_account() : void
+    public function user_cannot_login_with_disabled_account() : void
     {
         // Arrange
         $user = User::factory()->create([

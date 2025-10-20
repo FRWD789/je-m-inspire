@@ -155,10 +155,10 @@ class EventUpdateTest extends TestCase
                 'name' => 'Tentative de modification',
             ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(401)
             ->assertJson([
                 'success' => false,
-                'message' => 'Vous n\'êtes pas autorisé à modifier cet événement',
+                'error' => 'Vous n\'êtes pas autorisé à modifier cet événement',
             ]);
 
         // Vérifier que l'événement n'a pas été modifié
@@ -180,7 +180,7 @@ class EventUpdateTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'success' => false,
-                'message' => 'Événement non trouvé',
+                'error' => 'Événement non trouvé',
             ]);
     }
 
@@ -333,7 +333,7 @@ class EventUpdateTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'Maximum 5 images au total autorisées',
+                'error' => 'Maximum 5 images au total autorisées',
             ]);
 
         // Vérifier qu'on a toujours que 4 images
@@ -383,7 +383,7 @@ class EventUpdateTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'Le nouveau nombre maximum de places ne peut pas être inférieur aux places déjà réservées',
+                'error' => 'Le nouveau nombre maximum de places ne peut pas être inférieur aux places déjà réservées',
             ]);
 
         // Vérifier que max_places n'a pas changé

@@ -346,14 +346,14 @@ class EventCancelReservationTest extends TestCase
             'user_id' => $auth1['user']->id,
             'event_id' => $event->id,
             'type_operation_id' => 2,
-            'quantity' => 3,
+            'quantity' => 1,
         ]);
 
         Operation::create([
             'user_id' => $auth2['user']->id,
             'event_id' => $event->id,
             'type_operation_id' => 2,
-            'quantity' => 2,
+            'quantity' => 1,
         ]);
 
         // auth1 annule
@@ -365,7 +365,7 @@ class EventCancelReservationTest extends TestCase
         $response1->assertStatus(200);
 
         $event->refresh();
-        $this->assertEquals(18, $event->available_places); // 15 + 3
+        $this->assertEquals(19, $event->available_places);
 
         // auth2 annule
         $response2 = $this->withHeaders([

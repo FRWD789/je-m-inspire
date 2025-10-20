@@ -376,7 +376,6 @@ class ApproveProfessionalTest extends TestCase
                     'last_name',
                     'email',
                     'is_approved',
-                    'roles',
                 ],
             ]);
 
