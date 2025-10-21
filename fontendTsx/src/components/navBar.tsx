@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function NavBar() {
-  const { user, isAuthenticated } = useAuth(); // 👈 AJOUT isAuthenticated
+  const { user, isAuthenticated } = useAuth();
   const [openDropdown, setOpenDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -85,7 +85,7 @@ export default function NavBar() {
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden md:flex items-center gap-3">
-          {isAuthenticated ? ( // 👈 CORRECTION : Utilise isAuthenticated
+          {isAuthenticated ? (
             <NavLink to="/dashboard">
               <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden hover:ring-2 hover:ring-accent transition-all">
                 {user?.profile_picture ? (
@@ -95,7 +95,7 @@ export default function NavBar() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  user?.name[0]?.toUpperCase() || "U"
+                  (user?.name?.[0] || "U").toUpperCase()
                 )}
               </div>
             </NavLink>
@@ -166,7 +166,7 @@ export default function NavBar() {
 
             {/* Auth links */}
             <div className="flex flex-col gap-2 mt-4 border-t border-gray-200 pt-2">
-              {isAuthenticated ? ( // 👈 CORRECTION : Utilise isAuthenticated
+              {isAuthenticated ? (
                 <NavLink
                   to="/dashboard"
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
@@ -180,7 +180,7 @@ export default function NavBar() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      user?.name[0]?.toUpperCase() || "U"
+                      (user?.name?.[0] || "U").toUpperCase()
                     )}
                   </div>
                   Mon compte

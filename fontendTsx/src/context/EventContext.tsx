@@ -1,7 +1,7 @@
+// fontendTsx/src/context/EventContext.tsx
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { eventService as createEventService } from "../service/EventService";
-import usePrivateApi from "../hooks/usePrivateApi";
-import { useAuth } from "./AuthContext";
+import { useAuth, useApi } from "./AuthContext";
 
 type Event = {
   id: string | number;
@@ -22,14 +22,14 @@ type Event = {
 };
 
 type EventContextType = {
-  event:Event|undefined
+  event: Event | undefined;
   events: Event[];
   loading: boolean;
-  myEvents:any[];
-  fetchEventById: (id: any) => Promise<void>
-  fetchEvents: (force :boolean) => Promise<void>;
-  fetchMyEvents: (force :boolean) => Promise<void>;
-  createEvent:  (data: Partial<Event>) => Promise<any>
+  myEvents: any[];
+  fetchEventById: (id: any) => Promise<void>;
+  fetchEvents: (force: boolean) => Promise<void>;
+  fetchMyEvents: (force: boolean) => Promise<void>;
+  createEvent: (data: Partial<Event>) => Promise<any>;
   updateEvent: (id: string | number, data: Partial<Event>) => Promise<Event>;
   deleteEvent: (id: string | number) => Promise<void>;
 };
@@ -41,42 +41,41 @@ export const useEvent = () => {
   if (!context) throw new Error("useEvent must be used within an EventProvider");
   return context;
 };
+
 type EventProviderProps = {
   children: ReactNode;
 };
+
 export const EventProvider = ({ children }: EventProviderProps) => {
-
-
-  const {user} = useAuth()
+  const { user } = useAuth();
+  const { api: privateApi } = useApi(); // ✅ Utilisation de useApi au lieu de usePrivateApi
+  
   const [event, setEvent] = useState<Event>();
   const [events, setEvents] = useState<Event[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const privateApi = usePrivateApi()
-  const eventService = createEventService(privateApi)
+  const eventService = createEventService(privateApi);
   const [lastEventsFetch, setLastEventsFetch] = useState<number>(0);
   const [lastMyEventsFetch, setLastMyEventsFetch] = useState<number>(0);
-  
 
-
-  const fetchEventById = async (id:any)=>{
+  const fetchEventById = async (id: any) => {
     setLoading(true);
     try {
       const data = await eventService.getById(id);
-      console.log(data)
+      console.log(data);
       setEvent(data);
-     
     } catch (error) {
       console.error("Erreur lors de la récupération des événements:", error);
     } finally {
       setLoading(false);
     }
+  };
 
-  }
   const STALE_TIME = 3 * 60 * 1000; // 3 minutes cache
+
   const fetchMyEvents = async (force = false) => {
     const isStale = Date.now() - lastMyEventsFetch > STALE_TIME;
-     if (!force&&!isStale && myEvents.length > 0) {
+    if (!force && !isStale && myEvents.length > 0) {
       return;
     }
     setLoading(true);
@@ -90,9 +89,10 @@ export const EventProvider = ({ children }: EventProviderProps) => {
       setLoading(false);
     }
   };
-  const fetchEvents = async (force =false) => {
-       const isStale = Date.now() - lastEventsFetch > STALE_TIME;
-            if (!force&&!isStale && events.length > 0) {
+
+  const fetchEvents = async (force = false) => {
+    const isStale = Date.now() - lastEventsFetch > STALE_TIME;
+    if (!force && !isStale && events.length > 0) {
       return;
     }
     setLoading(true);
@@ -106,20 +106,20 @@ export const EventProvider = ({ children }: EventProviderProps) => {
       setLoading(false);
     }
   };
+
   const createEvent = async (data: Partial<Event>) => {
     setLoading(true);
 
-    console.log(data)
-    try {  
-     
+    console.log(data);
+    try {
       const newEvent = await eventService.create(data);
-      console.log(newEvent)
-      const creatorUpdatedEvents= {...newEvent,is_creator:true}
-      setEvents(prev => [...prev, newEvent]);
-      setMyEvents(prev => [...prev, creatorUpdatedEvents]); 
+      console.log(newEvent);
+      const creatorUpdatedEvents = { ...newEvent, is_creator: true };
+      setEvents((prev) => [...prev, newEvent]);
+      setMyEvents((prev) => [...prev, creatorUpdatedEvents]);
       setLastEventsFetch(Date.now());
       setLastMyEventsFetch(Date.now());
-      
+
       return newEvent;
     } finally {
       setLoading(false);
@@ -130,9 +130,9 @@ export const EventProvider = ({ children }: EventProviderProps) => {
     setLoading(true);
     try {
       const updated = await eventService.update(id, data);
-      const creatorUpdatedEvents= {...updated,is_creator:true}
-      setEvents(prev => prev.map(e => (e.id === id ? updated : e)));
-      setMyEvents(prev => prev.map(e => (e.id === id ? creatorUpdatedEvents : e)));
+      const creatorUpdatedEvents = { ...updated, is_creator: true };
+      setEvents((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      setMyEvents((prev) => prev.map((e) => (e.id === id ? creatorUpdatedEvents : e)));
       setLastEventsFetch(Date.now());
       setLastMyEventsFetch(Date.now());
       return updated;
@@ -145,8 +145,8 @@ export const EventProvider = ({ children }: EventProviderProps) => {
     setLoading(true);
     try {
       await eventService.delete(id);
-      setEvents(prev => prev.filter(e => e.id !== id));
-      setMyEvents(prev => prev.filter(e => e.id !== id));
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+      setMyEvents((prev) => prev.filter((e) => e.id !== id));
       setLastEventsFetch(Date.now());
       setLastMyEventsFetch(Date.now());
     } finally {
@@ -161,21 +161,33 @@ export const EventProvider = ({ children }: EventProviderProps) => {
     }
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-    
         fetchEvents();
         if (user) fetchMyEvents();
       }
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    };
-      return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [user]);
 
   return (
-    <EventContext.Provider value={{ event,events,myEvents, loading,fetchEventById, fetchEvents,fetchMyEvents, createEvent, updateEvent, deleteEvent }}>
+    <EventContext.Provider
+      value={{
+        event,
+        events,
+        myEvents,
+        loading,
+        fetchEventById,
+        fetchEvents,
+        fetchMyEvents,
+        createEvent,
+        updateEvent,
+        deleteEvent,
+      }}
+    >
       {children}
     </EventContext.Provider>
   );

@@ -1,6 +1,6 @@
-import FormFiled from '../../components/utils/form/formFiled'
-import Input from '../../components/ui/input'
-import Select from '../../components/ui/select'
+import FormFiled from '../../components/utils/form/formFiled';
+import Input from '../../components/ui/input';
+import Select from '../../components/ui/select';
 import { z } from "zod";
 import Form from '../../components/form';
 import { useAuth } from '../../context/AuthContext';
@@ -10,36 +10,26 @@ export const registerSchema = z.object({
   name: z.string()
     .min(1, "Name is required")
     .max(255, "Name must not exceed 255 characters"),
-
   last_name: z.string()
     .min(1, "Last name is required")
     .max(255, "Last name must not exceed 255 characters"),
-
   email: z.string()
     .min(1, "Email is required")
     .email("Invalid email format")
     .max(255, "Email must not exceed 255 characters"),
-
   date_of_birth: z.string()
     .refine(
       (val) => !isNaN(Date.parse(val)) && new Date(val) < new Date(),
       { message: "Date of birth must be a valid date before today" }
     ),
-
   city: z.string()
     .max(255, "City must not exceed 255 characters")
     .optional()
     .nullable(),
-
   password: z.string()
     .min(6, "Password must be at least 6 characters long"),
-
   password_confirmation: z.string()
     .min(6, "Password confirmation must be at least 6 characters long"),
-
-  role: z.enum(["utilisateur", "professionnel"], {
-    errorMap: () => ({ message: "Please select a valid role" })
-  }),
 }).refine((data) => data.password === data.password_confirmation, {
   message: "Passwords do not match",
   path: ["password_confirmation"],
@@ -47,26 +37,33 @@ export const registerSchema = z.object({
 
 export default function Register() {
   const navigate = useNavigate();
-  const { registerUser, isAuthenticated } = useAuth(); // 👈 AJOUT isAuthenticated
+  // ✅ Utilisation correcte du nouveau AuthContext
+  const { registerUser, isAuthenticated } = useAuth();
 
-  // 👇 AJOUT : Redirection si déjà connecté
+  // ✅ Redirection si déjà connecté
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
-
-  const options = [
-    { description: "Utilisateur", value: "utilisateur" },
-    { description: "Professionnel", value: "professionnel" }
-  ];
 
   const handleRegister = async (data: any) => {
     try {
-      await registerUser(data);
-      alert('Inscription réussie !');
-      navigate('/'); // 👈 Redirige vers /
-    } catch (error) {
-      console.error(error);
-      alert('Erreur lors de l\'inscription');
+      // ✅ Conversion en FormData pour correspondre au nouveau AuthContext
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('last_name', data.last_name);
+      formData.append('email', data.email);
+      formData.append('date_of_birth', data.date_of_birth);
+      if (data.city) formData.append('city', data.city);
+      formData.append('password', data.password);
+      formData.append('password_confirmation', data.password_confirmation);
+
+      await registerUser(formData);
+      
+      console.log('✅ Inscription réussie');
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('❌ Erreur d\'inscription:', error);
+      alert(error.message || 'Erreur lors de l\'inscription');
     }
   };
 
@@ -96,9 +93,6 @@ export default function Register() {
             <FormFiled label='Email'>
               <Input name='email' />
             </FormFiled>
-            <FormFiled label='Role'>
-              <Select name='role' options={options} />
-            </FormFiled>
             <FormFiled label='Password'>
               <Input name='password' type='password' />
             </FormFiled>
@@ -112,5 +106,5 @@ export default function Register() {
         </div>
       </div>
     </section>
-  )
+  );
 }

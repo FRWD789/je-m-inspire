@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEvent } from '@/context/EventContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, useApi } from '@/context/AuthContext'; // ✅ MODIFIÉ : ajout de useApi
 import { Calendar, MapPin, ArrowLeft, DollarSign, Users, Loader2 } from 'lucide-react';
-import usePrivateApi from '@/hooks/usePrivateApi';
 import Button from '@/components/ui/button';
 
 export default function EventDetail() {
   const { id } = useParams();
   const { event, fetchEventById, loading } = useEvent();
-  const { user, accessToken } = useAuth();
+  const { user, isAuthenticated } = useAuth(); // ✅ MODIFIÉ : isAuthenticated au lieu de accessToken
+  const { post } = useApi(); // ✅ AJOUTÉ
   const navigate = useNavigate();
-  const privateApi = usePrivateApi();
 
   // États pour le paiement
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
-
-  const isAuthenticated = !!(accessToken && user);
 
   useEffect(() => {
     if (id) fetchEventById(id);
@@ -28,7 +25,7 @@ export default function EventDetail() {
 
     setPaymentLoading(true);
     try {
-      const response = await privateApi.post('/stripe/checkout', {
+      const response = await post('/stripe/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
         event_id: event.id
       });
 
@@ -50,7 +47,7 @@ export default function EventDetail() {
 
     setPaymentLoading(true);
     try {
-      const response = await privateApi.post('/paypal/checkout', {
+      const response = await post('/paypal/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
         event_id: event.id
       });
 
