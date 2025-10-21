@@ -44,10 +44,19 @@ export const EventList = ({
         mapInstanceRef.current = mapInstance;
     };
 
-    const handleReserve = useCallback((event) => {
-        debug('Navigation vers:', `/payment/${event.id}`);
-        navigate(`/payment/${event.id}`);
-    }, [navigate]);
+    const handleReserve = async (event) => {
+        try {
+            const response = await post(`/api/events/${event.id}/reserve`);
+            
+            if (response.success) {
+                alert('✅ Réservation effectuée avec succès !');
+                refetch();
+            }
+        } catch (error) {
+            console.error('Erreur réservation:', error);
+            alert(error.response?.data?.error || 'Erreur lors de la réservation');
+        }
+    };
 
     const handleDelete = useCallback(async (eventId, eventName) => {
         if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${eventName}" ?`)) {

@@ -93,6 +93,6 @@ class Event extends Model
     {
         return $this->belongsToMany(User::class, 'operations')
                     ->wherePivot('type_operation_id', 2)
-                    ->withPivot(['quantity', 'created_at']);
+                    ->withPivot(['created_at']);
     }
 }

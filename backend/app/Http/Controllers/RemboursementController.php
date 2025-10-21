@@ -170,7 +170,8 @@ class RemboursementController extends Controller
 
             if ($validated['statut'] === 'approuve') {
                 $event = $remboursement->operation->event;
-                $event->available_places += $remboursement->operation->quantity;
+                // ✅ CORRECTION : Rendre 1 place au lieu de $operation->quantity
+                $event->available_places += 1;
                 $event->save();
 
                 if ($remboursement->operation->paiement) {

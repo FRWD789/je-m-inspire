@@ -9,28 +9,19 @@ import Button from '@/components/ui/button';
 export default function EventDetail() {
   const { id } = useParams();
   const { event, fetchEventById, loading } = useEvent();
-  const { user, accessToken } = useAuth(); // 👈 Utiliser accessToken au lieu de isAuthenticated
+  const { user, accessToken } = useAuth();
   const navigate = useNavigate();
   const privateApi = usePrivateApi();
 
   // États pour le paiement
-  const [quantity, setQuantity] = useState(1);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
 
-  // 👇 AJOUT : Variable dérivée pour savoir si connecté
   const isAuthenticated = !!(accessToken && user);
 
   useEffect(() => {
     if (id) fetchEventById(id);
   }, [id]);
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (value > 0 && value <= (event?.available_places || 1)) {
-      setQuantity(value);
-    }
-  };
 
   const handleStripePayment = async () => {
     if (!event) return;
@@ -38,9 +29,7 @@ export default function EventDetail() {
     setPaymentLoading(true);
     try {
       const response = await privateApi.post('/stripe/checkout', {
-        event_id: event.id,
-        quantity: quantity,
-        total_amount: totalPrice
+        event_id: event.id
       });
 
       if (response.data.url) {
@@ -62,9 +51,7 @@ export default function EventDetail() {
     setPaymentLoading(true);
     try {
       const response = await privateApi.post('/paypal/checkout', {
-        event_id: event.id,
-        quantity: quantity,
-        total_amount: totalPrice
+        event_id: event.id
       });
 
       if (response.data.approval_url) {
@@ -80,7 +67,7 @@ export default function EventDetail() {
     }
   };
 
-  const totalPrice = event ? (event.base_price * quantity).toFixed(2) : '0.00';
+  const totalPrice = event ? event.base_price.toFixed(2) : '0.00';
 
   if (loading) {
     return (
@@ -193,7 +180,7 @@ export default function EventDetail() {
           {/* Prix et disponibilité */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Prix unitaire</span>
+              <span className="text-gray-600">Prix</span>
               <div className="flex items-center gap-1 text-xl font-semibold text-accent">
                 <DollarSign size={18} />
                 {event.base_price} €
@@ -221,7 +208,6 @@ export default function EventDetail() {
             <Button
               onClick={() => {
                 if (!isAuthenticated) {
-                  // Sauvegarder l'URL actuelle pour rediriger après login
                   navigate('/login', { state: { from: `/events/${id}` } });
                 } else if (event.available_places <= 0) {
                   alert('Désolé, il n\'y a plus de places disponibles');
@@ -238,22 +224,6 @@ export default function EventDetail() {
             <>
               {/* Section de paiement */}
               <div className="space-y-4 pt-4 border-t border-gray-200">
-                {/* Sélection de quantité */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de places
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={event.available_places}
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    disabled={paymentLoading}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-[4px] focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                </div>
-
                 {/* Total */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-[8px]">
                   <span className="text-gray-700 font-medium">Total</span>

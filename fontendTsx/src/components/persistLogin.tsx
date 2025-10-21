@@ -1,53 +1,55 @@
-import  { use, useEffect, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { Outlet } from 'react-router-dom'
-import useRefresh from '../hooks/useRefresh'
+// fontendTsx/src/components/persistLogin.tsx
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Outlet } from 'react-router-dom';
+import axios from 'axios';
+
+// Instance simple pour le refresh
+const apiSimple = axios.create({
+    baseURL: "",
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
+});
 
 export default function PersistLogin() {
+    const { accessToken, setAccessToken, setUser } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
 
-     const { accessToken,user,setAccessToken,setUser } = useAuth();    
-    const refresh = useRefresh() 
-     const [isLoading,setIsloading]= useState(true)
-
-     useEffect(()=>{
-          
-
-        const verifyRefreshToken = async () =>{
-             console.log('🔄 Tentative de refresh du token...');
+    useEffect(() => {
+        const verifyRefreshToken = async () => {
+            console.log('🔄 PersistLogin: Tentative de refresh du token...');
+            
             try {
-               const {new_access_token,ref_user} = await refresh();
-               if (new_access_token&&ref_user) {
-                console.log('✅ Token refreshed avec succès');
-                console.log(ref_user,new_access_token)
-                setAccessToken(new_access_token)
-                setUser(ref_user)
-
+                const response = await apiSimple.post('/api/refresh');
+                
+                if (response.data.access_token) {
+                    console.log('✅ Token refreshed avec succès');
+                    setAccessToken(response.data.access_token);
+                    
+                    // Charger les infos utilisateur
+                    const userResponse = await apiSimple.get('/api/me', {
+                        headers: {
+                            Authorization: `Bearer ${response.data.access_token}`
+                        }
+                    });
+                    
+                    setUser(userResponse.data);
+                    console.log('✅ Utilisateur chargé');
                 }
-            }catch(error){
-                console.log(error)
-            }finally{
-                setIsloading(false)
+            } catch (error) {
+                console.log('⚠️ Pas de session valide');
+                setAccessToken(undefined);
+                setUser(undefined);
+            } finally {
+                setIsLoading(false);
             }
-        }
-        if (!accessToken) {
-                console.log('ℹ️ Pas de token, tentative de refresh...');
-                verifyRefreshToken();
-            } else {
-                console.log('✅ Token existe déjà');
-                setIsloading(false);
-            }
+        };
 
-     },[])
+        // ✅ TOUJOURS tenter un refresh au chargement (même si accessToken existe)
+        // Car au refresh de page, le token en mémoire est perdu
+        console.log('🔄 PersistLogin: Initialisation...');
+        verifyRefreshToken();
+    }, []); // ⚠️ Tableau vide pour n'exécuter qu'une fois au montage
 
-
-
-
-  return (
-    <>
-    {isLoading
-        ?<p>loading...</p>
-        :<Outlet/>}
-    </>
-    
-  )
+    return <Outlet />; // ✅ Toujours render l'Outlet, le loader est dans App.tsx
 }
