@@ -23,44 +23,42 @@ class OperationController extends Controller
      */
     public function mesReservations()
     {
-        $user = JWTAuth::user();
-
-        if (!$user) {
-            return $this->unauthenticatedResponse();
-        }
-
         try {
-            $reservations = Operation::with([
-                    'event.localisation',
-                    'event.categorie',
-                    'paiement'
-                ])
+            $user = JWTAuth::user();
+
+            if (!$user) {
+                return $this->unauthenticatedResponse();
+            }
+
+            $operations = Operation::with(['event.localisation', 'event.categorie', 'paiement'])
                 ->where('user_id', $user->id)
                 ->where('type_operation_id', 2)
                 ->orderBy('created_at', 'desc')
-                ->get()
+                ->get();
+
+            $reservations = $operations
                 ->map(function ($operation) {
                     $event = $operation->event;
                     $paiement = $operation->paiement;
 
-                    $now = now();
-                    $statut = 'À venir';
-                    if ($event->start_date <= $now && $event->end_date >= $now) {
-                        $statut = 'En cours';
-                    } elseif ($event->end_date < $now) {
+                    if ($event->end_date < now()) {
                         $statut = 'Terminé';
+                    } elseif ($event->start_date <= now()) {
+                        $statut = 'En cours';
+                    } else {
+                        $statut = 'À venir';
                     }
 
                     return [
                         'id' => $operation->id,
+                        'event_id' => $event->id,
                         'event_name' => $event->name,
                         'start_date' => $event->start_date->toIso8601String(),
                         'end_date' => $event->end_date->toIso8601String(),
                         'localisation' => $event->localisation->name ?? 'Non spécifié',
                         'categorie' => $event->categorie->name ?? 'Non spécifiée',
-                        'quantity' => $operation->quantity,
                         'unit_price' => (float) $event->base_price,
-                        'total_price' => $paiement ? (float) $paiement->total : ($operation->quantity * $event->base_price),
+                        'total_price' => $paiement ? (float) $paiement->total : (float) $event->base_price,
                         'statut_paiement' => $paiement ? $paiement->status : 'pending',
                         'statut' => $statut,
                         'date_reservation' => $operation->created_at->toIso8601String(),
@@ -72,7 +70,7 @@ class OperationController extends Controller
             $stats = [
                 'total_reservations' => $reservations->count(),
                 'a_venir' => $reservations->where('statut', 'À venir')->count(),
-                'total_places' => $reservations->sum('quantity'),
+                'total_places' => $reservations->count(), // 1 réservation = 1 place
                 'total_depense' => (float) $reservations->where('statut_paiement', 'paid')->sum('total_price')
             ];
 

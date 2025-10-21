@@ -6,6 +6,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Traits\ApiResponse;
+use App\Traits\HandlesProfilePictures;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -23,7 +24,7 @@ use App\Notifications\ProfessionalRejectedNotification;
 class AuthController extends Controller
 {
 
-  
+
    use ApiResponse,HandlesProfilePictures;
 
 
@@ -31,45 +32,45 @@ class AuthController extends Controller
     /**
      * Inscription pour les utilisateurs réguliers
      */
-private function verifyRecaptcha($token, $ip)
-{
-    Log::info('[reCAPTCHA] === DÉBUT VÉRIFICATION ===', [
-        'token_present' => !empty($token),
-        'token_length' => $token ? strlen($token) : 0,
-        'ip' => $ip,
-        'config_site_key' => config('recaptcha.site_key'),
-        'config_secret_key' => config('recaptcha.secret_key') ? 'PRÉSENTE' : 'MANQUANTE',
-        'verify_url' => config('recaptcha.verify_url')
-    ]);
+    private function verifyRecaptcha($token, $ip)
+    {
+        Log::info('[reCAPTCHA] === DÉBUT VÉRIFICATION ===', [
+            'token_present' => !empty($token),
+            'token_length' => $token ? strlen($token) : 0,
+            'ip' => $ip,
+            'config_site_key' => config('recaptcha.site_key'),
+            'config_secret_key' => config('recaptcha.secret_key') ? 'PRÉSENTE' : 'MANQUANTE',
+            'verify_url' => config('recaptcha.verify_url')
+        ]);
 
-    if (!$token) {
-        Log::error('[reCAPTCHA] Token manquant');
-        return false;
+        if (!$token) {
+            Log::error('[reCAPTCHA] Token manquant');
+            return false;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::asForm()->post(config('recaptcha.verify_url'), [
+                'secret' => config('recaptcha.secret_key'),
+                'response' => $token,
+                'remoteip' => $ip
+            ]);
+
+            $result = $response->json();
+
+            Log::info('[reCAPTCHA] Réponse Google', [
+                'success' => $result['success'] ?? false,
+                'error_codes' => $result['error-codes'] ?? [],
+                'challenge_ts' => $result['challenge_ts'] ?? null
+            ]);
+
+            return $result['success'] ?? false;
+        } catch (\Exception $e) {
+            Log::error('[reCAPTCHA] Exception', [
+                'message' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
-
-    try {
-        $response = \Illuminate\Support\Facades\Http::asForm()->post(config('recaptcha.verify_url'), [
-            'secret' => config('recaptcha.secret_key'),
-            'response' => $token,
-            'remoteip' => $ip
-        ]);
-
-        $result = $response->json();
-
-        Log::info('[reCAPTCHA] Réponse Google', [
-            'success' => $result['success'] ?? false,
-            'error_codes' => $result['error-codes'] ?? [],
-            'challenge_ts' => $result['challenge_ts'] ?? null
-        ]);
-
-        return $result['success'] ?? false;
-    } catch (\Exception $e) {
-        Log::error('[reCAPTCHA] Exception', [
-            'message' => $e->getMessage()
-        ]);
-        return false;
-    }
-}
    public function registerUser(Request $request)
     {
         try {
@@ -266,9 +267,9 @@ private function verifyRecaptcha($token, $ip)
                 'password' => 'required|string',
             ]);
 
-            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
-                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
-            }
+            // if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+            //     return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            // }
             $user = User::where('email', $credentials['email'])->first();
 
             if (!$user) {
@@ -602,12 +603,12 @@ private function verifyRecaptcha($token, $ip)
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'city' => 'nullable|string|max:255',
                 'date_of_birth' => 'sometimes|date|before:today',
-               
+
             ]);
 
-                 
 
-             
+
+
             $user->update($validated);
             $user->load('roles');
 

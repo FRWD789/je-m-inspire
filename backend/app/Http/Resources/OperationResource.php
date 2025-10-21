@@ -11,7 +11,6 @@ class OperationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'quantity' => $this->quantity,
             'type_operation_id' => $this->type_operation_id,
             'user' => new UserResource($this->whenLoaded('user')),
             'event' => new EventResource($this->whenLoaded('event')),
