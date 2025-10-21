@@ -92,10 +92,10 @@ class PaiementController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => env('FRONTEND_URL') . '/payment-success?session_id={CHECKOUT_SESSION_ID}',
+                'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => env('FRONTEND_URL') . '/payment-cancel',
                 'metadata' => [
-                    'paiement_id' => $paiement->paiement_id,
+                    'payment_id' => $paiement->paiement_id,
                     'event_id' => $event->id,
                     'user_id' => $user->id,
                     'operation_id' => $operation->id,

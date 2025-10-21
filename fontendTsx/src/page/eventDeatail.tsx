@@ -25,7 +25,7 @@ export default function EventDetail() {
 
     setPaymentLoading(true);
     try {
-      const response = await post('/stripe/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
+      const response = await post('/api/stripe/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
         event_id: event.id
       });
 
@@ -47,7 +47,7 @@ export default function EventDetail() {
 
     setPaymentLoading(true);
     try {
-      const response = await post('/paypal/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
+      const response = await post('/api/paypal/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
         event_id: event.id
       });
 
