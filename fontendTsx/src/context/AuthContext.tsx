@@ -102,7 +102,7 @@ const debugGroupEnd = () => {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // ✅ Base URL
-const BASE_URL = "";
+const BASE_URL = "http://localhost:8000/api";
 
 // ===============================
 // AXIOS INSTANCES
