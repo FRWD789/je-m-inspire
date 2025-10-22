@@ -13,6 +13,7 @@ export default function NavBar() {
     { name: "Événements", path: "/events" },
     { name: "Calendrier", path: "/calendar" },
     { name: "À propos", path: "/" },
+    { name: "Remboursements", path: "/remboursements"}
   ];
 
   const dropdownLinks = [
