@@ -19,6 +19,8 @@ import RegisterPro from './page/Auth/registerPro'
 import Calendar from './page/calendar'
 import { useAuth } from './context/AuthContext'
 import PaymentSuccess from './page/payment/PaymentSuccess' // ✅ AJOUT
+import RemboursementsPage from './page/remboursements';
+
 
 export default function App() {
   const { loading, isInitialized } = useAuth();
@@ -65,7 +67,12 @@ export default function App() {
             <Route path='events' element={<PublicEvents />} />
             <Route path="events/:id" element={<EventDetail />} />
             <Route path="calendar" element={<Calendar />} />
+            <Route element={<PrivateRoute allowedRoles={["utilisateur", "admin"]} />}>
+              <Route path="/remboursements" element={<RemboursementsPage />} />
+            </Route>
           </Route>
+         
+
 
           {/* ✅ AJOUT : Route PaymentSuccess protégée */}
           <Route element={<PrivateRoute allowedRoles={["utilisateur", "professionnel", "admin"]} />}>
@@ -82,8 +89,11 @@ export default function App() {
                 <Route path='approbation' element={<AdminApprovalPage />} />
               </Route>
 
+
             </Route>
           </Route>
+
+          
         </Route >
       </Routes>
     </EventProvider>

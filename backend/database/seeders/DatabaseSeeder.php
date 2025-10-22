@@ -19,13 +19,14 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TypeOperationSeeder::class,
             TypePaiementSeeder::class,
+            PaiementSeeder::class,
             CategorieEventSeeder::class,
             LocalisationSeeder::class,
             PlanAbonnementSeeder::class,  // <-- AJOUTER ICI
             UserSeeder::class,
 
-            
-            
+
+
 
             EventSeeder::class,
 

@@ -1,11 +1,6 @@
 import { publicApi } from "../api/api";
 import type { AxiosInstance } from "axios";
 
-
-
-
-
-
 export const eventService = (privateApi: AxiosInstance) => ( {
   // Fetch all events (public)
   getAll: async () => {
@@ -43,7 +38,4 @@ export const eventService = (privateApi: AxiosInstance) => ( {
     const response = await privateApi.delete(`/events/${id}`);
     return response.data;
   },
-
-
-  
 });
