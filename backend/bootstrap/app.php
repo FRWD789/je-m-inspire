@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
         $middleware->alias([
             'auth.jwt' => \App\Http\Middleware\JwtMiddleware::class, // ✅ Utiliser auth.jwt
             'jwt.auth' => \App\Http\Middleware\JwtMiddleware::class, // ✅ Alias pour compatibilité

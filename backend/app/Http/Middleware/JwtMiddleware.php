@@ -17,16 +17,20 @@ class JwtMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->isMethod('OPTIONS')) {
+            return $next($request);
+        }
+
 
         try{
             $token = JWTAuth::parseToken();
-            $payload = $token->getPayload();  
+            $payload = $token->getPayload();
             if ($payload->get('type') !== 'access') {
                     return response()->json(['error' => 'Invalid token type'], 401);
                 }
             $user = JWTAuth::parseToken()->authenticate();
-  
-         
+
+
         }catch(Exception $e){
             return response()->json(['error' => 'Unauthorized'], 401);
 

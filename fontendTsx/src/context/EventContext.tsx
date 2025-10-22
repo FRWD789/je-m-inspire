@@ -1,7 +1,8 @@
 // fontendTsx/src/context/EventContext.tsx
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { eventService as createEventService } from "../service/EventService";
-import { useAuth, useApi } from "./AuthContext";
+import { privateApi } from "../api/api"; // ✅ Import direct
+import { useAuth } from "./AuthContext"; // ✅ On garde useAuth pour user
 
 type Event = {
   id: string | number;
@@ -48,13 +49,13 @@ type EventProviderProps = {
 
 export const EventProvider = ({ children }: EventProviderProps) => {
   const { user } = useAuth();
-  const { api: privateApi } = useApi(); // ✅ Utilisation de useApi au lieu de usePrivateApi
+  // ✅ Utiliser directement privateApi importé (pas useApi)
   
   const [event, setEvent] = useState<Event>();
   const [events, setEvents] = useState<Event[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const eventService = createEventService(privateApi);
+  const eventService = createEventService(privateApi); // ✅ privateApi avec bon baseURL
   const [lastEventsFetch, setLastEventsFetch] = useState<number>(0);
   const [lastMyEventsFetch, setLastMyEventsFetch] = useState<number>(0);
 

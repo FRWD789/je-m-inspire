@@ -72,10 +72,7 @@ class PaiementController extends Controller
             $hasProPlus = false;
 
             if ($vendor) {
-                $hasProPlus = $vendor->abonnements()
-                    ->where('abonnements.name', 'Pro Plus')
-                    ->where('abonnements.status', 'active')
-                    ->exists();
+                $hasProPlus = $vendor->hasProPlus();
             }
 
             $sessionData = [
@@ -218,10 +215,7 @@ class PaiementController extends Controller
 
             // Si vendor avec Pro Plus et compte PayPal
             if ($vendor) {
-                $hasProPlus = $vendor->abonnements()
-                    ->where('abonnements.name', 'Pro Plus')
-                    ->where('abonnements.status', 'active')
-                    ->exists();
+                $hasProPlus = $vendor->hasProPlus();
 
                 if ($hasProPlus && $vendor->paypalAccount_id) {
                     $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);

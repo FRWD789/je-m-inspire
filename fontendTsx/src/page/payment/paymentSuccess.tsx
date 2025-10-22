@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, Home, Receipt, MapPin, Calendar } from 'lucide-react';
-import { useApi } from '@/context/AuthContext';
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
+import { paymentService } from '@/service/paymentService'; // ✅ AJOUTÉ
 
 // Types
 interface PaymentDetails {
@@ -27,7 +27,6 @@ interface PaymentDetails {
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { get } = useApi();
   
   const [loading, setLoading] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
@@ -54,18 +53,17 @@ export default function PaymentSuccess() {
           throw new Error('Aucun identifiant de paiement trouvé');
         }
 
-        const params = new URLSearchParams();
-        if (sessionId) params.append('session_id', sessionId);
-        if (paymentId) params.append('payment_id', paymentId);
-
-        // 📡 Appel API pour vérifier le paiement
-        const response = await get(`/api/payment/status?${params.toString()}`);
+        // ✅ MIGRÉ : Utilise paymentService au lieu de useApi
+        const response = await paymentService.getPaymentStatus({
+          session_id: sessionId || undefined,
+          payment_id: paymentId || undefined,
+        });
         
-        console.log('✅ Réponse API:', response.data);
-        setPaymentDetails(response.data);
+        console.log('✅ Réponse API:', response);
+        setPaymentDetails(response);
 
         // Vérifier si le paiement est bien confirmé
-        if (response.data.payment?.status !== 'paid') {
+        if (response.payment?.status !== 'paid') {
           setError('Le paiement n\'a pas été confirmé. Veuillez contacter le support.');
         }
 
@@ -78,7 +76,7 @@ export default function PaymentSuccess() {
     };
 
     verifyPayment();
-  }, [searchParams, get]);
+  }, [searchParams]);
 
   // 🔄 État de chargement
   if (loading) {
@@ -203,88 +201,29 @@ export default function PaymentSuccess() {
                 </span>
               </div>
 
-              {/* N° de transaction */}
+              {/* ID de transaction */}
               <div className="flex justify-between items-center">
-                <span className="text-secondary">N° de transaction</span>
+                <span className="text-secondary">ID de transaction</span>
                 <span className="font-mono text-sm text-primary">
-                  {payment.paiement_id}
+                  #{payment.paiement_id}
                 </span>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Boutons d'action */}
-        <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-delay-2">
+        {/* Bouton retour */}
+        <div className="flex justify-center gap-4 pt-4">
           <Button
             onClick={() => navigate('/')}
             variant="primary"
-            className="flex items-center justify-center gap-2"
+            className="w-auto"
           >
-            <Home size={20} />
+            <Home size={20} className="mr-2" />
             Retour à l'accueil
-          </Button>
-
-          <Button
-            onClick={() => navigate('/dashboard/profile-settings')}
-            variant="outline"
-            className="flex items-center justify-center gap-2"
-          >
-            <Receipt size={20} />
-            Voir mes achats
           </Button>
         </div>
       </div>
-
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.8) rotate(-10deg);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) rotate(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fadeIn 0.6s ease-out;
-        }
-        
-        .animate-slide-up {
-          animation: slideUp 0.6s ease-out;
-        }
-        
-        .animate-scale-in {
-          animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        .animate-fade-in-delay {
-          animation: fadeIn 0.6s ease-out 0.2s both;
-        }
-        
-        .animate-fade-in-delay-2 {
-          animation: fadeIn 0.6s ease-out 0.4s both;
-        }
-      `}</style>
     </div>
   );
 }
