@@ -18,9 +18,8 @@ import AdminApprovalPage from './components/userAprrobation'
 import RegisterPro from './page/Auth/registerPro'
 import Calendar from './page/calendar'
 import { useAuth } from './context/AuthContext'
-import PaymentSuccess from './page/payment/PaymentSuccess' // ✅ AJOUT
-import RemboursementsPage from './page/remboursements';
-
+import PaymentSuccess from './page/payment/PaymentSuccess'
+import RemboursementsPage from './page/remboursements'
 
 export default function App() {
   const { loading, isInitialized } = useAuth();
@@ -59,42 +58,41 @@ export default function App() {
     <EventProvider>
       <Routes>
         <Route element={<PersistLogin />}>
-          <Route path='/' element={<Layout />}>
-            <Route index element={<Home />} />
+          {/* ✅ Routes publiques avec Layout */}
+          <Route element={<Layout />}>
+            <Route path='/' element={<Home />} />
             <Route path='login' element={<Login />} />
             <Route path='register' element={<Register />} />
             <Route path='register-pro' element={<RegisterPro />} />
             <Route path='events' element={<PublicEvents />} />
-            <Route path="events/:id" element={<EventDetail />} />
-            <Route path="calendar" element={<Calendar />} />
+            <Route path='events/:id' element={<EventDetail />} />
+            <Route path='calendar' element={<Calendar />} />
+            
+            {/* ✅ Route remboursements protégée (dans Layout) */}
             <Route element={<PrivateRoute allowedRoles={["utilisateur", "admin"]} />}>
-              <Route path="/remboursements" element={<RemboursementsPage />} />
+              <Route path='remboursements' element={<RemboursementsPage />} />
             </Route>
           </Route>
          
-
-
-          {/* ✅ AJOUT : Route PaymentSuccess protégée */}
+          {/* ✅ Route PaymentSuccess protégée (hors Layout) */}
           <Route element={<PrivateRoute allowedRoles={["utilisateur", "professionnel", "admin"]} />}>
-            <Route path='/payment/success' element={<PaymentSuccess />} />
+            <Route path='payment/success' element={<PaymentSuccess />} />
           </Route>
 
+          {/* ✅ Routes Dashboard protégées */}
           <Route element={<PrivateRoute allowedRoles={["utilisateur", "professionnel", "admin"]} />}>
-            <Route path='/dashboard' element={<Dashboard />}>
+            <Route path='dashboard' element={<Dashboard />}>
               <Route path='profile-settings' element={<User />} />
               <Route path='events' element={<Events />} />
               <Route path='my-events' element={<MyEvents />} />
 
+              {/* ✅ Route Admin imbriquée */}
               <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
                 <Route path='approbation' element={<AdminApprovalPage />} />
               </Route>
-
-
             </Route>
           </Route>
-
-          
-        </Route >
+        </Route>
       </Routes>
     </EventProvider>
   )

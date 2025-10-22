@@ -63,7 +63,7 @@ class OperationController extends Controller
                         'statut' => $statut,
                         'date_reservation' => $operation->created_at->toIso8601String(),
                         'peut_annuler' => ($paiement && $paiement->status !== 'paid') || $event->start_date > now()->addHours(24),
-                        'event' => $event,
+
                     ];
                 });
 

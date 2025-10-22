@@ -8,12 +8,14 @@ export const refundService = {
   /**
    * Créer une demande de remboursement
    * @param operationId - ID de l'opération (réservation)
-   * @param reason - Raison du remboursement
+   * @param motif - Raison du remboursement
+   * @param montant - Montant à rembourser
    */
-  create: async (operationId: number | string, reason: string) => {
+  create: async (operationId: number | string, motif: string, montant: number) => {
     const response = await privateApi.post("/remboursements", {
       operation_id: operationId,
-      reason,
+      motif,
+      montant
     });
     return response.data;
   },
@@ -37,13 +39,17 @@ export const refundService = {
   /**
    * Traiter une demande de remboursement (Admin)
    * @param id - ID de la demande
-   * @param status - Statut (approuvé/rejeté)
-   * @param adminNotes - Notes administratives (optionnel)
+   * @param statut - Statut ('approuve' | 'refuse')
+   * @param commentaireAdmin - Commentaire administratif (optionnel)
    */
-  process: async (id: number | string, status: "approved" | "rejected", adminNotes?: string) => {
+  process: async (
+    id: number | string, 
+    statut: "approuve" | "refuse", 
+    commentaireAdmin?: string
+  ) => {
     const response = await privateApi.put(`/remboursements/${id}/traiter`, {
-      status,
-      admin_notes: adminNotes,
+      statut,
+      commentaire_admin: commentaireAdmin
     });
     return response.data;
   },

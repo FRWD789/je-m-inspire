@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
+import { reservationService } from '../../service/reservationService';
 
 const DEBUG = import.meta.env.DEV;
 const debug = (...args: any[]) => {
@@ -27,7 +28,7 @@ interface CreateRemboursementFormProps {
 }
 
 export const CreateRemboursementForm: React.FC<CreateRemboursementFormProps> = ({ onSuccess }) => {
-    const { get, post } = useApi();
+    const { post } = useApi();
     const [searchParams] = useSearchParams();
     const preSelectedOperationId = searchParams.get('operation_id');
     
@@ -62,12 +63,29 @@ export const CreateRemboursementForm: React.FC<CreateRemboursementFormProps> = (
     const fetchReservations = async () => {
         setLoadingReservations(true);
         try {
-            const response = await get('/api/mes-reservations');
-            const data = response.data || response;
+            const data = await reservationService.getMyReservations();
             
-            const validReservations = (Array.isArray(data) ? data : []).filter(
-                (r: any) => r.status === 'paid'
+            debug('=== DEBUG RÉSERVATIONS ===');
+            debug('Response complète:', data);
+            debug('Nombre total:', data.reservations?.length || 0);
+            
+            const allReservations = data.reservations || [];
+            
+            allReservations.forEach((r: any, index: number) => {
+                debug(`\n📋 Réservation ${index + 1}:`);
+                debug('  ID:', r.id);
+                debug('  Event:', r.event_name);
+                debug('  Statut paiement:', r.statut_paiement);
+                debug('  Type:', typeof r.statut_paiement);
+            });
+            
+            // ✅ CORRECTION : Utiliser statut_paiement au lieu de status
+            const validReservations = allReservations.filter((r: any) =>
+                r.statut_paiement === 'paid'
             );
+            
+            debug('\n✅ Réservations payées filtrées:', validReservations.length);
+            debug('======================\n');
             
             setReservations(validReservations);
         } catch (err) {
