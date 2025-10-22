@@ -13,12 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+
         // CORS en premier
         $middleware->api(prepend: [
             Cors::class,
         ]);
 
         // Alias
+
         $middleware->alias([
             'auth.jwt' => \App\Http\Middleware\JwtMiddleware::class,
             'jwt.auth' => \App\Http\Middleware\JwtMiddleware::class,
