@@ -1,15 +1,16 @@
+// fontendTsx/src/page/eventDeatail.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEvent } from '@/context/EventContext';
-import { useAuth, useApi } from '@/context/AuthContext'; // ✅ MODIFIÉ : ajout de useApi
+import { useAuth } from '@/context/AuthContext';
 import { Calendar, MapPin, ArrowLeft, DollarSign, Users, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/button';
+import { paymentService } from '@/service/paymentService'; // ✅ AJOUTÉ
 
 export default function EventDetail() {
   const { id } = useParams();
   const { event, fetchEventById, loading } = useEvent();
-  const { user, isAuthenticated } = useAuth(); // ✅ MODIFIÉ : isAuthenticated au lieu de accessToken
-  const { post } = useApi(); // ✅ AJOUTÉ
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // États pour le paiement
@@ -20,17 +21,16 @@ export default function EventDetail() {
     if (id) fetchEventById(id);
   }, [id]);
 
+  // ✅ MIGRÉ : Utilise paymentService au lieu de useApi
   const handleStripePayment = async () => {
     if (!event) return;
 
     setPaymentLoading(true);
     try {
-      const response = await post('/api/stripe/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
-        event_id: event.id
-      });
+      const response = await paymentService.stripeCheckout(event.id);
 
-      if (response.data.url) {
-        window.location.href = response.data.url;
+      if (response.url) {
+        window.location.href = response.url;
       } else {
         alert('Erreur lors de l\'initialisation du paiement Stripe');
       }
@@ -42,17 +42,16 @@ export default function EventDetail() {
     }
   };
 
+  // ✅ MIGRÉ : Utilise paymentService au lieu de useApi
   const handlePayPalPayment = async () => {
     if (!event) return;
 
     setPaymentLoading(true);
     try {
-      const response = await post('/api/paypal/checkout', { // ✅ MODIFIÉ : post au lieu de privateApi.post
-        event_id: event.id
-      });
+      const response = await paymentService.paypalCheckout(event.id);
 
-      if (response.data.approval_url) {
-        window.location.href = response.data.approval_url;
+      if (response.approval_url) {
+        window.location.href = response.approval_url;
       } else {
         alert('Erreur lors de l\'initialisation du paiement PayPal');
       }
@@ -64,71 +63,117 @@ export default function EventDetail() {
     }
   };
 
-  const totalPrice = event ? event.base_price.toFixed(2) : '0.00';
+  const totalPrice = event ? parseFloat(event.base_price as string) : 0;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-accent">
-        <Loader2 className="animate-spin w-8 h-8 mr-4" />
-        <h1>Chargement de l'événement...</h1>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="animate-spin text-accent" size={48} />
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-accent">
-        <h1>Événement introuvable.</h1>
-        <button
-          onClick={() => navigate("/events")}
-          className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-primary transition"
-        >
-          Retour à la liste
-        </button>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-gray-600">Événement introuvable</p>
+        <Button onClick={() => navigate('/events')}>Retour aux événements</Button>
       </div>
     );
   }
 
   return (
-    <section className="bg-white/40 backdrop-blur-3xl min-h-screen">
-      {/* Hero Section */}
-      <div className="relative h-[40vh] w-full drop-shadow-xl overflow-hidden rounded-t-[12px]">
-        <img
-          src={event.thumbnail || "/assets/img/bg-hero.avif"}
-          alt={event.name}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/15 flex flex-col justify-end p-8 text-white">
-          <button
-            onClick={() => navigate("/events")}
-            className="absolute top-4 left-4 bg-white/20 hover:bg-white/30 rounded-full p-2 transition"
-          >
-            <ArrowLeft size={20} />
-          </button>
+    <section className="max-w-7xl mx-auto p-6">
+      {/* Bouton retour */}
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition"
+      >
+        <ArrowLeft size={20} />
+        <span>Retour</span>
+      </button>
 
-          <h1 className="text-4xl md:text-5xl text-white font-bold mb-4">{event.name}</h1>
-          <div className="flex items-center gap-4 text-sm text-gray-200">
-            <div className="flex items-center gap-1">
-              <Calendar size={16} />
-              {new Date(event.start_date).toLocaleDateString("fr-FR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
+      <div className="grid lg:grid-cols-[1fr_400px] gap-8">
+        {/* Colonne principale */}
+        <main className="space-y-6">
+          {/* Image de l'événement */}
+          {event.images && event.images.length > 0 ? (
+            <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gray-100">
+              <img
+                src={`http://localhost:8000/storage/${event.images[0].path}`}
+                alt={event.name}
+                className="w-full h-full object-cover"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <MapPin size={16} /> {event.localisation?.address || "Adresse à venir"}
+          ) : (
+            <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
+              <Calendar size={64} className="text-accent/50" />
+            </div>
+          )}
+
+          {/* Titre et catégorie */}
+          <div>
+            {event.categorie && (
+              <span className="inline-block px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-medium mb-3">
+                {event.categorie.name}
+              </span>
+            )}
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">{event.name}</h1>
+          </div>
+
+          {/* Informations clés */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-[8px]">
+              <Calendar className="text-accent" size={24} />
+              <div>
+                <p className="text-xs text-gray-600">Date de début</p>
+                <p className="font-semibold text-gray-800">
+                  {new Date(event.start_date).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-[8px]">
+              <Calendar className="text-accent" size={24} />
+              <div>
+                <p className="text-xs text-gray-600">Date de fin</p>
+                <p className="font-semibold text-gray-800">
+                  {new Date(event.end_date).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-[8px]">
+              <MapPin className="text-accent" size={24} />
+              <div>
+                <p className="text-xs text-gray-600">Lieu</p>
+                <p className="font-semibold text-gray-800 text-sm">
+                  {event.localisation?.address || 'Adresse non spécifiée'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-[8px]">
+              <Users className="text-accent" size={24} />
+              <div>
+                <p className="text-xs text-gray-600">Places disponibles</p>
+                <p className="font-semibold text-gray-800">
+                  {event.available_places} / {event.max_places}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-[42px] py-[24px] flex flex-col lg:flex-row gap-8">
-        {/* Left: Description & Organizer */}
-        <div className="space-y-6 flex-1">
-          {/* Organizer */}
-          <div className="flex items-center gap-3">
+          {/* Créateur */}
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-[8px]">
             {event.creator ? (
               <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
                 {event.creator.profile_picture ? (
@@ -159,61 +204,27 @@ export default function EventDetail() {
               </p>
             </div>
           </div>
+        </main>
 
-          {/* Category Tag */}
-          {event.categorie && (
-            <div>
-              <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
-                Catégorie #{event.categorie.name}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Reservation Card */}
-        <aside className="lg:w-[400px] hover:bg-white transition rounded-2xl hover:shadow-md p-6 h-fit space-y-4 bg-white/90">
-          <h3 className="text-xl font-semibold">Réserver votre place</h3>
-
-          {/* Prix et disponibilité */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Prix</span>
-              <div className="flex items-center gap-1 text-xl font-semibold text-accent">
-                <DollarSign size={18} />
-                {event.base_price} €
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Places disponibles</span>
-              <div className="flex items-center gap-1 text-gray-800 font-medium">
-                <Users size={16} />
-                {event.available_places}/{event.max_places}
-              </div>
-            </div>
+        {/* Sidebar - Réservation */}
+        <aside className="lg:sticky lg:top-6 h-fit space-y-4 p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="flex items-baseline gap-2">
+            <DollarSign className="text-accent" size={32} />
+            <span className="text-3xl font-bold text-gray-900">{event.base_price}€</span>
+            <span className="text-gray-600">/ place</span>
           </div>
 
-          {/* Message si non connecté */}
-          {!isAuthenticated && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-[8px] text-sm text-blue-700">
-              ℹ️ Connectez-vous pour réserver votre place
-            </div>
-          )}
-
-          {/* Bouton principal de réservation */}
           {!showPayment ? (
             <Button
               onClick={() => {
                 if (!isAuthenticated) {
-                  navigate('/login', { state: { from: `/events/${id}` } });
-                } else if (event.available_places <= 0) {
-                  alert('Désolé, il n\'y a plus de places disponibles');
-                } else {
-                  setShowPayment(true);
+                  navigate('/login');
+                  return;
                 }
+                setShowPayment(true);
               }}
               disabled={event.available_places <= 0}
-              className="w-full py-3 text-base font-semibold"
+              className="w-full"
             >
               {event.available_places <= 0 ? 'Complet' : isAuthenticated ? 'Réserver maintenant' : 'Se connecter pour réserver'}
             </Button>
