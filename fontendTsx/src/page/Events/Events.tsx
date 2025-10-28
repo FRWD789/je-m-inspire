@@ -5,22 +5,18 @@ import { useEvent } from '@/context/EventContext';
 import { MapEvents } from '@/components/map';
 
 export default function Events() {
-  const { loading, events ,fetchEvents} = useEvent();
+  const { loading,events,fetchEvents} = useEvent();
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   useEffect(() => {
 
-    console.log("mounted")
   if (events.length === 0 && !loading) {
-    
     console.log("fetch forced")
-    fetchEvents(true);
+    fetchEvents();
   }
-  return(
-    console.log("unmounted")
-  )
-}, []); 
+ 
+  }, []); 
   const handleEventClick = (eventId: number) => {
     setSelectedEventId(eventId);
     window.scrollTo({ top: 0, behavior: 'smooth' });

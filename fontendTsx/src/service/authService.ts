@@ -1,66 +1,57 @@
-// services/authService.js
+// services/authService.ts
+import type { Credentials, LoginResponse, RefreshResponse, RegisterCredentials, User } from "@/types/user";
 import { privateApi, publicApi } from "../api/api";
-
-export type Credentials = {
-    email:string,
-    password:string
-}
- export interface RegisterCredentials {
-  name: string;
-  email: string;
-  password: string;
-  password_confirmation:string
-}
-
 
 
 
 export const authService = {
-  // Refresh token endpoint
-  refresh: async (): Promise<any> => {
+  // Refresh token endpoint - FIXED to use V2
+  refresh: async (): Promise<RefreshResponse> => {
     try {
-      const response = await publicApi.get("/refresh");
-      return response.data; // Return only data
+      const response = await publicApi.get("/v2/refresh");
+      return response.data;
     } catch (error) {
       console.error("Error refreshing token:", error);
-      throw error; // Let the caller handle it
+      throw error;
     }
   },
 
-  // Login endpoint
-  register: async (registerCredentials:RegisterCredentials,type:'user'|'professional'='user') => {
+  // Register endpoint
+  register: async (registerCredentials: RegisterCredentials, type: 'user' | 'professional' = 'user') => {
     try {
-      const response = await publicApi.post(`/register/${type}`, registerCredentials);
+      const endpoint = type === 'professional' ? '/register/professional' : '/register/user';
+      const response = await publicApi.post(endpoint, registerCredentials);
+      return response.data;
+    } catch (error) {
+      console.error("Error registering:", error);
+      throw error;
+    }
+  },
+
+  // Login endpoint - FIXED to use V2 and new response structure
+  login: async (credentials: Credentials): Promise<LoginResponse> => {
+    try {
+      const response = await publicApi.post("/v2/login", credentials);
       return response.data;
     } catch (error) {
       console.error("Error logging in:", error);
       throw error;
     }
   },
-  // Login endpoint
-  login: async (credentials:Credentials) => {
-    try {
-      const response = await publicApi.post("/login", credentials);
-      return response.data;
-    } catch (error) {
-      console.error("Error logging in:", error);
-      throw error;
-    }
-  },
 
-  // Logout endpoint
-  logout: async () => {
+  // Logout endpoint - FIXED to use V2
+  logout: async (): Promise<void> => {
     try {
-      const response = await privateApi.post("/logout");
-      return response.data;
+      await privateApi.post("/v2/logout");
     } catch (error) {
       console.error("Error logging out:", error);
       throw error;
     }
   },
-  updatePassword: async (data:any) => {
+
+  updatePassword: async (data: any) => {
     try {
-      const response = await privateApi.put("/profile/update-password",data);
+      const response = await privateApi.put("/profile/update-password", data);
       return response.data;
     } catch (error) {
       console.error("Error updating password:", error);
@@ -68,10 +59,10 @@ export const authService = {
     }
   },
 
-  updateProfile: async (data:any,isImg:boolean=false) => {
+  updateProfile: async (data: any, isImg: boolean = false) => {
     try {
-       const endpoint = isImg ? "/profile/update-img" : "/profile/update";
-      const response = await privateApi.post(endpoint,data);
+      const endpoint = isImg ? "/profile/update-img" : "/profile/update";
+      const response = await privateApi.post(endpoint, data);
       return response.data;
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -79,8 +70,8 @@ export const authService = {
     }
   },
 
-  // Optional: Get user profile
-  getProfile: async () => {
+  // Get user profile - FIXED to use V2
+  getProfile: async (): Promise<{ success: boolean; data: User; message: string }> => {
     try {
       const response = await privateApi.get("/me");
       return response.data;

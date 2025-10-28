@@ -20,7 +20,8 @@ export const LoginSchema = z.object({
 export default function Login() {
     const location = useLocation()
     const navigate = useNavigate()
-    const from = location.state?.from?.pathname || "/dashboard/profile"; 
+    const from = location.state?.from?.pathname || "/dashboard/";
+    console.log(from) 
     const {login} = useAuth()
     const handelLogin = async (data:any)=>{
         try {

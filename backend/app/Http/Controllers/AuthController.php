@@ -27,9 +27,76 @@ class AuthController extends Controller
    use ApiResponse,HandlesProfilePictures;
 
 
+    /**
+     * Compléter l’onboarding utilisateur (bio + photo de profil)
+     */
+        public function onboarding(Request $request)
+        {
+            try {
+                $user = Auth::user();
 
+                // Validate incoming data
+                $validated = $request->validate([
+                    'biography' => 'nullable|string|max:1000',
+                    'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+                ]);
 
+                // Handle profile picture upload
+                if ($request->hasFile('profile_picture')) {
+                    try {
+                        // Delete old image if exists
+                        $this->deleteProfilePicture($user->profile_picture);
 
+                        // Upload new one
+                        $validated['profile_picture'] = $this->uploadProfilePicture(
+                            $request->file('profile_picture'),
+                            $user->id
+                        );
+                    } catch (\Exception $e) {
+                        return $this->validationErrorResponse([
+                            'profile_picture' => [$e->getMessage()]
+                        ]);
+                    }
+                }
+
+                // Update biography if provided
+                if (isset($validated['biography'])) {
+                    $user->biography = $validated['biography'];
+                }
+
+                // Mark onboarding as completed
+                $user->onboarding_completed = true;
+                $user->save();
+                $user->load('roles');
+
+                return $this->resourceResponse(
+                        new UserResource($user),
+                    'Onboarding complété avec succès'
+                );
+            } catch (ValidationException $e) {
+                return $this->validationErrorResponse($e->errors());
+            } catch (\Exception $e) {
+                Log::error('[Auth] Erreur onboarding: ' . $e->getMessage());
+                return $this->errorResponse('Erreur lors du onboarding', 500);
+            }
+        }
+
+    public function skipOnboarding()
+    {
+        try {
+            $user = Auth::user();
+            $user->onboarding_skipped = true;
+            $user->save();
+
+            return $this->successResponse(
+                ['user' => new UserResource($user)],
+                'Onboarding ignoré avec succès'
+            );
+        } catch (\Exception $e) {
+            Log::error('[Auth] Erreur skip onboarding: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du skip onboarding', 500);
+        }
+    }
     /**
      * Inscription pour les utilisateurs réguliers
      */
@@ -270,7 +337,7 @@ class AuthController extends Controller
             Cache::forget("refresh_token:$jti");
 
             return $this->successResponse(
-                null,
+                // null,
                 'Déconnexion réussie'
             )->cookie('refresh_token', '', -1);
 
@@ -351,6 +418,7 @@ class AuthController extends Controller
 
             $user = JWTAuth::setToken($refreshToken)->authenticate();
             $user->load('roles');
+            $request->setUserResolver(fn () => $user);
             if ($debug) {
                 Log::info('✅ Utilisateur authentifié:', [
                     'id' => $user->id,
@@ -379,11 +447,11 @@ class AuthController extends Controller
 
                 Log::info('✅ ========== REFRESH TOKEN SUCCESS ==========');
             }
-
+         
             return $this->successResponse([
                 'access_token' => $newAccessToken,
                 'expires_in' => JWTAuth::factory()->getTTL() * 60,
-                'user'=>$user
+                'user'=> new UserResource($user)
             ], 'Token rafraîchi')->cookie(
                 'refresh_token',
                 $newRefreshToken,
@@ -478,15 +546,13 @@ class AuthController extends Controller
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'city' => 'nullable|string|max:255',
                 'date_of_birth' => 'sometimes|date|before:today',
-               
-            ]);
-
-                 
-
-             
+                'biography' => 'sometimes|string|max:1000',
+            ]);  
             $user->update($validated);
+                if (isset($validated['biography'])) {
+                    $user->biography = $validated['biography'];
+                }
             $user->load('roles');
-
             return $this->resourceResponse(
                 new UserResource($user),
                 'Profil mis à jour avec succès'

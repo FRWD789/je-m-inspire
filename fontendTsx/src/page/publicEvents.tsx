@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Filter, Menu, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Filter, Menu, Search, X } from 'lucide-react';
 import { MapEvents } from '@/components/map';
 import EventList from '@/components/events/EventList';
 import { useEvent } from '@/context/EventContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function PublicEvents() {
-
   const location = useLocation();
   const { events, loading } = useEvent();
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,15 +18,23 @@ export default function PublicEvents() {
   const [maxPrice, setMaxPrice] = useState(500);
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState('');
-  const [showSidebar, setShowSidebar] = useState(true); // 👈 new state for sidebar visibility
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const getCity = (address: string) => {
     if (!address) return '';
     const parts = address.split(',');
     return parts.length >= 2 ? parts[1].trim() : parts[0].trim();
   };
-  const cities = useMemo(() => [...new Set(events.map(e => getCity(e.localisation?.address)).filter(Boolean))], [events]);
-  const categories = useMemo(() => [...new Set(events.map(e => e.categorie?.name).filter(Boolean))], [events]);
+
+  const cities = useMemo(
+    () => [...new Set(events.map(e => getCity(e.localisation?.address)).filter(Boolean))],
+    [events]
+  );
+
+  const categories = useMemo(
+    () => [...new Set(events.map(e => e.categorie?.name).filter(Boolean))],
+    [events]
+  );
 
   const filteredEvents = useMemo(() => {
     let list = events.filter((e) => {
@@ -60,6 +67,7 @@ export default function PublicEvents() {
 
     return list;
   }, [events, selectedCategory, searchTerm, selectedCity, minPrice, maxPrice, selectedDateFilter, priceSort]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get('search') || '';
@@ -67,16 +75,14 @@ export default function PublicEvents() {
     setSearchTerm(search);
     setSelectedCity(city);
   }, [location.search]);
-  return (
-    <>
-      {/* 🔹 Sidebar Toggle Button */}
- 
 
-      {/* 🔹 Left Side: Search + Filters + Event List */}
+  return (
+    <div className="relative flex w-full h-[70vh] overflow-hidden">
+      {/* 🔹 Sidebar */}
       {showSidebar ? (
-        <div className="lg:w-1/3 h-[80vh] w-full flex flex-col relative z-50 bg-white/50 overflow-hidden  backdrop-blur-3xl rounded-[8px] drop-shadow-2xl border-accent/60 border ">
-          {/* Top Bar: Search + Close Button */}
-          <div className="flex items-center justify-between p-4 border-b-2  border-accent   z-30 backdrop-blur-3xl shadow-sm">
+        <div className="absolute z-40 top-0 left-0 lg:relative lg:w-1/3 w-full h-full flex flex-col bg-white/70 backdrop-blur-2xl border-r border-accent/30 shadow-lg rounded-none lg:rounded-l-xl overflow-hidden">
+          {/* Top Bar: Search + Close */}
+          <div className="flex items-center justify-between p-4 border-b border-accent/40 bg-white/80 backdrop-blur-lg">
             <div className="flex items-center gap-2 flex-1 bg-gray-100 rounded-md px-3 py-2">
               <Search className="text-gray-400" size={18} />
               <input
@@ -87,16 +93,13 @@ export default function PublicEvents() {
                 className="flex-1 text-sm bg-transparent focus:outline-none"
               />
             </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
               >
                 <Filter size={20} />
               </button>
-
-              {/* Close Sidebar Button */}
               <button
                 onClick={() => setShowSidebar(false)}
                 className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
@@ -106,10 +109,9 @@ export default function PublicEvents() {
             </div>
           </div>
 
-          {/* Filters Panel */}
+          {/* Filters */}
           {showFilters && (
-            <div className="p-4 border-b bg-gray-50 space-y-4">
-              {/* Category Filter */}
+            <div className="p-4 border-b bg-gray-50 space-y-4 overflow-y-auto max-h-[40vh]">
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">Catégorie</label>
                 <select
@@ -119,12 +121,13 @@ export default function PublicEvents() {
                 >
                   <option value="">Toutes les catégories</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {/* City Filter */}
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">Ville</label>
                 <select
@@ -134,25 +137,39 @@ export default function PublicEvents() {
                 >
                   <option value="">Toutes les villes</option>
                   {cities.map((city) => (
-                    <option key={city} value={city}>{city}</option>
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {/* Price Sorting */}
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">Tri par prix</label>
                 <div className="flex gap-2 text-sm text-gray-700">
                   <label className="flex items-center gap-1">
-                    <input type="radio" name="sort" value="asc" checked={priceSort === 'asc'} onChange={(e) => setPriceSort(e.target.value)} /> ↑
+                    <input
+                      type="radio"
+                      name="sort"
+                      value="asc"
+                      checked={priceSort === 'asc'}
+                      onChange={(e) => setPriceSort(e.target.value)}
+                    />{' '}
+                    ↑
                   </label>
                   <label className="flex items-center gap-1">
-                    <input type="radio" name="sort" value="desc" checked={priceSort === 'desc'} onChange={(e) => setPriceSort(e.target.value)} /> ↓
+                    <input
+                      type="radio"
+                      name="sort"
+                      value="desc"
+                      checked={priceSort === 'desc'}
+                      onChange={(e) => setPriceSort(e.target.value)}
+                    />{' '}
+                    ↓
                   </label>
                 </div>
               </div>
 
-              {/* Price Range */}
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">Prix max (€)</label>
                 <input
@@ -167,7 +184,6 @@ export default function PublicEvents() {
                 <p className="text-xs text-gray-500 mt-1 text-right">{maxPrice} €</p>
               </div>
 
-              {/* Reset */}
               <button
                 onClick={() => {
                   setSelectedCategory('');
@@ -186,7 +202,7 @@ export default function PublicEvents() {
             </div>
           )}
 
-          {/* Scrollable Event List */}
+          {/* Scrollable List */}
           <div className="flex-1 overflow-y-auto p-4">
             {loading ? (
               <p className="text-center text-gray-500 mt-20">Chargement...</p>
@@ -195,26 +211,29 @@ export default function PublicEvents() {
             ) : (
               <EventList
                 events={filteredEvents}
-                onEventClick={(id) => navigate(`/events/${id}`)} 
+                onEventClick={(id) => navigate(`/events/${id}`)}
                 selectedEventId={selectedEventId}
               />
             )}
           </div>
         </div>
-      ):    <button
+      ) : (
+        <button
           onClick={() => setShowSidebar(true)}
-          className=" relative z-50 bg-white/90 w-fit border-accent backdrop-blur-2xl text-accent shadow-lg rounded-full p-3 hover:bg-gray-100 transition"
+          className="absolute z-40 top-5 left-5 bg-white/90 border border-accent text-accent shadow-lg rounded-full p-3 hover:bg-gray-100 transition"
         >
           <Menu size={22} />
-        </button>}
-      <div className="fixed w-full  top-0 left-0  h-screen ">
-            <MapEvents
-              events={filteredEvents}
-              selectedEventId={selectedEventId}
-              onEventSelect={setSelectedEventId}
-            />
-          </div>
-    </>
-    
+        </button>
+      )}
+
+      {/* 🔹 Map (Fullscreen behind sidebar) */}
+      <div className="flex-1 fixed inset-0  w-full h-full overflow-hidden">
+        <MapEvents
+          events={filteredEvents}
+          selectedEventId={selectedEventId}
+          onEventSelect={setSelectedEventId}
+        />
+      </div>
+    </div>
   );
 }

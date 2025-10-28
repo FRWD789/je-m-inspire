@@ -1,165 +1,166 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { authService, type Credentials, type RegisterCredentials } from "../service/AuthService";
+import { authService } from "../service/AuthService";
 import { useNavigate } from "react-router-dom";
-
-
-
-
-
-
-
-
+import type { Credentials, LoginResponse, RegisterCredentials, User } from "@/types/user";
+import { tokenService } from "@/service/TokenService";
 interface AuthContextType {
-    user:any |undefined
-    accessToken:string |undefined
-    loading:boolean,
-    updatePassword:(payload: any) => Promise<void>,
-    updateProfileImg:(payload: any) => Promise<void>
-    registerPro: (credentials: RegisterCredentials) => Promise<void>
-    logout: () => Promise<void>
-    login: (credentials: Credentials) => Promise<void>
-    registerUser: (credentials: RegisterCredentials) => Promise<void>
-    setUser: (value: React.SetStateAction<any | undefined>) => void
-    updateProfile:(payload: any) => Promise<void>
-    setAccessToken:React.Dispatch<React.SetStateAction<string | undefined>>
+  user: User | undefined;
+  accessToken: string | undefined;
+  loading: boolean;
+  requiresOnboarding: boolean;
+  updatePassword: (payload: any) => Promise<void>;
+  updateProfileImg: (payload: any) => Promise<any>;
+  registerPro: (credentials: RegisterCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  login: (credentials: Credentials) => Promise<void>;
+  registerUser: (credentials: RegisterCredentials) => Promise<void>;
+  setUser: (value: React.SetStateAction<User | undefined>) => void;
+  updateProfile: (payload: any) => Promise<any>;
+  setAccessToken: React.Dispatch<React.SetStateAction<string | undefined>>;
 
 }
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | undefined>(undefined);
+  const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [requiresOnboarding, setRequiresOnboarding] = useState(false);
+  const navigate = useNavigate();
 
 
 
-
-
-const AuthContext = createContext<AuthContextType|undefined>(undefined)
-
-
-
-
-
-
-export const AuthContextProvider = ({children}:{children:ReactNode})=>{
-
-    const [user, setUser] = useState<any | undefined>(undefined);
-    const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate()
-        useEffect(() => {
-            if (accessToken) {
-                setLoading(false);
-            }
-        }, [accessToken]);
-
-        const logout = async ()=>{
-            try {
-                const data = await authService.logout();
-                setUser(undefined);
-                setAccessToken(undefined);
-                console.log("✅ utlusateur deconecter  avec succès");
-                navigate("/")
-
-            } catch (err) {
-            console.error("Erreur réseau:", err);
-            }
-        }
-
-
-      const updatePassword = async (payload:any) => {
-        if (!accessToken) {
-            console.error("Cannot update profile — no token found");
-            return;
-        }
-
-        try {
-        const data = await authService.updatePassword(payload);
-        console.log(data)
-            // if (data.success) {
-            //     setUser(data.user);
-            //     console.log("✅ Profil mis à jour avec succès");
-            // } else {
-            //     console.error("Erreur de mise à jour:", data.message);
-            // }
-        } catch (err) {
-        console.error("Erreur réseau:", err);
-        }
-    }
-      const updateProfileImg = async (payload:any) => {
-        
-        if (!accessToken) {
-            console.error("Cannot update profile — no token found");
-            return;
-        }
+  useEffect(() => {
+    tokenService.set(accessToken);
+  }, [accessToken]);
   
-        try {
-        const data = await authService.updateProfile(payload,true)
-            if (data.success) {
-                setUser(data);
-                console.log("✅ Profil mis à jour avec succès");
-            } else {
-                console.error("Erreur de mise à jour:", data.message);
-            }
-            return data
-        } catch (err) {
-        console.error("Erreur réseau:", err);
-        }
+  const logout = async (): Promise<void> => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error("Erreur déconnexion API:", err);
+      // Continue with client-side logout even if API call fails
+    } finally {
+      // Always clear client state
+      setUser(undefined);
+      setAccessToken(undefined);
+      tokenService.clear(); // also clear the global token
+      setRequiresOnboarding(false);
+      navigate("/");
     }
+  };
 
-    
-    const updateProfile = async (payload:any) => {
-        
-        if (!accessToken) {
-            console.error("Cannot update profile — no token found");
-            return;
-        }
-        setLoading(true)
-        try {
-        const data = await authService.updateProfile(payload);
-
-            if (data.success) {
-                setUser(data);
-                console.log("✅ Profil mis à jour avec succès");
-            } else {
-                console.error("Erreur de mise à jour:", data.message);
-            }
-            return data
-        } catch (err) {
-        console.error("Erreur réseau:", err);
-        }finally{
-            setLoading(false)
-        }
+  const updatePassword = async (payload: any): Promise<void> => {
+    if (!accessToken) {
+      console.error("Cannot update password — no token found");
+      throw new Error("No authentication token");
     }
-
-    const login = async (credentials:Credentials) => {
-            const data = await authService.login(credentials);
-            setAccessToken(data.token);
-            setUser(data.user);
-            
-   
-      
-    };
-    const registerUser = async (credentials:RegisterCredentials) =>{
-
-        const data = await authService.register(credentials);
-        console.log(data)
-
-
+    try {
+      const data = await authService.updatePassword(payload);
+      console.log("✅ Mot de passe mis à jour:", data);
+    } catch (err) {
+      console.error("Erreur mise à jour mot de passe:", err);
+      throw err;
     }
-      const registerPro = async (credentials:RegisterCredentials) =>{
-        const data = await authService.register(credentials,"professional");
-        console.log(data)
+  };
+
+  const updateProfileImg = async (payload: any): Promise<any> => {
+    if (!accessToken) {
+      console.error("Cannot update profile — no token found");
+      throw new Error("No authentication token");
     }
-    
-    
+    try {
+      const data = await authService.updateProfile(payload, true);
+      if (data.success) {
 
+        setUser(data);
+        console.log("✅ Photo de profil mise à jour avec succès");
+      }
+      return data;
+    } catch (err) {
+      console.error("Erreur mise à jour photo:", err);
+      throw err;
+    }
+  };
 
+  const updateProfile = async (payload: any): Promise<any> => {
+    if (!accessToken) {
+      console.error("Cannot update profile — no token found");
+      throw new Error("No authentication token");
+    }
+    setLoading(true);
+    try {
+      const data = await authService.updateProfile(payload);
+      if (data.success) {
+        setUser(data);
+        console.log("✅ Profil mis à jour avec succès");
+      }
+      return data;
+    } catch (err) {
+      console.error("Erreur mise à jour profil:", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
+  const login = async (credentials: Credentials): Promise<void> => {
+    setLoading(true);
+    try {
+      const response: LoginResponse = await authService.login(credentials);
+      setAccessToken(response.access_token);
+      setUser(response.user);
+      setRequiresOnboarding(response.requires_onboarding);
+      console.log("✅ Connexion réussie");
+    } catch (err) {
+      console.error("Erreur connexion:", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const registerUser = async (credentials: RegisterCredentials): Promise<void> => {
+    try {
+      const data = await authService.register(credentials);
+      console.log("✅ Inscription utilisateur réussie:", data);
+    } catch (err) {
+      console.error("Erreur inscription:", err);
+      throw err;
+    }
+  };
 
-        <AuthContext.Provider value={{user,loading,accessToken,updatePassword,updateProfileImg,logout,setUser,updateProfile,login,registerUser,registerPro,setAccessToken}}>
-            {children}
-        </AuthContext.Provider>
+  const registerPro = async (credentials: RegisterCredentials): Promise<void> => {
+    try {
+      const data = await authService.register(credentials, "professional");
+      console.log("✅ Inscription professionnel réussie:", data);
+    } catch (err) {
+      console.error("Erreur inscription pro:", err);
+      throw err;
+    }
+  };
 
-    )
-}
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      accessToken,
+      requiresOnboarding,
+      updatePassword,
+      updateProfileImg,
+      logout,
+      setUser,
+      updateProfile,
+      login,
+      registerUser,
+      registerPro,
+      setAccessToken
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -167,5 +168,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-

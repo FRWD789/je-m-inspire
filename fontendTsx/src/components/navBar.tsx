@@ -1,19 +1,22 @@
 import { Link, NavLink } from "react-router-dom";
-import { ChevronDown, LogIn, UserPlus, Menu, X } from "lucide-react";
+import { ChevronDown, LogIn, UserPlus, Menu, X, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import type { User } from "@/types/user";
 
 export default function NavBar() {
-  const {user} = useAuth()
-  const [openDropdown, setOpenDropdown] = useState(false);
+  const {user,logout} = useAuth()
+  const [openDropdown, setOpenDropdown] = useState<false | "experiences" | "account">(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
 
   const navLinks = [
     { name: "Accueil", path: "/" },
-    { name: "Événements", path: "/" },
-    { name: "Créer un événement", path: "/" },
+    { name: "Événements", path: "/events" },
+    { name: "Créer un événement", path: "/dashborad/events" },
     { name: "À propos", path: "/" },
+    ...(user?[{ name: "Mes Reservation", path: "/dashboard/my-reservations" }]:[]),
+    
   ];
 
   const dropdownLinks = [
@@ -22,6 +25,12 @@ export default function NavBar() {
     { name: "Sonothérapie", path: "/" },
     { name: "Cercles de partage", path: "/" },
   ];
+  const dropdownLinksAcoount = [
+    { name: "Compte", path: "/dashboard/profile-settings",icon:<ExternalLink className="w-3 h-3" /> },
+    { name: "Déconnexion", path: "/" },
+    
+  ];
+
 
   return (
     <nav className="w-full px-4 sm:px-10 md:px-[60px] backdrop-blur-md border-b border-secondary/30">
@@ -57,7 +66,7 @@ export default function NavBar() {
           {/* DROPDOWN MENU */}
           <div className="relative">
             <button
-              onClick={() => setOpenDropdown(!openDropdown)}
+              onClick={() => setOpenDropdown(openDropdown === "experiences" ? false : "experiences")}
               onBlur={() => setTimeout(() => setOpenDropdown(false), 200)}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:text-accent transition-all"
             >
@@ -69,7 +78,7 @@ export default function NavBar() {
               />
             </button>
 
-            {openDropdown && (
+            {openDropdown === "experiences" && (
               <div className="absolute top-full mt-2 w-48 bg-white/90 rounded-[8px] shadow-lg border border-gray-100 overflow-hidden">
                 {dropdownLinks.map(({ name, path }) => (
                   <NavLink
@@ -87,15 +96,49 @@ export default function NavBar() {
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden md:flex items-center gap-3">
-           {user ? (
-            <NavLink
-              to="/dashboard"
-              
-            >
-                <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-                 {user.profile_picture ?  <img src={`http://localhost:8000/storage/${user.profile_picture}`} alt="" />:user.name[0].toUpperCase()}
+           {user as User ? (
+            <div className="relative">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "account" ? false : "account")}
+                onBlur={() => setTimeout(() => setOpenDropdown(false), 200)}
+                className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden"
+              >
+                {user?.profile.profile_picture ? (
+                  <img
+                    src={user.profile.profile_picture}
+                    alt="avatar"
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  user?.profile?.name?.[0] || "U"
+                )}
+              </button>
+
+              {openDropdown === "account" && (
+                <div className="absolute right-0 mt-2 w-48 bg-white/90 rounded-[8px] shadow-lg border border-gray-100 overflow-hidden">
+                  {dropdownLinksAcoount.map(({ name, path, icon }) => (
+
+                    name.toLowerCase()==='déconnexion'?
+                    
+                    <button onClick={()=>logout()} className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all">
+                              {name}
+                    </button>
+                    
+                    
+                    :
+                    <NavLink
+                      key={path}
+                      to={path}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all"
+                    >
+                      {name}
+                      {icon && <span>{icon}</span>}
+                      
+                    </NavLink>
+                  ))}
                 </div>
-            </NavLink>
+              )}
+            </div>
           ) : (
             <>
               <NavLink

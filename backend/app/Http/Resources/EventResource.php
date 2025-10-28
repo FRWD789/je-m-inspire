@@ -54,7 +54,6 @@ class EventResource extends JsonResource
             'creator' => $this->whenLoaded('creator', function() {
                 return new UserResource($this->creator);
             }),
-
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

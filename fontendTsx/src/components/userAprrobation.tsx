@@ -1,15 +1,17 @@
-import { useAuth } from '@/context/AuthContext'
-import usePrivateApi from '@/hooks/usePrivateApi'
+import { privateApi } from '@/api/api'
+import type { User } from '@/types/user'
+
+
 import { ArrowLeft, CheckCheck, LoaderCircle, MessageCircle, RefreshCcw, Undo2, Users } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function AdminApprovalPage() {
-  const api = usePrivateApi()
+
   const navigate = useNavigate()
 
   const [allProfessionals, setAllProfessionals] = useState<any[]>([])
-  const [professionals, setProfessionals] = useState<any[]>([])
+  const [professionals, setProfessionals] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<number | null>(null)
   const [showModal, setShowModal] = useState<any | null>(null)
@@ -27,7 +29,7 @@ export default function AdminApprovalPage() {
   const fetchAllProfessionals = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/admin/approvals', { params: { status: 'all' } })
+      const response = await privateApi.get('/admin/approvals', { params: { status: 'all' } })
       const profData = response.data?.data || []
       setAllProfessionals(Array.isArray(profData) ? profData : [])
     } catch {
@@ -61,7 +63,7 @@ export default function AdminApprovalPage() {
   const handleApprove = async (id: number) => {
     setProcessing(id)
     try {
-      await api.post(`/admin/approvals/${id}/approve`)
+      await privateApi.post(`/admin/approvals/${id}/approve`)
       updateProfessionalState(id, 'approve')
     } finally {
       setProcessing(null)
@@ -72,7 +74,7 @@ export default function AdminApprovalPage() {
     if (rejectionReason.length < 10) return
     setProcessing(id)
     try {
-      await api.post(`/admin/approvals/${id}/reject`, { reason: rejectionReason })
+      await privateApi.post(`/admin/approvals/${id}/reject`, { reason: rejectionReason })
       updateProfessionalState(id, 'reject', rejectionReason)
       setShowModal(null)
       setRejectionReason('')
@@ -159,13 +161,13 @@ export default function AdminApprovalPage() {
                         <tbody>
                           {professionals.map(pro => (
                             <tr key={pro.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                              <td className="py-3 px-4">{pro.last_name || ''}</td>
-                              <td className="py-3 px-4">{pro.email}</td>
-                              <td className="py-3 px-4">{pro.city || 'N/A'}</td>
-                              <td className="py-3 px-4">{pro.created_at ? new Date(pro.created_at).toLocaleDateString('fr-FR') : 'N/A'}</td>
+                              <td className="py-3 px-4">{pro.profile.last_name || ''}</td>
+                              <td className="py-3 px-4">{pro.profile.email}</td>
+                              <td className="py-3 px-4">{pro.profile.city || 'N/A'}</td>
+                              <td className="py-3 px-4">{pro.timestamps.created_at ? new Date(pro.timestamps.created_at).toLocaleDateString('fr-FR') : 'N/A'}</td>
                               <td
                                 className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
-                                title={pro.motivation_letter || ''}
+                                title={pro.profilemotivation_letter || ''}
                                 onClick={() => setShowModal({ type: 'message', content: pro.motivation_letter })}
                               >
                                 <div className="flex items-center gap-2 truncate">

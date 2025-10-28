@@ -14,6 +14,7 @@ use App\Http\Controllers\AbonnementController;
 use App\Http\Controllers\AdminApprovalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommissionController;
+use App\Http\Controllers\ProfessionalProfileController;
 use App\Http\Controllers\VendorEarningsController;
 
 //route auth maher
@@ -83,6 +84,12 @@ Route::post('/reset-password', function (Request $request) {
 // ==========================================
 // ROUTES PUBLIQUES
 // ==========================================
+Route::prefix('v2')->group(function () {
+    Route::post('/login', [App\Http\Controllers\AuthV2Controller::class, 'login']);
+    Route::get('/refresh', [App\Http\Controllers\AuthV2Controller::class, 'refresh']);
+    Route::post('/logout', [App\Http\Controllers\AuthV2Controller::class, 'logout']);
+});
+
 Route::post('/register/user', [AuthController::class, 'registerUser']);
 Route::post('/register/professional', [AuthController::class, 'registerProfessional']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -94,7 +101,7 @@ Route::get('/events/{id}', [EventController::class, 'show']);
 
 // Rôles
 Route::get('/roles', [RoleController::class, 'index']);
-
+Route::get('/user/{id}/public-profile', [ProfessionalProfileController::class, 'show']);
 // Statut de paiement
 Route::get('/payment/status', [PaiementController::class, 'getPaymentStatus']);
 
@@ -116,10 +123,11 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::post('/profile/update', [AuthController::class, 'updateProfile']);
     Route::post('/profile/update-img', [AuthController::class, 'updateProfileImg']);
     Route::put('/profile/update-password', [AuthController::class, 'updatePassword']);
-
+    Route::post('/onboarding/skip-onboarding', [AuthController::class, 'skipOnboarding']);
+    Route::post('/onboarding', [AuthController::class, 'onboarding']);
     // ÉVÉNEMENTS
     Route::post('/events', [EventController::class, 'store']);
-    Route::put('/events/{id}', [EventController::class, 'update']);
+    Route::post('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
     Route::get('/my-events', [EventController::class, 'myEvents']);
 

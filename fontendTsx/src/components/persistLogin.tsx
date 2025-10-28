@@ -1,53 +1,50 @@
-import  { use, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Outlet } from 'react-router-dom'
 import useRefresh from '../hooks/useRefresh'
+import { authService } from '@/service/AuthService';
 
 export default function PersistLogin() {
-
-     const { accessToken,user,setAccessToken,setUser } = useAuth();    
-    const refresh = useRefresh() 
-     const [isLoading,setIsloading]= useState(true)
-
-     useEffect(()=>{
-          
-
-        const verifyRefreshToken = async () =>{
-             console.log('🔄 Tentative de refresh du token...');
-            try {
-               const {new_access_token,ref_user} = await refresh();
-               if (new_access_token&&ref_user) {
-                console.log('✅ Token refreshed avec succès');
-                console.log(ref_user,new_access_token)
-                setAccessToken(new_access_token)
-                setUser(ref_user)
-
-                }
-            }catch(error){
-                console.log(error)
-            }finally{
-                setIsloading(false)
-            }
-        }
-        if (!accessToken) {
-                console.log('ℹ️ Pas de token, tentative de refresh...');
-                verifyRefreshToken();
-            } else {
-                console.log('✅ Token existe déjà');
-                setIsloading(false);
-            }
-
-     },[])
+    const { accessToken, setAccessToken, setUser } = useAuth();    
+    const [isLoading, setIsLoading] = useState(true)
+        useEffect(() => {
+              const verifyAuth = async () => {
+                    try {
+                    if (!accessToken) {
+                        const { access_token, user } = await authService.refresh();
+                        if (access_token && user) {
+                        setAccessToken(access_token);
+                        setUser(user);
+                        } else {
+                        // Refresh failed → redirect to login or just continue
+                        console.log("❌ Refresh failed, user needs to login");
+                        }
+                    } else {
+                        console.log("✅ User session is valid");
+                    }
+                    } catch (error) {
+                    console.error("❌ Error verifying auth:", error);
+                    // Optionally, redirect to login
+                    // navigate("/login");
+                    } finally {
+                    setIsLoading(false); // ✅ ensure loading stops
+                    }
+                };
+            verifyAuth();
+        }, [])
 
 
 
 
-  return (
-    <>
-    {isLoading
-        ?<p>loading...</p>
-        :<Outlet/>}
-    </>
-    
-  )
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Vérification de la session...</p>
+                </div>
+            </div>
+        )
+    }
+    return <Outlet />
 }

@@ -2,32 +2,24 @@ import EventList from '@/components/events/EventList'
 import FormEvents from '@/components/events/formEvents'
 import MapEvents from '@/components/map'
 import { useEvent } from '@/context/EventContext'
+import usePrivateApi from '@/hooks/usePrivateApi'
 import {  Loader2, Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export default function MyEvents() {
-  
-    const {loading,myEvents,fetchMyEvents} =  useEvent()
+    const {loading,fetchMyEvents,myEvents} =  useEvent()
     const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
-    
         useEffect(() => {
-          if (myEvents.length === 0 && !loading) {
-            console.log("fetch forced")
-            fetchMyEvents(true);
-          }
+           fetchMyEvents()
 
         }, []); 
               
-      
       const handleEventClick = (eventId: number) => {
         setSelectedEventId(eventId);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
-
-
-
     
       const categories = useMemo(
         () => [...new Set(myEvents.map(e => e.categorie?.name).filter(Boolean))],
@@ -126,28 +118,7 @@ export default function MyEvents() {
     </div>
  
 
-    {
-        open&&
-          <div  className='w-full fixed top-0 left-0 z-9999 backdrop-blur-xs h-screen bg-black/20   '>
-        
-                        <div ref={menuRef} className='px-[24px] py-[32px] h-screen grid gap-y-[24px] absolute top-0 right-0 bg-white '>
-        
-                           <div className='flex justify-between items-center'>
-                                    <h2> Cree votre evenment </h2>
-                                    <Plus className='rotate-45' onClick={()=>setOpen(!open)}/>
-                                </div> 
-                            <div className='max-h-[600px] px-[16px] py-[24px] overflow-y-auto'>
-                                <FormEvents type='create' onSuccess={() => setOpen(false)}/>
-
-                            </div>
-                          
-        
-                        </div>
-                       
-                </div>
- 
-    }
-    
+   
     </>
 
   )

@@ -5,6 +5,8 @@ import Form from "@/components/form"
 import { userAvtarProfileSchema, userPasswordSchema, userProfileSchema, type UserAvtarProfileFormType, type UserPasswordFormType, type UserProfileFormType } from "@/schema/userSchema"
 import Input from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
+import LinkedAccountsSection from "./LinkedAccountsSection"
+import TextArea from "@/components/ui/textArea"
 
 export default function User() {
 
@@ -12,7 +14,7 @@ export default function User() {
   const {updateProfile,updateProfileImg,updatePassword,user} = useAuth()
   const [defaultValues,setDefaultValues] = useState(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(`http://localhost:8000/storage/${user.profile_picture}`)
+  const [preview, setPreview] = useState<string | undefined>(user?.profile.profile_picture)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -24,10 +26,10 @@ export default function User() {
   });
   useEffect(() => {
     if(user) {
-       setDefaultValues(normalizeUserDate(user));
+       setDefaultValues(normalizeUserDate(user.profile));
     }
-  if (user?.profile_picture) {
-    setPreview(`http://localhost:8000/storage/${user.profile_picture}`);
+  if (user?.profile.profile_picture) {
+    setPreview(user.profile.profile_picture);
     } else {
       setPreview("/default-avatar.png");
     }
@@ -86,13 +88,12 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
 
   return (
     <section className="grid gap-y-8">
-      <div className="grid gap-y-4">
+      <div className="grid gap-y-2">
         <h1 className="text-2xl font-semibold flex gap-2 items-center">
           <Settings /> Paramètre du compte
         </h1>
-
         {/* Tabs */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-3 ">
           {["profile", "security", "plan"].map((tab) => (
             <button
               key={tab}
@@ -110,7 +111,7 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
       </div>
 
       {/* Contenu principal */}
-      <div className="bg-white/70 rounded-[8px] shadow-sm  p-6">
+      <div className=" shadow-sm bg-white/50  p-6">
         {currentTab === "profile" && ( 
             <div className="p-8 md:p-10  mx-auto space-y-10">
 
@@ -146,6 +147,10 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
 
                     <Form defaultValues={defaultValues} schema={userProfileSchema} onSubmit={onSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex flex-col md:col-span-2">
+                          <label htmlFor="name" className="text-sm font-medium mb-1">Bio</label>
+                          <TextArea id="biography"  name="biography"  />
+                        </div>
                         <div className="flex flex-col">
                           <label htmlFor="name" className="text-sm font-medium mb-1">Nom</label>
                           <Input id="name" type="text" name="name" placeholder="Votre nom" />
@@ -188,6 +193,7 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
                     <SlidersHorizontal  size={20} className="text-primary" />
                     <h2 className="text-xl font-semibold">plan du compte</h2>
                   </div>
+                  <LinkedAccountsSection/>
                 </div>
               )}
              {currentTab === "security" && (
