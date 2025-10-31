@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\ProfessionalApprovedNotification;
 use App\Notifications\ProfessionalRejectedNotification;
-
+use App\Notifications\ProfessionalApplicationReceivedNotification;
 
 class AuthController extends Controller
 {
@@ -231,6 +231,9 @@ class AuthController extends Controller
             }
 
             $user->load('roles');
+
+            $user->notify(new ProfessionalApplicationReceivedNotification());
+            Log::info('[Professional] Email d\'accusé envoyé', ['user_id' => $user->id]);
 
             return $this->successResponse([
                 'status' => 'pending',

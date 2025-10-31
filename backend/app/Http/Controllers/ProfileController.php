@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Notifications\AccountReactivationRequestReceivedNotification;
 
 class ProfileController extends Controller
 {
@@ -564,5 +565,36 @@ class ProfileController extends Controller
 
             return $this->errorResponse('Erreur lors de la suppression du compte', 500);
         }
+    }
+
+    /**
+     * Demander la réactivation du compte désactivé
+     */
+    public function requestReactivation(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        // Vérifier que le compte est désactivé
+        if ($user->is_active) {
+            return $this->errorResponse('Ce compte est déjà actif', 400);
+        }
+
+        // Calculer l'inactivité
+        $daysInactive = $user->last_login_at
+            ? now()->diffInDays($user->last_login_at)
+            : null;
+
+        // ✅ AJOUTER
+        $user->notify(new AccountReactivationRequestReceivedNotification($daysInactive));
+
+        Log::info('[Account] Demande de réactivation', ['user_id' => $user->id]);
+
+        return $this->successResponse([
+            'message' => 'Demande envoyée. Vous recevrez un email de confirmation.',
+        ]);
     }
 }

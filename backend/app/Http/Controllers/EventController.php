@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Notifications\ReservationConfirmedNotification;
 
 class EventController extends Controller
 {
@@ -513,6 +514,18 @@ class EventController extends Controller
                     'user_id' => $user->id
                 ]);
             }
+
+            // Charger les relations nécessaires
+            $operation->load(['event.localisation', 'paiement']);
+
+            // Envoyer la notification
+            $user->notify(new ReservationConfirmedNotification($operation));
+
+            Log::info('[Reservation] Email de confirmation envoyé', [
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'operation_id' => $operation->id,
+            ]);
 
             return $this->successResponse([
                 'operation' => $operation,
