@@ -15,9 +15,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
   const fetchSubscription = async () => {
     try {
       const data = await privateApi.get("/abonnement/info");
-      data.data.has_pro_plus = true
       setSubscription(data.data);
-
       if (data.data.has_pro_plus) fetchLinkedAccounts();
     } catch (err) {
       console.error("Erreur abonnement:", err);
@@ -27,7 +25,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
   // ✅ 2. Fetch linked accounts if user has Pro Plus
   const fetchLinkedAccounts = async () => {
     try {
-      const { data } = await privateApi.get("/profile/linked-accounts");
+      const data = await privateApi.get("/profile/linked-accounts");
       setAccounts(data.data);
     } catch (err) {
       console.error("Erreur comptes liés:", err);
@@ -42,7 +40,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
     setLoading(true);
     setMessage(null);
     try {
-      const { data } = await privateApi.get(`/api/profile/${provider}/link`);
+      const data = await privateApi.get(`/profile/${provider}/link`);
       window.location.href = data.data.url;
     } catch (err) {
       console.error(err);
@@ -56,7 +54,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
     setLoading(true);
     setMessage(null);
     try {
-      await privateApi.post(`/api/profile/${provider}/unlink`);
+      await privateApi.post(`/profile/${provider}/unlink`);
       setMessage(`Compte ${provider} délié avec succès.`);
       fetchLinkedAccounts();
     } catch (err) {

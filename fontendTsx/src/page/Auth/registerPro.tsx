@@ -7,6 +7,7 @@ import Form from '../../components/form';
 
 import { useAuth } from '../../context/AuthContext';
 import TextArea from '@/components/ui/textArea';
+import Button from '@/components/ui/button';
 
 export const registerSchema = z.object({
   name: z.string()
@@ -83,65 +84,62 @@ export const registerSchema = z.object({
 
 
 export default function RegisterPro() {
-
-
     const {registerPro}= useAuth()
-
-
-
-
-
 
   return (
     <section className='w-full h-screen grid justify-center items-center py-[24px] px-[16px] gap-y-[32px]'>
       <div className='max-w-xl grid gap-y-[32px]'>
         <div className='text-center'>
-          <h1>Join as a Professional</h1>
-          <p>Submit your registration to become a verified professional</p>
+          <h1>Rejoignez en tant que professionnel</h1>
+          <p>Soumettez votre inscription pour devenir un professionnel vérifié</p>
         </div>
         <div>
-          <Form schema={registerSchema} onSubmit={registerPro} >
-            
-            <div className='flex justify-between  gap-x-[8px]'>
-              <FormFiled label='Name'>
-                <Input name='name' />
-              </FormFiled>
-              <FormFiled label='Last Name'>
-                <Input name='last_name' />
-              </FormFiled>
-            </div>
+           <Form schema={registerSchema} onSubmit={registerPro}>
+          {/* Name Fields */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+            <FormFiled label='Name'>
+              <Input name='name' />
+            </FormFiled>
+            <FormFiled label='Last Name'>
+              <Input name='last_name' />
+            </FormFiled>
+          </div>
 
+          {/* City & Date of Birth */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
             <FormFiled label='City'>
               <Input name='city' />
             </FormFiled>
-
             <FormFiled label='Date of Birth'>
               <Input name='date_of_birth' type='date' />
             </FormFiled>
+          </div>
 
-            <FormFiled label='Email'>
-              <Input name='email' />
-            </FormFiled>
+          {/* Email */}
+          <FormFiled label='Email' className='mb-4'>
+            <Input name='email' type='email' />
+          </FormFiled>
 
+          {/* Password Fields */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
             <FormFiled label='Password'>
               <Input name='password' type='password' />
             </FormFiled>
-
             <FormFiled label='Confirm Password'>
               <Input name='password_confirmation' type='password' />
             </FormFiled>
+          </div>
 
-            <FormFiled label='Motivation Letter'>
-              <TextArea name='motivation_letter' />
-            </FormFiled>
+          {/* Motivation Letter */}
+          <FormFiled label='Motivation Letter' className='mb-6'>
+            <TextArea name='motivation_letter' rows={6} />
+          </FormFiled>
 
-           
-            <button
-              type='submit'
-              className='px-[4px] py-[8px] bg-text text-background rounded'
-            >
-              Register as Professional
-            </button>
+          {/* Submit Button */}
+          <Button type='submit'
+          >
+            Register as Professional
+          </Button>
           </Form>
         </div>
       </div>

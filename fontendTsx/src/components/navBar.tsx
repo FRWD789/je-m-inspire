@@ -13,7 +13,7 @@ export default function NavBar() {
   const navLinks = [
     { name: "Accueil", path: "/" },
     { name: "Événements", path: "/events" },
-    { name: "Créer un événement", path: "/dashborad/events" },
+    { name: "Créer un événement", path: "/dashborad/my-events" },
     { name: "À propos", path: "/" },
     ...(user?[{ name: "Mes Reservation", path: "/dashboard/my-reservations" }]:[]),
     

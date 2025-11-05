@@ -12,6 +12,8 @@ import { z } from "zod";
 import Form from '../../components/form';
 import Select from '../../components/ui/select';
 import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
+import Button from '@/components/ui/button';
 
 export const registerSchema = z.object({
   name: z.string()
@@ -67,69 +69,65 @@ export default function Register() {
     const {registerUser}= useAuth()
 
 
-const options= [
-    {
-          description: "utilisateur du site",
-            value: "utilisateur"
-},
-   {
-          description: "professionnel du site",
-            value: "professionnel"
-},
- {
-          description: "admin du site",
-            value: "admin"
-}
 
-
-
-]
 
   return (
                <section className=' w-full h-screen grid justify-center  items-center py-[24px] px-[16px]  gap-y-[32px] '>
                   <div className='max-w-xl grid gap-y-[32px]'>
                        <div className='text-center  '>
                            <h1>
-                               Welcome Back
+                               Créez votre compte
                            </h1>
                            <p>
-                               Register to your Je m'inspire account
+                               Inscrivez-vous pour rejoindre Je m'inspire
                            </p>
                        </div>
                        <div className=' '>
                            <Form schema={registerSchema} onSubmit={registerUser}  >
-                               <div className='flex gap-x-[8px]'>
-                                   <FormFiled label='Name'>
-                                        <Input name='name'  />
-                                    </FormFiled>
-                                     <FormFiled label='Last Name'>
-                                        <Input name='last_name'  />
-                                    </FormFiled>
-                               </div>
-                                <FormFiled label='City'>
-                                    <Input name='city' />
-                                </FormFiled>
-                                      <FormFiled label='Date of Birth'>
-                                    <Input name='date_of_birth' type='date' />
-                                </FormFiled>
-                                <FormFiled label='Email'>
-                                    <Input name='email'  />
-                                </FormFiled>
-                                
-                            
-                                <FormFiled label='Role'>
-                                    <Select name='role' options={options} />
-                                </FormFiled>
-                                    <FormFiled label='Password'>
-                                    <Input name='password' type='password' />
-                                </FormFiled>
-                                     <FormFiled label='Confirm Password'>
-                                    <Input name='password_confirmation' type='password' />
-                                </FormFiled>
-                                <button type='submit' className='px-[4px] py-[8px] bg-text text-background'>Register</button>
+<div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+            <FormFiled label='Name'>
+              <Input name='name' />
+            </FormFiled>
+            <FormFiled label='Last Name'>
+              <Input name='last_name' />
+            </FormFiled>
+          </div>
+
+          {/* City & Date of Birth */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+            <FormFiled label='City'>
+              <Input name='city' />
+            </FormFiled>
+            <FormFiled label='Date of Birth'>
+              <Input name='date_of_birth' type='date' />
+            </FormFiled>
+          </div>
+
+          {/* Email */}
+          <FormFiled label='Email' className='mb-4'>
+            <Input name='email' type='email' />
+          </FormFiled>
+
+          {/* Password Fields */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+            <FormFiled label='Password'>
+              <Input name='password' type='password' />
+            </FormFiled>
+            <FormFiled label='Confirm Password'>
+              <Input name='password_confirmation' type='password' />
+            </FormFiled>
+          </div>
+
+                                <Button type='submit'>Register</Button>
                             </Form>
+                                <small className='hover:underline cursor-pointer text-primary hover:text-accent'> <Link to={"/login"}>Vous avez un compte ?</Link></small>
+
                            
                        </div>
+                          </div>
+                             <hr />
+                             <small className='hover:underline cursor-pointer text-primary hover:text-accent'> <Link to={"/register-pro"}>Rejoignez-nous en tant que professionnel</Link></small>            
+                          <div>
                   </div>
                    
                </section>

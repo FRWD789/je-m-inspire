@@ -27,6 +27,7 @@ import CalenderEventPage from "./features/calender/page/CalenderEventPage";
 import Abonnement from "./page/Abonnement";
 import ProfessionalPublicProfile from "./page/ProProfile";
 import AdminCommissionPage from "./page/UsersComissons";
+import AbonnementSuccess from "./page/abonnementSuccess";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="register-pro" element={<RegisterPro />} />
             <Route path="events" element={<PublicEvents />} />
             <Route path="events/:id" element={<EventDetail />} />
+            <Route path="abonnement/success" element={<AbonnementSuccess/>} />
             <Route path="payment/success" element={<PaymentSuccess />} />
             <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
           </Route>

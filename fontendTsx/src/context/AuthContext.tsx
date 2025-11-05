@@ -122,7 +122,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   const registerUser = async (credentials: RegisterCredentials): Promise<void> => {
     try {
-      const data = await authService.register(credentials);
+      const d={...credentials,role:'user'}
+      const data = await authService.register(d);
       console.log("✅ Inscription utilisateur réussie:", data);
     } catch (err) {
       console.error("Erreur inscription:", err);

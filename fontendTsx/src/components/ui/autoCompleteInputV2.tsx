@@ -47,7 +47,7 @@ export default function AutocompleteInputV2({
     setLoading(true);
     const service = new window.google.maps.places.AutocompleteService();
     service.getPlacePredictions(
-      { input, sessionToken: sessionTokenRef.current, language: "fr", componentRestrictions: { country: "fr" } },
+      { input, sessionToken: sessionTokenRef.current, language: "fr" },
       (predictions, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
           setSuggestions(predictions.map(p => ({ description: p.description, placeId: p.place_id })));

@@ -3,7 +3,8 @@ import z from 'zod'
 import FormFiled from '../../components/utils/form/formFiled';
 import Input from '../../components/ui/input';
 import { useAuth } from '../../context/AuthContext';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Button from '@/components/ui/button';
 export const LoginSchema = z.object({
   email: z
     .string()
@@ -41,10 +42,10 @@ export default function Login() {
                <div className='max-w-xl grid gap-y-[32px]'>
                     <div className='text-center  '>
                         <h1>
-                            Welcome Back
+                            Bon Retour
                         </h1>
                         <p>
-                            Login to your Je m'inspire account
+                            Connectez-vous à votre compte Je m'inspire
                         </p>
                     </div>
                     <div className=' '>
@@ -55,8 +56,12 @@ export default function Login() {
                             <FormFiled label='Password'>
                             <Input name='password' type='password' />
                         </FormFiled>
-                        <button className='px-[4px] py-[8px] bg-text text-background'>Login</button>
+                        <Button type='submit'>Se Connecter</Button>
                     </Form>
+                                                <small className='hover:underline cursor-pointer text-primary hover:text-accent'>Vous n'avez pas encore de compte ? <Link to={"/register"}>Créez-en un maintenant</Link></small>
+
+                    </div>
+                    <div>
                         
                     </div>
                </div>

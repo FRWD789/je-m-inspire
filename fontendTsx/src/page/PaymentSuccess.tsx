@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle, XCircle, Loader2, ArrowLeft, Clock } from "lucide-react";
 import usePrivateApi from "@/hooks/usePrivateApi";
 import { PayementService } from "@/service/PaymentService";
+import { privateApi } from "@/api/api";
 
 interface PaymentResponse {
   success: boolean;
@@ -42,26 +43,24 @@ export default function PaymentSuccess() {
   const [paymentData, setPaymentData] = useState<PaymentResponse | null>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  const api = usePrivateApi();
-  const paymentService = PayementService(api);
+  const paymentService = PayementService();
+  const payment_id = searchParams.get("payment_id");
+  const session_id = searchParams.get("session_id");
 
   useEffect(() => {
-    const payment_id = searchParams.get("payment_id");
-    const session_id = searchParams.get("session_id");
-
-    if (!payment_id && !session_id) {
+    if (!payment_id &&!session_id) {
       setStatus("failed");
       return;
     }
-
     const checkPayment = async () => {
       try {
-        const data = await paymentService.getPaymentStatus({ payment_id, session_id });
-        setPaymentData(data);
-
-        const currentStatus = data.payment?.status || "failed";
-        if (["success", "completed"].includes(currentStatus)) setStatus("success");
+        console.log(session_id)
+        const data =  await privateApi.get("/payment/status", {
+                params: { payment_id, session_id },
+              });
+        setPaymentData(data.data);
+        const currentStatus = data.data.payment?.status || "failed";
+        if (["success", "completed","paid"].includes(currentStatus)) setStatus("success");
         else if (currentStatus === "pending") setStatus("pending");
         else setStatus("failed");
       } catch (error) {
@@ -69,29 +68,29 @@ export default function PaymentSuccess() {
         setStatus("failed");
       }
     };
-
+    console.log(status)
     checkPayment();
   }, [searchParams]);
 
   const payment = paymentData?.payment;
   const event = paymentData?.operation?.event;
-  let thumbnail = event.thumbnail || event.thumbnail_path ;
-  if (thumbnail && !thumbnail.startsWith("http")) {
-    // assume local path, prepend localhost
-    thumbnail = `http://localhost:8000/storage/${thumbnail}`;
-  }
+  // let thumbnail = event.thumbnail || event.thumbnail_path ;
+  // if (thumbnail && !thumbnail.startsWith("http")) {
+  //   // assume local path, prepend localhost
+  //   thumbnail = `http://localhost:8000/storage/${thumbnail}`;
+  // }
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center px-6">
+    <section className="min-h-screen flex flex-col items-center justify-center  text-center px-6">
       {status === "loading" && (
         <>
-          <Loader2 className="animate-spin w-16 h-16 text-indigo-500 mb-4" />
+          <Loader2 className="animate-spin w-16 h-16 text-accent mb-4" />
           <p className="text-gray-600 text-lg">Vérification du paiement en cours...</p>
         </>
       )}
 
       {(status === "success" || status === "pending" || status === "failed") && payment && event && (
-        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg">
+        <div className=" backdrop-blur-2xl rounded-2xl  p-8 w-full max-w-2xl">
           {/* Header */}
           <div className="flex flex-col items-center mb-6">
             {status === "success" && <CheckCircle className="w-20 h-20 text-green-500 mb-3" />}
@@ -111,7 +110,7 @@ export default function PaymentSuccess() {
           {/* Event Info */}
           <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start text-left border-t pt-4">
             <img
-              src={thumbnail}
+              src={'/'}
               alt={event.name}
               className="w-28 h-28 object-cover rounded-lg shadow-sm"
             />
@@ -136,7 +135,7 @@ export default function PaymentSuccess() {
           <div className="mt-6 text-left border-t pt-4 space-y-2">
             <p className="flex justify-between text-gray-700">
               <span>Montant total :</span>
-              <span className="font-semibold">{payment.total.toFixed(2)} €</span>
+              <span className="font-semibold">{payment.total.toFixed(2)} $</span>
             </p>
             <p className="flex justify-between text-gray-700">
               <span>Commission :</span>
@@ -152,7 +151,7 @@ export default function PaymentSuccess() {
                 className={`capitalize font-semibold ${
                   payment.status === "pending"
                     ? "text-yellow-600"
-                    : payment.status === "success"
+                    : payment.status === "paid"
                     ? "text-green-600"
                     : "text-red-600"
                 }`}
@@ -166,7 +165,7 @@ export default function PaymentSuccess() {
           <div className="mt-8 flex justify-center">
             <button
               onClick={() => navigate("/events")}
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition flex items-center gap-2"
+              className="bg-accent text-white px-6 py-3 rounded-lg font-medium hover:bg-accent transition flex items-center gap-2"
             >
               <ArrowLeft size={18} />
               Retourner aux événements
