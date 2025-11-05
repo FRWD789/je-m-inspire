@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use App\Notifications\ReservationConfirmedNotification;
 
 class EventController extends Controller
 {
@@ -27,7 +26,7 @@ class EventController extends Controller
      */
     public function index()
     {
-        $events = Event::with(['localisation', 'categorie', 'images'])
+        $events = Event::with(['localisation', 'categorie', 'images', 'creator'])
             ->where('start_date', '>', now())
             ->orderBy('start_date')
             ->get();
@@ -205,7 +204,6 @@ class EventController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => 1,
-                'quantity' => 0,
             ]);
 
             DB::commit();
@@ -262,25 +260,54 @@ class EventController extends Controller
                 return $this->unauthorizedResponse('Vous n\'êtes pas autorisé à modifier cet événement');
             }
 
-            $validated = $request->validate([
-                'name' => 'sometimes|string|max:255',
-                'description' => 'sometimes|string|max:2000',
-                'start_date' => 'sometimes|date|after_or_equal:now',
-                'end_date' => 'sometimes|date|after:start_date',
-                'base_price' => 'sometimes|numeric|min:0|max:9999.99',
-                'max_places' => 'sometimes|integer|min:1|max:10000',
-                'level' => 'sometimes|string|max:50',
-                'priority' => 'sometimes|integer|min:1|max:10',
-                'localisation_id' => 'sometimes|exists:localisations,id',
-                'categorie_event_id' => 'sometimes|exists:categorie_events,id',
-                'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
-                'delete_images' => 'nullable|array',
-                'delete_images.*' => 'integer|exists:event_images,id',
-                'images_order' => 'nullable|array',
-                'images_order.*' => 'integer|exists:event_images,id',
-            ]);
-
+               $validated = $request->validate([
+                    'name' => 'sometimes|string|max:255',
+                    'description' => 'sometimes|string|max:2000',
+                    'start_date' => 'sometimes|date|after_or_equal:now',
+                    'end_date' => 'sometimes|date|after:start_date',
+                    'base_price' => 'sometimes|numeric|min:0|max:9999.99',
+                    'max_places' => 'sometimes|integer|min:1|max:10000',
+                    'level' => 'sometimes|string|max:50',
+                    'priority' => 'sometimes|integer|min:1|max:10',
+                    'localisation_id' => 'sometimes|exists:localisations,id',
+                    'categorie_event_id' => 'sometimes|exists:categorie_events,id',
+                    'thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,webp,avif|max:2048',
+                    'banner' => 'nullable|file|mimes:jpeg,png,jpg,webp,avif|max:4096',
+                    'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
+                    'delete_images' => 'nullable|array',
+                    'delete_images.*' => 'integer|exists:event_images,id',
+                    'images_order' => 'nullable|array',
+                    'images_order.*' => 'integer|exists:event_images,id',
+                ]);
             DB::beginTransaction();
+
+
+                /** ----------------------------
+                 * Thumbnail update handling
+                 * --------------------------- */
+                if ($request->hasFile('thumbnail')) {
+                    if ($event->thumbnail && Storage::disk('public')->exists($event->thumbnail)) {
+                        Storage::disk('public')->delete($event->thumbnail);
+                    }
+
+                    $thumbName = time() . '_thumb_' . Str::random(8) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
+                    $thumbPath = $request->file('thumbnail')->storeAs('event_thumbnails', $thumbName, 'public');
+                    $validated['thumbnail_path'] = $thumbPath;
+
+                }
+
+                /** ----------------------------
+                 * Banner update handling
+                 * --------------------------- */
+                if ($request->hasFile('banner')) {
+                    if ($event->banner && Storage::disk('public')->exists($event->banner)) {
+                        Storage::disk('public')->delete($event->banner);
+                    }
+                    $bannerName = time() . '_banner_' . Str::random(8) . '.' . $request->file('banner')->getClientOriginalExtension();
+                    $bannerPath = $request->file('banner')->storeAs('event_banners', $bannerName, 'public');
+                    $validated['banner_path'] = $bannerPath;
+                }
+
 
             // Gestion de la suppression d'images
             if (!empty($validated['delete_images'])) {
@@ -361,7 +388,6 @@ class EventController extends Controller
             // Mise à jour des champs de l'événement
             if (isset($validated['max_places'])) {
                 $reservedPlaces = $event->max_places - $event->available_places;
-
                 if ($validated['max_places'] < $reservedPlaces) {
                     DB::rollBack();
                     return $this->errorResponse(
@@ -369,7 +395,6 @@ class EventController extends Controller
                         422
                     );
                 }
-
                 $validated['available_places'] = $validated['max_places'] - $reservedPlaces;
             }
 
@@ -383,11 +408,16 @@ class EventController extends Controller
                     'updated_by' => $user->id
                 ]);
             }
-
-            return $this->resourceResponse(
-                new EventResource($event->load(['localisation', 'categorie', 'images'])),
-                'Événement mis à jour avec succès'
-            );
+            // --- Build response including is_creator and user_role ---
+            $eventResource = new EventResource($event->load(['localisation', 'categorie', 'images']));
+            // Add additional data to the response
+            $responseData = $eventResource->toArray($request);
+            $responseData['is_creator'] = $isCreator;
+            $responseData['user_role'] = $isAdmin ? 'admin' : ($isCreator ? 'creator' : 'user');
+        return $this->successResponse(
+            $responseData,
+            'Événement mis à jour avec succès'
+        );
 
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
@@ -483,7 +513,7 @@ class EventController extends Controller
             }
 
             if ($event->available_places < 1) {
-                return $this->errorResponse('Aucune place disponible', 422);
+                return $this->errorResponse('Places insuffisantes disponibles', 422);
             }
 
             $existingReservation = Operation::where([
@@ -511,21 +541,9 @@ class EventController extends Controller
                 Log::info('[Event] Réservation créée', [
                     'operation_id' => $operation->id,
                     'event_id' => $eventId,
-                    'user_id' => $user->id
+                    'user_id' => $user->id,
                 ]);
             }
-
-            // Charger les relations nécessaires
-            $operation->load(['event.localisation', 'paiement']);
-
-            // Envoyer la notification
-            $user->notify(new ReservationConfirmedNotification($operation));
-
-            Log::info('[Reservation] Email de confirmation envoyé', [
-                'user_id' => $user->id,
-                'event_id' => $event->id,
-                'operation_id' => $operation->id,
-            ]);
 
             return $this->successResponse([
                 'operation' => $operation,
@@ -576,7 +594,7 @@ class EventController extends Controller
             if ($debug) {
                 Log::info('[Event] Réservation annulée', [
                     'event_id' => $eventId,
-                    'user_id' => $user->id
+                    'user_id' => $user->id,
                 ]);
             }
 
@@ -610,13 +628,10 @@ class EventController extends Controller
                 ->get();
 
             $createdEvents = collect();
-            $reservedEvents = collect();
 
             foreach ($events as $event) {
                 $userOpsForEvent = $userOperations->where('event_id', $event->id);
                 $isCreator = $userOpsForEvent->where('type_operation_id', 1)->isNotEmpty();
-                $reservationOps = $userOpsForEvent->where('type_operation_id', 2);
-
                 $eventResource = new EventResource($event);
                 $eventData = $eventResource->toArray(request());
 
@@ -627,23 +642,12 @@ class EventController extends Controller
                     ]));
                 }
 
-                foreach ($reservationOps as $reservationOp) {
-                    $reservedEvents->push(array_merge($eventData, [
-                        'is_creator' => false,
-                        'is_reserved' => true,
-                        'operation_id' => $reservationOp->id,
-                        'user_role' => 'participant'
-                    ]));
-                }
+
             }
 
             return $this->successResponse([
-                'events' => $createdEvents->merge($reservedEvents)->values(),
                 'created_events' => $createdEvents->values(),
-                'reserved_events' => $reservedEvents->values(),
-                'total' => $createdEvents->count() + $reservedEvents->count(),
                 'total_created' => $createdEvents->count(),
-                'total_reserved' => $reservedEvents->count(),
             ], 'Événements de l\'utilisateur récupérés');
 
         } catch (\Exception $e) {

@@ -20,7 +20,7 @@ export default function Layout() {
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
    const isHomePage = location.pathname === '/';
-   const isAuth =location.pathname === '/login'||location.pathname === '/register'
+   const isAuth =location.pathname === '/login'||location.pathname === '/register' || location.pathname==='/register-pro'
 
   return (
     <>

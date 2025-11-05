@@ -1,19 +1,22 @@
 import { Link, NavLink } from "react-router-dom";
-import { ChevronDown, LogIn, UserPlus, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, LogIn, UserPlus, Menu, X, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import type { User } from "@/types/user";
 
 export default function NavBar() {
-  const { user, isAuthenticated } = useAuth();
-  const [openDropdown, setOpenDropdown] = useState(false);
+  const {user,logout} = useAuth()
+  const [openDropdown, setOpenDropdown] = useState<false | "experiences" | "account">(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
 
   const navLinks = [
     { name: "Accueil", path: "/" },
     { name: "Événements", path: "/events" },
-    { name: "Calendrier", path: "/calendar" },
+    { name: "Créer un événement", path: "/dashborad/my-events" },
     { name: "À propos", path: "/" },
-    { name: "Remboursements", path: "/remboursements"}
+    ...(user?[{ name: "Mes Reservation", path: "/dashboard/my-reservations" }]:[]),
+    
   ];
 
   const dropdownLinks = [
@@ -22,6 +25,12 @@ export default function NavBar() {
     { name: "Sonothérapie", path: "/" },
     { name: "Cercles de partage", path: "/" },
   ];
+  const dropdownLinksAcoount = [
+    { name: "Compte", path: "/dashboard/profile-settings",icon:<ExternalLink className="w-3 h-3" /> },
+    { name: "Déconnexion", path: "/" },
+    
+  ];
+
 
   return (
     <nav className="w-full px-4 sm:px-10 md:px-[60px] backdrop-blur-md border-b border-secondary/30">
@@ -30,11 +39,12 @@ export default function NavBar() {
         <div className="flex items-center gap-2">
           <Link to="/">
             <img
-              src="/assets/img/logo.png"
-              alt="Logo"
-              className="h-[clamp(2.5rem,5vw,6rem)] w-auto"
-            />
+            src="/assets/img/logo.png"
+            alt="Logo"
+            className="h-[clamp(2.5rem,5vw,6rem)] w-auto"
+          />
           </Link>
+        
         </div>
 
         {/* DESKTOP NAV LINKS */}
@@ -56,7 +66,7 @@ export default function NavBar() {
           {/* DROPDOWN MENU */}
           <div className="relative">
             <button
-              onClick={() => setOpenDropdown(!openDropdown)}
+              onClick={() => setOpenDropdown(openDropdown === "experiences" ? false : "experiences")}
               onBlur={() => setTimeout(() => setOpenDropdown(false), 200)}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:text-accent transition-all"
             >
@@ -68,7 +78,7 @@ export default function NavBar() {
               />
             </button>
 
-            {openDropdown && (
+            {openDropdown === "experiences" && (
               <div className="absolute top-full mt-2 w-48 bg-white/90 rounded-[8px] shadow-lg border border-gray-100 overflow-hidden">
                 {dropdownLinks.map(({ name, path }) => (
                   <NavLink
@@ -86,20 +96,49 @@ export default function NavBar() {
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden md:flex items-center gap-3">
-          {isAuthenticated ? (
-            <NavLink to="/dashboard">
-              <div className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden hover:ring-2 hover:ring-accent transition-all">
-                {user?.profile_picture ? (
+           {user as User ? (
+            <div className="relative">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === "account" ? false : "account")}
+                onBlur={() => setTimeout(() => setOpenDropdown(false), 200)}
+                className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden"
+              >
+                {user?.profile.profile_picture ? (
                   <img
-                    src={`http://localhost:8000/storage/${user.profile_picture}`}
-                    alt=""
-                    className="w-full h-full object-cover"
+                    src={user.profile.profile_picture}
+                    alt="avatar"
+                    className="object-cover w-full h-full"
                   />
                 ) : (
-                  (user?.name?.[0] || "U").toUpperCase()
+                  user?.profile?.name?.[0] || "U"
                 )}
-              </div>
-            </NavLink>
+              </button>
+
+              {openDropdown === "account" && (
+                <div className="absolute right-0 mt-2 w-48 bg-white/90 rounded-[8px] shadow-lg border border-gray-100 overflow-hidden">
+                  {dropdownLinksAcoount.map(({ name, path, icon }) => (
+
+                    name.toLowerCase()==='déconnexion'?
+                    
+                    <button onClick={()=>logout()} className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all">
+                              {name}
+                    </button>
+                    
+                    
+                    :
+                    <NavLink
+                      key={path}
+                      to={path}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all"
+                    >
+                      {name}
+                      {icon && <span>{icon}</span>}
+                      
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <NavLink
@@ -115,7 +154,7 @@ export default function NavBar() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
               >
                 <UserPlus className="w-4 h-4" />
-                S'inscrire
+                S’inscrire
               </NavLink>
             </>
           )}
@@ -167,44 +206,21 @@ export default function NavBar() {
 
             {/* Auth links */}
             <div className="flex flex-col gap-2 mt-4 border-t border-gray-200 pt-2">
-              {isAuthenticated ? (
-                <NavLink
-                  to="/dashboard"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <div className="w-8 h-8 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-                    {user?.profile_picture ? (
-                      <img
-                        src={`http://localhost:8000/storage/${user.profile_picture}`}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      (user?.name?.[0] || "U").toUpperCase()
-                    )}
-                  </div>
-                  Mon compte
-                </NavLink>
-              ) : (
-                <>
-                  <NavLink
-                    to="/login"
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <LogIn className="w-4 h-4" /> Se connecter
-                  </NavLink>
+              <NavLink
+                to="/login"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <LogIn className="w-4 h-4" /> Se connecter
+              </NavLink>
 
-                  <NavLink
-                    to="/register"
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <UserPlus className="w-4 h-4" /> S'inscrire
-                  </NavLink>
-                </>
-              )}
+              <NavLink
+                to="/register"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <UserPlus className="w-4 h-4" /> S’inscrire
+              </NavLink>
             </div>
           </div>
         </div>

@@ -3,6 +3,10 @@ import { z } from "zod"
 export const userProfileSchema = z.object({
   name: z.string().max(255).optional(),
   last_name: z.string().max(255).optional(),
+  biography: z.string()
+    .max(500, "La bio ne peut pas dépasser 500 caractères")
+    .optional()
+    .or(z.literal("")), // allow empty
   email: z.string().email(),
   city: z.string().max(255).nullable().optional(),
   date_of_birth: z.string().optional(),
@@ -12,6 +16,38 @@ export const userProfileSchema = z.object({
     .nullable()
     .or(z.string().nullable()),
 })
+
+
+
+
+
+export const userOnboardingSchema = z.object({
+  biography: z
+    .string()
+    .max(500, "La bio ne peut pas dépasser 500 caractères")
+    .optional()
+    .or(z.literal("")), // allow empty
+
+  profile_picture: z
+    .any()
+    .transform((val) => {
+      // If user selected a file, extract the first one
+      if (val instanceof FileList) return val[0];
+      return val;
+    })
+    .refine(
+      (val) =>
+        !val ||
+        val instanceof File ||
+        typeof val === "string" ||
+        val === null,
+      {
+        message: "Input must be a valid image file or URL",
+      }
+    )
+    .optional()
+    .nullable(),
+});
 export const userPasswordSchema = z
   .object({
     current_password: z.string().min(1, "Le mot de passe actuel est requis"),

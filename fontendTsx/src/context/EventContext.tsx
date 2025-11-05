@@ -1,183 +1,113 @@
-// fontendTsx/src/context/EventContext.tsx
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { eventService as createEventService } from "../service/EventService";
-import { privateApi } from "../api/api"; // ✅ Import direct
-import { useAuth } from "./AuthContext"; // ✅ On garde useAuth pour user
+import usePrivateApi from "@/hooks/usePrivateApi";
+import { createEventService } from "@/service/EventService";
+import type { CreateEventData, UpdateEventData,Event } from "@/types/events";
+import { createContext, useContext, useEffect, useState } from "react";
 
-type Event = {
-  id: string | number;
-  name: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  base_price: string | number;
-  capacity: string | number;
-  max_places: string | number;
-  level: string;
-  priority: string | number;
-  localisation_address?: string;
-  localisation_lat?: string | number | null | undefined;
-  localisation_lng?: string | number | null | undefined;
-  localisation_id?: string | number;
-  categorie_event_id: string | number;
-};
-
-type EventContextType = {
+interface EventContextType {
+  // State
   event: Event | undefined;
   events: Event[];
-  loading: boolean;
-  myEvents: any[];
-  fetchEventById: (id: any) => Promise<void>;
-  fetchEvents: (force: boolean) => Promise<void>;
-  fetchMyEvents: (force: boolean) => Promise<void>;
-  createEvent: (data: Partial<Event>) => Promise<any>;
-  updateEvent: (id: string | number, data: Partial<Event>) => Promise<Event>;
+  myEvents: Event[];
+  loading: boolean;  
+  // Actions
+  fetchEventById: (id: string | number) => Promise<void>;
+  fetchEvents: () => Promise<void>;
+  fetchMyEvents: () => Promise<void>;
+  createEvent: (data: CreateEventData) => Promise<Event>;
+  updateEvent: (id: string | number, data: UpdateEventData) => Promise<Event>;
   deleteEvent: (id: string | number) => Promise<void>;
-};
-
+}
 const EventContext = createContext<EventContextType | undefined>(undefined);
+interface EventProviderProps {
+  children: React.ReactNode;
 
-export const useEvent = () => {
-  const context = useContext(EventContext);
-  if (!context) throw new Error("useEvent must be used within an EventProvider");
-  return context;
-};
+}
+export default function EventProvider({children }:EventProviderProps) {
 
-type EventProviderProps = {
-  children: ReactNode;
-};
-
-export const EventProvider = ({ children }: EventProviderProps) => {
-  const { user } = useAuth();
-  // ✅ Utiliser directement privateApi importé (pas useApi)
-  
   const [event, setEvent] = useState<Event>();
   const [events, setEvents] = useState<Event[]>([]);
-  const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
-  const eventService = createEventService(privateApi); // ✅ privateApi avec bon baseURL
-  const [lastEventsFetch, setLastEventsFetch] = useState<number>(0);
-  const [lastMyEventsFetch, setLastMyEventsFetch] = useState<number>(0);
+  const eventService = createEventService()
 
-  const fetchEventById = async (id: any) => {
-    setLoading(true);
-    try {
-      const data = await eventService.getById(id);
-      console.log(data);
-      setEvent(data);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des événements:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const STALE_TIME = 3 * 60 * 1000; // 3 minutes cache
-
-  const fetchMyEvents = async (force = false) => {
-    const isStale = Date.now() - lastMyEventsFetch > STALE_TIME;
-    if (!force && !isStale && myEvents.length > 0) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await eventService.getMyEvents();
-      setMyEvents(data.created_events);
-      setLastMyEventsFetch(Date.now());
-    } catch (error) {
-      console.error("Erreur lors de la récupération des événements:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchEvents = async (force = false) => {
-    const isStale = Date.now() - lastEventsFetch > STALE_TIME;
-    if (!force && !isStale && events.length > 0) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await eventService.getAll();
-      setLastEventsFetch(Date.now());
-      setEvents(data);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des événements:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createEvent = async (data: Partial<Event>) => {
-    setLoading(true);
-
-    console.log(data);
-    try {
-      const newEvent = await eventService.create(data);
-      console.log(newEvent);
-      const creatorUpdatedEvents = { ...newEvent, is_creator: true };
-      setEvents((prev) => [...prev, newEvent]);
-      setMyEvents((prev) => [...prev, creatorUpdatedEvents]);
-      setLastEventsFetch(Date.now());
-      setLastMyEventsFetch(Date.now());
-
-      return newEvent;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateEvent = async (id: string | number, data: Partial<Event>) => {
-    setLoading(true);
-    try {
-      const updated = await eventService.update(id, data);
-      const creatorUpdatedEvents = { ...updated, is_creator: true };
-      setEvents((prev) => prev.map((e) => (e.id === id ? updated : e)));
-      setMyEvents((prev) => prev.map((e) => (e.id === id ? creatorUpdatedEvents : e)));
-      setLastEventsFetch(Date.now());
-      setLastMyEventsFetch(Date.now());
-      return updated;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteEvent = async (id: string | number) => {
-    setLoading(true);
-    try {
-      await eventService.delete(id);
-      setEvents((prev) => prev.filter((e) => e.id !== id));
-      setMyEvents((prev) => prev.filter((e) => e.id !== id));
-      setLastEventsFetch(Date.now());
-      setLastMyEventsFetch(Date.now());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEvents();
-    if (user) {
-      fetchMyEvents();
-    }
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchEvents();
-        if (user) fetchMyEvents();
+  useEffect(()=>{
+    fetchEvents()
+  },[])
+  // --- Actions ---
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const data = await eventService.getAll();
+        setEvents(data);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+      } finally {
+        setLoading(false);
       }
     };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    const fetchMyEvents = async () => {
+      setLoading(true);
+      try {
+        const data = await eventService.getMyEvents();
+        setMyEvents(data.created_events || []);
+      } catch (err) {
+        console.error("Error fetching my events:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [user]);
-
+      const fetchEventById = async (id: string | number) => {
+      setLoading(true);
+      try {
+        const data = await eventService.getById(id);
+        setEvent(data);
+      } catch (err) {
+        console.error("Error fetching event by id:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+      const createEvent = async (data: CreateEventData) => {
+      setLoading(true);
+      try {
+        const newEvent = await eventService.create(data);
+        setEvents((prev) => [newEvent, ...prev]);
+        setMyEvents((prev) => [newEvent, ...prev]);
+        return newEvent;
+      } finally {
+        setLoading(false);
+      }
+    };
+    const updateEvent = async (id: string | number, data: UpdateEventData) => {
+      setLoading(true);
+      try {
+        const updatedEvent = await eventService.update(id, data);
+        setEvents((prev) => prev.map((e) =>
+                    e.id === id
+                    ? (({is_creator,user_role,...rest }) => rest)(updatedEvent) // remove unwanted fields
+                    : e
+        ));
+        setMyEvents((prev) => prev.map((e) => (e.id === id ? updatedEvent : e)));
+        if (event?.id === id) setEvent(updatedEvent);
+        return updatedEvent;
+      } finally {
+        setLoading(false);
+      }
+    };
+    const deleteEvent = async (id: string | number) => {
+      setLoading(true);
+      try {
+        await eventService.delete(id);
+        setEvents((prev) => prev.filter((e) => e.id !== id));
+        setMyEvents((prev) => prev.filter((e) => e.id !== id));
+        if (event?.id === id) setEvent(undefined);
+      } finally {
+        setLoading(false);
+      }
+    };
   return (
-    <EventContext.Provider
-      value={{
-        event,
+    <EventContext.Provider value={
+      { event,
         events,
         myEvents,
         loading,
@@ -186,10 +116,23 @@ export const EventProvider = ({ children }: EventProviderProps) => {
         fetchMyEvents,
         createEvent,
         updateEvent,
-        deleteEvent,
-      }}
-    >
+        deleteEvent,}
+    }>
       {children}
     </EventContext.Provider>
-  );
+  )
+}
+
+export const useEvent = (): EventContextType => {
+  const context = useContext(EventContext);
+  if (!context) {
+    throw new Error("useEvent must be used within an EventProvider");
+  }
+  return context;
 };
+
+
+
+
+
+

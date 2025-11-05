@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Stripe\Stripe;
+use Stripe\Checkout\Session;
+use Stripe\Webhook;
 
 class PaiementController extends Controller
 {
@@ -37,14 +40,14 @@ class PaiementController extends Controller
 
             // Vérifications métier
             if ($event->available_places < 1) {
-                return $this->errorResponse('Aucune place disponible', 400);
+                return $this->errorResponse('Pas assez de places disponibles', 400);
             }
 
             if ($event->start_date <= now()) {
                 return $this->errorResponse('Impossible de réserver un événement déjà commencé', 400);
             }
 
-            // Calcul du montant (1 place)
+            // Calcul du montant
             $totalAmount = $event->base_price;
             $amountCents = intval(round($totalAmount * 100));
 
@@ -55,11 +58,14 @@ class PaiementController extends Controller
                 'total' => $totalAmount,
                 'status' => 'pending',
                 'type_paiement_id' => 1,
-                'taux_commission' => $vendor ? ($vendor->commission_rate ?? 0) : 0,
-                'vendor_id' => $vendor ? $vendor->id : null,
+                'taux_commission' => $vendor->commission_rate ?? 0,
+                'vendor_id' => $vendor->id ?? null,
+                'session_id' => '',
+                'paypal_id' => null,
+                'paypal_capture_id' => null,
             ]);
 
-            // Créer l'opération temporaire
+            // Créer l'opération
             $operation = Operation::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
@@ -67,71 +73,69 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // Logique Stripe Connect
-            $hasPlatformAccount = $vendor && !empty($vendor->stripeAccount_id);
-            $hasProPlus = false;
-
-            if ($vendor) {
-                $hasProPlus = $vendor->hasProPlus();
-            }
-
-            $sessionData = [
+            // Configuration de base pour la session Stripe
+            $sessionParams = [
                 'payment_method_types' => ['card'],
                 'line_items' => [[
                     'price_data' => [
-                        'currency' => 'eur',
+                        'currency' => 'cad',
                         'product_data' => [
                             'name' => $event->name,
-                            'description' => "Réservation pour " . $event->name,
+                            'description' => "1 place pour {$event->name}",
                         ],
-                        'unit_amount' => $amountCents,
+                        'unit_amount' => intval(round($event->base_price * 100)),
                     ],
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
                 'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => env('FRONTEND_URL') . '/payment-cancel',
+                'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
                 'metadata' => [
-                    'payment_id' => $paiement->paiement_id,
-                    'event_id' => $event->id,
                     'user_id' => $user->id,
+                    'event_id' => $event->id,
                     'operation_id' => $operation->id,
+                    'payment_id' => $paiement->paiement_id,
+                    'quantity' => 1,
                 ],
             ];
 
-            if ($hasPlatformAccount && $hasProPlus) {
-                $commissionAmount = intval(round($amountCents * ($vendor->commission_rate / 100)));
-                $sessionData['payment_intent_data'] = [
+            // ✅ STRIPE CONNECT : Si le vendor a Pro Plus + compte Stripe lié
+            if ($vendor && $vendor->hasProPlus() && $vendor->stripeAccount_id) {
+                $commissionAmount = intval(round($totalAmount * ($vendor->commission_rate / 100) * 100));
+
+                // Paiement direct au vendor avec prélèvement de la commission
+                $sessionParams['payment_intent_data'] = [
                     'application_fee_amount' => $commissionAmount,
                     'transfer_data' => [
                         'destination' => $vendor->stripeAccount_id,
                     ],
                 ];
+
+                Log::info('[Stripe Connect] Paiement avec commission', [
+                    'vendor_id' => $vendor->id,
+                    'total' => $totalAmount,
+                    'commission' => $commissionAmount / 100,
+                    'vendor_reçoit' => ($amountCents - $commissionAmount) / 100,
+                ]);
             }
 
-            $session = \Stripe\Checkout\Session::create($sessionData);
+            // Créer la session Stripe
+            $session = \Stripe\Checkout\Session::create($sessionParams);
 
             $paiement->update(['session_id' => $session->id]);
 
             DB::commit();
 
-            Log::info('[Stripe] Session créée', [
-                'session_id' => $session->id,
-                'paiement_id' => $paiement->paiement_id,
-                'event_id' => $event->id,
-                'has_vendor' => $vendor !== null,
-                'direct_payment' => $hasPlatformAccount && $hasProPlus
-            ]);
-
             return $this->successResponse([
-                'sessionId' => $session->id,
-                'url' => $session->url
-            ], 'Session de paiement créée');
+                'session_id' => $session->id,
+                'url' => $session->url,
+                'payment_id' => $paiement->paiement_id,
+            ], 'Session de paiement créée avec succès');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[Stripe] Erreur checkout: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la création de la session: ' . $e->getMessage(), 500);
+            Log::error('Erreur Stripe Checkout: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la création de la session de paiement', 500);
         }
     }
 
@@ -151,7 +155,7 @@ class PaiementController extends Controller
 
             // Vérifications métier
             if ($event->available_places < 1) {
-                return $this->errorResponse('Aucune place disponible', 400);
+                return $this->errorResponse('Pas assez de places disponibles', 400);
             }
 
             if ($event->start_date <= now()) {
@@ -173,8 +177,8 @@ class PaiementController extends Controller
                 'total' => $totalAmount,
                 'status' => 'pending',
                 'type_paiement_id' => 1,
-                'taux_commission' => $vendor ? ($vendor->commission_rate ?? 0) : 0,
-                'vendor_id' => $vendor ? $vendor->id : null,
+                'taux_commission' => $vendor->commission_rate ?? 0,
+                'vendor_id' => $vendor->id ?? null,
                 'session_id' => '',
                 'paypal_id' => '',
                 'paypal_capture_id' => null,
@@ -191,51 +195,29 @@ class PaiementController extends Controller
             $purchaseUnit = [
                 "amount" => [
                     "currency_code" => "CAD",
-                    "value" => number_format($totalAmount, 2, '.', ''),
-                    "breakdown" => [
-                        "item_total" => [
-                            "currency_code" => "CAD",
-                            "value" => number_format($totalAmount, 2, '.', '')
-                        ]
-                    ]
+                    "value" => number_format($totalAmount, 2, '.', '')
                 ],
-                "items" => [
-                    [
-                        "name" => $event->name,
-                        "description" => "Réservation pour " . $event->name,
-                        "unit_amount" => [
-                            "currency_code" => "CAD",
-                            "value" => number_format($totalAmount, 2, '.', '')
-                        ],
-                        "quantity" => "1"
-                    ]
-                ],
-                "custom_id" => (string) $paiement->paiement_id
             ];
 
             // Si vendor avec Pro Plus et compte PayPal
-            if ($vendor) {
-                $hasProPlus = $vendor->hasProPlus();
+            if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
+                $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
 
-                if ($hasProPlus && $vendor->paypalAccount_id) {
-                    $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
+                $purchaseUnit["payee"] = [
+                    "merchant_id" => $vendor->paypalAccount_id,
+                ];
 
-                    $purchaseUnit["payee"] = [
-                        "merchant_id" => $vendor->paypalAccount_id,
-                    ];
-
-                    $purchaseUnit["payment_instruction"] = [
-                        "disbursement_mode" => "INSTANT",
-                        "platform_fees" => [
-                            [
-                                "amount" => [
-                                    "currency_code" => "CAD",
-                                    "value" => number_format($commissionAmount, 2, '.', '')
-                                ]
+                $purchaseUnit["payment_instruction"] = [
+                    "disbursement_mode" => "INSTANT",
+                    "platform_fees" => [
+                        [
+                            "amount" => [
+                                "currency_code" => "CAD",
+                                "value" => number_format($commissionAmount, 2, '.', '')
                             ]
                         ]
-                    ];
-                }
+                    ]
+                ];
             }
 
             $response = $paypal->createOrder([
@@ -471,9 +453,9 @@ class PaiementController extends Controller
 
             $event = $operation->event;
 
-            // Vérifier les places disponibles (1 place)
+            // Vérifier les places disponibles
             if ($event->available_places >= 1) {
-                // Déduire 1 place
+                // Déduire les places
                 $event->available_places -= 1;
                 $event->save();
 
@@ -502,14 +484,14 @@ class PaiementController extends Controller
                     'capture_id' => $captureId
                 ]);
             } else {
-                // Pas de place disponible : remboursement
+                // Pas assez de places : remboursement
                 $paiement->update([
                     'status' => 'refunded',
                     'updated_at' => now(),
                 ]);
                 $operation->delete();
 
-                Log::warning('⚠️ Remboursement automatique PayPal - pas de place disponible', [
+                Log::warning('⚠️ Remboursement automatique PayPal - pas assez de places', [
                     'payment_id' => $paiement->paiement_id,
                     'places_disponibles' => $event->available_places
                 ]);
@@ -529,7 +511,7 @@ class PaiementController extends Controller
     /**
      * Gérer le succès du paiement Stripe
      */
-   private function handleStripeCheckoutCompleted($session)
+    private function handleStripeCheckoutCompleted($session)
     {
         try {
             DB::beginTransaction();
@@ -538,28 +520,28 @@ class PaiementController extends Controller
             $planType = $session->metadata->plan_type ?? null;
             $paymentId = $session->metadata->payment_id ?? null;
 
-            // Si c'est un abonnement Pro Plus
+            // Si c'est un abonnement, déléguer à AbonnementController
             if ($planType) {
-                Log::info('[Stripe] Webhook abonnement détecté', [
-                    'session_id' => $session->id,
-                    'plan_type' => $planType
-                ]);
+                DB::rollBack();
+                Log::info('[Stripe] Session d\'abonnement détectée, délégation à AbonnementController');
 
-                $abonnementController = new AbonnementController();
-                $abonnementController->handleStripeSubscriptionSuccess($session);
-
-                DB::commit();
+                $abonnementController = app(AbonnementController::class);
+                $abonnementController->handleStripeCheckoutCompleted($session);
                 return;
             }
 
-            // Sinon, c'est un paiement d'événement
+            // Si pas de payment_id, c'est invalide
             if (!$paymentId) {
-                Log::error('[Stripe] payment_id manquant dans metadata');
+                Log::warning('[Stripe] Session sans payment_id ni plan_type - ignorée', [
+                    'session_id' => $session->id,
+                    'metadata' => (array) $session->metadata
+                ]);
                 DB::rollBack();
                 return;
             }
 
-            $paiement = Paiement::where('paiement_id', $paymentId)->first();
+            // ✅ Traiter le paiement d'événement normalement
+            $paiement = Paiement::find($paymentId);
 
             if (!$paiement) {
                 Log::error('[Stripe] Paiement non trouvé', ['payment_id' => $paymentId]);
@@ -567,10 +549,9 @@ class PaiementController extends Controller
                 return;
             }
 
-            // Protection contre double traitement
             if ($paiement->status === 'paid') {
-                Log::info('[Stripe] Paiement déjà traité', ['payment_id' => $paymentId]);
                 DB::rollBack();
+                Log::info("[Stripe] Paiement déjà traité: $paymentId");
                 return;
             }
 
@@ -584,35 +565,26 @@ class PaiementController extends Controller
 
             $event = $operation->event;
 
-            // Vérifier si place disponible
+            // Vérifier les places disponibles
             if ($event->available_places >= 1) {
-                // Déduire 1 place
                 $event->available_places -= 1;
                 $event->save();
 
-                // Marquer le paiement comme payé
                 $paiement->update([
                     'status' => 'paid',
-                    'updated_at' => now(),
+                    'total' => ($session->amount_total ?? $paiement->total) / 100,
                 ]);
 
-                Log::info('[Stripe] ✅ Paiement confirmé', [
+                Log::info('✅ Paiement Stripe confirmé', [
                     'payment_id' => $paiement->paiement_id,
-                    'operation_id' => $operation->id,
-                    'event_id' => $event->id,
-                    'session_id' => $session->id
+                    'session_id' => $session->id,
                 ]);
             } else {
-                // Plus de places : remboursement
-                $paiement->update([
-                    'status' => 'refunded',
-                    'updated_at' => now(),
-                ]);
+                $paiement->update(['status' => 'refunded']);
                 $operation->delete();
 
-                Log::warning('[Stripe] ⚠️ Remboursement automatique - pas de place disponible', [
-                    'payment_id' => $paiement->paiement_id,
-                    'places_disponibles' => $event->available_places
+                Log::warning('⚠️ Remboursement automatique Stripe - pas assez de places', [
+                    'payment_id' => $paymentId
                 ]);
             }
 

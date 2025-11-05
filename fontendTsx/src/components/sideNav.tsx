@@ -8,21 +8,18 @@ import { Form } from 'react-hook-form';
 import From from './form';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Settings } from 'lucide-react';
+import Abonnement from '@/page/Abonnement';
 
 type SideNavProps = {
   open: boolean;
   children: React.ReactNode;
   width?: string; // width in rem
 };
-const userSettingsSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  email: z.string().email("Email invalide"),
-  city: z.string().optional(),
-  date_of_birth: z.string().optional(),
-});
+
 export default function SideNav({ open, children, width = '16' }: SideNavProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
+  const [showAbonemment, setShowAbonemment] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const { user ,updateProfile,logout} = useAuth();
@@ -50,14 +47,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
     if (showUserSettings) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showUserSettings]);
-     async function handleUpdate(values: any) {
-    try {
-      await updateProfile(values);
-      setShowUserSettings(false); // close modal on success
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du profil :", error);
-    }
-  }
+   
    
 
   return (
@@ -82,22 +72,37 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
               >
                 
                 <div className="w-10 h-10 cursor-pointer rounded-full border hover:scale-110 transition flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-                 {user.profile_picture ?  <img src={`http://localhost:8000/storage/${user.profile_picture}`} alt="" />:user.name[0].toUpperCase()}
+                 {user.profile.profile_picture ?  <img src={user.profile.profile_picture} alt="" />:"d"}
                 </div>
                 <div>
             
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="font-medium text-sm">{user.name}</span>
-                  <span className="text-xs text-gray-500 truncate">{user.email}</span>
+                  <span className="font-medium text-sm">{user.profile.name}</span>
+                  <span className="text-xs text-gray-500 truncate">{user.subscription?.has_pro_plus?'Pro+':'Gratuit'}</span>
                 </div>
+             
                
               </button>
-              <LogOut onClick={() => logout()} className='hover:text-accent hover:scale-110 transition cursor-pointer' />
+              {
+                !user.subscription?.has_pro_plus&&
+                   <div className='w-full' onClick={()=>setShowAbonemment(true)}>
+                   <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>Mettre à niveau</button>
+                </div>
+              }
+              
+             
             </div>
           )}
         </div>
       </aside>
+      {
+        showAbonemment&&
+         <div className="fixed z-999  w-full inset-0 min-h-screen bg-black/5 backdrop-blur-3xl overflow-y-auto ">
+                        <Abonnement handelClose={()=>setShowAbonemment(false)}/>
+          </div>
+
+      }
 
     
     </>

@@ -1,11 +1,12 @@
-import EventCard from '@/components/events/EventCard';
+
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useEvent } from '@/context/EventContext';
+import EventCard from '@/features/events/components/EventCard';
 import { Calendar, Eye, Smartphone, Users } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const { events } = useEvent();
@@ -147,8 +148,8 @@ const filteredEvents = useMemo(() => {
       className="w-full  "
     >
     <div className='flex items-center justify-between'>
-            <p className='text-accent hover:underline  cursor-pointer'>
-                Voir tous les événements →
+            <p className='text-accent hover:underline  cursor-pointer' >
+              <Link to={"/events"}> Voir tous les événements →</Link>  
             </p>
       <div className='flex gap-x-[4px] items-center'>
               <CarouselPrevious  children/>
@@ -160,53 +161,9 @@ const filteredEvents = useMemo(() => {
                 
               {events.map((event) => (
                 <CarouselItem key={event.id} className="w-full">
-                    <div className='bg-white/60 hover:bg-white/90 cursor-pointer backdrop-blur-3xl overflow-hidden rounded-[8px] h-[250px] flex-col flex '>
-                     <div className="w-full h-1/2 flex justify-center items-center bg-gradient-to-br from-gray-200 to-gray-500 text-white ">
-                        {event.thumbnail ? (
-                          <img
-                            src={event.thumbnail}
-                            alt={event.name}
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                        ) : (
-                          "No Image"
-                        )}
-                      </div>
-                    <div className="px-[12px] py-[8px] flex flex-col justify-between flex-1 text-gray-600 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Calendar size={14} />
-                        <span>
-                          {new Date(event.start_date).toLocaleDateString()} →{" "}
-                          {new Date(event.end_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users size={14} />
-                        <span>
-                          {event.capacity}/{event.max_places} places
-                        </span>
-                      </div>
-                         <div className="flex items-center w-full justify-between">
-                      <p className="text-lg  flex-1 font-semibold text-primary">
-                        {event.base_price} €
-                      </p>
-                      <div className='w-[30%]'>
-                        <Button
-                        onClick={() => navigate(`/events/${event.id}`)}
-                        className="text-sm font-medium text-primary "
-                      >
-                        Voir plus 
-                      </Button>
-
-                      </div>
-                      
-                    </div>
-                  
-                    </div>
-
-                 
-
-                  </div>
+                   <EventCard
+                    event={event}
+                   />
       </CarouselItem>
               ))}
             </CarouselContent>

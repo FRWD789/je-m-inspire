@@ -6,7 +6,6 @@ type AutocompleteInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   name: string;
   placeholder?: string;
 };
-
 export default function AutocompleteInput({ name, placeholder = "Rechercher une adresse...", ...rest }: AutocompleteInputProps) {
   const { register, setValue, watch } = useFormContext();
   const [suggestions, setSuggestions] = useState<any[]>([]);

@@ -14,6 +14,6 @@ export default function TextArea({name,...res}:TextAreaProps) {
       const { register } = useFormContext();
     
   return (
-        <textarea {...register(name)} {...res}  className='border-[1px] px-2 py-[4px] rounded-[4px] focus:outline-0' placeholder="Description de l'événement" rows={4} />
+        <textarea {...register(name)} {...res}  className='border-[1px] px-2 py-[4px] rounded-[4px] focus:outline-0' placeholder={"Description de l'événement"} rows={4} />
   )
 }

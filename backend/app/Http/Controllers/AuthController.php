@@ -23,14 +23,10 @@ use App\Notifications\ProfessionalApplicationReceivedNotification;
 
 class AuthController extends Controller
 {
-
-
-   use ApiResponse,HandlesProfilePictures;
-
-
+    use ApiResponse, HandlesProfilePictures;
 
     /**
-     * Inscription pour les utilisateurs réguliers
+     * Vérifier le token reCAPTCHA (V2)
      */
     private function verifyRecaptcha($token, $ip)
     {
@@ -71,7 +67,11 @@ class AuthController extends Controller
             return false;
         }
     }
-   public function registerUser(Request $request)
+
+    /**
+     * Inscription pour les utilisateurs réguliers (V2)
+     */
+    public function registerUser(Request $request)
     {
         try {
             $validated = $request->validate([
@@ -115,6 +115,7 @@ class AuthController extends Controller
             if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
                 return $this->errorResponse('Validation reCAPTCHA échouée', 422);
             }
+
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -166,7 +167,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Inscription pour les professionnels (nécessite approbation)
+     * Inscription pour les professionnels (nécessite approbation) (V2)
      */
     public function registerProfessional(Request $request)
     {
@@ -209,9 +210,11 @@ class AuthController extends Controller
                     'mime' => $file->getMimeType()
                 ]);
             }
+
             if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
                 return $this->errorResponse('Validation reCAPTCHA échouée', 422);
             }
+
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -258,7 +261,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Connexion
+     * Connexion (V2)
      */
     public function login(Request $request)
     {
@@ -273,6 +276,7 @@ class AuthController extends Controller
             // if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
             //     return $this->errorResponse('Validation reCAPTCHA échouée', 422);
             // }
+
             $user = User::where('email', $credentials['email'])->first();
 
             if (!$user) {
@@ -349,7 +353,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Obtenir l'utilisateur authentifié
+     * Obtenir l'utilisateur authentifié (V2)
      */
     public function me()
     {
@@ -367,7 +371,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Déconnexion
+     * Déconnexion (V2)
      */
     public function logout(Request $request)
     {
@@ -394,7 +398,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Rafraîchir le token
+     * Rafraîchir le token (V2)
      */
     public function refresh(Request $request)
     {
@@ -464,6 +468,7 @@ class AuthController extends Controller
 
             $user = JWTAuth::setToken($refreshToken)->authenticate();
             $user->load('roles');
+
             if ($debug) {
                 Log::info('✅ Utilisateur authentifié:', [
                     'id' => $user->id,
@@ -516,27 +521,35 @@ class AuthController extends Controller
             return $this->errorResponse('Erreur lors du refresh', 500);
         }
     }
-        public function updatePassword(Request $request)
-        {
-            $user = Auth::user();
 
-            $request->validate([
-                'current_password' => 'required|string',
-                'new_password' => 'required|string|min:6|confirmed',
-            ]);
+    /**
+     * Mettre à jour le mot de passe (V2)
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
 
-            if (!Hash::check($request->current_password, $user->password)) {
-                return $this->errorResponse('Mot de passe actuel incorrect', 400);
-            }
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
 
-            $user->password = Hash::make($request->new_password);
-            $user->save();
-
-            return $this->successResponse(null, 'Mot de passe mis à jour avec succès');
+        if (!Hash::check($request->current_password, $user->password)) {
+            return $this->errorResponse('Mot de passe actuel incorrect', 400);
         }
 
-    public function updateProfileImg(Request $request){
-         try {
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return $this->successResponse(null, 'Mot de passe mis à jour avec succès');
+    }
+
+    /**
+     * Mettre à jour l'image de profil (V2)
+     */
+    public function updateProfileImg(Request $request)
+    {
+        try {
             $user = Auth::user();
 
             $validated = $request->validate([
@@ -592,8 +605,9 @@ class AuthController extends Controller
             return $this->errorResponse('Erreur lors de la mise à jour du profil', 500);
         }
     }
+
     /**
-     * Mettre à jour le profil
+     * Mettre à jour le profil (V2)
      */
     public function updateProfile(Request $request)
     {
@@ -606,11 +620,7 @@ class AuthController extends Controller
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'city' => 'nullable|string|max:255',
                 'date_of_birth' => 'sometimes|date|before:today',
-
             ]);
-
-
-
 
             $user->update($validated);
             $user->load('roles');
@@ -629,7 +639,81 @@ class AuthController extends Controller
     }
 
     /**
-     * Récupérer les professionnels en attente
+     * Compléter l'onboarding utilisateur (Document 1)
+     */
+    public function onboarding(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            // Validate incoming data
+            $validated = $request->validate([
+                'biography' => 'nullable|string|max:1000',
+                'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+            ]);
+
+            // Handle profile picture upload
+            if ($request->hasFile('profile_picture')) {
+                try {
+                    // Delete old image if exists
+                    $this->deleteProfilePicture($user->profile_picture);
+
+                    // Upload new one
+                    $validated['profile_picture'] = $this->uploadProfilePicture(
+                        $request->file('profile_picture'),
+                        $user->id
+                    );
+                } catch (\Exception $e) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => [$e->getMessage()]
+                    ]);
+                }
+            }
+
+            // Update biography if provided
+            if (isset($validated['biography'])) {
+                $user->biography = $validated['biography'];
+            }
+
+            // Mark onboarding as completed
+            $user->onboarding_completed = true;
+            $user->save();
+            $user->load('roles');
+
+            return $this->resourceResponse(
+                new UserResource($user),
+                'Onboarding complété avec succès'
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            Log::error('[Auth] Erreur onboarding: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du onboarding', 500);
+        }
+    }
+
+    /**
+     * Ignorer l'onboarding (Document 1)
+     */
+    public function skipOnboarding()
+    {
+        try {
+            $user = Auth::user();
+            $user->onboarding_skipped = true;
+            $user->save();
+
+            return $this->successResponse(
+                ['user' => new UserResource($user)],
+                'Onboarding ignoré avec succès'
+            );
+        } catch (\Exception $e) {
+            Log::error('[Auth] Erreur skip onboarding: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du skip onboarding', 500);
+        }
+    }
+
+    /**
+     * Récupérer les professionnels en attente (V2)
      */
     public function getPendingProfessionals()
     {
@@ -645,7 +729,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Récupérer les professionnels approuvés
+     * Récupérer les professionnels approuvés (V2)
      */
     public function getApprovedProfessionals()
     {
@@ -662,7 +746,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Approuver un professionnel
+     * Approuver un professionnel (V2)
      */
     public function approveProfessional($id)
     {
@@ -686,7 +770,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Rejeter un professionnel
+     * Rejeter un professionnel (V2)
      */
     public function rejectProfessional($id)
     {
@@ -708,7 +792,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Récupérer les utilisateurs réguliers
+     * Récupérer les utilisateurs réguliers (V2)
      */
     public function getUsers()
     {
@@ -724,7 +808,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Basculer le statut actif d'un utilisateur
+     * Basculer le statut actif d'un utilisateur (V2)
      */
     public function toggleUserStatus($id)
     {
@@ -747,7 +831,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Générer un refresh token
+     * Générer un refresh token (V2)
      */
     private function generateRefreshToken(User $user): string
     {
@@ -778,7 +862,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Générer un access token
+     * Générer un access token (V2)
      */
     private function generateAccessToken(User $user): string
     {

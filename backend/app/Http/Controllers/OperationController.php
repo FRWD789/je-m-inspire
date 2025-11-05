@@ -23,54 +23,54 @@ class OperationController extends Controller
      */
     public function mesReservations()
     {
+        $user = JWTAuth::user();
+
+        if (!$user) {
+            return $this->unauthenticatedResponse();
+        }
+
         try {
-            $user = JWTAuth::user();
-
-            if (!$user) {
-                return $this->unauthenticatedResponse();
-            }
-
-            $operations = Operation::with(['event.localisation', 'event.categorie', 'paiement'])
+            $reservations = Operation::with([
+                    'event.localisation',
+                    'event.categorie',
+                    'paiement'
+                ])
                 ->where('user_id', $user->id)
                 ->where('type_operation_id', 2)
                 ->orderBy('created_at', 'desc')
-                ->get();
-
-            $reservations = $operations
+                ->get()
                 ->map(function ($operation) {
                     $event = $operation->event;
                     $paiement = $operation->paiement;
 
-                    if ($event->end_date < now()) {
-                        $statut = 'Terminé';
-                    } elseif ($event->start_date <= now()) {
+                    $now = now();
+                    $statut = 'À venir';
+                    if ($event->start_date <= $now && $event->end_date >= $now) {
                         $statut = 'En cours';
-                    } else {
-                        $statut = 'À venir';
+                    } elseif ($event->end_date < $now) {
+                        $statut = 'Terminé';
                     }
 
                     return [
                         'id' => $operation->id,
-                        'event_id' => $event->id,
                         'event_name' => $event->name,
                         'start_date' => $event->start_date->toIso8601String(),
                         'end_date' => $event->end_date->toIso8601String(),
                         'localisation' => $event->localisation->name ?? 'Non spécifié',
                         'categorie' => $event->categorie->name ?? 'Non spécifiée',
                         'unit_price' => (float) $event->base_price,
-                        'total_price' => $paiement ? (float) $paiement->total : (float) $event->base_price,
+                        'total_price' => $paiement->total,
                         'statut_paiement' => $paiement ? $paiement->status : 'pending',
                         'statut' => $statut,
                         'date_reservation' => $operation->created_at->toIso8601String(),
                         'peut_annuler' => ($paiement && $paiement->status !== 'paid') || $event->start_date > now()->addHours(24),
-
+                        'event' => $event,
                     ];
                 });
 
             $stats = [
                 'total_reservations' => $reservations->count(),
                 'a_venir' => $reservations->where('statut', 'À venir')->count(),
-                'total_places' => $reservations->count(), // 1 réservation = 1 place
                 'total_depense' => (float) $reservations->where('statut_paiement', 'paid')->sum('total_price')
             ];
 
@@ -118,7 +118,7 @@ class OperationController extends Controller
             DB::beginTransaction();
 
             if ($paiement && $paiement->status === 'paid') {
-                $event->available_places += $operation->quantity;
+                $event->available_places += 1;
                 $event->save();
             }
 
@@ -163,7 +163,6 @@ class OperationController extends Controller
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
                 'type_operation_id' => 'required|in:1,2,3',
-                'quantity' => 'required|integer|min:1',
             ]);
 
             $event = Event::findOrFail($validated['event_id']);
@@ -171,11 +170,11 @@ class OperationController extends Controller
             DB::beginTransaction();
 
             if ($validated['type_operation_id'] == 2) {
-                if ($event->available_places < $validated['quantity']) {
+                if ($event->available_places < 1) {
                     return $this->errorResponse('Pas assez de places disponibles', 400);
                 }
 
-                $event->available_places -= $validated['quantity'];
+                $event->available_places -= 1;
                 $event->save();
             }
 
@@ -183,7 +182,6 @@ class OperationController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => $validated['type_operation_id'],
-                'quantity' => $validated['quantity']
             ]);
 
             DB::commit();
