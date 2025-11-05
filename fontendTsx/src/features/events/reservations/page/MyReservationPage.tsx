@@ -27,7 +27,6 @@ export default function MyReservationPage() {
                 reservation_id: r.id,
                 reservation_status: r.statut,
                 payment_status: r.statut_paiement,
-                quantity: r.quantity,
                 total_price: r.total_price,
                 can_cancel: r.peut_annuler,
                 reservation_date: r.date_reservation,

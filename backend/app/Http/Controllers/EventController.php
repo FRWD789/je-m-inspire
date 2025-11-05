@@ -163,11 +163,11 @@ class EventController extends Controller
                 'categorie_event_id' => $validated['categorie_event_id'],
                 'thumbnail_path' => $thumbnailPath,
                 'banner_path' => $bannerPath,
-        
+
             ]);
 
             // Upload thumbnail
-     
+
             // Upload des images
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
@@ -204,7 +204,6 @@ class EventController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => 1,
-                'quantity' => 0,
             ]);
 
             DB::commit();
@@ -282,7 +281,7 @@ class EventController extends Controller
                 ]);
             DB::beginTransaction();
 
-            
+
                 /** ----------------------------
                  * Thumbnail update handling
                  * --------------------------- */
@@ -294,7 +293,7 @@ class EventController extends Controller
                     $thumbName = time() . '_thumb_' . Str::random(8) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
                     $thumbPath = $request->file('thumbnail')->storeAs('event_thumbnails', $thumbName, 'public');
                     $validated['thumbnail_path'] = $thumbPath;
-                   
+
                 }
 
                 /** ----------------------------
@@ -501,14 +500,6 @@ class EventController extends Controller
         }
 
         try {
-            $validated = $request->validate([
-                'quantity' => 'required|integer|min:1|max:10'
-            ]);
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
-        }
-
-        try {
             DB::beginTransaction();
 
             $event = Event::lockForUpdate()->find($eventId);
@@ -521,7 +512,7 @@ class EventController extends Controller
                 return $this->errorResponse('Impossible de réserver pour un événement passé ou en cours', 422);
             }
 
-            if ($event->available_places < $validated['quantity']) {
+            if ($event->available_places < 1) {
                 return $this->errorResponse('Places insuffisantes disponibles', 422);
             }
 
@@ -535,14 +526,13 @@ class EventController extends Controller
                 return $this->errorResponse('Vous avez déjà une réservation pour cet événement', 422);
             }
 
-            $event->available_places -= $validated['quantity'];
+            $event->available_places -= 1;
             $event->save();
 
             $operation = Operation::create([
                 'user_id' => $user->id,
                 'event_id' => $eventId,
                 'type_operation_id' => 2,
-                'quantity' => $validated['quantity'],
             ]);
 
             DB::commit();
@@ -552,7 +542,6 @@ class EventController extends Controller
                     'operation_id' => $operation->id,
                     'event_id' => $eventId,
                     'user_id' => $user->id,
-                    'quantity' => $validated['quantity']
                 ]);
             }
 
@@ -595,7 +584,7 @@ class EventController extends Controller
             }
 
             $event = Event::lockForUpdate()->find($eventId);
-            $event->available_places += $operation->quantity;
+            $event->available_places += 1;
             $event->save();
 
             $operation->delete();
@@ -606,7 +595,6 @@ class EventController extends Controller
                 Log::info('[Event] Réservation annulée', [
                     'event_id' => $eventId,
                     'user_id' => $user->id,
-                    'quantity' => $operation->quantity
                 ]);
             }
 
@@ -654,7 +642,7 @@ class EventController extends Controller
                     ]));
                 }
 
-               
+
             }
 
             return $this->successResponse([

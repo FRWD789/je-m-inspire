@@ -20,9 +20,6 @@ return new class extends Migration
             // FK type_operation
             $table->foreignId('type_operation_id')->constrained('type_operations')->onDelete('cascade');
 
-            // Nombre de places (remplace adults + children)
-            $table->integer('quantity')->default(1);
-
             // FK paiement (optionnel)
             $table->foreignId('paiement_id')->nullable()->constrained('paiements', 'paiement_id')->onDelete('set null');
 

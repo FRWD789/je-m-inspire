@@ -43,7 +43,7 @@ interface EventCardProps {
   mode?: CardMode;
   onEdit?: (event: EventCardData) => void;
   onDelete?: (event: EventCardData) => void;
-  onCancel?: (event: EventCardData) => Promise<void>; // <--- new cancel callback
+  onCancel?: (event: EventCardData) => void; // callback annullement
   className?: string;
 }
 
@@ -60,7 +60,7 @@ export default function EventCard({
   const isHorizontal = orientation === "horizontale";
   const [loadingCancel, setLoadingCancel] = useState(false);
 
-  // Payment status color
+  // Couleur du statut de paiement
   const paymentColor =
     event.reservation_status === "paid"
       ? "text-green-600"
@@ -68,7 +68,8 @@ export default function EventCard({
       ? "text-yellow-600"
       : "text-red-600";
 
-  
+  // 🔹 Debug log
+  console.log("EventCard render:", event.id, event.peut_annuler, typeof onCancel);
 
   return (
     <Card
@@ -125,9 +126,14 @@ export default function EventCard({
             <p className={`mt-1 text-sm ${paymentColor}`}>
               Paiement: {event.reservation_status}
             </p>
+
+            {/* 🔹 Bouton Annuler */}
             {event.peut_annuler && onCancel && (
               <Button
-                onClick={() => onCancel(event)}
+                onClick={() => {
+                  console.log("EventCard: click annuler pour event", event.id);
+                  onCancel(event);
+                }}
                 disabled={loadingCancel}
                 className={`mt-2 text-xs px-3 py-1 bg-red-500 hover:bg-red-600 text-white ${
                   loadingCancel ? "opacity-50 cursor-not-allowed" : ""

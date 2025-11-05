@@ -12,7 +12,7 @@ interface PaymentResponse {
     id: number;
     total: number;
     status: string;
-    taux_commission: number;
+    
     session_id: string;
     paypal_id: string | null;
     vendor_id: number;
@@ -20,7 +20,7 @@ interface PaymentResponse {
   };
   operation: {
     id: number;
-    quantity: number;
+  
     type_operation_id: number;
     event: {
       id: number;
@@ -136,14 +136,6 @@ export default function PaymentSuccess() {
             <p className="flex justify-between text-gray-700">
               <span>Montant total :</span>
               <span className="font-semibold">{payment.total.toFixed(2)} $</span>
-            </p>
-            <p className="flex justify-between text-gray-700">
-              <span>Commission :</span>
-              <span>{payment.taux_commission}%</span>
-            </p>
-            <p className="flex justify-between text-gray-700">
-              <span>Quantité :</span>
-              <span>{paymentData.operation.quantity}</span>
             </p>
             <p className="flex justify-between text-gray-700">
               <span>Statut :</span>

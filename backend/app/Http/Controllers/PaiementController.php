@@ -30,18 +30,16 @@ class PaiementController extends Controller
         try {
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
-                'quantity' => 'required|integer|min:1|max:20',
             ]);
 
             \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
             $event = Event::with(['localisation', 'categorie'])->findOrFail($validated['event_id']);
             $user = JWTAuth::user();
-            $quantity = $validated['quantity'];
             $vendor = $event->creator;
 
             // Vérifications métier
-            if ($event->available_places < $quantity) {
+            if ($event->available_places < 1) {
                 return $this->errorResponse('Pas assez de places disponibles', 400);
             }
 
@@ -50,7 +48,7 @@ class PaiementController extends Controller
             }
 
             // Calcul du montant
-            $totalAmount = $quantity * $event->base_price;
+            $totalAmount = $event->base_price;
             $amountCents = intval(round($totalAmount * 100));
 
             DB::beginTransaction();
@@ -72,7 +70,6 @@ class PaiementController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => 2,
-                'quantity' => $quantity,
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
@@ -84,11 +81,11 @@ class PaiementController extends Controller
                         'currency' => 'cad',
                         'product_data' => [
                             'name' => $event->name,
-                            'description' => "$quantity place(s) pour {$event->name}",
+                            'description' => "1 place pour {$event->name}",
                         ],
                         'unit_amount' => intval(round($event->base_price * 100)),
                     ],
-                    'quantity' => $quantity,
+                    'quantity' => 1,
                 ]],
                 'mode' => 'payment',
                 'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
@@ -98,7 +95,7 @@ class PaiementController extends Controller
                     'event_id' => $event->id,
                     'operation_id' => $operation->id,
                     'payment_id' => $paiement->paiement_id,
-                    'quantity' => $quantity,
+                    'quantity' => 1,
                 ],
             ];
 
@@ -150,16 +147,14 @@ class PaiementController extends Controller
         try {
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
-                'quantity' => 'required|integer|min:1|max:20',
             ]);
 
             $event = Event::with(['localisation', 'categorie'])->findOrFail($validated['event_id']);
             $user = JWTAuth::user();
-            $quantity = $validated['quantity'];
             $vendor = $event->creator;
 
             // Vérifications métier
-            if ($event->available_places < $quantity) {
+            if ($event->available_places < 1) {
                 return $this->errorResponse('Pas assez de places disponibles', 400);
             }
 
@@ -169,7 +164,7 @@ class PaiementController extends Controller
 
             DB::beginTransaction();
 
-            $totalAmount = $quantity * $event->base_price;
+            $totalAmount = $event->base_price;
 
             // Configuration PayPal
             $paypal = new PayPalClient;
@@ -194,7 +189,6 @@ class PaiementController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => 2,
-                'quantity' => $quantity,
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
@@ -460,9 +454,9 @@ class PaiementController extends Controller
             $event = $operation->event;
 
             // Vérifier les places disponibles
-            if ($event->available_places >= $operation->quantity) {
+            if ($event->available_places >= 1) {
                 // Déduire les places
-                $event->available_places -= $operation->quantity;
+                $event->available_places -= 1;
                 $event->save();
 
                 // Extraire le montant selon le format du payload
@@ -486,7 +480,6 @@ class PaiementController extends Controller
                 Log::info('✅ Paiement PayPal confirmé', [
                     'payment_id' => $paiement->paiement_id,
                     'operation_id' => $operation->id,
-                    'quantity' => $operation->quantity,
                     'event_id' => $event->id,
                     'capture_id' => $captureId
                 ]);
@@ -500,7 +493,6 @@ class PaiementController extends Controller
 
                 Log::warning('⚠️ Remboursement automatique PayPal - pas assez de places', [
                     'payment_id' => $paiement->paiement_id,
-                    'places_demandees' => $operation->quantity,
                     'places_disponibles' => $event->available_places
                 ]);
             }
@@ -574,8 +566,8 @@ class PaiementController extends Controller
             $event = $operation->event;
 
             // Vérifier les places disponibles
-            if ($event->available_places >= $operation->quantity) {
-                $event->available_places -= $operation->quantity;
+            if ($event->available_places >= 1) {
+                $event->available_places -= 1;
                 $event->save();
 
                 $paiement->update([
@@ -586,7 +578,6 @@ class PaiementController extends Controller
                 Log::info('✅ Paiement Stripe confirmé', [
                     'payment_id' => $paiement->paiement_id,
                     'session_id' => $session->id,
-                    'quantity' => $operation->quantity
                 ]);
             } else {
                 $paiement->update(['status' => 'refunded']);

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import usePrivateApi from "@/hooks/usePrivateApi";
+import { useNavigate } from "react-router-dom"; 
 import { ReservationService } from "@/service/ReservationService";
 import EventCard from "@/components/events/EventCard";
 
 export default function MyReservations() {
   const privateApi = usePrivateApi();
   const service = ReservationService(privateApi);
+  const navigate = useNavigate();
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,6 +26,13 @@ export default function MyReservations() {
     };
     fetchReservations();
   }, []);
+
+   const handleCancel = (eventId: any) => {
+    console.log("MyReservations: handleCancel called with id:", eventId);
+    navigate("/dashboard/refunds-request", {
+      state: { eventId },
+    });
+  };
  
 
   if (loading)
@@ -45,12 +54,11 @@ export default function MyReservations() {
             event={{
               ...r.event,
               // add reservation-specific info for EventCard
-              reservation_quantity: r.quantity,
               reservation_total: r.total_price,
               reservation_status: r.statut_paiement,
               peut_annuler: r.peut_annuler,
             }}
-            onCancel={handleCancel}
+            onCancel={() => handleCancel(r.event.id)}
             className="hover:shadow-lg transition"
             onEdit={r.peut_annuler ? () => alert("Annuler réservation") : undefined}
             mode="reservation"

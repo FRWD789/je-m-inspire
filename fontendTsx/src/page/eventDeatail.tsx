@@ -34,8 +34,6 @@ interface ReservationCardProps {
   user: any;
   expanded: boolean;
   setExpanded: (expanded: boolean) => void;
-  quantity: number;
-  setQuantity: (quantity: number | ((prev: number) => number)) => void;
   method: 'stripe' | 'paypal';
   setMethod: (method: 'stripe' | 'paypal') => void;
   handleCheckout: () => void;
@@ -116,18 +114,13 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
   user,
   expanded,
   setExpanded,
-  quantity,
-  setQuantity,
   method,
   setMethod,
   handleCheckout,
   location,
   navigate
 }) => {
-  const total = useMemo(() => 
-    (quantity * event.base_price).toFixed(2), 
-    [quantity, event.base_price]
-  );
+  const total =  event.base_price;
 
   const handleReserveClick = useCallback(() => {
     if (!user) {
@@ -138,24 +131,9 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
     setExpanded(true);
   }, [user, navigate, location, setExpanded]);
 
-  const handleQuantityChange = useCallback((newQuantity: number) => {
-    const maxQuantity = event.available_places || event.capacity;
-    setQuantity(Math.max(1, Math.min(maxQuantity, newQuantity)));
-  }, [event.available_places, event.capacity, setQuantity]);
+ 
 
-  const decreaseQuantity = useCallback(() => {
-    handleQuantityChange(quantity - 1);
-  }, [quantity, handleQuantityChange]);
-
-  const increaseQuantity = useCallback(() => {
-    handleQuantityChange(quantity + 1);
-  }, [quantity, handleQuantityChange]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 1;
-    handleQuantityChange(value);
-  }, [handleQuantityChange]);
-
+  
   return (
     <aside className={`transition-all duration-300 h-fit rounded-2xl p-6 border border-gray-100 shadow-md flex flex-col gap-4 ${expanded ? "flex-1" : "w-64"}`}>
       <h3 className="text-xl font-semibold">Réserver votre place</h3>
@@ -175,34 +153,6 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
 
       {expanded && user && (
         <div className="space-y-5">
-          {/* Quantity Selector */}
-          <div className="flex items-center justify-between px-3 py-2">
-            <span className="font-medium text-gray-700">Nombre de places</span>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={decreaseQuantity} 
-                className="p-1 border rounded-md hover:bg-gray-100 transition-colors"
-                disabled={quantity <= 1}
-              >
-                <Minus size={16} />
-              </button>
-              <input
-                type="number"
-                min={1}
-                max={event.available_places || event.capacity}
-                value={quantity}
-                onChange={handleInputChange}
-                className="w-16 text-center border border-gray-300 rounded-md py-1 focus:ring-2 focus:ring-indigo-400"
-              />
-              <button
-                onClick={increaseQuantity}
-                className="p-1 border rounded-md hover:bg-gray-100 transition-colors"
-                disabled={quantity >= (event.available_places || event.capacity)}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
 
           {/* Total */}
           <div className="flex items-center justify-between text-xl font-bold text-indigo-600">
@@ -297,7 +247,6 @@ export default function EventDetail() {
   const {event, fetchEventById, loading } = useEvent();
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
-  const [quantity, setQuantity] = useState(1);
   const [method, setMethod] = useState<'stripe' | 'paypal'>('stripe');
   const api = usePrivateApi();
   
@@ -322,8 +271,8 @@ export default function EventDetail() {
 
     try {
       const response = method === 'stripe'
-        ? await paymentService.createStripeCheckout(event.id, quantity)
-        : await paymentService.createPaypalCheckout(event.id, quantity);
+        ? await paymentService.createStripeCheckout(event.id)
+        : await paymentService.createPaypalCheckout(event.id);
 
       const redirectUrl = method === 'stripe' ? response?.url : response?.approval_url;
       
@@ -336,7 +285,7 @@ export default function EventDetail() {
       console.error('Erreur lors du paiement:', error);
       alert('Impossible de créer la session de paiement. Veuillez réessayer.');
     }
-  }, [user, event?.id, method, quantity, paymentService, navigate, location]);
+  }, [user, event?.id, method, paymentService, navigate, location]);
 
   if (loading) {
     return (
@@ -387,8 +336,6 @@ export default function EventDetail() {
           user={user}
           expanded={expanded}
           setExpanded={setExpanded}
-          quantity={quantity}
-          setQuantity={setQuantity}
           method={method}
           setMethod={setMethod}
           handleCheckout={handleCheckout}

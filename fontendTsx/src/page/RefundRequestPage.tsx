@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import usePrivateApi from "@/hooks/usePrivateApi";
+import { useLocation } from "react-router-dom";
 import { ReservationService } from "@/service/ReservationService";
 import { RefundService } from "@/service/RefundService";
 import Button from "@/components/ui/button";
@@ -9,6 +10,9 @@ export default function RefundRequestPage() {
   const privateApi = usePrivateApi();
   const reservationService = ReservationService(privateApi);
   const refundService = RefundService(privateApi);
+
+  const location = useLocation();
+  const eventIdFromState = location.state?.eventId || null;
 
   const [reservations, setReservations] = useState<any[]>([]);
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
@@ -27,6 +31,11 @@ export default function RefundRequestPage() {
           (r: any) => r.statut_paiement === "paid" && r.peut_annuler
         );
         setReservations(eligible);
+
+        if (eventIdFromState) {
+          const found = eligible.find((r) => r.event.id === eventIdFromState);
+          if (found) setSelectedReservationId(found.id);
+        }
       } catch (err) {
         console.error(err);
         setError("Impossible de charger vos réservations.");
@@ -45,7 +54,7 @@ export default function RefundRequestPage() {
     setSubmitting(true);
     try {
       const reservation = reservations.find((r) => r.id === selectedReservationId);
-      const montant = reservation.event.base_price * reservation.quantity;
+      const montant = reservation.event.base_price;
 
       await refundService.requestRefund(selectedReservationId, motif, montant, captchaToken);
       alert("Demande de remboursement créée avec succès !");
@@ -89,7 +98,7 @@ export default function RefundRequestPage() {
           <option value="">-- Choisissez un événement --</option>
           {reservations.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.event_name} ({r.quantity} place{r.quantity > 1 ? "s" : ""})
+              {r.event_name}
             </option>
           ))}
         </select>

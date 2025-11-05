@@ -6,8 +6,8 @@ use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use App\Traits\HandlesProfilePictures;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -19,88 +19,59 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\ProfessionalApprovedNotification;
 use App\Notifications\ProfessionalRejectedNotification;
-
+use App\Notifications\ProfessionalApplicationReceivedNotification;
 
 class AuthController extends Controller
 {
-  
-   use ApiResponse,HandlesProfilePictures;
-
+    use ApiResponse, HandlesProfilePictures;
 
     /**
-     * Compléter l’onboarding utilisateur (bio + photo de profil)
+     * Vérifier le token reCAPTCHA (V2)
      */
-        public function onboarding(Request $request)
-        {
-            try {
-                $user = Auth::user();
+    private function verifyRecaptcha($token, $ip)
+    {
+        Log::info('[reCAPTCHA] === DÉBUT VÉRIFICATION ===', [
+            'token_present' => !empty($token),
+            'token_length' => $token ? strlen($token) : 0,
+            'ip' => $ip,
+            'config_site_key' => config('recaptcha.site_key'),
+            'config_secret_key' => config('recaptcha.secret_key') ? 'PRÉSENTE' : 'MANQUANTE',
+            'verify_url' => config('recaptcha.verify_url')
+        ]);
 
-                // Validate incoming data
-                $validated = $request->validate([
-                    'biography' => 'nullable|string|max:1000',
-                    'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
-                ]);
-
-                // Handle profile picture upload
-                if ($request->hasFile('profile_picture')) {
-                    try {
-                        // Delete old image if exists
-                        $this->deleteProfilePicture($user->profile_picture);
-
-                        // Upload new one
-                        $validated['profile_picture'] = $this->uploadProfilePicture(
-                            $request->file('profile_picture'),
-                            $user->id
-                        );
-                    } catch (\Exception $e) {
-                        return $this->validationErrorResponse([
-                            'profile_picture' => [$e->getMessage()]
-                        ]);
-                    }
-                }
-
-                // Update biography if provided
-                if (isset($validated['biography'])) {
-                    $user->biography = $validated['biography'];
-                }
-
-                // Mark onboarding as completed
-                $user->onboarding_completed = true;
-                $user->save();
-                $user->load('roles');
-
-                return $this->resourceResponse(
-                        new UserResource($user),
-                    'Onboarding complété avec succès'
-                );
-            } catch (ValidationException $e) {
-                return $this->validationErrorResponse($e->errors());
-            } catch (\Exception $e) {
-                Log::error('[Auth] Erreur onboarding: ' . $e->getMessage());
-                return $this->errorResponse('Erreur lors du onboarding', 500);
-            }
+        if (!$token) {
+            Log::error('[reCAPTCHA] Token manquant');
+            return false;
         }
 
-    public function skipOnboarding()
-    {
         try {
-            $user = Auth::user();
-            $user->onboarding_skipped = true;
-            $user->save();
+            $response = \Illuminate\Support\Facades\Http::asForm()->post(config('recaptcha.verify_url'), [
+                'secret' => config('recaptcha.secret_key'),
+                'response' => $token,
+                'remoteip' => $ip
+            ]);
 
-            return $this->successResponse(
-                ['user' => new UserResource($user)],
-                'Onboarding ignoré avec succès'
-            );
+            $result = $response->json();
+
+            Log::info('[reCAPTCHA] Réponse Google', [
+                'success' => $result['success'] ?? false,
+                'error_codes' => $result['error-codes'] ?? [],
+                'challenge_ts' => $result['challenge_ts'] ?? null
+            ]);
+
+            return $result['success'] ?? false;
         } catch (\Exception $e) {
-            Log::error('[Auth] Erreur skip onboarding: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors du skip onboarding', 500);
+            Log::error('[reCAPTCHA] Exception', [
+                'message' => $e->getMessage()
+            ]);
+            return false;
         }
     }
+
     /**
-     * Inscription pour les utilisateurs réguliers
+     * Inscription pour les utilisateurs réguliers (V2)
      */
-   public function registerUser(Request $request)
+    public function registerUser(Request $request)
     {
         try {
             $validated = $request->validate([
@@ -110,14 +81,41 @@ class AuthController extends Controller
                 'date_of_birth' => 'required|date|before:today',
                 'city' => 'nullable|string|max:255',
                 'password' => 'required|string|min:6|confirmed',
-               
+                'profile_picture' => 'nullable|file|max:2048',
             ]);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
 
         try {
-            
+            $profilePicturePath = null;
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                Log::info('[Auth] Image de profil uploadée lors de l\'inscription', [
+                    'filename' => $filename,
+                    'path' => $profilePicturePath,
+                    'mime' => $file->getMimeType()
+                ]);
+            }
+
+            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            }
+
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -125,6 +123,7 @@ class AuthController extends Controller
                 'date_of_birth' => $validated['date_of_birth'],
                 'city' => $validated['city'] ?? null,
                 'password' => Hash::make($validated['password']),
+                'profile_picture' => $profilePicturePath,
                 'is_approved' => true,
                 'approved_at' => now(),
             ]);
@@ -136,18 +135,39 @@ class AuthController extends Controller
 
             $user->load('roles');
 
-          
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = $this->generateRefreshToken($user);
 
-            return $this->successResponse( 'Inscription réussie', 201);
+            return $this->successResponse([
+                'user' => new UserResource($user),
+                'token' => $accessToken,
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'refresh_token' => $refreshToken
+            ], 'Inscription réussie', 201)->cookie(
+                'refresh_token',
+                $refreshToken,
+                7*24*60,
+                '/',
+                null,
+                false,
+                true,
+                false,
+                'lax'
+            );
 
         } catch (\Exception $e) {
             Log::error('[Auth] Erreur inscription utilisateur: ' . $e->getMessage());
+
+            if (isset($profilePicturePath) && Storage::disk('public')->exists($profilePicturePath)) {
+                Storage::disk('public')->delete($profilePicturePath);
+            }
+
             return $this->errorResponse('Erreur lors de l\'inscription', 500);
         }
     }
 
     /**
-     * Inscription pour les professionnels (nécessite approbation)
+     * Inscription pour les professionnels (nécessite approbation) (V2)
      */
     public function registerProfessional(Request $request)
     {
@@ -167,7 +187,33 @@ class AuthController extends Controller
         }
 
         try {
-          
+            $profilePicturePath = null;
+
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
+                }
+
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                Log::info('[Auth] Image de profil uploadée lors de l\'inscription pro', [
+                    'filename' => $filename,
+                    'path' => $profilePicturePath,
+                    'mime' => $file->getMimeType()
+                ]);
+            }
+
+            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            }
 
             $user = User::create([
                 'name' => $validated['name'],
@@ -177,6 +223,7 @@ class AuthController extends Controller
                 'city' => $validated['city'] ?? null,
                 'password' => Hash::make($validated['password']),
                 'motivation_letter' => $validated['motivation_letter'],
+                'profile_picture' => $profilePicturePath,
                 'is_approved' => false,
                 'approved_at' => null,
             ]);
@@ -187,6 +234,9 @@ class AuthController extends Controller
             }
 
             $user->load('roles');
+
+            $user->notify(new ProfessionalApplicationReceivedNotification());
+            Log::info('[Professional] Email d\'accusé envoyé', ['user_id' => $user->id]);
 
             return $this->successResponse([
                 'status' => 'pending',
@@ -202,14 +252,16 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error('[Auth] Erreur inscription professionnel: ' . $e->getMessage());
 
-           
+            if (isset($profilePicturePath) && Storage::disk('public')->exists($profilePicturePath)) {
+                Storage::disk('public')->delete($profilePicturePath);
+            }
 
             return $this->errorResponse('Erreur lors de l\'inscription', 500);
         }
     }
 
     /**
-     * Connexion
+     * Connexion (V2)
      */
     public function login(Request $request)
     {
@@ -221,20 +273,18 @@ class AuthController extends Controller
                 'password' => 'required|string',
             ]);
 
+            // if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
+            //     return $this->errorResponse('Validation reCAPTCHA échouée', 422);
+            // }
+
             $user = User::where('email', $credentials['email'])->first();
 
             if (!$user) {
                 return $this->errorResponse('Identifiants invalides', 401);
             }
 
-                // Vérifie si le compte est approuvé
             if (!$user->is_approved) {
-                // Vérifie s'il existe une raison de rejet
-                $reason = $user->rejection_reason
-                    ? 'Compte rejeté : ' . $user->rejection_reason
-                    : 'Compte en attente d\'approbation';
-
-                return $this->errorResponse($reason, 403);
+                return $this->errorResponse('Compte en attente d\'approbation', 403);
             }
 
             // if ($user->last_login_at) {
@@ -303,7 +353,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Obtenir l'utilisateur authentifié
+     * Obtenir l'utilisateur authentifié (V2)
      */
     public function me()
     {
@@ -321,7 +371,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Déconnexion
+     * Déconnexion (V2)
      */
     public function logout(Request $request)
     {
@@ -337,7 +387,7 @@ class AuthController extends Controller
             Cache::forget("refresh_token:$jti");
 
             return $this->successResponse(
-                // null,
+                null,
                 'Déconnexion réussie'
             )->cookie('refresh_token', '', -1);
 
@@ -348,7 +398,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Rafraîchir le token
+     * Rafraîchir le token (V2)
      */
     public function refresh(Request $request)
     {
@@ -418,7 +468,7 @@ class AuthController extends Controller
 
             $user = JWTAuth::setToken($refreshToken)->authenticate();
             $user->load('roles');
-            $request->setUserResolver(fn () => $user);
+
             if ($debug) {
                 Log::info('✅ Utilisateur authentifié:', [
                     'id' => $user->id,
@@ -447,11 +497,10 @@ class AuthController extends Controller
 
                 Log::info('✅ ========== REFRESH TOKEN SUCCESS ==========');
             }
-         
+
             return $this->successResponse([
                 'access_token' => $newAccessToken,
                 'expires_in' => JWTAuth::factory()->getTTL() * 60,
-                'user'=> new UserResource($user)
             ], 'Token rafraîchi')->cookie(
                 'refresh_token',
                 $newRefreshToken,
@@ -472,51 +521,75 @@ class AuthController extends Controller
             return $this->errorResponse('Erreur lors du refresh', 500);
         }
     }
-        public function updatePassword(Request $request)
-        {
-            $user = Auth::user();
 
-            $request->validate([
-                'current_password' => 'required|string',
-                'new_password' => 'required|string|min:6|confirmed',
-            ]);
+    /**
+     * Mettre à jour le mot de passe (V2)
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
 
-            if (!Hash::check($request->current_password, $user->password)) {
-                return $this->errorResponse('Mot de passe actuel incorrect', 400);
-            }
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
 
-            $user->password = Hash::make($request->new_password);
-            $user->save();
-
-            return $this->successResponse(null, 'Mot de passe mis à jour avec succès');
+        if (!Hash::check($request->current_password, $user->password)) {
+            return $this->errorResponse('Mot de passe actuel incorrect', 400);
         }
 
-    public function updateProfileImg(Request $request){
-         try {
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return $this->successResponse(null, 'Mot de passe mis à jour avec succès');
+    }
+
+    /**
+     * Mettre à jour l'image de profil (V2)
+     */
+    public function updateProfileImg(Request $request)
+    {
+        try {
             $user = Auth::user();
 
             $validated = $request->validate([
                 'profile_picture' => 'nullable|file|max:2048',
             ]);
 
-                  if ($request->hasFile('profile_picture')) {
-                    try {
-                        // Delete old one
-                        $this->deleteProfilePicture($user->profile_picture);
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
 
-                        // Upload new one
-                        $validated['profile_picture'] = $this->uploadProfilePicture(
-                            $request->file('profile_picture'),
-                            $user->id
-                        );
-                    } catch (\Exception $e) {
-                        return $this->validationErrorResponse([
-                            'profile_picture' => [$e->getMessage()]
-                        ]);
-                    }
+                // Vérification manuelle du type MIME
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                if (!in_array($file->getMimeType(), $allowedMimes)) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => ['Le fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                    ]);
                 }
 
-             
+                // Supprimer l'ancienne image si elle existe
+                if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                    Log::info('[Auth] Ancienne image de profil supprimée', [
+                        'user_id' => $user->id,
+                        'old_path' => $user->profile_picture
+                    ]);
+                }
+
+                // Uploader la nouvelle image
+                $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $profilePicturePath = $file->storeAs('profile_pictures', $filename, 'public');
+
+                $validated['profile_picture'] = $profilePicturePath;
+
+                Log::info('[Auth] Nouvelle image de profil uploadée', [
+                    'user_id' => $user->id,
+                    'filename' => $filename,
+                    'path' => $profilePicturePath
+                ]);
+            }
+
             $user->update($validated);
             $user->load('roles');
 
@@ -532,8 +605,9 @@ class AuthController extends Controller
             return $this->errorResponse('Erreur lors de la mise à jour du profil', 500);
         }
     }
+
     /**
-     * Mettre à jour le profil
+     * Mettre à jour le profil (V2)
      */
     public function updateProfile(Request $request)
     {
@@ -546,13 +620,11 @@ class AuthController extends Controller
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'city' => 'nullable|string|max:255',
                 'date_of_birth' => 'sometimes|date|before:today',
-                'biography' => 'sometimes|string|max:1000',
-            ]);  
+            ]);
+
             $user->update($validated);
-                if (isset($validated['biography'])) {
-                    $user->biography = $validated['biography'];
-                }
             $user->load('roles');
+
             return $this->resourceResponse(
                 new UserResource($user),
                 'Profil mis à jour avec succès'
@@ -566,87 +638,161 @@ class AuthController extends Controller
         }
     }
 
-    // /**
-    //  * Récupérer les professionnels en attente
-    //  */
-    // public function getPendingProfessionals()
-    // {
-    //     $users = User::where('is_approved', false)
-    //         ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
-    //         ->with('roles')
-    //         ->get();
+    /**
+     * Compléter l'onboarding utilisateur (Document 1)
+     */
+    public function onboarding(Request $request)
+    {
+        try {
+            $user = Auth::user();
 
-    //     return $this->collectionResponse(
-    //         UserResource::collection($users),
-    //         'Professionnels en attente récupérés'
-    //     );
-    // }
+            // Validate incoming data
+            $validated = $request->validate([
+                'biography' => 'nullable|string|max:1000',
+                'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+            ]);
 
-    // /**
-    //  * Récupérer les professionnels approuvés
-    //  */
-    // public function getApprovedProfessionals()
-    // {
-    //     $users = User::where('is_approved', true)
-    //         ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
-    //         ->with('roles')
-    //         ->orderBy('approved_at', 'desc')
-    //         ->get();
+            // Handle profile picture upload
+            if ($request->hasFile('profile_picture')) {
+                try {
+                    // Delete old image if exists
+                    $this->deleteProfilePicture($user->profile_picture);
 
-    //     return $this->collectionResponse(
-    //         UserResource::collection($users),
-    //         'Professionnels approuvés récupérés'
-    //     );
-    // }
+                    // Upload new one
+                    $validated['profile_picture'] = $this->uploadProfilePicture(
+                        $request->file('profile_picture'),
+                        $user->id
+                    );
+                } catch (\Exception $e) {
+                    return $this->validationErrorResponse([
+                        'profile_picture' => [$e->getMessage()]
+                    ]);
+                }
+            }
 
-    // /**
-    //  * Approuver un professionnel
-    //  */
-    // public function approveProfessional($id)
-    // {
-    //     try {
-    //         $user = User::findOrFail($id);
-    //         $user->is_approved = true;
-    //         $user->approved_at = now();
-    //         $user->save();
+            // Update biography if provided
+            if (isset($validated['biography'])) {
+                $user->biography = $validated['biography'];
+            }
 
-    //         return $this->successResponse(
-    //             ['user' => new UserResource($user)],
-    //             'Professionnel approuvé avec succès'
-    //         );
+            // Mark onboarding as completed
+            $user->onboarding_completed = true;
+            $user->save();
+            $user->load('roles');
 
-    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-    //         return $this->notFoundResponse('Utilisateur non trouvé');
-    //     } catch (\Exception $e) {
-    //         Log::error('Erreur approbation: ' . $e->getMessage());
-    //         return $this->errorResponse('Erreur lors de l\'approbation', 500);
-    //     }
-    // }
-
-    // /**
-    //  * Rejeter un professionnel
-    //  */
-    // public function rejectProfessional($id)
-    // {
-    //     try {
-    //         $user = User::findOrFail($id);
-    //         $user->delete();
-
-    //         return $this->successResponse(
-    //             null,
-    //             'Professionnel rejeté avec succès'
-    //         );
-
-    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-    //         return $this->notFoundResponse('Utilisateur non trouvé');
-    //     } catch (\Exception $e) {
-    //         Log::error('Erreur rejet: ' . $e->getMessage());
-    //         return $this->errorResponse('Erreur lors du rejet', 500);
-    //     }
-    // }
+            return $this->resourceResponse(
+                new UserResource($user),
+                'Onboarding complété avec succès'
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            Log::error('[Auth] Erreur onboarding: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du onboarding', 500);
+        }
+    }
 
     /**
-     * Récupérer les utilisateurs réguliers
+     * Ignorer l'onboarding (Document 1)
+     */
+    public function skipOnboarding()
+    {
+        try {
+            $user = Auth::user();
+            $user->onboarding_skipped = true;
+            $user->save();
+
+            return $this->successResponse(
+                ['user' => new UserResource($user)],
+                'Onboarding ignoré avec succès'
+            );
+        } catch (\Exception $e) {
+            Log::error('[Auth] Erreur skip onboarding: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du skip onboarding', 500);
+        }
+    }
+
+    /**
+     * Récupérer les professionnels en attente (V2)
+     */
+    public function getPendingProfessionals()
+    {
+        $users = User::where('is_approved', false)
+            ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
+            ->with('roles')
+            ->get();
+
+        return $this->collectionResponse(
+            UserResource::collection($users),
+            'Professionnels en attente récupérés'
+        );
+    }
+
+    /**
+     * Récupérer les professionnels approuvés (V2)
+     */
+    public function getApprovedProfessionals()
+    {
+        $users = User::where('is_approved', true)
+            ->whereHas('roles', fn($q) => $q->where('role', 'professionnel'))
+            ->with('roles')
+            ->orderBy('approved_at', 'desc')
+            ->get();
+
+        return $this->collectionResponse(
+            UserResource::collection($users),
+            'Professionnels approuvés récupérés'
+        );
+    }
+
+    /**
+     * Approuver un professionnel (V2)
+     */
+    public function approveProfessional($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $user->is_approved = true;
+            $user->approved_at = now();
+            $user->save();
+
+            return $this->successResponse(
+                ['user' => new UserResource($user)],
+                'Professionnel approuvé avec succès'
+            );
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Utilisateur non trouvé');
+        } catch (\Exception $e) {
+            Log::error('Erreur approbation: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de l\'approbation', 500);
+        }
+    }
+
+    /**
+     * Rejeter un professionnel (V2)
+     */
+    public function rejectProfessional($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $user->delete();
+
+            return $this->successResponse(
+                null,
+                'Professionnel rejeté avec succès'
+            );
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Utilisateur non trouvé');
+        } catch (\Exception $e) {
+            Log::error('Erreur rejet: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors du rejet', 500);
+        }
+    }
+
+    /**
+     * Récupérer les utilisateurs réguliers (V2)
      */
     public function getUsers()
     {
@@ -662,7 +808,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Basculer le statut actif d'un utilisateur
+     * Basculer le statut actif d'un utilisateur (V2)
      */
     public function toggleUserStatus($id)
     {
@@ -685,7 +831,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Générer un refresh token
+     * Générer un refresh token (V2)
      */
     private function generateRefreshToken(User $user): string
     {
@@ -716,7 +862,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Générer un access token
+     * Générer un access token (V2)
      */
     private function generateAccessToken(User $user): string
     {

@@ -58,9 +58,8 @@ class OperationController extends Controller
                         'end_date' => $event->end_date->toIso8601String(),
                         'localisation' => $event->localisation->name ?? 'Non spécifié',
                         'categorie' => $event->categorie->name ?? 'Non spécifiée',
-                        'quantity' => $operation->quantity,
                         'unit_price' => (float) $event->base_price,
-                        'total_price' => $paiement ? (float) $paiement->total : ($operation->quantity * $event->base_price),
+                        'total_price' => $paiement->total,
                         'statut_paiement' => $paiement ? $paiement->status : 'pending',
                         'statut' => $statut,
                         'date_reservation' => $operation->created_at->toIso8601String(),
@@ -72,7 +71,6 @@ class OperationController extends Controller
             $stats = [
                 'total_reservations' => $reservations->count(),
                 'a_venir' => $reservations->where('statut', 'À venir')->count(),
-                'total_places' => $reservations->sum('quantity'),
                 'total_depense' => (float) $reservations->where('statut_paiement', 'paid')->sum('total_price')
             ];
 
@@ -120,7 +118,7 @@ class OperationController extends Controller
             DB::beginTransaction();
 
             if ($paiement && $paiement->status === 'paid') {
-                $event->available_places += $operation->quantity;
+                $event->available_places += 1;
                 $event->save();
             }
 
@@ -165,7 +163,6 @@ class OperationController extends Controller
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
                 'type_operation_id' => 'required|in:1,2,3',
-                'quantity' => 'required|integer|min:1',
             ]);
 
             $event = Event::findOrFail($validated['event_id']);
@@ -173,11 +170,11 @@ class OperationController extends Controller
             DB::beginTransaction();
 
             if ($validated['type_operation_id'] == 2) {
-                if ($event->available_places < $validated['quantity']) {
+                if ($event->available_places < 1) {
                     return $this->errorResponse('Pas assez de places disponibles', 400);
                 }
 
-                $event->available_places -= $validated['quantity'];
+                $event->available_places -= 1;
                 $event->save();
             }
 
@@ -185,7 +182,6 @@ class OperationController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => $validated['type_operation_id'],
-                'quantity' => $validated['quantity']
             ]);
 
             DB::commit();

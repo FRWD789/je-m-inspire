@@ -44,7 +44,6 @@ class OperationSeeder extends Seeder
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'type_operation_id' => 2, // réservation
-                'quantity' => $quantity,
                 'paiement_id' => $paiement->paiement_id,
             ]);
         }
