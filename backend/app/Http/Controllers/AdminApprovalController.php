@@ -7,6 +7,9 @@ use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Notifications\ProfessionalApprovedNotification;
+use App\Notifications\ProfessionalRejectedNotification;
+use Illuminate\Support\Facades\Log;
 
 class AdminApprovalController extends Controller
 {
@@ -72,6 +75,10 @@ class AdminApprovalController extends Controller
                 'rejection_reason' => null
             ]);
 
+            $user->notify(new ProfessionalApprovedNotification());
+
+            Log::info('[Admin] Professionnel approuvé', ['user_id' => $user->id]);
+
             return $this->resourceResponse(
                 new UserResource($user->load('roles')),
                 'Professionnel approuvé avec succès'
@@ -96,14 +103,18 @@ class AdminApprovalController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
-        
+
         try {
             $user = User::findOrFail($id);
-  
+
             $user->update([
                 'is_approved' => false,
                 'rejection_reason' => $validated['reason']
             ]);
+
+            $user->notify(new ProfessionalRejectedNotification($validated['rejection_reason']));
+
+            Log::info('[Admin] Professionnel rejeté', ['user_id' => $user->id]);
 
             return $this->resourceResponse(
                 new UserResource($user->load('roles')),

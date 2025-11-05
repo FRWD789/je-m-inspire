@@ -80,7 +80,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/approve-professional/{$professional->id}");
+        ])->postJson("/api/admin/approvals/{$professional->id}/approve");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -127,7 +127,7 @@ class ApproveProfessionalTest extends TestCase
         $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/approve-professional/{$professional->id}");
+        ])->postJson("/api/admin/approvals/{$professional->id}/approve");
 
         // Tenter de se connecter APRÈS approbation
         $loginAfter = $this->postJson('/api/login', [
@@ -154,7 +154,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson('/api/admin/approve-professional/99999');
+        ])->postJson("/api/admin/approvals/99999/approve");
 
         $response->assertStatus(404)
             ->assertJson([
@@ -170,7 +170,7 @@ class ApproveProfessionalTest extends TestCase
     {
         $professional = $this->createPendingProfessional();
 
-        $response = $this->postJson("/api/admin/approve-professional/{$professional->id}");
+        $response = $this->postJson("/api/admin/approvals/{$professional->id}/approve");
 
         $response->assertStatus(401);
     }
@@ -191,7 +191,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/approve-professional/{$professional->id}");
+        ])->postJson("/api/admin/approvals/{$professional->id}/approve");
 
         $response->assertStatus(200);
 
@@ -218,7 +218,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/reject-professional/{$professionalId}");
+        ])->postJson("/api/admin/approvals/{$professionalId}/reject");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -256,7 +256,7 @@ class ApproveProfessionalTest extends TestCase
         $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/reject-professional/{$professionalId}");
+        ])->postJson("/api/admin/approvals/{$professionalId}/reject");
 
         // Vérifier que la photo a été supprimée
         Storage::disk('public')->assertMissing($path);
@@ -277,7 +277,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson('/api/admin/reject-professional/99999');
+        ])->postJson("/api/admin/approvals/99999/reject");
 
         $response->assertStatus(404)
             ->assertJson([
@@ -293,7 +293,7 @@ class ApproveProfessionalTest extends TestCase
     {
         $professional = $this->createPendingProfessional();
 
-        $response = $this->postJson("/api/admin/reject-professional/{$professional->id}");
+        $response = $this->postJson("/api/admin/approvals/{$professional->id}/reject");
 
         $response->assertStatus(401);
     }
@@ -313,7 +313,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/reject-professional/{$professionalId}");
+        ])->postJson("/api/admin/approvals/{$professionalId}/reject");
 
         $response->assertStatus(200);
 
@@ -341,7 +341,7 @@ class ApproveProfessionalTest extends TestCase
         $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/reject-professional/{$professionalId}");
+        ])->postJson("/api/admin/approvals/{$professionalId}/reject");
 
         // Vérifier que la relation a été supprimée
         $this->assertDatabaseMissing('role_user', [
@@ -364,7 +364,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/approve-professional/{$professional->id}");
+        ])->postJson("/api/admin/approvals/{$professional->id}/reject");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -398,7 +398,7 @@ class ApproveProfessionalTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $admin['token'],
             'Accept' => 'application/json',
-        ])->postJson("/api/admin/reject-professional/{$professional->id}");
+        ])->postJson("/api/admin/approvals/{$professional->id}/reject");
 
         $response->assertStatus(200)
             ->assertJson([

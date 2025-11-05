@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import ReCaptcha from '../common/ReCaptcha';
 
 const DEBUG = import.meta.env.DEV;
 const debug = (...args) => {
@@ -24,6 +25,7 @@ const LoginForm = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+    const [recaptchaToken, setRecaptchaToken] = useState('');
 
     // ✅ Afficher le message si redirection depuis inscription professionnel
     useEffect(() => {
@@ -38,8 +40,15 @@ const LoginForm = () => {
         setError('');
         setSuccessMessage('');
 
+        // Vérifier que reCAPTCHA est validé
+        if (!recaptchaToken) {
+            setError('Veuillez valider le reCAPTCHA');
+            setLoading(false);
+            return;
+        }
+
         try {
-            await login(credentials.email, credentials.password);
+            await login(credentials.email, credentials.password, recaptchaToken);
             debug('✅ Connexion réussie');
             
             // ✅ Redirection vers la page d'accueil après connexion
@@ -48,11 +57,28 @@ const LoginForm = () => {
         } catch (err) {
             debugError('❌ Erreur connexion:', err);
             setError(err.message || 'Erreur de connexion');
+            setRecaptchaToken('');
+            if (window.grecaptcha) {
+                window.grecaptcha.reset();
+            }
         } finally {
             setLoading(false);
         }
     };
+    const handleRecaptchaVerify = (token) => {
+        setRecaptchaToken(token);
+        setError(''); // Clear error si présent
+    };
 
+    const handleRecaptchaExpired = () => {
+        setRecaptchaToken('');
+        setError('reCAPTCHA expiré, veuillez revalider');
+    };
+
+    const handleRecaptchaError = () => {
+        setRecaptchaToken('');
+        setError('Erreur reCAPTCHA, veuillez recharger la page');
+    };
     return (
         <div style={{
             minHeight: '100vh',
@@ -179,7 +205,11 @@ const LoginForm = () => {
                                 {error}
                             </div>
                         )}
-
+                        <ReCaptcha 
+                            onVerify={handleRecaptchaVerify}
+                            onExpired={handleRecaptchaExpired}
+                            onError={handleRecaptchaError}
+                        />
                         <button 
                             type="submit"
                             disabled={loading}

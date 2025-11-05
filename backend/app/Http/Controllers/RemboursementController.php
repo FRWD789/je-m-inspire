@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use App\Notifications\RemboursementReceivedNotification;
 
 class RemboursementController extends Controller
 {
@@ -71,6 +72,18 @@ class RemboursementController extends Controller
             ]);
 
             DB::commit();
+
+            $remboursement->load(['operation.event']);
+
+            // Envoyer la notification à l'utilisateur
+            $remboursement->load(['operation.event', 'user']);
+            $remboursement->user->notify(new RemboursementReceivedNotification($remboursement));
+
+            Log::info('[Remboursement] Demande créée et email envoyé', [
+                'remboursement_id' => $remboursement->id,
+                'user_id' => Auth::id(),
+                'montant' => $remboursement->montant,
+            ]);
 
             if ($debug) {
                 Log::info('[Remboursement] Demande créée', [
@@ -170,7 +183,8 @@ class RemboursementController extends Controller
 
             if ($validated['statut'] === 'approuve') {
                 $event = $remboursement->operation->event;
-                $event->available_places += $remboursement->operation->quantity;
+                // ✅ CORRECTION : Rendre 1 place au lieu de $operation->quantity
+                $event->available_places += 1;
                 $event->save();
 
                 if ($remboursement->operation->paiement) {

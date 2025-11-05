@@ -13,7 +13,6 @@ class Operation extends Model
         'user_id',
         'event_id',
         'type_operation_id',
-        'quantity',
         'paiement_id',
         'abonnement_id',
     ];

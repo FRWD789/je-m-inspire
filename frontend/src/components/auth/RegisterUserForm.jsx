@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import ReCaptcha from '../common/ReCaptcha';
 
 const RegisterUserForm = () => {
     const navigate = useNavigate();
@@ -18,29 +19,52 @@ const RegisterUserForm = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    const [recaptchaToken, setRecaptchaToken] = useState('');
     const { registerUser } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
-
+        // Vérifier que reCAPTCHA est validé
+        if (!recaptchaToken) {
+            setErrors({ recaptcha: 'Veuillez valider le reCAPTCHA' });
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await registerUser(formData);
+            // Créer FormData avec le token reCAPTCHA
+            const submitData = new FormData();
+            Object.keys(formData).forEach(key => {
+                if (formData[key] !== null && formData[key] !== undefined) {
+                    submitData.append(key, formData[key]);
+                }
+            });
+            submitData.append('recaptcha_token', recaptchaToken);
+
+            const response = await registerUser(submitData);
             console.log('✅ Inscription réussie:', response);
             navigate('/', { replace: true });
         } catch (error) {
             console.error('❌ Erreur inscription:', error);
+            
             if (error.isValidation && error.message) {
                 setErrors(error.message);
+            } else if (typeof error.message === 'object') {
+                setErrors(error.message);
             } else {
-                setErrors({ general: error.message || 'Une erreur est survenue' });
+                setErrors({ general: error.message || 'Une erreur est survenue lors de l\'inscription' });
+            }
+            
+            // Reset reCAPTCHA en cas d'erreur
+            setRecaptchaToken('');
+            if (window.grecaptcha) {
+                window.grecaptcha.reset();
             }
         } finally {
             setLoading(false);
         }
     };
-
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -135,6 +159,23 @@ const RegisterUserForm = () => {
         fontWeight: 'bold'
     };
 
+    // 4. Ajouter les callbacks reCAPTCHA avant le return
+    const handleRecaptchaVerify = (token) => {
+        setRecaptchaToken(token);
+        if (errors.recaptcha) {
+            setErrors(prev => ({ ...prev, recaptcha: null }));
+        }
+    };
+
+    const handleRecaptchaExpired = () => {
+        setRecaptchaToken('');
+        setErrors(prev => ({ ...prev, recaptcha: 'reCAPTCHA expiré, veuillez revalider' }));
+    };
+
+    const handleRecaptchaError = () => {
+        setRecaptchaToken('');
+        setErrors(prev => ({ ...prev, recaptcha: 'Erreur reCAPTCHA, veuillez recharger la page' }));
+    };
     return (
         <div style={{
             display: 'flex',
@@ -362,7 +403,21 @@ const RegisterUserForm = () => {
                         />
                         {errors.password_confirmation && <div style={errorStyle}>{errors.password_confirmation}</div>}
                     </div>
-
+                    <ReCaptcha 
+                        onVerify={handleRecaptchaVerify}
+                        onExpired={handleRecaptchaExpired}
+                        onError={handleRecaptchaError}
+                    />
+                    {errors.recaptcha && (
+                        <div style={{ 
+                            color: '#e74c3c', 
+                            fontSize: '12px', 
+                            marginBottom: '10px',
+                            textAlign: 'center'
+                        }}>
+                            {errors.recaptcha}
+                        </div>
+                    )}
                     <button
                         type="submit"
                         disabled={loading}
