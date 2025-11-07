@@ -15,7 +15,18 @@ export const authService = {
       throw error;
     }
   },
-
+  googleCallback: async (code: string): Promise<LoginResponse> => {
+    try {
+      // Send as query parameter, not body
+      const response = await publicApi.get("/google/callback", {
+        params: { code }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error Google Callback:", error);
+      throw error;
+    }
+  },
   // Register endpoint
   register: async (registerCredentials: RegisterCredentials, type: 'user' | 'professional' = 'user') => {
     try {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, HandCoins, BanknoteArrowDown, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent } from 'lucide-react';
+import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, HandCoins, BanknoteArrowDown, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, ChartNoAxesCombined } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import SideNav from '@/components/sideNav';
 import { useAuth } from '@/context/AuthContext';
@@ -37,9 +37,10 @@ export default function Dashboard() {
 
   const menuItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Home', path: "/" },
+         ...(user!.roles[0].role ==="professionnel"? [{ icon: <ChartNoAxesCombined className="w-5 h-5" />, label: 'Revenus', path: "/vendor" }] : []),
     ...(user!.roles[0].role === "admin" ? [{ icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: "/approbation" },{ icon: <Percent  className="w-5 h-5"/>, label: "Commissions", path: "/commissions" }] : []),
     { icon: refundIcon, label: "Remboursement", path: refundPath },
-    
+
     { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calandrier", path: "/event-calender" },
     {
       icon: <Ticket  className="w-5 h-5" />,

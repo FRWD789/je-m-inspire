@@ -107,7 +107,8 @@ Route::post('/register/user', [AuthController::class, 'registerUser']);
 Route::post('/register/professional', [AuthController::class, 'registerProfessional']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/refresh', [AuthController::class, 'refresh']);
-
+Route::get('/google', [AuthController::class, 'redirectToGoogle']);
+Route::get('/google/callback', [AuthController::class, 'googleCallback']);
 // Événements publics
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);

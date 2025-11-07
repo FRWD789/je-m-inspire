@@ -28,6 +28,8 @@ import Abonnement from "./page/Abonnement";
 import ProfessionalPublicProfile from "./page/ProProfile";
 import AdminCommissionPage from "./page/UsersComissons";
 import AbonnementSuccess from "./page/abonnementSuccess";
+import GoogleCallback from "./page/Auth/GoogleCallback";
+import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
 
 export default function App() {
   return (
@@ -42,6 +44,7 @@ export default function App() {
             <Route path="register-pro" element={<RegisterPro />} />
             <Route path="events" element={<PublicEvents />} />
             <Route path="events/:id" element={<EventDetail />} />
+            <Route path="/google/callback" element={<GoogleCallback />} />
             <Route path="abonnement/success" element={<AbonnementSuccess/>} />
             <Route path="payment/success" element={<PaymentSuccess />} />
             <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
@@ -73,10 +76,12 @@ export default function App() {
               <Route
                 element={
                   <PrivateRoute
-                    allowedRoles={["utilisateur", "professionnel"]}
+                    allowedRoles={["admin", "professionnel"]}
                   />
                 }
+                
               >
+                  <Route path="vendor" element={<VendorDashboard />} />
                
               </Route> 
             </Route>

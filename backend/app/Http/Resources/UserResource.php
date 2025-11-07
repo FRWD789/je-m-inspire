@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Str;
 class UserResource extends JsonResource
 {
     /**
@@ -43,10 +43,24 @@ class UserResource extends JsonResource
             'professional' => $this->getProfessionalData($request),
             
             // Subscription info (user-specific or admin)
-            'subscription' => $this->when(
-                $this->isCurrentUser($request) || $this->isAdmin($request),
-                $this->getSubscriptionData()
-            ),
+            'subscription' => [
+                'has_pro_plus' => $this->hasProPlus(),
+                'subscription_type' => $this->getAbonnementType(),
+                'status' => $this->hasActiveSubscription() ? 'active' : 'inactive',
+                'end_date' => optional($this->getSubscriptionEndDate())->toDateString(),
+                'is_active' => $this->hasActiveSubscription(),
+                'features' => [
+                    'basic_analytics' => true, // you can customize based on type
+                    'limited_account_linking' => true,
+                    'standard_support' => true,
+                    'unlimited_account_linking' => $this->hasProPlus(),
+                    'advanced_analytics' => $this->hasProPlus(),
+                    'priority_support' => $this->hasProPlus(),
+                    'custom_reports' => $this->hasProPlus(),
+                    'api_access' => $this->hasProPlus(),
+                    'bulk_operations' => $this->hasProPlus(),
+                ],
+            ],
             
             // Payment info (sensitive - restrict access)
             'payment' => $this->when(
@@ -134,11 +148,16 @@ class UserResource extends JsonResource
     
     private function getProfilePictureUrl(): ?string
     {
-        if (!$this->profile_picture) {
-            return null;
+       if (!$this->profile_picture) {
+        return null;
+    }
+
+        // If it already looks like a full URL (starts with http), return as-is
+        if (Str::startsWith($this->profile_picture, ['http://', 'https://'])) {
+            return $this->profile_picture;
         }
-        
-        // Always return full URL for profile pictures
+
+        // Otherwise, assume it's a local file path and generate full URL
         return Storage::disk('public')->url($this->profile_picture);
     }
     

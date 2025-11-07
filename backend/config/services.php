@@ -53,5 +53,10 @@ return [
         'currency' => env('PAYPAL_CURRENCY', 'CAD'),
         'pro_plus_plan_id' => env('PRO_PLUS_PLAN_ID'), // P-6H8771292B5725726NDG3YXQ
     ],
+    'google' => [
+    'client_id' => env('GOOGLE_CLIENT_ID'),
+    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    'redirect' => env('GOOGLE_REDIRECT_URI'),
+],
 
 ];

@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { authService } from "../service/AuthService";
 import { useNavigate } from "react-router-dom";
 import type { Credentials, LoginResponse, RegisterCredentials, User } from "@/types/user";
 import { tokenService } from "@/service/TokenService";
+import { authService } from "@/service/AuthService";
 interface AuthContextType {
   user: User | undefined;
   accessToken: string | undefined;
@@ -10,6 +10,7 @@ interface AuthContextType {
   requiresOnboarding: boolean;
   updatePassword: (payload: any) => Promise<void>;
   updateProfileImg: (payload: any) => Promise<any>;
+  googleLogin : (code: string) => Promise<any>;
   registerPro: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   login: (credentials: Credentials) => Promise<void>;
@@ -120,6 +121,23 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+
+  const googleLogin = async (code: string): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await authService.googleCallback(code);
+      setAccessToken(response.access_token);
+      setUser(response.user);
+      console.log("✅ Google login successful");
+      navigate("/dashboard"); 
+    } catch (err) {
+      console.error("Erreur Google Login:", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const registerUser = async (credentials: RegisterCredentials): Promise<void> => {
     try {
       const d={...credentials,role:'user'}
@@ -147,6 +165,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       loading,
       accessToken,
       requiresOnboarding,
+      googleLogin,
       updatePassword,
       updateProfileImg,
       logout,

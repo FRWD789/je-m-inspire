@@ -20,10 +20,101 @@ use Illuminate\Support\Facades\Log;
 use App\Notifications\ProfessionalApprovedNotification;
 use App\Notifications\ProfessionalRejectedNotification;
 use App\Notifications\ProfessionalApplicationReceivedNotification;
-
+use Laravel\Socialite\Facades\Socialite;
 class AuthController extends Controller
 {
     use ApiResponse, HandlesProfilePictures;
+
+
+
+      public function redirectToGoogle()
+    {
+        return $this->successResponse([
+            'url' => Socialite::driver('google')->stateless()->redirect()->getTargetUrl()
+        ], "Google Redirect URL generated");
+    }
+
+    public function googleCallback(Request $request)
+    {
+        try {
+            // Get the authorization code from request
+            $code = $request->input('code');
+            
+            if (!$code) {
+                return $this->errorResponse('Code d\'autorisation manquant', 400);
+            }
+
+            // Exchange code for user information
+            $googleUser = Socialite::driver('google')
+                ->stateless()
+                ->user();
+
+            $email = $googleUser->getEmail();
+            
+            if (!$email) {
+                return $this->errorResponse('Email non fourni par Google', 400);
+            }
+
+            // Find or create user
+            $user = User::where('email', $email)->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->getName() ?? '',
+                    'last_name' => '',
+                    'email' => $email,
+                    'date_of_birth' => now()->subYears(18),
+                    'password' => Hash::make(Str::random(16)),
+                    'profile_picture' => $googleUser->getAvatar(),
+                    'is_approved' => true,
+                    'approved_at' => now(),
+                ]);
+
+                $role = Role::where('role', 'utilisateur')->first();
+                if ($role) {
+                    $user->roles()->attach($role->id);
+                }
+            }
+
+            // Check if user is approved
+            if (!$user->is_approved) {
+                return $this->errorResponse('Votre compte est en attente d\'approbation', 403);
+            }
+
+            // Generate tokens
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = $this->generateRefreshToken($user);
+
+            // Return response matching your frontend expectations
+            return $this->successResponse([
+                'user' => new UserResource($user),
+                'access_token' => $accessToken, // Changed from 'token' to 'access_token'
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'refresh_token' => $refreshToken,
+                'requires_onboarding' => false // Add if needed
+            ], 'Connexion Google réussie')->cookie(
+                'refresh_token',
+                $refreshToken,
+                7 * 24 * 60,
+                '/',
+                null,
+                false,
+                true,
+                false,
+                'lax'
+            );
+
+        } catch (\Exception $e) {
+            \Log::error('Google Auth Error: ' . $e->getMessage());
+            return $this->errorResponse('Erreur Google Auth: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+
+
+
+
 
     /**
      * Vérifier le token reCAPTCHA (V2)
