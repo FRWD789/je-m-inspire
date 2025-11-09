@@ -41,7 +41,13 @@ class Kernel extends ConsoleKernel
                     'time' => now()->toDateTimeString()
                 ]);
             })->everyMinute();
-
+        $schedule->command('users:send-inactivity-warning')->daily()->at('10:00');
+        $schedule->command('users:deactivate-inactive', ['--notify'])->daily()->at('02:00');
+        // Notifier les utilisateurs 7 jours avant expiration (tous les jours à 9h)
+        $schedule->command('password:notify-expiration --days-before=7')
+            ->dailyAt('09:00')
+            ->name('notify-password-expiration')
+            ->withoutOverlapping();
     }
 
     /**
@@ -53,4 +59,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+}
 }

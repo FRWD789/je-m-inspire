@@ -222,6 +222,9 @@ Route::middleware(['auth.jwt'])->group(function () {
         Route::get('/earnings/statistics', [VendorEarningsController::class, 'statistics']);
         Route::get('/earnings/export', [VendorEarningsController::class, 'export']);
     });
+    //FORCER CHANGEMENT DE MOTDEPASS
+    Route::post('/profile/change-expired-password', [ProfileController::class, 'changeExpiredPassword']);
+
 
 
 });
@@ -420,6 +423,9 @@ Route::prefix('test-emails')->group(function () {
         ]);
     });
 
+    // Réactivation de compte via lien email (signed route)
+    Route::get('/account/reactivate/{user}', [ProfileController::class, 'reactivateAccount'])
+        ->name('account.reactivate');
     //TEST EMAIL DEMANDE DE RÉACTIVATION DE COMPTE
     Route::get('/reactivation-request', function () {
         $user = User::where('email', 'user@example.com')->first();

@@ -3,54 +3,43 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 
 class AccountDeactivatedNotification extends Notification
 {
     use Queueable;
 
-    public $daysInactive;
+    private $daysInactive;
 
-    public function __construct(int $daysInactive)
+    public function __construct($daysInactive)
     {
         $this->daysInactive = $daysInactive;
     }
 
-    public function via(object $notifiable): array
+    public function via($notifiable)
     {
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail($notifiable)
     {
-        $contactEmail = config('mail.from.address', 'support@example.com');
-        $loginUrl = config('app.frontend_url', 'http://localhost:5173') . '/login';
+        // Générer un lien signé sécurisé valide 30 jours
+        $reactivationUrl = URL::temporarySignedRoute(
+            'account.reactivate',
+            now()->addDays(30),
+            ['user' => $notifiable->id]
+        );
 
         return (new MailMessage)
-            ->subject('⚠️ Votre compte a été désactivé pour inactivité')
-            ->greeting('Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',')
-            ->line('Nous vous informons que votre compte a été **désactivé** en raison d\'une inactivité prolongée.')
-            ->line('**Détails :**')
-            ->line('• Dernière connexion : ' . $notifiable->last_login_at)
-            ->line('• Durée d\'inactivité : ' . $this->daysInactive . ' jours')
-            ->line('• Seuil de désactivation : 90 jours')
-            ->line('---')
-            ->line('**Comment réactiver votre compte ?**')
-            ->line('Pour réactiver votre compte, veuillez nous contacter à : **' . $contactEmail . '**')
-            ->line('Notre équipe traitera votre demande dans les plus brefs délais.')
-            ->line('---')
-            ->line('Si vous ne souhaitez plus utiliser notre plateforme, aucune action n\'est requise.')
-            ->salutation('Cordialement, L\'équipe ' . config('app.name'));
-    }
-
-    public function toArray(object $notifiable): array
-    {
-        return [
-            'message' => 'Compte désactivé pour inactivité',
-            'days_inactive' => $this->daysInactive,
-            'deactivated_at' => now(),
-        ];
+            ->subject('Votre compte a été désactivé')
+            ->greeting('Bonjour ' . $notifiable->name . ',')
+            ->line("Votre compte a été désactivé en raison d'une inactivité de {$this->daysInactive} jours.")
+            ->line('Si vous souhaitez continuer à utiliser notre plateforme, vous pouvez réactiver votre compte en cliquant sur le bouton ci-dessous.')
+            ->action('Réactiver mon compte', $reactivationUrl)
+            ->line('Ce lien est valide pendant 30 jours.')
+            ->line('Si vous ne souhaitez pas réactiver votre compte, ignorez simplement cet email.')
+            ->salutation('Cordialement, L\'équipe Je M\'inspire');
     }
 }

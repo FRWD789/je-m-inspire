@@ -597,4 +597,100 @@ class ProfileController extends Controller
             'message' => 'Demande envoyée. Vous recevrez un email de confirmation.',
         ]);
     }
+    /**
+     * Réactiver le compte via lien email (signed route)
+     */
+    public function reactivateAccount(Request $request, $user)
+    {
+        try {
+            // Vérifier que la signature du lien est valide
+            if (!$request->hasValidSignature()) {
+                return $this->errorResponse('Ce lien de réactivation est invalide ou a expiré', 403);
+            }
+
+            $user = User::findOrFail($user);
+
+            // Vérifier que le compte est bien désactivé
+            if ($user->is_active) {
+                return redirect(env('FRONTEND_URL') . '/login?message=compte_deja_actif');
+            }
+
+            // Réactiver le compte
+            $user->is_active = true;
+            $user->last_login_at = now();
+            $user->save();
+
+            Log::info('[Account] Compte réactivé via email', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+
+            // Envoyer notification de confirmation
+            $user->notify(new \App\Notifications\AccountReactivatedNotification());
+
+            // Rediriger vers le frontend avec message de succès
+            return redirect(env('FRONTEND_URL') . '/login?message=compte_reactive');
+
+        } catch (\Exception $e) {
+            Log::error('[Account] Erreur réactivation', [
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect(env('FRONTEND_URL') . '/login?message=erreur_reactivation');
+        }
+    }
+    /**
+     * Changer le mot de passe expiré
+     */
+    public function changeExpiredPassword(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            // Vérifier si le mot de passe a vraiment expiré
+            $accountAge = now()->diffInDays($user->created_at);
+            $expirationDays = 90; // Même valeur que dans le middleware
+
+            if ($accountAge < $expirationDays) {
+                return $this->errorResponse('Votre mot de passe n\'a pas expiré', 400);
+            }
+
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:8|confirmed',
+            ]);
+
+            // Vérifier le mot de passe actuel
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return $this->errorResponse('Mot de passe actuel incorrect', 400);
+            }
+
+            // Vérifier que le nouveau mot de passe est différent
+            if (Hash::check($validated['new_password'], $user->password)) {
+                return $this->errorResponse('Le nouveau mot de passe doit être différent de l\'ancien', 400);
+            }
+
+            // Mettre à jour le mot de passe ET la date de création
+            // (pour réinitialiser le compteur d'expiration)
+            $user->password = Hash::make($validated['new_password']);
+            $user->created_at = now();
+            $user->save();
+
+            Log::info('[PasswordExpiration] Mot de passe changé après expiration', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'account_age_days' => $accountAge
+            ]);
+
+            return $this->successResponse(null, 'Mot de passe modifié avec succès');
+
+        } catch (\Exception $e) {
+            Log::error('[PasswordExpiration] Erreur changement mot de passe expiré', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->errorResponse('Erreur lors du changement de mot de passe', 500);
+        }
+    }
 }

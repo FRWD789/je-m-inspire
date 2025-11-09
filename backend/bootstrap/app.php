@@ -28,6 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
     })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'auth.jwt' => \App\Http\Middleware\JwtMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'password.expiration' => \App\Http\Middleware\CheckPasswordExpiration::class, // ✅ AJOUTER
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
