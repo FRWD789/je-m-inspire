@@ -84,6 +84,9 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
     }
   }
 
+  const tabs = ["profile", "security"];
+  if (user.roles[0].role === "professionnel") tabs.push("plan");
+
   if (!user) return <p>Loading...</p>;
 
   return (
@@ -94,7 +97,7 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
         </h1>
         {/* Tabs */}
         <div className="flex gap-3 ">
-          {["profile", "security", "plan"].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               className={`px-4 py-2 rounded-md font-medium transition-colors ${
@@ -102,7 +105,7 @@ const handleUpload = async (data:UserAvtarProfileFormType) => {
                   ? "bg-primary text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
-              onClick={() => setCurrentTab(tab as any)}
+              onClick={() => setCurrentTab(tab)}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>

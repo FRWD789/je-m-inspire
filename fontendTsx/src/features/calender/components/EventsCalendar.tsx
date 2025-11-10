@@ -113,7 +113,7 @@ const EventsCalendar = ({events}:{events:Event[]}) => {
       {/* Calendar Header */}
       <div className='flex gap-2 items-center'>
       
-        <h1>Calandrier</h1>
+        <h1>Calendrier</h1>
       </div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">

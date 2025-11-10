@@ -18,7 +18,7 @@ interface AuthContextType {
   setUser: (value: React.SetStateAction<User | undefined>) => void;
   updateProfile: (payload: any) => Promise<any>;
   setAccessToken: React.Dispatch<React.SetStateAction<string | undefined>>;
-
+  hasProPlus: boolean;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,6 +27,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [requiresOnboarding, setRequiresOnboarding] = useState(false);
+   const [hasProPlus, setHasProPlus] = useState<boolean>(false);
   const navigate = useNavigate();
 
 
@@ -34,6 +35,21 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     tokenService.set(accessToken);
   }, [accessToken]);
+
+  useEffect(() => {
+    const checkProPlus = async () => {
+      if (user) {
+        try {
+          const subscription = await authService.getSubscription();
+          setHasProPlus(subscription); // true ou false
+        } catch (err) {
+          console.error("Erreur récupération abonnement Pro Plus:", err);
+          setHasProPlus(false);
+        }
+      }
+    };
+    checkProPlus();
+  }, [user]);
   
   const logout = async (): Promise<void> => {
     try {
@@ -159,6 +175,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -174,7 +192,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       login,
       registerUser,
       registerPro,
-      setAccessToken
+      setAccessToken,
+      hasProPlus
     }}>
       {children}
     </AuthContext.Provider>

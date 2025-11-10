@@ -22,7 +22,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
   const [showAbonemment, setShowAbonemment] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const { user ,updateProfile,logout} = useAuth();
+  const { user ,updateProfile,logout,hasProPlus} = useAuth();
   const navigate = useNavigate()
   // ✅ Close menu when clicking outside
   useEffect(() => {
@@ -85,8 +85,13 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                
               </button>
               {
+<<<<<<< Updated upstream
                 user.roles[0].role==="professionnel"&&!user.subscription?.has_pro_plus?
                   <div className='w-full' onClick={()=>setShowAbonemment(true)}>
+=======
+                user.roles[0].role === "professionnel" && !hasProPlus &&
+                   <div className='w-full' onClick={()=>setShowAbonemment(true)}>
+>>>>>>> Stashed changes
                    <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>Mettre à niveau</button>
                 </div>
                 :

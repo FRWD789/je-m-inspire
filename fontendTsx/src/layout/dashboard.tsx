@@ -40,15 +40,20 @@ export default function Dashboard() {
          ...(user!.roles[0].role ==="professionnel"? [{ icon: <ChartNoAxesCombined className="w-5 h-5" />, label: 'Revenus', path: "/vendor" }] : []),
     ...(user!.roles[0].role === "admin" ? [{ icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: "/approbation" },{ icon: <Percent  className="w-5 h-5"/>, label: "Commissions", path: "/commissions" }] : []),
     { icon: refundIcon, label: "Remboursement", path: refundPath },
+<<<<<<< Updated upstream
 
     { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calandrier", path: "/event-calender" },
+=======
+    
+    { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calendrier", path: "/event-calender" },
+>>>>>>> Stashed changes
     {
       icon: <Ticket  className="w-5 h-5" />,
       label: 'Événements',
       path: "/my-events",
       children: [
-        { label: 'Mes événements', path: "/my-events", icon: <TicketPlus  className="w-4 h-4" /> },
-        { label: 'Mes Reservation', path: "/my-reservations", icon: <TicketCheck  className="w-4 h-4" /> },
+        { label: 'Événements', path: "/my-events", icon: <TicketPlus  className="w-4 h-4" /> },
+        { label: 'Mes réservations', path: "/my-reservations", icon: <TicketCheck  className="w-4 h-4" /> },
       ]
     },
   ]
@@ -113,7 +118,7 @@ export default function Dashboard() {
             to={`/dashboard/profile-settings`}
           >
             <Settings className="w-5 h-5" />
-            <span className="ml-3 font-medium">Paramètre</span>
+            <span className="ml-3 font-medium">Paramètres</span>
           </Link>
         </ul>
       </SideNav>

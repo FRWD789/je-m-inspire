@@ -91,4 +91,15 @@ export const authService = {
       throw error;
     }
   },
-};
+
+  getSubscription: async (): Promise<boolean> => {
+    try {
+      const data = await privateApi.get("/abonnement/info");
+      return !!data.data.has_pro_plus; // retourne true ou false directement
+    } catch (err) {
+      console.error("Erreur abonnement:", err);
+      return false; // en cas d'erreur, considère que l'utilisateur n'a pas Pro Plus
+    }
+  },
+
+}

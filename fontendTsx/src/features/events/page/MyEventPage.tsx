@@ -4,6 +4,7 @@ import EventCard from '../components/EventCard'
 
 import { useEvent } from '@/context/EventContext'
 import EventForm from '../components/EventForm'
+import { useAuth } from '@/context/AuthContext'
 
 import { ReservationService } from '@/service/ReservationService'
 import type { Event } from '@/types/events'
@@ -17,6 +18,7 @@ export default function MyEventPage() {
   const [selectedTab, setSelectedTab] = useState<Tab>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const { user } = useAuth();
 
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -85,7 +87,8 @@ export default function MyEventPage() {
           >
             Tous les événements
           </button>
-          <button
+          {
+            user.roles[0].role === "professionnel" &&   <button
             onClick={() => setSelectedTab('my')}
             className={`px-3 py-1 rounded-lg ${
               selectedTab === 'my' ? 'bg-accent text-white' : 'text-gray-600'
@@ -93,6 +96,8 @@ export default function MyEventPage() {
           >
             Mes événements
           </button>
+          }
+        
         </div>
 
         {/* Search + Category + Add Button */}

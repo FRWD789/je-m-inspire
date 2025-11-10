@@ -174,13 +174,16 @@ const filteredEvents = useMemo(() => {
       </div>
       <div className='flex justify-between items-center'>
         <div className='basis-1/3  flex flex-col justify-between h-full gap-y-[8px]'>
-        <div>
-            <h2>Rejoignez notre communauté</h2>
-              <p>
-                Partagez votre savoir holistique et faites rayonner vos événements.
-              </p>
-        </div>
-            <Button>Partagez votre savoir</Button>
+          <div>
+              <h2>Rejoignez notre communauté</h2>
+                <p>
+                  Partagez votre savoir holistique et faites rayonner vos événements.
+                </p>
+          </div>
+          <Link to="/register-pro">
+           <Button>Partagez votre savoir</Button>
+          </Link>
+          
         </div>
        <div className='basis-1/4 felx flex-col gap-y-[4px] text-right'>
           <h3 className='font-default leading-tight font-bold text-primary'>
