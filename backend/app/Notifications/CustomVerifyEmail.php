@@ -13,9 +13,6 @@ class CustomVerifyEmail extends Notification
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
     public function __construct()
     {
         //
@@ -23,7 +20,7 @@ class CustomVerifyEmail extends Notification
 
     protected function verificationUrl($notifiable)
     {
-        $expiration = Carbon::now()->addMinutes(60); // link valid 60 mins
+        $expiration = Carbon::now()->addMinutes(60);
         $signedUrl = URL::temporarySignedRoute(
             'verification.verify',
             $expiration,
@@ -39,59 +36,36 @@ class CustomVerifyEmail extends Notification
         return $frontendUrl;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         $url = $this->verificationUrl($notifiable);
 
-        // ✅ Vérifier si c'est un professionnel approuvé
+        // Vérifier si c'est un professionnel approuvé
         $isProfessional = $notifiable->roles()->where('role', 'professionnel')->exists();
+        $isApproved = $notifiable->is_approved ?? false;
 
-        if ($isProfessional && $notifiable->is_approved) {
-            return (new MailMessage)
-                ->subject('🎉 Félicitations ! Votre compte professionnel a été approuvé')
-                ->greeting('Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',')
-                ->line('Excellente nouvelle ! Votre demande d\'inscription en tant que professionnel a été **approuvée** par notre équipe.')
-                ->line('Pour finaliser l\'activation de votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :')
-                ->action('Vérifier mon email', $url)
-                ->line('Ce lien est valide pendant 60 minutes.')
-                ->line('**Prochaines étapes après vérification :**')
-                ->line('• Vous pourrez vous connecter à votre compte')
-                ->line('• Compléter votre profil professionnel')
-                ->line('• Commencer à créer et gérer vos événements')
-                ->line('Si vous n\'avez pas créé de compte, aucune action n\'est requise.')
-                ->salutation('Bienvenue dans notre communauté ! L\'équipe ' . config('app.name'));
-        }
+        $subject = $isProfessional && $isApproved
+            ? '🎉 Félicitations ! Votre compte professionnel a été approuvé'
+            : 'Vérifiez votre adresse email';
 
-        // Email de vérification standard
+        $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
+
         return (new MailMessage)
-            ->subject('Vérifiez votre adresse email')
-            ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line('Merci de vous être inscrit sur notre plateforme !')
-            ->line('Veuillez cliquer sur le bouton ci-dessous pour vérifier votre adresse email.')
-            ->action('Vérifier mon email', $url)
-            ->line('Ce lien est valide pendant 60 minutes.')
-            ->line('Si vous n\'avez pas créé de compte, aucune action n\'est requise.')
-            ->salutation('Cordialement, L\'équipe ' . config('app.name'));
+            ->subject($subject)
+            ->view('emails.notifications.verify-email', [
+                'user' => $notifiable,
+                'url' => $url,
+                'greeting' => $greeting,
+                'isProfessional' => $isProfessional,
+                'isApproved' => $isApproved,
+            ]);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(object $notifiable): array
     {
         return [

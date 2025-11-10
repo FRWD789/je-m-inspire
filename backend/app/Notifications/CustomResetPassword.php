@@ -10,47 +10,41 @@ use Illuminate\Notifications\Notification;
 class CustomResetPassword extends Notification
 {
     use Queueable;
+
     public $token;
-    /**
-     * Create a new notification instance.
-     */
+
     public function __construct($token)
     {
-          $this->token = $token;
+        $this->token = $token;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
-        $frontendUrl = config('app.frontend_url') . "/reset-password?token={$this->token}&email={$notifiable->email}";
+        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+        $url = $frontendUrl . '/reset-password?token=' . $this->token . '&email=' . urlencode($notifiable->email);
+
+        $greeting = 'Bonjour ' . $notifiable->name . ',';
+
         return (new MailMessage)
-                ->subject('Reset Your Password')
-                ->line('You are receiving this email because we received a password reset request for your account.')
-                ->action('Reset Password', $frontendUrl)
-                ->line('If you did not request a password reset, no further action is required.');
+            ->subject('Réinitialisation de votre mot de passe')
+            ->view('emails.notifications.reset-password', [
+                'user' => $notifiable,
+                'url' => $url,
+                'greeting' => $greeting,
+                'count' => 60, // Minutes avant expiration
+            ]);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'message' => 'Réinitialisation de mot de passe demandée',
+            'email' => $notifiable->email
         ];
     }
 }

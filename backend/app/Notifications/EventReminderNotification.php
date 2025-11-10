@@ -14,27 +14,23 @@ class EventReminderNotification extends Notification
 
     protected $event;
     protected $operation;
+    protected $daysUntil;
 
-    /**
-     * Getter pour l'événement (utile pour les tests)
-     */
     public function getEvent(): Event
     {
         return $this->event;
     }
 
-    /**
-     * Getter pour l'opération (utile pour les tests)
-     */
     public function getOperation(): Operation
     {
         return $this->operation;
     }
 
-    public function __construct(Event $event, Operation $operation)
+    public function __construct(Event $event, Operation $operation, int $daysUntil = 2)
     {
         $this->event = $event;
         $this->operation = $operation;
+        $this->daysUntil = $daysUntil;
     }
 
     public function via($notifiable)
@@ -44,20 +40,28 @@ class EventReminderNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $eventDate = $this->event->start_date->format('d/m/Y à H:i');
-        $eventName = $this->event->name;
-        $quantity = $this->operation->quantity;
-        $location = $this->event->localisation->address ?? 'Non spécifié';
+        $eventUrl = config('app.frontend_url', 'http://localhost:5173') . '/events/' . $this->event->id;
+
+        $greeting = 'Bonjour ' . $notifiable->name . ',';
 
         return (new MailMessage)
-            ->subject("Rappel : {$eventName} dans 2 jours")
-            ->greeting("Bonjour {$notifiable->name},")
-            ->line("Votre événement approche ! Nous vous rappelons que **{$eventName}** aura lieu dans 2 jours.")
-            ->line("📅 **Date :** {$eventDate}")
-            ->line("📍 **Lieu :** {$location}")
-            ->line("🎫 **Nombre de places :** {$quantity}")
-            ->action('Voir les détails', env('FRONTEND_URL') . "/events/{$this->event->id}")
-            ->line('Nous avons hâte de vous voir !')
-            ->salutation('À bientôt, L\'équipe ' . config('app.name'));
+            ->subject('⏰ Rappel : ' . $this->event->name . ' dans ' . $this->daysUntil . ' jour(s)')
+            ->view('emails.notifications.event-reminder', [
+                'user' => $notifiable,
+                'event' => $this->event,
+                'operation' => $this->operation,
+                'daysUntil' => $this->daysUntil,
+                'eventUrl' => $eventUrl,
+                'greeting' => $greeting,
+            ]);
+    }
+
+    public function toArray($notifiable)
+    {
+        return [
+            'message' => 'Rappel événement',
+            'event_id' => $this->event->id,
+            'days_until' => $this->daysUntil,
+        ];
     }
 }

@@ -29,6 +29,16 @@ use App\Notifications\AccountReactivationRequestReceivedNotification;
 use App\Notifications\AccountReactivatedNotification;
 use App\Notifications\ReservationConfirmedNotification;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Event;
+use App\Notifications\CustomVerifyEmail;
+use App\Notifications\CustomResetPassword;
+use App\Notifications\AccountDeactivatedNotification;
+use App\Notifications\EventReminderNotification;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
+
+
+
 
 //route auth maher
 Route::get('/test-mail', function() {
@@ -226,138 +236,212 @@ Route::middleware(['auth.jwt'])->group(function () {
 
 });
 
-// ==========================================
-// ROUTES DE TEST D'EMAILS
-// ==========================================
+// ========================================================================
+// GROUPE DE ROUTES DE TEST
+// ========================================================================
+
 Route::prefix('test-emails')->group(function () {
 
-    //TEST EMAIL DEMANDE DE REMBOURSEMENT
-    Route::get('/remboursement', function () {
+    // 1️⃣ TEST EMAIL VÉRIFICATION
+    Route::get('/verify-email', function () {
+        $user = User::where('email', 'user@example.com')->first();
+
+        if (!$user) {
+            $user = User::create([
+                'name' => 'Test',
+                'last_name' => 'User',
+                'email' => 'user@example.com',
+                'password' => Hash::make('password123'),
+                'date_of_birth' => now()->subYears(25),
+                'city' => 'Montréal',
+            ]);
+            $created = true;
+        } else {
+            $created = false;
+        }
+
+        $user->notify(new CustomVerifyEmail());
+
+        return response()->json([
+            '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
+            'destinataire' => $user->email,
+            'type' => 'Vérification email',
+            'utilisateur_cree' => $created ? 'Oui' : 'Non (existant)',
+        ]);
+    });
+
+    // 2️⃣ TEST EMAIL RÉINITIALISATION MOT DE PASSE
+    Route::get('/reset-password', function () {
         $user = User::where('email', 'user@example.com')->first();
 
         if (!$user) {
             return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
-        // Chercher un remboursement existant
-        $remboursement = Remboursement::with(['operation.event', 'user'])
+        $token = Str::random(64);
+        $user->notify(new CustomResetPassword($token));
+
+        return response()->json([
+            '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
+            'destinataire' => $user->email,
+            'type' => 'Réinitialisation mot de passe',
+            'token' => $token,
+        ]);
+    });
+
+    // 3️⃣ TEST EMAIL RÉSERVATION CONFIRMÉE
+    Route::get('/reservation-confirmed', function () {
+        $user = User::where('email', 'user@example.com')->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Chercher ou créer une opération
+        $operation = Operation::with(['event.localisation', 'paiement'])
             ->where('user_id', $user->id)
+            ->where('type_operation_id', 2)
             ->first();
 
-        // ✅ SI AUCUN REMBOURSEMENT, EN CRÉER UN
-        if (!$remboursement) {
-            // Chercher ou créer une opération
-            $operation = Operation::where('user_id', $user->id)
-                ->where('type_operation_id', 2)
-                ->first();
+        if (!$operation) {
+            $event = Event::with('localisation')->first();
 
-            if (!$operation) {
-                $event = \App\Models\Event::first();
-                if (!$event) {
-                    return response()->json(['error' => 'Aucun événement trouvé'], 404);
-                }
-
-                $paiement = Paiement::create([
-                    'total' => $event->base_price,
-                    'status' => 'paid',
-                    'type_paiement_id' => 1,
-                    'taux_commission' => 10,
-                    'session_id' => 'test_' . uniqid(),
-                ]);
-
-                $operation = Operation::create([
-                    'user_id' => $user->id,
-                    'event_id' => $event->id,
-                    'type_operation_id' => 2,
-                    'paiement_id' => $paiement->paiement_id,
-                ]);
+            if (!$event) {
+                return response()->json(['error' => 'Aucun événement trouvé'], 404);
             }
 
-            // Créer le remboursement
-            $remboursement = Remboursement::create([
+            // Créer le paiement
+            $paiement = Paiement::create([
+                'total' => $event->base_price ?? 50.00,
+                'status' => 'paid',
+                'provider' => 'stripe',
+                'type_paiement_id' => 1,
+                'taux_commission' => 10,
+                'session_id' => 'test_' . uniqid(),
+            ]);
+
+            // Créer l'opération
+            $operation = Operation::create([
                 'user_id' => $user->id,
-                'operation_id' => $operation->id,
-                'montant' => 50.00,
-                'motif' => 'Test de notification email - demande créée automatiquement',
-                'statut' => 'en_attente',
+                'event_id' => $event->id,
+                'type_operation_id' => 2,
+                'paiement_id' => $paiement->paiement_id,
+                'quantity' => 1,
             ]);
 
-            $remboursement->load(['operation.event', 'user']);
+            $operation->load(['event.localisation', 'paiement']);
             $created = true;
         } else {
             $created = false;
         }
 
-        $remboursement->user->notify(new RemboursementReceivedNotification($remboursement));
+        $user->notify(new ReservationConfirmedNotification($operation));
 
         return response()->json([
             '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
             'destinataire' => $user->email,
-            'type' => 'Demande de remboursement',
-            'remboursement_id' => $remboursement->id,
-            'remboursement_cree' => $created ? 'Oui' : 'Non (existant)',
+            'type' => 'Réservation confirmée',
+            'operation_id' => $operation->id,
+            'operation_creee' => $created ? 'Oui' : 'Non (existante)',
         ]);
     });
 
-    //TEST EMAIL CANDIDATURE PROFESSIONNELLE
-    Route::get('/professional-application', function () {
-        // Chercher un professionnel existant
-        $user = User::where('email', 'pro@example.com')->first();
+    // 4️⃣ TEST EMAIL COMPTE DÉSACTIVÉ
+    Route::get('/account-deactivated', function () {
+        $user = User::where('email', 'user@example.com')->first();
 
-        // ✅ SI AUCUN PRO, EN CRÉER UN
         if (!$user) {
-            $user = User::create([
-                'name' => 'Pro',
-                'last_name' => 'Test',
-                'email' => 'pro@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-                'date_of_birth' => now()->subYears(30),
-                'city' => 'Paris',
-                'motivation_letter' => 'Lettre de motivation de test pour un professionnel',
-                'is_approved' => false,
-                'email_verified_at' => null,
-            ]);
-
-            // Attacher le rôle professionnel
-            $proRole = \App\Models\Role::where('role', 'professionnel')->first();
-            if ($proRole) {
-                $user->roles()->attach($proRole->id);
-            }
-
-            $created = true;
-        } else {
-            $created = false;
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
-        $user->notify(new ProfessionalApplicationReceivedNotification());
+        $daysInactive = 95;
+        $user->notify(new AccountDeactivatedNotification($daysInactive));
 
         return response()->json([
             '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
             'destinataire' => $user->email,
-            'type' => 'Demande inscription professionnel',
-            'professionnel_cree' => $created ? 'Oui' : 'Non (existant)',
+            'type' => 'Compte désactivé',
+            'jours_inactivite' => $daysInactive,
         ]);
     });
 
-    //TEST EMAIL PROFESSIONNEL APPROUVÉ
+    // 5️⃣ TEST EMAIL DEMANDE RÉACTIVATION (ADMIN)
+    Route::get('/account-reactivation', function () {
+        $user = User::where('email', 'user@example.com')->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Chercher un admin
+        $admin = User::whereHas('roles', function($query) {
+            $query->where('role', 'admin');
+        })->first();
+
+        if (!$admin) {
+            return response()->json(['error' => 'Aucun admin trouvé'], 404);
+        }
+
+        $reason = "Je souhaite réactiver mon compte car j'ai été absent pour des raisons personnelles. Je suis maintenant prêt à utiliser à nouveau la plateforme.";
+
+        $admin->notify(new AccountReactivationRequestReceivedNotification($user, $reason));
+
+        return response()->json([
+            '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
+            'destinataire' => $admin->email,
+            'type' => 'Demande réactivation (admin)',
+            'demandeur' => $user->email,
+        ]);
+    });
+
+    // 6️⃣ TEST EMAIL RAPPEL ÉVÉNEMENT
+    Route::get('/event-reminder', function () {
+        $user = User::where('email', 'user@example.com')->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Chercher une opération avec événement
+        $operation = Operation::with('event')
+            ->where('user_id', $user->id)
+            ->where('type_operation_id', 2)
+            ->first();
+
+        if (!$operation) {
+            return response()->json(['error' => 'Aucune réservation trouvée'], 404);
+        }
+
+        $daysUntil = 2;
+        $user->notify(new EventReminderNotification($operation->event, $operation, $daysUntil));
+
+        return response()->json([
+            '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
+            'destinataire' => $user->email,
+            'type' => 'Rappel événement',
+            'evenement' => $operation->event->name,
+            'dans_x_jours' => $daysUntil,
+        ]);
+    });
+
+    // 7️⃣ TEST EMAIL PROFESSIONNEL APPROUVÉ
     Route::get('/professional-approved', function () {
         $user = User::where('email', 'pro@example.com')->first();
 
-        // ✅ SI AUCUN PRO, EN CRÉER UN
         if (!$user) {
             $user = User::create([
                 'name' => 'Pro',
                 'last_name' => 'Test',
                 'email' => 'pro@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                'password' => Hash::make('password123'),
                 'date_of_birth' => now()->subYears(30),
-                'city' => 'Paris',
-                'motivation_letter' => 'Lettre de motivation de test',
+                'city' => 'Montréal',
+                'motivation_letter' => 'Lettre de motivation professionnelle',
                 'is_approved' => true,
-                'approved_at' => now(),
                 'email_verified_at' => now(),
             ]);
 
+            // Attacher le rôle professionnel
             $proRole = \App\Models\Role::where('role', 'professionnel')->first();
             if ($proRole) {
                 $user->roles()->attach($proRole->id);
@@ -373,197 +457,150 @@ Route::prefix('test-emails')->group(function () {
         return response()->json([
             '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
             'destinataire' => $user->email,
-            'type' => 'Approbation professionnel',
+            'type' => 'Professionnel approuvé',
             'professionnel_cree' => $created ? 'Oui' : 'Non (existant)',
         ]);
     });
 
-    //TEST EMAIL PROFESSIONNEL REJETÉ
+    // 8️⃣ TEST EMAIL PROFESSIONNEL REJETÉ
     Route::get('/professional-rejected', function () {
-        // Utiliser un email différent pour éviter les conflits
-        $user = User::where('email', 'pro-rejected@example.com')->first();
+        $user = User::where('email', 'pro@example.com')->first();
 
-        // ✅ SI AUCUN PRO, EN CRÉER UN
         if (!$user) {
-            $user = User::create([
-                'name' => 'Pro',
-                'last_name' => 'Rejected',
-                'email' => 'pro-rejected@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-                'date_of_birth' => now()->subYears(30),
-                'city' => 'Lyon',
-                'motivation_letter' => 'Lettre de motivation insuffisante pour test de rejet',
-                'is_approved' => false,
-                'email_verified_at' => null,
-            ]);
-
-            $proRole = \App\Models\Role::where('role', 'professionnel')->first();
-            if ($proRole) {
-                $user->roles()->attach($proRole->id);
-            }
-
-            $created = true;
-        } else {
-            $created = false;
+            return response()->json(['error' => 'Professionnel non trouvé'], 404);
         }
 
-        $reason = 'Votre lettre de motivation ne correspond pas aux critères requis. Veuillez fournir plus de détails sur votre expérience professionnelle dans le domaine du bien-être.';
+        $reason = "Votre lettre de motivation ne correspond pas aux critères requis. Veuillez fournir plus de détails sur votre expérience professionnelle dans le domaine du bien-être et votre projet sur notre plateforme.";
 
         $user->notify(new ProfessionalRejectedNotification($reason));
 
         return response()->json([
             '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
             'destinataire' => $user->email,
-            'type' => 'Rejet professionnel',
+            'type' => 'Professionnel rejeté',
             'raison' => $reason,
-            'professionnel_cree' => $created ? 'Oui' : 'Non (existant)',
         ]);
     });
 
-    //TEST EMAIL DEMANDE DE RÉACTIVATION DE COMPTE
-    Route::get('/reactivation-request', function () {
-        $user = User::where('email', 'user@example.com')->first();
+    // 9️⃣ TEST EMAIL CANDIDATURE PROFESSIONNELLE (ADMIN)
+    Route::get('/professional-application', function () {
+        $user = User::where('email', 'pro@example.com')->first();
 
-        // ✅ SI AUCUN USER, EN CRÉER UN
         if (!$user) {
-            $user = User::create([
-                'name' => 'User',
-                'last_name' => 'Test',
-                'email' => 'user@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-                'date_of_birth' => now()->subYears(25),
-                'is_active' => false, // Compte désactivé
-                'last_login_at' => now()->subDays(90), // Inactif depuis 90 jours
-                'email_verified_at' => now(),
-            ]);
-
-            $userRole = \App\Models\Role::where('role', 'utilisateur')->first();
-            if ($userRole) {
-                $user->roles()->attach($userRole->id);
-            }
-
-            $created = true;
-        } else {
-            $created = false;
+            return response()->json(['error' => 'Professionnel non trouvé'], 404);
         }
 
-        $daysInactive = $user->last_login_at
-            ? now()->diffInDays($user->last_login_at)
-            : 90;
+        // Chercher un admin
+        $admin = User::whereHas('roles', function($query) {
+            $query->where('role', 'admin');
+        })->first();
 
-        $user->notify(new AccountReactivationRequestReceivedNotification($daysInactive));
+        if (!$admin) {
+            return response()->json(['error' => 'Aucun admin trouvé'], 404);
+        }
+
+        $motivation = "Je suis passionné par le yoga et la méditation depuis 10 ans. Je souhaite partager mon expérience avec la communauté en organisant des ateliers et des retraites.";
+        $experience = "Professeur de yoga certifié (500h), formateur en méditation pleine conscience, 8 ans d'expérience dans l'enseignement.";
+
+        $admin->notify(new ProfessionalApplicationReceivedNotification($user, $motivation, $experience));
 
         return response()->json([
             '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
-            'destinataire' => $user->email,
-            'type' => 'Demande de réactivation',
-            'jours_inactivite' => $daysInactive,
-            'utilisateur_cree' => $created ? 'Oui' : 'Non (existant)',
+            'destinataire' => $admin->email,
+            'type' => 'Candidature professionnelle (admin)',
+            'candidat' => $user->email,
         ]);
     });
 
-    //TEST EMAIL COMPTE RÉACTIVÉ
-    Route::get('/account-reactivated', function () {
+    // 🔟 TEST EMAIL REMBOURSEMENT REÇU
+    Route::get('/remboursement', function () {
         $user = User::where('email', 'user@example.com')->first();
 
-        // ✅ SI AUCUN USER, EN CRÉER UN
         if (!$user) {
-            $user = User::create([
-                'name' => 'User',
-                'last_name' => 'Test',
-                'email' => 'user@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-                'date_of_birth' => now()->subYears(25),
-                'is_active' => true, // Compte réactivé
-                'email_verified_at' => now(),
-            ]);
-
-            $userRole = \App\Models\Role::where('role', 'utilisateur')->first();
-            if ($userRole) {
-                $user->roles()->attach($userRole->id);
-            }
-
-            $created = true;
-        } else {
-            $created = false;
+            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
         }
 
-        $user->notify(new AccountReactivatedNotification());
-
-        return response()->json([
-            '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
-            'destinataire' => $user->email,
-            'type' => 'Compte réactivé',
-            'utilisateur_cree' => $created ? 'Oui' : 'Non (existant)',
-        ]);
-    });
-
-    //TEST EMAIL RÉSERVATION CONFIRMÉE
-    Route::get('/reservation', function () {
-        $user = User::where('email', 'user@example.com')->first();
-
-        // ✅ SI AUCUN USER, EN CRÉER UN
-        if (!$user) {
-            $user = User::create([
-                'name' => 'User',
-                'last_name' => 'Test',
-                'email' => 'user@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-                'date_of_birth' => now()->subYears(25),
-                'email_verified_at' => now(),
-            ]);
-
-            $userRole = \App\Models\Role::where('role', 'utilisateur')->first();
-            if ($userRole) {
-                $user->roles()->attach($userRole->id);
-            }
-        }
-
-        $operation = Operation::with(['event.localisation', 'paiement'])
-            ->where('type_operation_id', 2)
+        // Chercher un remboursement existant
+        $remboursement = Remboursement::with(['operation.event', 'operation.paiement'])
             ->where('user_id', $user->id)
             ->first();
 
-        // ✅ SI AUCUNE OPÉRATION, EN CRÉER UNE
-        if (!$operation) {
-            $event = \App\Models\Event::with('localisation')->first();
+        if (!$remboursement) {
+            // Chercher une opération
+            $operation = Operation::where('user_id', $user->id)
+                ->where('type_operation_id', 2)
+                ->first();
 
-            if (!$event) {
-                return response()->json(['error' => 'Aucun événement trouvé. Exécute: php artisan db:seed'], 404);
+            if (!$operation) {
+                $event = Event::first();
+                if (!$event) {
+                    return response()->json(['error' => 'Aucun événement trouvé'], 404);
+                }
+
+                $paiement = Paiement::create([
+                    'total' => $event->base_price ?? 50.00,
+                    'status' => 'paid',
+                    'provider' => 'stripe',
+                    'type_paiement_id' => 1,
+                    'taux_commission' => 10,
+                    'session_id' => 'test_' . uniqid(),
+                ]);
+
+                $operation = Operation::create([
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'type_operation_id' => 2,
+                    'paiement_id' => $paiement->paiement_id,
+                    'quantity' => 1,
+                ]);
             }
 
-            $paiement = Paiement::create([
-                'total' => $event->base_price,
-                'status' => 'paid',
-                'type_paiement_id' => 1,
-                'taux_commission' => 10,
-                'session_id' => 'test_' . uniqid(),
-            ]);
-
-            $operation = Operation::create([
+            // Créer le remboursement
+            $remboursement = Remboursement::create([
                 'user_id' => $user->id,
-                'event_id' => $event->id,
-                'type_operation_id' => 2,
-                'paiement_id' => $paiement->paiement_id,
+                'operation_id' => $operation->id,
+                'montant' => 50.00,
+                'motif' => 'Test de notification - annulation événement',
+                'statut' => 'approuve',
             ]);
 
-            $operation->load(['event.localisation', 'paiement']);
+            $remboursement->load(['operation.event', 'operation.paiement']);
             $created = true;
         } else {
             $created = false;
         }
 
-        $user->notify(new ReservationConfirmedNotification($operation));
+        $user->notify(new RemboursementReceivedNotification($remboursement));
 
         return response()->json([
             '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
             'destinataire' => $user->email,
-            'type' => 'Confirmation de réservation',
-            'operation_id' => $operation->id,
-            'operation_creee' => $created ? 'Oui' : 'Non (existante)',
+            'type' => 'Remboursement traité',
+            'montant' => $remboursement->montant,
+            'remboursement_cree' => $created ? 'Oui' : 'Non (existant)',
         ]);
     });
 
+    // 📋 ROUTE RÉCAPITULATIVE
+    Route::get('/', function () {
+        return response()->json([
+            'message' => '📧 Routes de test des emails disponibles',
+            'routes' => [
+                'GET /api/test-emails/verify-email' => 'Vérification email',
+                'GET /api/test-emails/reset-password' => 'Réinitialisation mot de passe',
+                'GET /api/test-emails/reservation-confirmed' => 'Confirmation réservation',
+                'GET /api/test-emails/account-deactivated' => 'Compte désactivé',
+                'GET /api/test-emails/account-reactivation' => 'Demande réactivation (admin)',
+                'GET /api/test-emails/event-reminder' => 'Rappel événement',
+                'GET /api/test-emails/professional-approved' => 'Professionnel approuvé',
+                'GET /api/test-emails/professional-rejected' => 'Professionnel rejeté',
+                'GET /api/test-emails/professional-application' => 'Candidature pro (admin)',
+                'GET /api/test-emails/remboursement' => 'Remboursement traité',
+            ],
+            'mailhog' => 'http://localhost:8025',
+            'note' => 'Toutes les routes créent automatiquement les données de test nécessaires'
+        ]);
+    });
 });
 
 

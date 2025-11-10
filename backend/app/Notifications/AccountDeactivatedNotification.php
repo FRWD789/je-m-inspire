@@ -28,21 +28,22 @@ class AccountDeactivatedNotification extends Notification
         $contactEmail = config('mail.from.address', 'support@example.com');
         $loginUrl = config('app.frontend_url', 'http://localhost:5173') . '/login';
 
+        $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
+
+        $lastLogin = $notifiable->last_login_at
+            ? $notifiable->last_login_at->locale('fr')->isoFormat('D MMMM YYYY à HH:mm')
+            : 'Jamais connecté';
+
         return (new MailMessage)
             ->subject('⚠️ Votre compte a été désactivé pour inactivité')
-            ->greeting('Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',')
-            ->line('Nous vous informons que votre compte a été **désactivé** en raison d\'une inactivité prolongée.')
-            ->line('**Détails :**')
-            ->line('• Dernière connexion : ' . $notifiable->last_login_at)
-            ->line('• Durée d\'inactivité : ' . $this->daysInactive . ' jours')
-            ->line('• Seuil de désactivation : 90 jours')
-            ->line('---')
-            ->line('**Comment réactiver votre compte ?**')
-            ->line('Pour réactiver votre compte, veuillez nous contacter à : **' . $contactEmail . '**')
-            ->line('Notre équipe traitera votre demande dans les plus brefs délais.')
-            ->line('---')
-            ->line('Si vous ne souhaitez plus utiliser notre plateforme, aucune action n\'est requise.')
-            ->salutation('Cordialement, L\'équipe ' . config('app.name'));
+            ->view('emails.notifications.account-deactivated', [
+                'user' => $notifiable,
+                'daysInactive' => $this->daysInactive,
+                'lastLogin' => $lastLogin,
+                'contactEmail' => $contactEmail,
+                'loginUrl' => $loginUrl,
+                'greeting' => $greeting,
+            ]);
     }
 
     public function toArray(object $notifiable): array
