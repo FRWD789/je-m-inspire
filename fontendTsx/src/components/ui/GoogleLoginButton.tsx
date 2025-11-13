@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { publicApi } from '@/api/api';
+import { useTranslation } from 'react-i18next';
 interface GoogleLoginButtonProps {
   className?: string;
   onError?: (error: any) => void;
@@ -7,6 +8,7 @@ interface GoogleLoginButtonProps {
 
 export default function GoogleLoginButton({ className = '', onError }: GoogleLoginButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -86,10 +88,10 @@ export default function GoogleLoginButton({ className = '', onError }: GoogleLog
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            Connexion en cours...
+            {t('auth.googleLoading')}
           </span>
         ) : (
-          'Continuer avec Google'
+          t('auth.googleButton')
         )}
       </span>
     </button>

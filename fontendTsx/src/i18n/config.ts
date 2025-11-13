@@ -64,10 +64,12 @@ const resources = {
         createAccount: 'Créer un compte',
         forgotPassword: 'Mot de passe oublié ?',
         middleText: 'Ou avec votre email',
+        googleButton: 'Continuer avec Google',
+        googleLoading: 'Connexion en cours...',
         
         // Register User
-        registerUserTitle: 'Inscription Utilisateur',
-        registerUserSubtitle: 'Créez votre compte utilisateur',
+        registerUserTitle: 'Créez votre compte',
+        registerUserSubtitle: 'Inscrivez-vous pour rejoindre Je m\'inspire',
         firstName: 'Prénom',
         firstNamePlaceholder: 'Entrez votre prénom',
         lastName: 'Nom',
@@ -79,13 +81,14 @@ const resources = {
         passwordConfirmationPlaceholder: 'Confirmez votre mot de passe',
         registerButton: "S'inscrire",
         alreadyAccount: 'Déjà un compte ?',
+        registerPro: 'Rejoignez-nous en tant que professionnel',
         
         // Register Professional
-        registerProTitle: 'Inscription Professionnel',
-        registerProSubtitle: 'Créez votre compte professionnel',
+        registerProTitle: 'Rejoignez en tant que professionnel',
+        registerProSubtitle: 'Soumettez votre inscription pour devenir un professionnel vérifié',
         businessName: 'Nom de votre entreprise',
         businessNamePlaceholder: 'Entrez le nom de votre entreprise',
-        description: 'Description',
+        motivationLetter: 'Lettre de motivation',
         descriptionPlaceholder: 'Décrivez votre activité',
         
         // Messages
@@ -581,10 +584,12 @@ const resources = {
         createAccount: 'Create account',
         forgotPassword: 'Forgot password?',
         middleText: 'Or with you email',
+        googleButton: 'Sign in with google',
+        googleLoading: 'Connection in progress...',
         
         // Register User
-        registerUserTitle: 'User Registration',
-        registerUserSubtitle: 'Create your user account',
+        registerUserTitle: 'Create your account',
+        registerUserSubtitle: 'Sign up to join Je m\'inspire',
         firstName: 'First Name',
         firstNamePlaceholder: 'Enter your first name',
         lastName: 'Last Name',
@@ -596,13 +601,14 @@ const resources = {
         passwordConfirmationPlaceholder: 'Confirm your password',
         registerButton: 'Sign up',
         alreadyAccount: 'Already have an account?',
+        registerPro: 'Join us as a professional',
         
         // Register Professional
         registerProTitle: 'Professional Registration',
         registerProSubtitle: 'Create your professional account',
         businessName: 'Business Name',
         businessNamePlaceholder: 'Enter your business name',
-        description: 'Description',
+        motivationLetter: 'Motivation Letter',
         descriptionPlaceholder: 'Describe your activity',
         
         // Messages

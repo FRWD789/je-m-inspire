@@ -76,8 +76,8 @@ export default function Login() {
                     </Form>
 
                     <small className='hover:underline cursor-pointer text-primary hover:text-accent block text-center'>
-                        {t('auth.noAccount')}{' '}
-                        <Link to={"/register"}>{t('auth.createAccount')}</Link>
+                        
+                        <Link to={"/register"}>{t('auth.noAccount')}{' '}{t('auth.createAccount')}</Link>
                     </small>
                 </div>
             </div>
