@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Settings, Star } from 'lucide-react';
 import Abonnement from '@/page/Abonnement';
 
+
 type SideNavProps = {
   open: boolean;
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
   const settingsRef = useRef<HTMLDivElement>(null);
   const { user ,updateProfile,logout,hasProPlus} = useAuth();
   const navigate = useNavigate()
+ 
   // ✅ Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -85,19 +87,19 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                
               </button>
               {
-<<<<<<< Updated upstream
-                user.roles[0].role==="professionnel"&&!user.subscription?.has_pro_plus?
-                  <div className='w-full' onClick={()=>setShowAbonemment(true)}>
-=======
-                user.roles[0].role === "professionnel" && !hasProPlus &&
-                   <div className='w-full' onClick={()=>setShowAbonemment(true)}>
->>>>>>> Stashed changes
-                   <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>Mettre à niveau</button>
-                </div>
-                :
-                 <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 m-2 shadow-lg">
-                  <Star size={16} fill="currentColor" />
-                </div>
+                user.roles[0].role === "professionnel" && (
+                  !hasProPlus ? (
+                    <div className='w-full' onClick={() => setShowAbonemment(true)}>
+                      <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>
+                        Mettre à niveau
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 m-2 shadow-lg">
+                      <Star size={16} fill="currentColor" />
+                    </div>
+                  )
+                )
               }
               
              

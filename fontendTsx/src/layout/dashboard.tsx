@@ -3,6 +3,7 @@ import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, H
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import SideNav from '@/components/sideNav';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
   const [open, setOpen] = useState(true);
@@ -10,6 +11,7 @@ export default function Dashboard() {
   const { user ,logout} = useAuth();
   console.log(user)
   const location = useLocation(); // ✅ Get current path
+  const { t } = useTranslation();
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-open");
@@ -36,24 +38,19 @@ export default function Dashboard() {
     user!.roles[0].role === "admin" ? "/refunds" : "/refunds-request";
 
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: 'Home', path: "/" },
-         ...(user!.roles[0].role ==="professionnel"? [{ icon: <ChartNoAxesCombined className="w-5 h-5" />, label: 'Revenus', path: "/vendor" }] : []),
-    ...(user!.roles[0].role === "admin" ? [{ icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: "/approbation" },{ icon: <Percent  className="w-5 h-5"/>, label: "Commissions", path: "/commissions" }] : []),
-    { icon: refundIcon, label: "Remboursement", path: refundPath },
-<<<<<<< Updated upstream
-
-    { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calandrier", path: "/event-calender" },
-=======
+    { icon: <Home className="w-5 h-5" />, label: t('dashboard.home'), path: "/" },
+         ...(user!.roles[0].role ==="professionnel"? [{ icon: <ChartNoAxesCombined className="w-5 h-5" />, label: t('dashboard.earnings'), path: "/vendor" }] : []),
+    ...(user!.roles[0].role === "admin" ? [{ icon: <Users className="w-5 h-5" />, label: t('dashboard.users'), path: "/approbation" },{ icon: <Percent  className="w-5 h-5"/>, label: t('dashboard.commissions'), path: "/commissions" }] : []),
+    { icon: refundIcon, label: t('dashboard.refunds'), path: refundPath },
     
-    { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calendrier", path: "/event-calender" },
->>>>>>> Stashed changes
+    { icon: <CalendarDays  className="w-5 h-5"/>, label: t('dashboard.calendar'), path: "/event-calender" },
     {
       icon: <Ticket  className="w-5 h-5" />,
-      label: 'Événements',
+      label:  t('dashboard.events'),
       path: "/my-events",
       children: [
-        { label: 'Événements', path: "/my-events", icon: <TicketPlus  className="w-4 h-4" /> },
-        { label: 'Mes réservations', path: "/my-reservations", icon: <TicketCheck  className="w-4 h-4" /> },
+        { label: t('dashboard.myEvents'), path: "/my-events", icon: <TicketPlus  className="w-4 h-4" /> },
+        { label: t('dashboard.myReservations'), path: "/my-reservations", icon: <TicketCheck  className="w-4 h-4" /> },
       ]
     },
   ]

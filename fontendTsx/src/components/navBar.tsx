@@ -3,32 +3,34 @@ import { ChevronDown, LogIn, UserPlus, Menu, X, ExternalLink } from "lucide-reac
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import type { User } from "@/types/user";
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function NavBar() {
   const {user,logout} = useAuth()
   const [openDropdown, setOpenDropdown] = useState<false | "experiences" | "account">(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
 
   const navLinks = [
-    { name: "Accueil", path: "/" },
-    { name: "Événements", path: "/events" },
-    { name: "Créer un événement", path: "/dashborad/my-events" },
-    { name: "À propos", path: "/" },
-    ...(user?[{ name: "Mes Reservation", path: "/dashboard/my-reservations" }]:[]),
-    
+    { name: t('nav.home'), path: "/" },
+    { name: t('nav.events'), path: "/events" },
+    { name: t('nav.createEvent'), path: "/dashboard/my-events" },
+    { name: t('nav.about'), path: "/" },
+    ...(user ? [{ name: t('nav.myReservations'), path: "/dashboard/my-reservations" }] : []),
   ];
 
   const dropdownLinks = [
-    { name: "Méditation", path: "/" },
-    { name: "Yoga & Mouvement", path: "/" },
-    { name: "Sonothérapie", path: "/" },
-    { name: "Cercles de partage", path: "/" },
+    { name: t('experiences.meditation'), path: "/" },
+    { name: t('experiences.yoga'), path: "/" },
+    { name: t('experiences.sonotherapy'), path: "/" },
+    { name: t('experiences.circles'), path: "/" },
   ];
-  const dropdownLinksAcoount = [
-    { name: "Compte", path: "/dashboard/profile-settings",icon:<ExternalLink className="w-3 h-3" /> },
-    { name: "Déconnexion", path: "/" },
-    
+
+  const dropdownLinksAccount = [
+    { name: t('nav.account'), path: "/dashboard/profile-settings", icon: <ExternalLink /> },
+    { name: t('nav.logout'), path: "/" },
   ];
 
 
@@ -92,10 +94,15 @@ export default function NavBar() {
               </div>
             )}
           </div>
+
+          
         </div>
+
+        
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden md:flex items-center gap-3">
+          <LanguageSwitcher/>
            {user as User ? (
             <div className="relative">
               <button
@@ -116,25 +123,25 @@ export default function NavBar() {
 
               {openDropdown === "account" && (
                 <div className="absolute right-0 mt-2 w-48 bg-white/90 rounded-[8px] shadow-lg border border-gray-100 overflow-hidden">
-                  {dropdownLinksAcoount.map(({ name, path, icon }) => (
-
-                    name.toLowerCase()==='déconnexion'?
-                    
-                    <button onClick={()=>logout()} className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all">
-                              {name}
-                    </button>
-                    
-                    
-                    :
-                    <NavLink
-                      key={path}
-                      to={path}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all"
-                    >
-                      {name}
-                      {icon && <span>{icon}</span>}
-                      
-                    </NavLink>
+                  {dropdownLinksAccount.map(({ name, path, icon }) => (
+                    name.toLowerCase() === 'déconnexion' || name.toLowerCase() === 'logout' ? (
+                      <button 
+                        key={name}
+                        onClick={() => logout()} 
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all"
+                      >
+                        {name}
+                      </button>
+                    ) : (
+                      <NavLink
+                        key={path}
+                        to={path}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-background justify-between hover:text-accent transition-all"
+                      >
+                        {name}
+                        {icon && <span>{icon}</span>}
+                      </NavLink>
+                    )
                   ))}
                 </div>
               )}
@@ -146,7 +153,7 @@ export default function NavBar() {
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
               >
                 <LogIn className="w-4 h-4" />
-                Se connecter
+                {t('nav.login')}
               </NavLink>
 
               <NavLink
@@ -154,7 +161,7 @@ export default function NavBar() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
               >
                 <UserPlus className="w-4 h-4" />
-                S’inscrire
+                {t('nav.register')}
               </NavLink>
             </>
           )}
@@ -189,7 +196,7 @@ export default function NavBar() {
 
             {/* Dropdown items */}
             <div className="mt-2 border-t border-gray-200 pt-2">
-              <span className="text-sm font-medium text-primary">Expériences</span>
+              <span className="text-sm font-medium text-primary">{t('nav.experiences')}</span>
               <div className="flex flex-col mt-1 gap-1">
                 {dropdownLinks.map(({ name, path }) => (
                   <NavLink
@@ -211,7 +218,7 @@ export default function NavBar() {
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-accent transition-all"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <LogIn className="w-4 h-4" /> Se connecter
+                <LogIn className="w-4 h-4" /> {t('nav.login')}
               </NavLink>
 
               <NavLink
@@ -219,7 +226,7 @@ export default function NavBar() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:brightness-110 rounded-[4px] shadow-sm transition-all"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <UserPlus className="w-4 h-4" /> S’inscrire
+                <UserPlus className="w-4 h-4" /> {t('nav.register')}
               </NavLink>
             </div>
           </div>
