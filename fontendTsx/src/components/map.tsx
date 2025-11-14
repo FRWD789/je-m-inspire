@@ -182,6 +182,7 @@ export const MapEvents = ({ events = [], selectedEventId = null, onEventSelect =
             mapTypeControl={false}
             streetView={false}
             streetViewControl={false}
+            minZoom={4}
             
           >
             <ClusteredEventMarkers 

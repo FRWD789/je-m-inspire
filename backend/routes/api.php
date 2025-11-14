@@ -193,6 +193,11 @@ Route::middleware(['auth.jwt'])->group(function () {
     // SUPPRESSION DE COMPTE
     Route::delete('/profile/deleteAccount', [ProfileController::class, 'deleteAccount']);
 
+    // FOLLOW PROFESSIONNELS
+    Route::post('/follow/{proId}', [\App\Http\Controllers\FollowProController::class, 'toggle']);
+    Route::get('/follow/check/{proId}', [\App\Http\Controllers\FollowProController::class, 'check']);
+    Route::get('/my-following', [\App\Http\Controllers\FollowProController::class, 'myFollowing']);
+
     // ABONNEMENTS
     Route::prefix('abonnement')->group(function () {
         Route::post('/stripe', [AbonnementController::class, 'abonnementStripe']);
