@@ -85,15 +85,19 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                
               </button>
               {
-                user.roles[0].role === "professionnel" && !hasProPlus &&
-                   <div className='w-full' onClick={()=>setShowAbonemment(true)}>
-
-                   <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>Mettre à niveau</button>
-                </div>
-                :
-                 <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 m-2 shadow-lg">
-                  <Star size={16} fill="currentColor" />
-                </div>
+                user.roles[0].role === "professionnel" && (
+                  !hasProPlus ? (
+                    <div className='w-full' onClick={() => setShowAbonemment(true)}>
+                      <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>
+                        Mettre à niveau
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 m-2 shadow-lg">
+                      <Star size={16} fill="currentColor" />
+                    </div>
+                  )
+                )
               }
               
              
