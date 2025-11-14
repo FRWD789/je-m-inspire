@@ -29,8 +29,8 @@ class ReservationConfirmedNotification extends Notification
         $event = $this->operation->event;
         $paiement = $this->operation->paiement;
 
-        $eventUrl = config('app.frontend_url', 'http://localhost:5173') . '/events/' . $event->id;
-        $myReservationsUrl = config('app.frontend_url', 'http://localhost:5173') . '/my-reservations';
+        $eventUrl = config(env("FRONTEND_URL"), env("APP_URL")) . '/events/' . $event->id;
+        $myReservationsUrl = config(env("FRONTEND_URL"), env("APP_URL")) . '/my-reservations';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 

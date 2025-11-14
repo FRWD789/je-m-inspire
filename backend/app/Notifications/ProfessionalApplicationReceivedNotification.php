@@ -30,7 +30,7 @@ class ProfessionalApplicationReceivedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $reviewUrl = config('app.frontend_url', 'http://localhost:5173') . '/admin/users/' . $this->applicant->id;
+        $reviewUrl = config(env("FRONTEND_URL"), env("APP_URL")) . '/admin/users/' . $this->applicant->id;
 
         $greeting = 'Bonjour l\'équipe administrative,';
 
