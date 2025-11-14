@@ -40,13 +40,8 @@ export default function Dashboard() {
          ...(user!.roles[0].role ==="professionnel"? [{ icon: <ChartNoAxesCombined className="w-5 h-5" />, label: 'Revenus', path: "/vendor" }] : []),
     ...(user!.roles[0].role === "admin" ? [{ icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: "/approbation" },{ icon: <Percent  className="w-5 h-5"/>, label: "Commissions", path: "/commissions" }] : []),
     { icon: refundIcon, label: "Remboursement", path: refundPath },
-<<<<<<< Updated upstream
-
-    { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calandrier", path: "/event-calender" },
-=======
-    
     { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calendrier", path: "/event-calender" },
->>>>>>> Stashed changes
+
     {
       icon: <Ticket  className="w-5 h-5" />,
       label: 'Événements',
