@@ -21,6 +21,9 @@ use App\Notifications\ProfessionalApprovedNotification;
 use App\Notifications\ProfessionalRejectedNotification;
 use App\Notifications\ProfessionalApplicationReceivedNotification;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\ProfessionalApplicationConfirmationNotification;
+
 class AuthController extends Controller
 {
     use ApiResponse, HandlesProfilePictures;
@@ -39,7 +42,7 @@ class AuthController extends Controller
         try {
             // Get the authorization code from request
             $code = $request->input('code');
-            
+
             if (!$code) {
                 return $this->errorResponse('Code d\'autorisation manquant', 400);
             }
@@ -50,7 +53,7 @@ class AuthController extends Controller
                 ->user();
 
             $email = $googleUser->getEmail();
-            
+
             if (!$email) {
                 return $this->errorResponse('Email non fourni par Google', 400);
             }
@@ -302,10 +305,6 @@ class AuthController extends Controller
                 ]);
             }
 
-            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
-                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
-            }
-
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -326,8 +325,19 @@ class AuthController extends Controller
 
             $user->load('roles');
 
-            $user->notify(new ProfessionalApplicationReceivedNotification());
+            Notification::route('mail', config('app.admin_email'))
+            ->notify(new ProfessionalApplicationReceivedNotification(
+                $user,
+                $validated['motivation_letter']
+            ));
             Log::info('[Professional] Email d\'accusé envoyé', ['user_id' => $user->id]);
+
+            $user->notify(new ProfessionalApplicationConfirmationNotification());
+
+            Log::info('[Professional] Email de confirmation envoyé à l\'utilisateur', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
 
             return $this->successResponse([
                 'status' => 'pending',

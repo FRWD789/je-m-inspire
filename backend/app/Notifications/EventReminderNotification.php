@@ -40,7 +40,7 @@ class EventReminderNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $eventUrl = config(env("FRONTEND_URL"), env("APP_URL")) . '/events/' . $this->event->id;
+        $eventUrl = env("FRONTEND_URL") . '/events/' . $this->event->id;
 
         $greeting = 'Bonjour ' . $notifiable->name . ',';
 
