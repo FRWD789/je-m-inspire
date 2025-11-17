@@ -5,6 +5,7 @@ import FormEvents from './formEvents';
 import { useEvent } from '@/context/EventContext';
 import EventCard from '@/features/events/components/EventCard';
 
+
 type EventListProps = {
   events: any[];
   onEventClick?: (eventId: number) => void;

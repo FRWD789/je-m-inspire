@@ -3,30 +3,33 @@ import { ChevronDown, LogIn, UserPlus, Menu, X, ExternalLink } from "lucide-reac
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import type { User } from "@/types/user";
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function NavBar() {
   const { user, logout } = useAuth();
   const [openDropdown, setOpenDropdown] = useState<false | "experiences" | "account">(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   const navLinks = [
-    { name: "Accueil", path: "/" },
-    { name: "Événements", path: "/events" },
-    { name: "Créer un événement", path: "/dashboard/my-events" },
-    { name: "À propos", path: "/" },
-    ...(user ? [{ name: "Mes Reservation", path: "/dashboard/my-reservations" }] : []),
+    { name: t('nav.home'), path: "/" },
+    { name: t('nav.events'), path: "/events" },
+    { name: t('nav.createEvent'), path: "/dashboard/my-events" },
+    { name: t('nav.about'), path: "/" },
+    ...(user ? [{ name: t('nav.myReservations'), path: "/dashboard/my-reservations" }] : []),
   ];
 
   const dropdownLinks = [
-    { name: "Méditation", path: "/" },
-    { name: "Yoga & Mouvement", path: "/" },
-    { name: "Sonothérapie", path: "/" },
-    { name: "Cercles de partage", path: "/" },
+    { name: t('experiences.meditation'), path: "/" },
+    { name: t('experiences.yoga'), path: "/" },
+    { name: t('experiences.sonotherapy'), path: "/" },
+    { name: t('experiences.circles'), path: "/" },
   ];
 
   const dropdownLinksAccount = [
-    { name: "Compte", path: "/dashboard/profile-settings", icon: <ExternalLink className="w-3 h-3" /> },
-    { name: "Déconnexion", path: "/" },
+    { name: t('nav.account'), path: "/dashboard/profile-settings", icon: <ExternalLink /> },
+    { name: t('nav.logout'), path: "/" },
   ];
 
   return (
@@ -88,7 +91,11 @@ export default function NavBar() {
               </div>
             )}
           </div>
+
+          
         </div>
+
+        
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-shrink-0">
@@ -111,12 +118,14 @@ export default function NavBar() {
               </button>
 
               {openDropdown === "account" && (
-                <div className="absolute right-0 mt-2 w-40 xl:w-48 bg-white/90 rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50">
+
+
+                 <div className="absolute right-0 mt-2 w-40 xl:w-48 bg-white/90 rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50">
                   {dropdownLinksAccount.map(({ name, path, icon }) => (
-                    name.toLowerCase() === "déconnexion" ? (
-                      <button
+                    name.toLowerCase() === 'déconnexion' || name.toLowerCase() === 'logout' ? (
+                      <button 
                         key={name}
-                        onClick={() => {
+                       onClick={() => {
                           logout();
                           setOpenDropdown(false);
                         }}
@@ -145,9 +154,11 @@ export default function NavBar() {
                 to="/login"
                 className="flex items-center gap-1 xl:gap-2 px-2 xl:px-3 py-1.5 xl:py-2 text-xs xl:text-sm font-medium text-primary hover:text-accent transition-all"
               >
+
                 <LogIn className="w-3 h-3 xl:w-4 xl:h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Se connecter</span>
+                <span className="hidden sm:inline">{t('nav.login')}</span>
                 <span className="sm:hidden">Connexion</span>
+
               </NavLink>
 
               <NavLink
@@ -155,8 +166,9 @@ export default function NavBar() {
                 className="flex items-center gap-1 xl:gap-2 px-2 xl:px-4 py-1.5 xl:py-2 text-xs xl:text-sm font-medium text-white bg-accent hover:brightness-110 rounded-md transition-all flex-shrink-0"
               >
                 <UserPlus className="w-3 h-3 xl:w-4 xl:h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">S'inscrire</span>
+                <span className="hidden sm:inline"> {t('nav.register')}</span>
                 <span className="sm:hidden">Inscription</span>
+
               </NavLink>
             </>
           )}
@@ -209,10 +221,12 @@ export default function NavBar() {
               </NavLink>
             ))}
 
+
             {/* Experiences Dropdown */}
             <div className="mt-3 sm:mt-4 border-t border-gray-200 pt-3 sm:pt-4">
-              <span className="text-sm font-semibold text-primary px-2">Expériences</span>
+              <span className="text-sm font-semibold text-primary px-2">{t('nav.experiences')}</span>
               <div className="flex flex-col gap-1 mt-2">
+
                 {dropdownLinks.map(({ name, path }) => (
                   <NavLink
                     key={path}

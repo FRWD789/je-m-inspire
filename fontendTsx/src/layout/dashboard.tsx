@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star } from 'lucide-react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -9,8 +10,11 @@ export default function Dashboard() {
   const [eventsOpen, setEventsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { user, logout, hasProPlus } = useAuth();
+  const location = useLocation(); // ✅ Get current path
+  const { t } = useTranslation();
   
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -31,25 +35,25 @@ export default function Dashboard() {
   const refundPath = user?.roles[0]?.role === 'admin' ? '/dashboard/refunds' : '/dashboard/refunds-request';
 
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/dashboard' },
+    { icon: <Home className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard' },
     ...(user?.roles[0]?.role === 'professionnel'
-      ? [{ icon: <BarChart3 className="w-5 h-5" />, label: 'Revenus', path: '/dashboard/vendor' }]
+      ? [{ icon: <BarChart3 className="w-5 h-5" />, label: t('dashboard.earnings'), path: '/dashboard/vendor' }]
       : []),
     ...(user?.roles[0]?.role === 'admin'
       ? [
-          { icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: '/dashboard/approbation' },
-          { icon: <Percent className="w-5 h-5" />, label: 'Commissions', path: '/dashboard/commissions' },
+          { icon: <Users className="w-5 h-5" />, label: t('dashboard.users'), path: '/dashboard/approbation' },
+          { icon: <Percent className="w-5 h-5" />, label: t('dashboard.commissions'), path: '/dashboard/commissions' },
         ]
       : []),
-    { icon: refundIcon, label: 'Remboursement', path: refundPath },
-    { icon: <CalendarDays className="w-5 h-5" />, label: 'Calendrier', path: '/dashboard/event-calender' },
+    { icon: refundIcon, label: t('dashboard.refunds'), path: refundPath },
+    { icon: <CalendarDays className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard/event-calender' },
     {
       icon: <Ticket className="w-5 h-5" />,
-      label: 'Événements',
+      label: t('dashboard.events'),
       path: '/dashboard/my-events',
       children: [
-        { label: 'Événements', path: '/dashboard/my-events', icon: <TicketPlus className="w-4 h-4" /> },
-        { label: 'Mes réservations', path: '/dashboard/my-reservations', icon: <TicketCheck className="w-4 h-4" /> },
+        { label: t('dashboard.myEvents'), path: '/dashboard/my-events', icon: <TicketPlus className="w-4 h-4" /> },
+        { label: t('dashboard.myReservations'), path: '/dashboard/my-reservations', icon: <TicketCheck className="w-4 h-4" /> },
       ],
     },
   ];

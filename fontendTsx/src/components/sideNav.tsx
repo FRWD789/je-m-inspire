@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Settings, Star } from 'lucide-react';
 import Abonnement from '@/page/Abonnement';
 
+
 type SideNavProps = {
   open: boolean;
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
   const settingsRef = useRef<HTMLDivElement>(null);
   const { user ,hasProPlus} = useAuth();
   const navigate = useNavigate()
+ 
   // ✅ Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

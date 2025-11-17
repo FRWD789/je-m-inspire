@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import TextArea from '@/components/ui/textArea';
 import Button from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 export const registerSchema = z.object({
   name: z.string()
@@ -89,6 +90,7 @@ export default function RegisterPro() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = location.state?.from?.pathname || "/login";
+  const { t } = useTranslation();
 
   const handelRegister = async (data: any) => {
       try {
@@ -102,58 +104,58 @@ export default function RegisterPro() {
    
 
   return (
-    <section className='w-full h-screen grid justify-center items-center py-[24px] px-[16px] gap-y-[32px]'>
+    <section className='w-full h-auto grid justify-center items-center  px-[16px] gap-y-[32px]'>
       <div className='max-w-xl grid gap-y-[32px]'>
         <div className='text-center'>
-          <h1>Rejoignez en tant que professionnel</h1>
-          <p>Soumettez votre inscription pour devenir un professionnel vérifié</p>
+          <h1>{t('auth.registerProTitle')}</h1>
+          <p>{t('auth.registerProSubtitle')}</p>
         </div>
         <div>
            <Form schema={registerSchema} onSubmit={handelRegister}>
           {/* Name Fields */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label='Name'>
+            <FormFiled label={t('auth.firstName')}>
               <Input name='name' />
             </FormFiled>
-            <FormFiled label='Last Name'>
+            <FormFiled label={t('auth.lastName')}>
               <Input name='last_name' />
             </FormFiled>
           </div>
 
           {/* City & Date of Birth */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label='City'>
+            <FormFiled label={t('auth.city')}>
               <Input name='city' />
             </FormFiled>
-            <FormFiled label='Date of Birth'>
+            <FormFiled label={t('auth.dateOfBirth')}>
               <Input name='date_of_birth' type='date' />
             </FormFiled>
           </div>
 
           {/* Email */}
-          <FormFiled label='Email' className='mb-4'>
+          <FormFiled label={t('auth.email')} className='mb-4'>
             <Input name='email' type='email' />
           </FormFiled>
 
           {/* Password Fields */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label='Password'>
+            <FormFiled label={t('auth.password')}>
               <Input name='password' type='password' />
             </FormFiled>
-            <FormFiled label='Confirm Password'>
+            <FormFiled label={t('auth.passwordConfirmation')}>
               <Input name='password_confirmation' type='password' />
             </FormFiled>
           </div>
 
           {/* Motivation Letter */}
-          <FormFiled label='Motivation Letter' className='mb-6'>
+          <FormFiled label={t('auth.motivationLetter')} className='mb-6'>
             <TextArea name='motivation_letter' rows={6} />
           </FormFiled>
 
           {/* Submit Button */}
           <Button type='submit'
           >
-            Register as Professional
+            {t('auth.registerButton')}
           </Button>
           </Form>
         </div>

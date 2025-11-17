@@ -1,19 +1,21 @@
 import React from "react";
 import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
   const navLinks = [
-    { name: "Accueil", path: "/" },
-    { name: "Événements", path: "/" },
-    { name: "Créer un événement", path: "/" },
-    { name: "À propos", path: "/" },
+    { name: t('nav.home'), path: "/" },
+    { name: t('nav.events'), path: "/" },
+    { name: t('nav.createEvent'), path: "/" },
+    { name: t('nav.about'), path: "/" },
   ];
 
   const experiences = [
-    "Méditation",
-    "Yoga & Mouvement",
-    "Sonothérapie",
-    "Cercles de partage",
+    t('experiences.meditation'),
+    t('experiences.yoga'),
+    t('experiences.sonotherapy'),
+    t('experiences.circles'),
   ];
 
   const communitySize = 5; // Number of avatars in “joined our community”
@@ -34,7 +36,7 @@ export default function Footer() {
             className="h-24 w-auto mb-4"
           />
           <p className="text-sm text-white">
-            Le meilleur sanctuaire holistique pour méditation, yoga et bien-être.
+            {t('footer.description')}
           </p>
 
 
@@ -45,7 +47,7 @@ export default function Footer() {
           
           {/* Quick Links */}
           <div>
-            <h4 className="font-bold mb-3 text-sm">Navigation</h4>
+            <h4 className="font-bold mb-3 text-sm">{t('footer.navigation')}</h4>
             <ul className="flex flex-col gap-2 text-sm">
               {navLinks.map(({ name, path }) => (
                 <li key={path}>
@@ -62,7 +64,7 @@ export default function Footer() {
 
           {/* Experiences */}
           <div>
-            <h4 className="font-bold mb-3 text-sm">Expériences</h4>
+            <h4 className="font-bold mb-3 text-sm">{t('nav.experiences')}</h4>
             <ul className="flex flex-col gap-2 text-sm">
               {experiences.map((exp, idx) => (
                 <li key={idx}>
@@ -77,7 +79,7 @@ export default function Footer() {
 
         {/* SOCIAL LINKS */}
         <div className="flex-1 flex flex-col gap-4">
-          <h4 className="font-bold mb-3 text-sm">Suivez-nous</h4>
+          <h4 className="font-bold mb-3 text-sm">{t('footer.followUs')}</h4>
           <div className="flex gap-4">
             <a href="#" aria-label="Facebook" className="hover:text-accent transition-colors">
               <Facebook className="w-5 h-5" />
@@ -97,7 +99,7 @@ export default function Footer() {
 
       {/* COPYRIGHT */}
       <div className="border-t border-white mt-8 pt-4 text-center text-xs text-white">
-        © {new Date().getFullYear()} Votre entreprise. Tous droits réservés.
+        © {new Date().getFullYear()} Je m'inspire. {t('footer.copyright')}.
       </div>
     </footer>
   );
