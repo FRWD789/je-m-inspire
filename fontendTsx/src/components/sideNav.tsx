@@ -22,7 +22,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
   const [showAbonemment, setShowAbonemment] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const { user ,updateProfile,logout,hasProPlus} = useAuth();
+  const { user ,hasProPlus} = useAuth();
   const navigate = useNavigate()
   // ✅ Close menu when clicking outside
   useEffect(() => {

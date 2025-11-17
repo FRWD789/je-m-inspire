@@ -48,85 +48,87 @@ const filteredEvents = useMemo(() => {
 
   return (
     <section className='grid gap-y-[32px] '>
-      <div className="h-[80vh] md:h-[70vh] border border-accent/20 rounded-[12px] shadow-2xl relative overflow-hidden">
-        {/* Hero content */}
-        <div className="absolute inset-0 h-full flex flex-col gap-y-[18px] px-6 sm:px-10 md:px-16 justify-center  z-20 w-full ">
-          <div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl text-white leading-tight font-semibold">
-              Explorez <br />
-              des événements holistiques <br />
-              près de chez vous
-            </h1>
+      <div className="h-[50vh] w-full sm:h-[60vh] md:h-[70vh] lg:h-[80vh] border border-accent/20 rounded-lg sm:rounded-xl md:rounded-[12px] shadow-2xl relative overflow-hidden">
+  {/* Hero content */}
+  <div className="absolute inset-0 h-full flex flex-col gap-y-3 sm:gap-y-4 md:gap-y-6 px-4 sm:px-6 md:px-10 lg:px-16 justify-center z-20 w-full">
+    <div>
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl text-white leading-tight font-semibold">
+        Explorez <br />
+        des événements holistiques <br className="hidden sm:block" />
+        près de chez vous
+      </h1>
 
-            <p className="text-white/90 mt-[16px] text-lg md:text-xl leading-relaxed">
-              Découvrez, créez et réservez des expériences bien-être, retraites et ateliers
-              qui nourrissent le corps, l’esprit et l’âme. Connectez-vous à une communauté inspirante.
-            </p>
-          </div>
+      <p className="text-white/90 mt-2 sm:mt-3 md:mt-4 text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed max-w-2xl">
+        Découvrez, créez et réservez des expériences bien-être, retraites et ateliers
+        qui nourrissent le corps, l'esprit et l'âme.
+      </p>
+    </div>
 
-          {/* Search + City filter */}
-          <div className="relative w-full">
-            <div className="flex w-full border-white bg-gray-100/20 px-4 py-2 backdrop-blur-3xl border-2 rounded-full overflow-hidden">
-              <input
-                type="text"
-                placeholder="Rechercher par nom..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setDropdownOpen(true);
-                }}
-                className="basis-3/4 focus:outline-none text-black placeholder-gray-500"
-              />
+    {/* Search + City filter */}
+    <div className="relative w-full">
+      <div className="flex flex-col sm:flex-row w-full border-white bg-gray-100/20 px-3 sm:px-4 md:px-5 py-2 md:py-3 backdrop-blur-3xl border-2 rounded-full overflow-hidden gap-2 sm:gap-0">
+        <input
+          type="text"
+          placeholder="Rechercher par nom..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setDropdownOpen(true);
+          }}
+          className="basis-full sm:basis-3/4 focus:outline-none text-black placeholder-gray-500 text-sm md:text-base bg-transparent"
+        />
 
-              <select
-                value={selectedCity}
-                onChange={(e) => {
-                  setSelectedCity(e.target.value);
-                  setDropdownOpen(false); // close dropdown when city changes
-                }}
-                className="basis-1/4 border-l text-white px-2 border-white focus:outline-none bg-transparent"
-              >
-                <option value="">Tous les villes</option>
-                {cities.map((city) => (
-                  <option key={city} className="text-black" value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <select
+          value={selectedCity}
+          onChange={(e) => {
+            setSelectedCity(e.target.value);
+            setDropdownOpen(false);
+          }}
+          className="basis-full sm:basis-1/4 border-0 sm:border-l text-white px-2 md:px-3 border-white focus:outline-none bg-transparent text-sm md:text-base"
+        >
+          <option value="">Tous les villes</option>
+          {cities.map((city) => (
+            <option key={city} className="text-black" value={city}>
+              {city}
+            </option>
+          ))}
+        </select>
+      </div>
 
-            {/* Dropdown */}
-          {isDropdownOpen && search && (
-              <ul className="absolute left-0 right-0 mt-1  bg-white rounded-lg shadow-lg max-h-60 z-30 overflow-y-auto">
-                {/* Show the first matching event if there is one */}
-                {filteredEvents.length > 0 && (
-                  <li
-                    key={filteredEvents[0].id}
-                    className="px-4 py-2 hover:bg-accent/20 cursor-pointer font-semibold"
-                    onClick={() => handleSelect(filteredEvents[0].id)}
-                  >
-                    <span className="text-primary">{filteredEvents[0].name}</span> —{' '}
-                    <span className="text-primary">{filteredEvents[0].localisation.address}</span>
-                  </li>
-                )}
+      {/* Dropdown */}
+      {isDropdownOpen && search && (
+        <ul className="absolute left-0 right-0 mt-1 bg-white rounded-lg shadow-lg max-h-60 z-30 overflow-y-auto text-sm md:text-base">
+          {/* Show the first matching event if there is one */}
+          {filteredEvents.length > 0 && (
+            <li
+              key={filteredEvents[0].id}
+              className="px-3 sm:px-4 py-2 hover:bg-accent/20 cursor-pointer font-semibold transition"
+              onClick={() => handleSelect(filteredEvents[0].id)}
+            >
+              <span className="text-primary">{filteredEvents[0].name}</span> —{' '}
+              <span className="text-primary text-xs sm:text-sm truncate">
+                {filteredEvents[0].localisation.address}
+              </span>
+            </li>
+          )}
 
-                {/* Link to all matching events */}
-                <li
-                  className="px-4 py-2 hover:bg-accent/20 cursor-pointer text-accent font-semibold"
-                  onClick={() =>
-                    navigate(
-                      `/events?search=${encodeURIComponent(search)}&city=${encodeURIComponent(selectedCity)}`
-                    )
-                  }
-                >
-                  {filteredEvents.length > 0
-                    ? `Voir tous les ${filteredEvents.length} événements correspondants...`
-                    : 'Voir tous les événements...'}
-                </li>
-              </ul>
-            )}
-          </div>
-        </div>
+          {/* Link to all matching events */}
+          <li
+            className="px-3 sm:px-4 py-2 hover:bg-accent/20 cursor-pointer text-accent font-semibold transition text-xs sm:text-sm"
+            onClick={() =>
+              navigate(
+                `/events?search=${encodeURIComponent(search)}&city=${encodeURIComponent(selectedCity)}`
+              )
+            }
+          >
+            {filteredEvents.length > 0
+              ? `Voir tous les ${filteredEvents.length} événements...`
+              : 'Voir tous les événements...'}
+          </li>
+        </ul>
+      )}
+    </div>
+  </div>
 
         <div className="absolute inset-0 z-10 bg-gradient-radial from-white/30 to-transparent backdrop-blur-sm"></div>
 
@@ -136,43 +138,42 @@ const filteredEvents = useMemo(() => {
           className="absolute inset-0 w-full h-full object-cover rotate-180"
         />
       </div>
-      <div className='grid gap-y-[16px]'>
-        <h2>Événements à venir</h2>
-       
-        <div>
-          <Carousel
-      opts={{
-        align: "start",
-      }}
-      orientation="horizontal"
-      className="w-full  "
-    >
-    <div className='flex items-center justify-between'>
-            <p className='text-accent hover:underline  cursor-pointer' >
+      
+    <div className='grid gap-y-3 md:gap-y-4 lg:gap-y-6'>
+      <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold">Événements à venir</h2>
+      
+      <div>
+        <Carousel
+          opts={{
+            align: "start",
+          }}
+          orientation="horizontal"
+          className="w-full"
+        >
+          <div className='flex items-center justify-between mb-3 md:mb-4 lg:mb-6 gap-2'>
+            <p className='text-accent hover:underline cursor-pointer text-xs md:text-sm lg:text-base transition'>
               <Link to={"/events"}> Voir tous les événements →</Link>  
             </p>
-      <div className='flex gap-x-[4px] items-center'>
-              <CarouselPrevious  children/>
-              <CarouselNext children/>
-        
-    </div>
-    </div>
-      <CarouselContent className=" h-full mt-[8px]">
-                
-              {events.map((event) => (
-                <CarouselItem key={event.id} className="w-full">
-                   <EventCard
-                    event={event}
-                   />
-      </CarouselItem>
-              ))}
-            </CarouselContent>
-            {/* <CarouselPrevious children={undefined} />
-            <CarouselNext children={undefined} /> */}
-          </Carousel>
-        </div>
+            <div className='flex gap-x-1 md:gap-x-2 items-center flex-shrink-0'>
+              <CarouselPrevious children className="h-8 w-8 md:h-9 md:w-9 lg:h-10 lg:w-10" />
+              <CarouselNext children className="h-8 w-8 md:h-9 md:w-9 lg:h-10 lg:w-10" />
+            </div>
+          </div>
+
+          <CarouselContent className="h-full max-w-[90vw] md:w-full mt-0">
+            {events.map((event) => (
+            <CarouselItem 
+              key={event.id} 
+              className=" sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 pl-2 sm:pl-3 md:pl-4"
+            >
+              <EventCard event={event} />
+            </CarouselItem>
+          ))}
+          </CarouselContent>
+        </Carousel>
       </div>
-      <div className='flex justify-between items-center'>
+    </div>
+      {/* <div className='flex justify-between items-center'>
         <div className='basis-1/3  flex flex-col justify-between h-full gap-y-[8px]'>
           <div>
               <h2>Rejoignez notre communauté</h2>
@@ -206,59 +207,63 @@ const filteredEvents = useMemo(() => {
             })}
           </ul>
         </div>
+      </div> */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6 h-auto md:h-56 lg:h-64 xl:h-72'>
+  {/* Card 1 - Smartphone */}
+  <div className='w-full h-40 sm:h-48 md:h-full flex text-[#58534a] rounded-lg md:rounded-[8px] bg-[#B0A796]/50 flex-col justify-between p-4 md:p-5 lg:p-6 hover:shadow-lg transition-shadow'>
+    <Smartphone className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
+    
+    <div>
+      <h3 className='font-bold text-base md:text-lg text-[#58534a]'>Rayonnez vos ateliers</h3>
+      <p className='text-sm md:text-base text-[#58534a] mt-1'>Rejoignez, partagez vos événements holistiques facilement.</p>
+    </div>
+  </div>
+
+  {/* Card 2 - Eye */}
+  <div className='w-full h-40 sm:h-48 md:h-full text-primary rounded-lg md:rounded-[8px] bg-accent/50 flex flex-col justify-between p-4 md:p-5 lg:p-6 hover:shadow-lg transition-shadow'>
+    <Eye className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
+    
+    <div>
+      <h3 className='font-bold text-base md:text-lg'>Rayonnez vos ateliers</h3>
+      <p className='text-sm md:text-base mt-1'>Rejoignez, partagez vos événements holistiques facilement.</p>
+    </div>
+  </div>
+
+  {/* Card 3 - Users */}
+  <div className='w-full h-40 sm:h-48 md:h-full rounded-lg md:rounded-[8px] text-[#443640] bg-[#81667A]/50 flex flex-col justify-between p-4 md:p-5 lg:p-6 hover:shadow-lg transition-shadow'>
+    <Users className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
+    
+    <div>
+      <h3 className='font-bold text-base md:text-lg text-[#443640]'>Rayonnez vos ateliers</h3>
+      <p className='text-sm md:text-base text-[#443640] mt-1'>Rejoignez, partagez vos événements holistiques facilement.</p>
+    </div>
+  </div>
+</div>
+<div className='w-full flex flex-col md:flex-row p-4 sm:p-6 md:p-8 lg:p-10 items-start md:items-center justify-between gap-4 md:gap-6 lg:gap-8 drop-shadow-2xl bg-gradient-to-br from-[#B0A796]/20 rounded-lg md:rounded-[8px] to-[#81667A]/50'>
+  {/* Left Section - Heading & Description */}
+  <div className='w-full md:basis-1/2 grid gap-y-2 md:gap-y-3 lg:gap-y-4'>
+    <h2 className='text-xl md:text-2xl lg:text-3xl font-semibold'>Rejoignez plus de 2 000 abonnés</h2>
+    <p className='text-sm md:text-base text-gray-700'>Restez informé·e de tout ce que vous devez savoir.</p>
+  </div>
+
+  {/* Right Section - Form */}
+  <div className='w-full md:flex-1 flex flex-col gap-y-3 md:gap-y-4'>
+    {/* Email Input + Button */}
+    <div className='flex flex-col sm:flex-row gap-y-2 sm:gap-x-2 w-full'>
+      <input 
+        type="email" 
+        placeholder='Inscrivez votre e-mail' 
+        className='px-3 md:px-4 py-2 md:py-3 hover:bg-white focus:bg-white focus:outline-none transition bg-white/50 rounded-md flex-1 text-sm md:text-base'
+      />
+      <div className='w-full sm:w-auto'>
+        <Button className='w-full'>Abonnez-vous</Button>
       </div>
-      <div className='flex gap-x-[50px] h-[60vh]'>
-        <div className='w-full h-full flex   text-[#58534a] rounded-[8px] bg-[#B0A796]/50 flex-col justify-between p-6'>
-          <Smartphone />
-          
-          <div>
-            <h3 className='font-default  text-[#58534a]'>Rayonnez vos ateliers</h3>
-            <p className='text-[#58534a]'>Rejoignez, partagez vos événements holistiques facilement.</p>
+    </div>
 
-          </div>
-
-        </div>
-        <div  className='w-full text-primary rounded-[8px] bg-accent/50 h-full flex flex-col justify-between p-6'>
-          <Eye />
-            <div>
-            <h3 className='font-default '>Rayonnez vos ateliers</h3>
-            <p>Rejoignez, partagez vos événements holistiques facilement.</p>
-
-          </div>
-          
-        </div>
-         <div  className='w-full h-full rounded-[8px] text-[#443640] bg-[#81667A]/50 flex flex-col justify-between p-6'>
-          <Users />
-            <div>
-            <h3 className='font-default  text-[#443640]'>Rayonnez vos ateliers</h3>
-            <p  className='text-[#443640]'>Rejoignez, partagez vos événements holistiques facilement.</p>
-
-          </div>
-          
-        </div>
-      </div>
-      <div>
-        <div className='w-full flex p-8 items-center justify-between drop-shadow-2xl bg-gradient-to-br from-[#B0A796]/20 rounded-[8px] to-[#81667A]/50 '>
-          <div className='grid gap-y-[16px] basis-1/2'>
-            <h2>Rejoignez plus de 2 000 abonnés</h2>
-            <p>restez informé·e de tout ce que vous devez savoir.</p>
-
-          </div>
-          <div className='flex flex-1  gap-y-[16px] flex-col justify-between '>
-            <div className='flex gap-x-[8px]  w-full'>
-              <input type="text" placeholder='Inscrivez votre e-mail' className='px-4 hover:bg-white focus:bg-white transition bg-white/50 rounded-[4px] py-2 w-full ' />
-              <div className='w-1/3'>
-                              <Button>Abonnez-vous</Button>
-
-              </div>
-
-            </div>
-            <p>Nous prenons soin de vos données dans notre politique de confidentialité</p>
-            
-          </div>
-
-        </div>
-      </div>
+    {/* Privacy Text */}
+    <p className='text-xs md:text-sm text-gray-600'>Nous prenons soin de vos données dans notre politique de confidentialité</p>
+  </div>
+</div>
     </section>
   );
 }

@@ -1,145 +1,262 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, HandCoins, BanknoteArrowDown, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, ChartNoAxesCombined } from 'lucide-react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import SideNav from '@/components/sideNav';
+import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star } from 'lucide-react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Dashboard() {
-  const [open, setOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
-  const { user ,logout} = useAuth();
-  console.log(user)
-  const location = useLocation(); // ✅ Get current path
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const { user, logout, hasProPlus } = useAuth();
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem("sidebar-open");
-    if (saved) setOpen(JSON.parse(saved));
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("sidebar-open", JSON.stringify(open));
-  }, [open]);
+    if (isMobile) setSidebarOpen(false);
+  }, [isMobile]);
 
-  // ✅ Check if current path matches or is a child of the link
-  const isActive = (path: string) => {
-    return location.pathname === `/dashboard${path}`;
-  };
+  const refundIcon = user?.roles[0]?.role === 'admin' ? (
+    <DollarSign className="w-5 h-5" />
+  ) : (
+    <DollarSign className="w-5 h-5" />
+  );
 
-  const refundIcon =
-    user!.roles[0].role === "admin" ? (
-      <HandCoins className="w-5 h-5" />
-    ) : (
-      <BanknoteArrowDown className="w-5 h-5" />
-    );
-
-  const refundPath =
-    user!.roles[0].role === "admin" ? "/refunds" : "/refunds-request";
+  const refundPath = user?.roles[0]?.role === 'admin' ? '/dashboard/refunds' : '/dashboard/refunds-request';
 
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: 'Home', path: "/" },
-         ...(user!.roles[0].role ==="professionnel"? [{ icon: <ChartNoAxesCombined className="w-5 h-5" />, label: 'Revenus', path: "/vendor" }] : []),
-    ...(user!.roles[0].role === "admin" ? [{ icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: "/approbation" },{ icon: <Percent  className="w-5 h-5"/>, label: "Commissions", path: "/commissions" }] : []),
-    { icon: refundIcon, label: "Remboursement", path: refundPath },
-    { icon: <CalendarDays  className="w-5 h-5"/>, label: "Calendrier", path: "/event-calender" },
-
+    { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/dashboard' },
+    ...(user?.roles[0]?.role === 'professionnel'
+      ? [{ icon: <BarChart3 className="w-5 h-5" />, label: 'Revenus', path: '/dashboard/vendor' }]
+      : []),
+    ...(user?.roles[0]?.role === 'admin'
+      ? [
+          { icon: <Users className="w-5 h-5" />, label: 'Utilisateurs', path: '/dashboard/approbation' },
+          { icon: <Percent className="w-5 h-5" />, label: 'Commissions', path: '/dashboard/commissions' },
+        ]
+      : []),
+    { icon: refundIcon, label: 'Remboursement', path: refundPath },
+    { icon: <CalendarDays className="w-5 h-5" />, label: 'Calendrier', path: '/dashboard/event-calender' },
     {
-      icon: <Ticket  className="w-5 h-5" />,
+      icon: <Ticket className="w-5 h-5" />,
       label: 'Événements',
-      path: "/my-events",
+      path: '/dashboard/my-events',
       children: [
-        { label: 'Événements', path: "/my-events", icon: <TicketPlus  className="w-4 h-4" /> },
-        { label: 'Mes réservations', path: "/my-reservations", icon: <TicketCheck  className="w-4 h-4" /> },
-      ]
+        { label: 'Événements', path: '/dashboard/my-events', icon: <TicketPlus className="w-4 h-4" /> },
+        { label: 'Mes réservations', path: '/dashboard/my-reservations', icon: <TicketCheck className="w-4 h-4" /> },
+      ],
     },
-  ]
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const NavLinkItem = ({ item, isChild = false }) => (
+    <NavLink
+      to={item.path}
+      onClick={() => {
+        if (isMobile) setMobileMenuOpen(false);
+      }}
+      className={({ isActive }) =>
+        `w-full flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors text-left ${
+          isActive ? 'bg-blue-100 text-blue-600 font-semibold' : ''
+        } ${isChild ? 'text-sm' : ''} ${!isMobile && sidebarOpen ? '' : 'whitespace-nowrap'}`
+      }
+    >
+      <span className="flex-shrink-0">{item.icon}</span>
+      <span className={`ml-3 font-medium flex-1 ${isMobile || sidebarOpen ? 'block' : 'hidden'} truncate`}>
+        {item.label}
+      </span>
+    </NavLink>
+  );
+
+  const handleEventsToggle = (e) => {
+    e.preventDefault();
+    setEventsOpen(!eventsOpen);
+  };
 
   return (
-    <div className="flex h-screen bg-background transition-all">
-      <SideNav open={open} width="16">
-        <ul className="space-y-2">
-          {menuItems.map((item, index) => (
-            <React.Fragment key={index}>
-              {!item.children ? (
-                <Link
-                  className={`flex items-center p-2 rounded-lg cursor-pointer hover:bg-background/50 transition-colors ${
-                    isActive(item.path) ? 'bg-primary/10 text-primary font-semibold' : ''
-                  }`}
-                  to={index==0? item.path:`/dashboard${item.path}`}
-                >
-                  {item.icon}
-                  <span className="ml-3 font-medium">{item.label}</span>
-                </Link>
-              ) : (
-                <div className="space-y-1">
-                  <Link
-                    to={`/dashboard${item.path}`}
-                    className={`flex items-center w-full p-2 rounded-lg cursor-pointer hover:bg-background/50 transition-colors ${
-                      isActive(item.path) ? 'bg-primary/10 text-primary font-semibold' : ''
-                    }`}
-                    onClick={() => {
-                      setEventsOpen(!eventsOpen);
-                    }}
-                  >
-                    {item.icon}
-                    <span className="ml-3 font-medium flex-1">{item.label}</span>
-                    {eventsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </Link>
-                  {eventsOpen && (
-                    <ul className="ml-6 space-y-1">
-                      {item.children.map((child, cIndex) => (
-                        <Link
-                          key={cIndex}
-                          className={`flex items-center p-2 rounded-lg cursor-pointer hover:bg-background/50 transition-colors text-sm ${
-                            isActive(child.path) ? 'bg-primary/10 text-primary font-semibold' : ''
-                          }`}
-                          to={`/dashboard${child.path}`}
-                        >
-                          {child.icon && <span className="mr-2">{child.icon}</span>}
-                          {child.label}
-                        </Link>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </React.Fragment>
-          ))}
-          
-          {/* Settings Link - Moved outside the loop */}
-          <Link
-            className={`flex items-center p-2 rounded-lg cursor-pointer hover:bg-background/50 transition-colors ${
-              isActive('/profile-settings') ? 'bg-primary/10 text-primary font-semibold' : ''
-            }`}
-            to={`/dashboard/profile-settings`}
-          >
-            <Settings className="w-5 h-5" />
-            <span className="ml-3 font-medium">Paramètres</span>
-          </Link>
-        </ul>
-      </SideNav>
+    <div className="flex h-screen bg-gray-100">
+      {/* Overlay for mobile */}
+      {mobileMenuOpen && isMobile && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
-      <main
-        className="flex-1 flex flex-col px-6 py-[8px] min-h-screen transition-all duration-300"
-        style={{ marginLeft: open ? '16rem' : '0rem' }}
+      {/* Sidebar */}
+      <aside
+        className={`fixed md:relative top-16 md:top-0 left-0 bottom-0 md:bottom-auto bg-white border-r border-gray-200 shadow-sm transition-all duration-300 z-50 overflow-y-auto flex flex-col ${
+          sidebarOpen && !isMobile ? 'w-64' : 'md:w-20 w-0'
+        } ${mobileMenuOpen ? 'translate-x-0 w-64 sm:w-72' : '-translate-x-full md:translate-x-0'}`}
       >
-        <div className='flex mb-4 justify-between sticky top-2 z-100 p-2 bg-[#F8F6F2] rounded-lg shadow-2xl w-full items-center gap-x-[24px]'>
-        <div className='flex  gap-x-[24px] '>
-            <button
-              onClick={() => setOpen(!open)}
-              className="p-2 w-fit text-primary rounded-lg shadow transition-colors"
-            >
-              {open ? <PanelLeft size={20} /> : <PanelRight size={20} />}
-            </button>
-            <h2 className="text-lg text-left font-semibold">Tableau de bord</h2>
-        </div>
-        <div className='p-2 w-fit text-primary rounded-lg shadow transition-colors'>
-          <LogOut   size={20} onClick={()=>logout()}/>
-        </div>
-          
+        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
+          <div className="hidden md:block">
+            <h1 className={`font-bold text-center transition-all ${sidebarOpen ? 'text-xl' : 'text-xs'}`}>
+              {sidebarOpen ? 'Dashboard' : 'DB'}
+            </h1>
+          </div>
+          <ul className="space-y-1">
+            {menuItems.map((item, index) => (
+              <React.Fragment key={index}>
+                {!item.children ? (
+                  <NavLinkItem item={item} />
+                ) : (
+                  <div onClick={() => setSidebarOpen(true)} className="space-y-1">
+                    <button
+                      onClick={handleEventsToggle}
+                      className={`w-full flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${
+                        eventsOpen ? 'bg-blue-50 text-blue-600' : ''
+                      }`}
+                    >
+                      <span className="flex-shrink-0">{item.icon}</span>
+                      <span className={`ml-3 font-medium flex-1 text-left ${
+                        isMobile || sidebarOpen ? 'block' : 'hidden'
+                      }`}>
+                        {item.label}
+                      </span>
+                      {isMobile || sidebarOpen ? (
+                        eventsOpen ? (
+                          <ChevronUp className="w-4 h-4 flex-shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                        )
+                      ) : null}
+                    </button>
+                    {eventsOpen && (
+                      <ul className="space-y-1 ml-4">
+                        {item.children.map((child, cIndex) => (
+                          <div key={cIndex}>
+                            <NavLinkItem item={child} isChild />
+                          </div>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+            <div className="pt-4 border-t border-gray-200">
+              <NavLinkItem item={{ icon: <Settings className="w-5 h-5" />, label: 'Paramètres', path: '/dashboard/profile-settings' }} />
+            </div>
+          </ul>
         </div>
 
-        <div className="bg-[#F8F6F2] rounded-xl p-6 shadow flex-1">
-          <Outlet />
+        {/* User Profile Section - Bottom of Sidebar */}
+        {user && (
+          <div className="border-t border-gray-200 p-3 flex items-center md:p-4 space-y-3">
+            {/* User Info Button */}
+            <button
+              className="flex items-center gap-2 w-full hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
+              onClick={() => {
+                navigate("/dashboard/profile-settings");
+                if (isMobile) setMobileMenuOpen(false);
+              }}
+              title="Profile settings"
+            >
+              <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
+                {user.profile.profile_picture ? (
+                  <img src={user.profile.profile_picture} alt={user.profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.profile.name?.charAt(0).toUpperCase() || 'U'
+                )}
+              </div>
+              
+              <div className={`flex flex-col text-left flex-1 min-w-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
+                <span className="font-medium text-sm truncate">{user.profile.name}</span>
+                <span className="text-xs text-gray-500 truncate">
+                  {user.subscription?.has_pro_plus ? 'Pro+' : 'Gratuit'}
+                </span>
+              </div>
+               {/* Pro+ Badge or Upgrade Button */}
+            {user.roles[0].role === 'professionnel' && (
+              <div className={`flex flex-col text-left   ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
+                {!hasProPlus ? (
+                  <button
+                    onClick={() => {
+                      navigate("/dashboard/profile-settings");
+                      if (isMobile) setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-xs font-medium py-1.5 px-2 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition ${
+                      isMobile || sidebarOpen ? 'block' : 'hidden'
+                    }`}
+                  >
+                    Mettre à niveau
+                  </button>
+                ) : (
+                  <div className="w-full flex justify-center">
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition">
+                      <Star size={16} fill="currentColor" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            </button>
+
+           
+          </div>
+        )}
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col w-full overflow-hidden">
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+              <button
+                onClick={() => {
+                  if (isMobile) {
+                    setMobileMenuOpen(!mobileMenuOpen);
+                  } else {
+                    setSidebarOpen(!sidebarOpen);
+                  }
+                }}
+                className="p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                aria-label="Toggle menu"
+              >
+                {isMobile ? (
+                  mobileMenuOpen ? (
+                    <X size={20} />
+                  ) : (
+                    <Menu size={20} />
+                  )
+                ) : sidebarOpen ? (
+                  <PanelLeft size={20} />
+                ) : (
+                  <PanelRight size={20} />
+                )}
+              </button>
+              <h2 className="text-base md:text-lg lg:text-xl font-semibold whitespace-nowrap truncate">
+                Tableau de bord
+              </h2>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-6">
+          <div className="bg-white rounded-lg md:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-full">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

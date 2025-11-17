@@ -161,15 +161,14 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       aria-roledescription="slide"
       data-slot="carousel-item"
       className={cn(
-        "min-w-0 shrink-0 grow-0 basis-1/3",
-        orientation === "horizontal" ? "pl-4" : "pt-4",
+        "min-w-0 shrink-0 grow-0 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4",
+        orientation === "horizontal" ? "pl-2 sm:pl-3 md:pl-4" : "pt-2 sm:pt-3 md:pt-4",
         className
       )}
       {...props}
     />
   )
 }
-
 function CarouselPrevious({
   className,
   variant = "outline",

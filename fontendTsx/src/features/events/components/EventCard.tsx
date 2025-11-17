@@ -21,14 +21,12 @@ export default function EventCard({
 
   let thumbnail = event.thumbnail || event.thumbnail_path ;
   if (thumbnail && !thumbnail.startsWith("http")) {
-    // assume local path, prepend localhost
     thumbnail = `http://localhost:8000/storage/${thumbnail}`;
   }
   const startDate = formatEventDate(event.start_date)
   const endDate = formatEventDate(event.end_date)
   const navigate = useNavigate()
  
-  // Payment status badge color
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -56,18 +54,18 @@ export default function EventCard({
   }
 
   return (
-    <div className="group relative flex flex-col overflow-hidden w-full rounded-[4px] bg-white shadow-md transition-all duration-300 hover:shadow-lg">
+    <div className="group relative flex flex-col overflow-hidden w-full rounded-lg md:rounded-[4px] bg-white shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105">
       {/* Reservation Badge */}
       {isReservation && event.payment_status && (
         <div className="absolute top-2 right-2 z-10">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(event.payment_status)}`}>
+          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(event.payment_status)}`}>
             {getPaymentStatusText(event.payment_status)}
           </span>
         </div>
       )}
 
       {/* Thumbnail */}
-      <div className="h-44 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+      <div className="h-32 sm:h-40 md:h-44 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
         {thumbnail ? (
           <img
             src={thumbnail}
@@ -77,40 +75,46 @@ export default function EventCard({
         ) : (
           <div className="h-full w-full flex items-center justify-center">
             <div className="text-center text-gray-400">
-              <Layers className="w-16 h-16 mx-auto mb-2 opacity-30" />
-              <p className="text-sm font-medium">Aucune image</p>
+              <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+              <p className="text-xs sm:text-sm font-medium">Aucune image</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Event Info */}
-      <div className="flex flex-col flex-1 p-4 space-y-2">
-        <h2 className="text-lg font-semibold text-gray-800 truncate">{event.name}</h2>
+      <div className="flex flex-col flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+        {/* Title */}
+        <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 truncate line-clamp-2">
+          {event.name}
+        </h2>
 
-        <div className="flex items-center text-sm text-gray-600 gap-1">
-          <Layers className="w-4 h-4" />
-          <span>{event.categorie?.name} · Niveau {event.level}</span>
+        {/* Category & Level */}
+        <div className="flex items-center text-xs sm:text-sm text-gray-600 gap-1">
+          <Layers className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="truncate">{event.categorie?.name} · Niveau {event.level}</span>
         </div>
 
-        <div className="flex items-center text-sm text-gray-500 gap-1 truncate">
-          <MapPin className="w-4 h-4 " />
-          <span>{event.localisation?.name}</span>
+        {/* Location */}
+        <div className="flex items-center text-xs sm:text-sm text-gray-500 gap-1 truncate">
+          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="truncate">{event.localisation?.name}</span>
         </div>
 
-        <div className="flex items-center text-sm text-gray-500 gap-1">
-          <Calendar className="w-4 h-4 " />
-          <span>Du {startDate} au {endDate}</span>
+        {/* Date */}
+        <div className="flex items-center text-xs sm:text-sm text-gray-500 gap-1">
+          <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="truncate">Du {startDate} au {endDate}</span>
         </div>
 
         {/* Reservation Details */}
         {isReservation && (
-          <div className="pt-2 space-y-1 border-t border-gray-200">
-            <div className="flex justify-between items-center text-sm">
+          <div className="pt-1.5 sm:pt-2 space-y-1 border-t border-gray-200">
+            <div className="flex justify-between items-center text-xs sm:text-sm gap-2">
               <span className="text-gray-600">Quantité:</span>
               <span className="font-semibold">{event.quantity || 1} place(s)</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs sm:text-sm gap-2">
               <span className="text-gray-600">Total payé:</span>
               <span className="font-bold text-primary">
                 {Number(event.total_price || 0).toFixed(2)} $
@@ -118,8 +122,8 @@ export default function EventCard({
             </div>
             {event.reservation_date && (
               <div className="flex items-center text-xs text-gray-500 gap-1 mt-1">
-                <Clock className="w-3 h-3" />
-                <span>Réservé le {formatEventDate(event.reservation_date)}</span>
+                <Clock className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">Réservé le {formatEventDate(event.reservation_date)}</span>
               </div>
             )}
           </div>
@@ -127,8 +131,8 @@ export default function EventCard({
 
         {/* Price - Only show for non-reservations */}
         {!isReservation && (
-          <div className="pt-2">
-            <span className="text-xl font-bold text-primary">
+          <div className="pt-1.5 sm:pt-2">
+            <span className="text-lg sm:text-xl font-bold text-primary">
               {Number(event.base_price || 0) > 0 
                 ? `${Number(event.base_price || 0).toFixed(2)} $` 
                 : 'Gratuit'}
@@ -139,39 +143,41 @@ export default function EventCard({
         {/* View Details Button */}
         <button
           onClick={() => navigate('/events/' + event.id)}
-          className="w-full flex items-center justify-center gap-2 rounded-[4px] bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-primary transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
         >
-          <Eye className="w-4 h-4" />
-          Voir détails
+          <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span>Voir détails</span>
         </button>
 
         {/* Reservation Controls */}
         {isReservation && event.can_cancel && (
           <button
             onClick={() => onCancelReservation && onCancelReservation(event.id)}
-            className="w-full flex items-center justify-center gap-2 rounded-[4px] bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-red-500 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-red-600 transition-colors active:scale-95"
           >
-            <XCircle className="w-4 h-4" />
-            Annuler la réservation
+            <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span>Annuler</span>
           </button>
         )}
 
         {/* Creator Controls */}
         {event.is_creator && !isReservation && (
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
             <button
               onClick={() => onEdit && onEdit(event)}
-              className="flex-1 flex items-center justify-center gap-2 rounded-[4px] bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-primary transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
             >
-              <Edit3 className="w-4 h-4" />
-              Modifier
+              <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Modifier</span>
+              <span className="sm:hidden">Éditer</span>
             </button>
             <button
               onClick={() => onDelete && onDelete(event.id)}
-              className="flex-1 flex items-center justify-center gap-2 rounded-[4px] bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-red-500 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-red-600 transition-colors active:scale-95"
             >
-              <Trash2 className="w-4 h-4" />
-              Supprimer
+              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Supprimer</span>
+              <span className="sm:hidden">Sup.</span>
             </button>
           </div>
         )}
