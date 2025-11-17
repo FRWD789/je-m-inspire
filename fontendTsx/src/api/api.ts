@@ -1,4 +1,4 @@
-import { authService } from "@/service/AuthService";
+import { authService } from "@/service/authService";
 import { tokenService } from "@/service/TokenService";
 import axios from "axios";
 const API_URL  = "http://localhost:8000/api"
