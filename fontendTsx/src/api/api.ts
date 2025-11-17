@@ -1,7 +1,8 @@
 import { authService } from "@/service/authService";
 import { tokenService } from "@/service/TokenService";
 import axios from "axios";
-const API_URL  = "http://localhost:8000/api"
+
+const API_URL  = "https://api.jminspire.com"
 export const publicApi = axios.create({
   baseURL: API_URL,
   withCredentials:true
