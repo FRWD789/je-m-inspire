@@ -145,7 +145,7 @@ class AuthV2Controller extends AuthController
             }
 
             $user = User::with('roles')->find($userId);
-            
+
             if (!$user) {
                 Log::error('❌ V2: Utilisateur non trouvé');
                 return $this->errorResponse('Utilisateur non trouvé', 401);
@@ -210,9 +210,9 @@ class AuthV2Controller extends AuthController
     {
         $jti = Str::uuid()->toString();
          $customClaims = [
-            'type' => 'refresh', 
+            'type' => 'refresh',
             'jti' => $jti,
-            'exp' => now()->addDays(7)->timestamp // 7 days from now
+            'exp' => (int) now()->addDays(7)->timestamp // 7 days from now
         ];
 
         $refreshToken = JWTAuth::customClaims($customClaims)->fromUser($user);

@@ -79,7 +79,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="font-medium text-sm">{user.profile.name}</span>
-                  <span className="text-xs text-gray-500 truncate">{user.subscription?.has_pro_plus?'Pro+':'Gratuit'}</span>
+                  {user.roles[0].role === "professionnel"?<span className="text-xs text-gray-500 truncate">{hasProPlus?'Pro+':'Gratuit'}</span>:<span></span>}
                 </div>
              
                
