@@ -3,6 +3,7 @@ import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, D
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -10,7 +11,6 @@ export default function Dashboard() {
   const [eventsOpen, setEventsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { user, logout, hasProPlus } = useAuth();
-  const location = useLocation(); // ✅ Get current path
   const { t } = useTranslation();
   
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function Dashboard() {
   const refundPath = user?.roles[0]?.role === 'admin' ? '/dashboard/refunds' : '/dashboard/refunds-request';
 
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard' },
+    { icon: <Home className="w-5 h-5" />, label: t('dashboard.home'), path: '/' },
     ...(user?.roles[0]?.role === 'professionnel'
       ? [{ icon: <BarChart3 className="w-5 h-5" />, label: t('dashboard.earnings'), path: '/dashboard/vendor' }]
       : []),
@@ -106,7 +106,7 @@ export default function Dashboard() {
         <div className="flex-1 p-4 space-y-6 overflow-y-auto">
           <div className="hidden md:block">
             <h1 className={`font-bold text-center transition-all ${sidebarOpen ? 'text-xl' : 'text-xs'}`}>
-              {sidebarOpen ? 'Dashboard' : 'DB'}
+              {sidebarOpen ? t('dashboard.titleSideNav') : t('dashboard.titleSmallSideNav')}
             </h1>
           </div>
           <ul className="space-y-1">
@@ -150,7 +150,7 @@ export default function Dashboard() {
               </React.Fragment>
             ))}
             <div className="pt-4 border-t border-gray-200">
-              <NavLinkItem item={{ icon: <Settings className="w-5 h-5" />, label: 'Paramètres', path: '/dashboard/profile-settings' }} />
+              <NavLinkItem item={{ icon: <Settings className="w-5 h-5" />, label: t('dashboard.settings'), path: '/dashboard/profile-settings' }} />
             </div>
           </ul>
         </div>
@@ -165,7 +165,7 @@ export default function Dashboard() {
                 navigate("/dashboard/profile-settings");
                 if (isMobile) setMobileMenuOpen(false);
               }}
-              title="Profile settings"
+              title= {t('dashboard.profileSettings')}
             >
               <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
                 {user.profile.profile_picture ? (
@@ -178,7 +178,7 @@ export default function Dashboard() {
               <div className={`flex flex-col text-left flex-1 min-w-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
                 <span className="font-medium text-sm truncate">{user.profile.name}</span>
                 <span className="text-xs text-gray-500 truncate">
-                  {user.subscription?.has_pro_plus ? 'Pro+' : 'Gratuit'}
+                  {user.subscription?.has_pro_plus ? 'Pro+' : t('common.freeAccount')}
                 </span>
               </div>
                {/* Pro+ Badge or Upgrade Button */}
@@ -194,7 +194,7 @@ export default function Dashboard() {
                       isMobile || sidebarOpen ? 'block' : 'hidden'
                     }`}
                   >
-                    Mettre à niveau
+                     {t('common.upgradeAccount')}
                   </button>
                 ) : (
                   <div className="w-full flex justify-center">
@@ -242,20 +242,20 @@ export default function Dashboard() {
                 )}
               </button>
               <h2 className="text-base md:text-lg lg:text-xl font-semibold whitespace-nowrap truncate">
-                Tableau de bord
+                {t('dashboard.title')}
               </h2>
             </div>
+            <LanguageSwitcher/>
             <button
               onClick={handleLogout}
               className="p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
-              title="Logout"
+              title={t('nav.logout')}
               aria-label="Logout"
             >
               <LogOut size={20} />
             </button>
           </div>
         </header>
-
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-6">
           <div className="bg-white rounded-lg md:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-full">

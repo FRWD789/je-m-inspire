@@ -15,9 +15,10 @@ export default function NavBar() {
   const navLinks = [
     { name: t('nav.home'), path: "/" },
     { name: t('nav.events'), path: "/events" },
-    { name: t('nav.createEvent'), path: "/dashboard/my-events" },
     { name: t('nav.about'), path: "/" },
-    ...(user ? [{ name: t('nav.myReservations'), path: "/dashboard/my-reservations" }] : []),
+    ...(user? [{name: t('dashboard.title'), path: "/dashboard"}]:[]),
+    ...(user?.roles?.[0]?.role === "utilisateur" ? [{ name: t('nav.myReservations'), path: "/dashboard/my-reservations" }] : []),
+    ...(user?.roles?.[0]?.role === "professionnel" ? [{ name: t('nav.createEvent'), path: "/dashboard/my-events" }] : []),
   ];
 
   const dropdownLinks = [
@@ -99,6 +100,7 @@ export default function NavBar() {
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-shrink-0">
+          <LanguageSwitcher/>
           {user ? (
             <div className="relative">
               <button
