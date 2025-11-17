@@ -99,6 +99,7 @@ export default function NavBar() {
 
         {/* DESKTOP AUTH LINKS */}
         <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-shrink-0">
+          <LanguageSwitcher/>
           {user ? (
             <div className="relative">
               <button
