@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext'
-import { authService } from '../service/AuthService'
+import { authService } from '../service/authService'
 
 interface RefreshResult {
     new_access_token: string;
