@@ -4,7 +4,7 @@ import { MapEvents } from '@/components/map';
 import EventList from '@/components/events/EventList';
 import { useEvent } from '@/context/EventContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useHeaderHeight } from '@/layout/layout';
+import { useHeaderHeight } from '@/layout/Layout';
 
 export default function PublicEvents() {
   const location = useLocation();
