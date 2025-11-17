@@ -226,4 +226,57 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
     {
         $this->notify(new CustomVerifyEmail());
     }
+    // ========================================
+    // RELATIONS FOLLOW
+    // ========================================
+
+    /**
+     * Professionnels que cet utilisateur suit
+     */
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follow_pro', 'follower_id', 'pro_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Utilisateurs qui suivent ce professionnel
+     */
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follow_pro', 'pro_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Vérifier si cet utilisateur suit un professionnel
+     */
+    public function isFollowing($proId)
+    {
+        return $this->following()->where('pro_id', $proId)->exists();
+    }
+
+    /**
+     * Suivre un professionnel
+     */
+    public function follow($proId)
+    {
+        if (!$this->isFollowing($proId)) {
+            $this->following()->attach($proId);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Ne plus suivre un professionnel
+     */
+    public function unfollow($proId)
+    {
+        if ($this->isFollowing($proId)) {
+            $this->following()->detach($proId);
+            return true;
+        }
+        return false;
+    }
 }

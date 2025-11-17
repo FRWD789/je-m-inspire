@@ -30,7 +30,7 @@ class RemboursementReceivedNotification extends Notification
         $event = $operation->event;
         $paiement = $operation->paiement;
 
-        $myReservationsUrl = config('app.frontend_url', 'http://localhost:5173') . '/my-reservations';
+        $myReservationsUrl = env("FRONTEND_URL") . '/my-reservations';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 

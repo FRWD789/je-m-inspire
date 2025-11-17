@@ -14,13 +14,14 @@ export default function Login() {
     const { t } = useTranslation();
     const location = useLocation()
     const navigate = useNavigate()
-    const from = location.state?.from?.pathname || "/dashboard/";
+    const from = location.state?.from?.pathname || "/";
     const { login } = useAuth()
 
     const handelLogin = async (data: any) => {
         try {
             await login(data)
             navigate(from, { replace: true })
+            window.location.reload() 
         } catch (error) {
             console.log(error)
         }

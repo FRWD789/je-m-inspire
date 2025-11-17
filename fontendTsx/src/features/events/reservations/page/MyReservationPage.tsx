@@ -99,10 +99,11 @@ export default function MyReservationPage() {
 
   return (
     <>
+      <h1>Mes réservations</h1>
       {/* Tabs + Filter */}
-      <div className="space-y-4 sticky top-[76px] backdrop-blur-xl rounded-b-[8px] z-30 bg-white shadow-sm">
+      <div className="space-y-4 sticky top-0 backdrop-blur-xl rounded-b-[8px] z-30 bg-white shadow-sm">
         {/* Tabs */}
-        
+
 
         {/* Search + Category + Add Button */}
         <div className="flex flex-col sm:flex-row gap-3 px-4 py-2">

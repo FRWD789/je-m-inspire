@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import EventCard from '@/features/events/components/EventCard';
-
+import { UserPlus, UserMinus } from 'lucide-react';
 
 
 export default function ProfessionalPublicProfile() {
@@ -32,6 +32,9 @@ export default function ProfessionalPublicProfile() {
   const [user, setUser] = useState<User | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const { events } = useEvent();
   const navigate = useNavigate();
 
@@ -48,6 +51,25 @@ export default function ProfessionalPublicProfile() {
       }
     };
     fetchUserById();
+
+    // Vérifier le statut de follow si l'utilisateur est connecté
+    const checkFollowStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await publicApi.get(`/follow/check/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setIsFollowing(res.data.is_following);
+          setFollowersCount(res.data.followers_count);
+        } catch (err) {
+          console.error('Error checking follow status:', err);
+        }
+      }
+    };
+    
+    fetchUserById();
+    checkFollowStatus();
   }, [id]);
 
   const userEvents = useMemo(() => 
@@ -81,6 +103,29 @@ export default function ProfessionalPublicProfile() {
 
   const handleContact = () => {
     alert('Fonction de contact à implémenter');
+  };
+
+  const handleFollow = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Vous devez être connecté pour suivre un professionnel');
+      navigate('/login');
+      return;
+    }
+
+    setIsFollowLoading(true);
+    try {
+      const res = await publicApi.post(`/follow/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsFollowing(res.data.is_following);
+      setFollowersCount(res.data.followers_count);
+    } catch (err) {
+      console.error('Error toggling follow:', err);
+      alert('Erreur lors du suivi');
+    } finally {
+      setIsFollowLoading(false);
+    }
   };
 
   if (loading) {
@@ -309,21 +354,53 @@ export default function ProfessionalPublicProfile() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
+                onClick={handleFollow}
+                disabled={isFollowLoading}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition font-medium ${
+                  isFollowing 
+                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                    : 'bg-accent text-white hover:bg-blue-700'
+                }`}
+              >
+                {isFollowLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                ) : isFollowing ? (
+                  <>
+                    <UserMinus size={18} />
+                    Ne plus suivre
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={18} />
+                    Suivre
+                  </>
+                )}
+              </button>
+              
+              <button
                 onClick={handleShareProfile}
                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium"
               >
                 <Share2 size={18} />
                 Partager
               </button>
-              
-              <button 
-                onClick={handleContact}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-accent text-white rounded-xl hover:bg-blue-700 transition font-medium"
-              >
-                <MessageCircle size={18} />
-                Contacter
-              </button>
             </div>
+
+            {/* Followers Count */}
+            {followersCount > 0 && (
+              <div className="text-center py-2 text-gray-600">
+                <span className="font-semibold">{followersCount}</span> abonné{followersCount > 1 ? 's' : ''}
+              </div>
+            )}
+
+            {/* Contact Button */}
+            <button 
+              onClick={handleContact}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium"
+            >
+              <MessageCircle size={18} />
+              Contacter
+            </button>
 
             {/* Contact Info */}
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">

@@ -28,7 +28,7 @@ class CustomVerifyEmail extends Notification
         );
 
         $query = parse_url($signedUrl, PHP_URL_QUERY);
-        $frontendUrl = config('app.frontend_url')
+        $frontendUrl = config(env("FRONTEND_URL"))
             . '/verify-email?id=' . $notifiable->getKey()
             . '&hash=' . sha1($notifiable->email)
             . '&' . $query;

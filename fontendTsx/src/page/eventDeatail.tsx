@@ -137,18 +137,20 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
   return (
     <aside className={`transition-all duration-300 h-fit rounded-2xl p-6 border border-gray-100 shadow-md flex flex-col gap-4 ${expanded ? "flex-1" : "w-64"}`}>
       <h3 className="text-xl font-semibold">Réserver votre place</h3>
-      <div className="flex items-center gap-2">
-        <DollarSignIcon size={18} />
-        <span className="text-lg font-medium">{event.base_price} €</span>
-      </div>
+      
 
       {!expanded && (
-        <button
-          className="w-full py-3 bg-accent text-white rounded-[8px] hover:bg-primary transition font-medium"
-          onClick={handleReserveClick}
-        >
-          Réserver maintenant
-        </button>
+        <>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-medium">{event.base_price} $</span>
+          </div>
+          <button
+            className="w-full py-3 bg-accent text-white rounded-[8px] hover:bg-primary transition font-medium"
+            onClick={handleReserveClick}
+          >
+            Réserver maintenant
+          </button>
+        </>
       )}
 
       {expanded && user && (
@@ -157,7 +159,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
           {/* Total */}
           <div className="flex items-center justify-between text-xl font-bold text-indigo-600">
             <span>Total</span>
-            <span>{total} €</span>
+            <span>{total} $</span>
           </div>
 
           {/* Payment Method */}

@@ -26,7 +26,7 @@ class AccountDeactivatedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $contactEmail = config('mail.from.address', 'support@example.com');
-        $loginUrl = config('app.frontend_url', 'http://localhost:5173') . '/login';
+        $loginUrl = env("FRONTEND_URL") . '/login';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 

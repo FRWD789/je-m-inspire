@@ -4,7 +4,7 @@ import FormFiled from '../../components/utils/form/formFiled'
 import Input from '../../components/ui/input'
 import { z } from "zod";
 import Form from '../../components/form';
-
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import TextArea from '@/components/ui/textArea';
 import Button from '@/components/ui/button';
@@ -85,8 +85,23 @@ export const registerSchema = z.object({
 
 
 export default function RegisterPro() {
-    const {registerPro}= useAuth()
-    const { t } = useTranslation();
+
+  const {registerPro}= useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from?.pathname || "/login";
+  const { t } = useTranslation();
+
+  const handelRegister = async (data: any) => {
+      try {
+          await registerPro(data)
+          navigate(from, { replace: true })
+          
+      } catch (error) {
+          console.log(error)
+      }
+  }
+   
 
   return (
     <section className='w-full h-auto grid justify-center items-center  px-[16px] gap-y-[32px]'>
@@ -96,7 +111,7 @@ export default function RegisterPro() {
           <p>{t('auth.registerProSubtitle')}</p>
         </div>
         <div>
-           <Form schema={registerSchema} onSubmit={registerPro}>
+           <Form schema={registerSchema} onSubmit={handelRegister}>
           {/* Name Fields */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
             <FormFiled label={t('auth.firstName')}>

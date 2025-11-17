@@ -6,7 +6,7 @@ import { z } from "zod";
 import Form from '../../components/form';
 import Select from '../../components/ui/select';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
@@ -42,9 +42,6 @@ export const registerSchema = z.object({
 
   password_confirmation: z.string()
     .min(6, "Password confirmation must be at least 6 characters long"),
-
-  role: z.string()
-    .min(1, "Role is required"),
 })
 .superRefine(({ password, password_confirmation }, ctx) => {
   if (password !== password_confirmation) {
@@ -60,68 +57,80 @@ export const registerSchema = z.object({
 
 
 export default function Register() {
-
   const {registerUser}= useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from?.pathname || "/";
   const { t } = useTranslation();
 
+  const handelRegister = async (data: any) => {
+      try {
+          await registerUser(data)
+          navigate(from, { replace: true })
+          window.location.reload() 
+      } catch (error) {
+          console.log(error)
+      }
+  }
+
   return (
-    <section className=' w-full h-auto grid justify-center  items-center py-[24px] px-[16px]  gap-y-[32px] '>
+    <section className=' w-full h-screen grid justify-center  items-center py-[24px] px-[16px]  gap-y-[32px] '>
       <div className='max-w-xl grid gap-y-[32px]'>
         <div className='text-center  '>
             <h1>
                 {t('auth.registerUserTitle')}
             </h1>
             <p>
-                {t('auth.registerUserSubtitle')}
+                 {t('auth.registerUserSubtitle')}
             </p>
         </div>
         <div className=' '>
-          <Form schema={registerSchema} onSubmit={registerUser}  >
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label={t('auth.firstName')}>
-              <Input name='name' />
+          <Form schema={registerSchema} onSubmit={handelRegister}  >
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <FormFiled label={t('auth.firstName')}>
+                <Input name='name' />
+              </FormFiled>
+              <FormFiled label={t('auth.lastName')}>
+                <Input name='last_name' />
+              </FormFiled>
+            </div>
+
+            {/* City & Date of Birth */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <FormFiled label={t('auth.city')}>
+                <Input name='city' />
+              </FormFiled>
+              <FormFiled label={t('auth.dateOfBirth')}>
+                <Input name='date_of_birth' type='date' />
+              </FormFiled>
+            </div>
+
+            {/* Email */}
+            <FormFiled label={t('auth.email')} className='mb-4'>
+              <Input name='email' type='email' />
+
             </FormFiled>
-            <FormFiled label={t('auth.lastName')}>
-              <Input name='last_name' />
-            </FormFiled>
+            {/* Password Fields */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <FormFiled label={t('auth.password')}>
+                <Input name='password' type='password' />
+              </FormFiled>
+              <FormFiled label={t('auth.passwordConfirmation')}>
+                <Input name='password_confirmation' type='password' />
+              </FormFiled>
+            </div>
+
+              <Button type='submit'>{t('auth.registerButton')}</Button>
+            </Form>
+                <small className='hover:underline cursor-pointer text-primary hover:text-accent'> <Link to={"/login"}>Vous avez un compte ?</Link></small>     
           </div>
-
-          {/* City & Date of Birth */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label={t('auth.city')}>
-              <Input name='city' />
-            </FormFiled>
-            <FormFiled label={t('auth.dateOfBirth')}>
-              <Input name='date_of_birth' type='date' />
-            </FormFiled>
-          </div>
-
-          {/* Email */}
-          <FormFiled label={t('auth.email')} className='mb-4'>
-            <Input name='email' type='email' />
-          </FormFiled>
-
-          {/* Password Fields */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label={t('auth.password')}>
-              <Input name='password' type='password' />
-            </FormFiled>
-            <FormFiled label={t('auth.passwordConfirmation')}>
-              <Input name='password_confirmation' type='password' />
-            </FormFiled>
-          </div>
-
-          <Button type='submit'>{t('auth.registerButton')}</Button>
-          </Form>
-          <small className='hover:underline cursor-pointer text-primary hover:text-accent'> <Link to={"/login"}>{t('auth.alreadyAccount')}</Link></small>
-
-                        
         </div>
-        </div>
-            <hr />
-            <small className='hover:underline cursor-pointer text-primary hover:text-accent'> <Link to={"/register-pro"}>{t('auth.registerPro')}</Link></small>            
+        <hr />
+        <small className='hover:underline cursor-pointer text-primary hover:text-accent'> <Link to={"/register-pro"}>Rejoignez-nous en tant que professionnel</Link></small>            
         <div>
-      </div>          
+        </div>
+                   
+
     </section>
   )
 }
