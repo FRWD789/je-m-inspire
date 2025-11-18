@@ -111,6 +111,8 @@ const resources = {
       dashboard: {
         title: 'Tableau de bord',
         welcome: 'Bienvenue',
+        titleSideNav: 'Navigation',
+        titleSmallSideNav: 'Nav',
         
         // Menu items
         home: 'Accueil',
@@ -403,7 +405,8 @@ const resources = {
       // REVENUS (VENDEUR)
       // ==========================================
       earnings: {
-        title: 'Mes revenus',
+        title: 'Tableau de bord vendeur',
+        subtitle: 'Gérez vos revenus et transactions',
         totalEarnings: 'Revenus totaux',
         platformCommission: 'Commission plateforme',
         netEarnings: 'Revenus nets',
@@ -412,12 +415,24 @@ const resources = {
         sales: 'Ventes',
         revenue: 'Revenus',
         commission: 'Commission',
+        transactions: 'Transactions',
         net: 'Net',
         period: 'Période',
         thisMonth: 'Ce mois',
-        lastMonth: 'Mois dernier',
-        thisYear: 'Cette année',
-        allTime: 'Depuis le début'
+        today: 'Aujourd\'hui',
+        thisWeek: 'Cette semaine',
+        allTime: 'Depuis le début',
+        exportCSV: 'Exporter CSV',
+        overview: 'Vue d\'ensemble',
+        statistics: 'Statistiques',
+        bestEvent: 'Événements les plus rentables',
+        paymentMethod: 'Méthodes de paiement',
+        client: 'Client',
+        amount: 'Montant',
+        method: 'Méthode',
+        last12Month: 'Revenus mensuels (12 derniers mois)',
+
+
       },
 
       // ==========================================
@@ -457,6 +472,8 @@ const resources = {
         success: 'Succès',
         warning: 'Attention',
         info: 'Information',
+        upgradeAccount: 'Mettre à niveau',
+        freeAccount: 'Gratuit',
         
         // Labels
         name: 'Nom',
@@ -629,7 +646,8 @@ const resources = {
       dashboard: {
         title: 'Dashboard',
         welcome: 'Welcome',
-        
+        titleSideNav: 'Navigation',
+        titleSmallSideNav: 'Nav',
         // Menu items
         home: 'Home',
         earnings: 'Earnings',
@@ -921,7 +939,8 @@ const resources = {
       // EARNINGS (VENDOR)
       // ==========================================
       earnings: {
-        title: 'My Earnings',
+        title: 'Seller dashboard',
+        subtitle: 'Manage your income and transactions',
         totalEarnings: 'Total Earnings',
         platformCommission: 'Platform Commission',
         netEarnings: 'Net Earnings',
@@ -930,12 +949,24 @@ const resources = {
         sales: 'Sales',
         revenue: 'Revenue',
         commission: 'Commission',
+        transactions: 'Transactions',
         net: 'Net',
         period: 'Period',
         thisMonth: 'This Month',
-        lastMonth: 'Last Month',
-        thisYear: 'This Year',
-        allTime: 'All Time'
+        today: 'Today',
+        thisWeek: 'This Week',
+        allTime: 'All Time',
+        exportCSV: 'Export CSV',
+        overview: 'Overview',
+        statistics: 'Statistics',
+        bestEvent: 'Most profitable events',
+        paymentMethod: 'Payment methods',
+        client: 'Customer',
+        amount: 'Amount',
+        method: 'Method',
+        last12Month: 'Monthly income (last 12 months)',
+
+
       },
 
       // ==========================================
@@ -975,6 +1006,8 @@ const resources = {
         success: 'Success',
         warning: 'Warning',
         info: 'Information',
+        upgradeAccount: 'Upgrade',
+        freeAccount: 'Free',
         
         // Labels
         name: 'Name',

@@ -9,6 +9,7 @@ import From from './form';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Settings, Star } from 'lucide-react';
 import Abonnement from '@/page/Abonnement';
+import { useTranslation } from 'react-i18next';
 
 
 type SideNavProps = {
@@ -25,6 +26,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
   const settingsRef = useRef<HTMLDivElement>(null);
   const { user ,hasProPlus} = useAuth();
   const navigate = useNavigate()
+  const { t } = useTranslation();
  
   // ✅ Close menu when clicking outside
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="font-medium text-sm">{user.profile.name}</span>
-                  {user.roles[0].role === "professionnel"?<span className="text-xs text-gray-500 truncate">{hasProPlus?'Pro+':'Gratuit'}</span>:<span></span>}
+                  {user.roles[0].role === "professionnel"?<span className="text-xs text-gray-500 truncate">{hasProPlus?'Pro+': t('common.freeAccount')}</span>:<span></span>}
                 </div>
              
                
@@ -91,7 +93,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                   !hasProPlus ? (
                     <div className='w-full' onClick={() => setShowAbonemment(true)}>
                       <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>
-                        Mettre à niveau
+                        {t('common.upgradeAccount')}
                       </button>
                     </div>
                   ) : (
