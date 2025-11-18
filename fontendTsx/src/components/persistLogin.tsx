@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Outlet } from 'react-router-dom'
 import useRefresh from '../hooks/useRefresh'
-import { authService } from '@/service/AuthService';
+import { authService } from '@/service/authService';
 
 export default function PersistLogin() {
     const { accessToken, setAccessToken, setUser } = useAuth();    

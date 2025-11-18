@@ -365,8 +365,6 @@ const resources = {
         reason: 'Raison',
         status: 'Statut',
         process: 'Traiter',
-        approved: 'Approuvé',
-        rejected: 'Refusé',
         
         // Messages
         approvalSuccess: 'Utilisateur approuvé',
@@ -901,8 +899,6 @@ const resources = {
         reason: 'Reason',
         status: 'Status',
         process: 'Process',
-        approved: 'Approved',
-        rejected: 'Rejected',
         
         // Messages
         approvalSuccess: 'User approved',

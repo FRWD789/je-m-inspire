@@ -198,7 +198,7 @@
                     <!-- Header -->
                     <tr>
                         <td class="email-header">
-                            <img src="{{ $logoUrl ?? config('app.url') . '/assets/img/logo-white.png' }}" alt="{{ config('app.name') }}" class="logo">
+                            <img src="{{ $logoUrl ?? config('app.frontend_url') . '/assets/img/logo-white.png' }}" alt="{{ config('app.name') }}" class="logo">
                         </td>
                     </tr>
 
@@ -223,7 +223,7 @@
                                 Cet email a été envoyé automatiquement, merci de ne pas y répondre directement.
                             </p>
                             <p class="footer-text">
-                                Des questions ? <a href="{{ config('app.url') }}/contact" class="footer-link">Contactez-nous</a>
+                                Des questions ? <a href="{{ config('app.frontend_url') }}/contact" class="footer-link">Contactez-nous</a>
                             </p>
 
                             @if(isset($unsubscribeUrl))

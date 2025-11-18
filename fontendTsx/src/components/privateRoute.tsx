@@ -14,7 +14,6 @@ export default function PrivateRoute({ allowedRoles }: PrivateRouteProps) {
   console.log(accessToken,user)
 
 
-
   // Not logged in → go to login
   if (!accessToken || !user) {
     console.log("🔐 Redirecting to login - No access token or user");

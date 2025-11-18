@@ -24,7 +24,6 @@ class ProfessionalApprovedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $loginUrl = env("FRONTEND_URL") . '/login';
-        $dashboardUrl = env("FRONTEND_URL") . '/dashboard';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 
@@ -33,7 +32,6 @@ class ProfessionalApprovedNotification extends Notification
             ->view('emails.notifications.professional-approved', [
                 'user' => $notifiable,
                 'loginUrl' => $loginUrl,
-                'dashboardUrl' => $dashboardUrl,
                 'greeting' => $greeting,
             ]);
     }

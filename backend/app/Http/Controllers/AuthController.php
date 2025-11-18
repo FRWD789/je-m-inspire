@@ -206,10 +206,6 @@ class AuthController extends Controller
                 ]);
             }
 
-            if (!$this->verifyRecaptcha($request->input('recaptcha_token'), $request->ip())) {
-                return $this->errorResponse('Validation reCAPTCHA échouée', 422);
-            }
-
             $user = User::create([
                 'name' => $validated['name'],
                 'last_name' => $validated['last_name'],
@@ -325,8 +321,7 @@ class AuthController extends Controller
 
             $user->load('roles');
 
-            Notification::route('mail', config('app.admin_email'))
-            ->notify(new ProfessionalApplicationReceivedNotification(
+            Notification::route('mail', env('ADMIN_EMAIL'))->notify(new ProfessionalApplicationReceivedNotification(
                 $user,
                 $validated['motivation_letter']
             ));
