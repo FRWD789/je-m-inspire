@@ -83,10 +83,6 @@
         <div class="info-list-item">Approuver ou refuser la demande avec justification</div>
     </div>
 
-    <div class="button-container">
-        <a href="{{ $reviewUrl }}" class="button">🔍 Examiner la demande</a>
-    </div>
-
     <div class="alert-warning">
         <p class="content-text" style="margin: 0;">
             ⏰ <strong>Rappel :</strong> Merci de traiter cette demande dans un délai de 48-72 heures.
