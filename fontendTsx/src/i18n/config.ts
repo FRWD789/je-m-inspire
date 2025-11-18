@@ -365,7 +365,7 @@ const resources = {
         reason: 'Raison',
         status: 'Statut',
         process: 'Traiter',
-        
+
         // Messages
         approvalSuccess: 'Utilisateur approuvé',
         approvalError: "Erreur lors de l'approbation",
@@ -438,14 +438,12 @@ const resources = {
       // ==========================================
       // CALENDRIER
       // ==========================================
-      calendar: {
-        title: 'Calendrier des événements',
-        month: 'Mois',
-        week: 'Semaine',
-        day: 'Jour',
-        today: "Aujourd'hui",
-        noEvents: 'Aucun événement ce jour',
-        viewDetails: 'Voir les détails'
+     calendar: {
+        title: "Calendrier",
+        prev: "Mois précédent",
+        next: "Mois suivant",
+        eventsFor: "Événements du",
+        close: "Fermer",
       },
 
       // ==========================================
@@ -899,7 +897,7 @@ const resources = {
         reason: 'Reason',
         status: 'Status',
         process: 'Process',
-        
+
         // Messages
         approvalSuccess: 'User approved',
         approvalError: 'Approval error',
@@ -973,13 +971,11 @@ const resources = {
       // CALENDAR
       // ==========================================
       calendar: {
-        title: 'Events Calendar',
-        month: 'Month',
-        week: 'Week',
-        day: 'Day',
-        today: 'Today',
-        noEvents: 'No events on this day',
-        viewDetails: 'View Details'
+        title: "Calendar",
+        prev: "Previous month",
+        next: "Next month",
+        eventsFor: "Events for",
+        close: "Close",
       },
 
       // ==========================================
