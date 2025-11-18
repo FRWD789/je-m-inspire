@@ -127,7 +127,7 @@ export default function Dashboard() {
               onClick={() => setEventsOpen(false)}
               className={`font-bold text-center transition-all flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 ${sidebarOpen ? 'text-base' : 'text-xs'}`}
             >
-              <ArrowLeft size={sidebarOpen ? 18 : 14} />
+              <ArrowLeft size={sidebarOpen ? 18 : 18} />
               {sidebarOpen && <span>Retour</span>}
             </NavLink>
           </div>
