@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star } from 'lucide-react';
+import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star, ArrowLeft  } from 'lucide-react';
 import { Outlet, useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
+
+ 
 
   const refundIcon = user?.roles[0]?.role === 'admin' ? (
     <DollarSign className="w-5 h-5" />
@@ -69,6 +71,7 @@ export default function Dashboard() {
       end={item.exact || false}
       onClick={() => {
         if (isMobile) setMobileMenuOpen(false);
+        if (!isChild) setEventsOpen(false);
       }}
       className={({ isActive }) =>
         `w-full flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors text-left ${
@@ -83,8 +86,21 @@ export default function Dashboard() {
     </NavLink>
   );
 
-  const handleEventsToggle = (e) => {
+   useEffect(() => {
+  // Ouvrir automatiquement le dropdown si on est sur une route enfant
+  const eventsItem = menuItems.find(item => item.children);
+  if (eventsItem && eventsItem.children.some(child => location.pathname === child.path)) {
+    setEventsOpen(true);
+  }
+}, [location.pathname]);
+
+  const handleEventsToggle = (e, item) => {
     e.preventDefault();
+    if (item.children && item.children.length > 0) {
+      // Rediriger vers le premier enfant
+      navigate(item.children[0].path);
+      if (isMobile) setMobileMenuOpen(false);
+    }
     setEventsOpen(!eventsOpen);
   };
 
@@ -106,12 +122,13 @@ export default function Dashboard() {
       >
         <div className="flex-1 p-4 space-y-6 overflow-y-auto">
          <div className="hidden md:block">
-            <NavLink 
+           <NavLink 
               to="/" 
+              onClick={() => setEventsOpen(false)}
               className={`font-bold text-center transition-all flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 ${sidebarOpen ? 'text-base' : 'text-xs'}`}
             >
-              <Home size={sidebarOpen ? 20 : 16} />
-              {sidebarOpen && <span>Accueil</span>}
+              <ArrowLeft size={sidebarOpen ? 18 : 14} />
+              {sidebarOpen && <span>Retour</span>}
             </NavLink>
           </div>
           <ul className="space-y-1">
@@ -122,7 +139,7 @@ export default function Dashboard() {
                 ) : (
                   <div onClick={() => setSidebarOpen(true)} className="space-y-1">
                     <button
-                      onClick={handleEventsToggle}
+                      onClick={(e) => handleEventsToggle(e, item)}
                       className={`w-full flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${
                         eventsOpen ? 'bg-blue-50 text-blue-600' : ''
                       }`}
