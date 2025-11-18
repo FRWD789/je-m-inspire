@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import usePrivateApi from "@/hooks/usePrivateApi";
 import { useNavigate } from "react-router-dom"; 
-import { ReservationService } from "@/service/ReservationService";
+import { ReservationService } from "@/service/reservationService";
 import EventCard from "@/components/events/EventCard";
 
 export default function MyReservations() {
