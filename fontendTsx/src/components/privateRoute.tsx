@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router';
 
 interface PrivateRouteProps {
   allowedRoles: string[];
@@ -12,7 +12,6 @@ export default function PrivateRoute({ allowedRoles }: PrivateRouteProps) {
 
 
   console.log(accessToken,user)
-
 
 
   // Not logged in → go to login
