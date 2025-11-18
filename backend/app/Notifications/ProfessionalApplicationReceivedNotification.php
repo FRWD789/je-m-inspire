@@ -38,7 +38,6 @@ class ProfessionalApplicationReceivedNotification extends Notification
                 'user' => $this->applicant,
                 'motivation' => $this->motivation,
                 'experience' => $this->experience,
-                'reviewUrl' => $reviewUrl,
                 'greeting' => $greeting,
             ]);
     }
