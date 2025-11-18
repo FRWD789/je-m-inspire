@@ -57,10 +57,6 @@
         </p>
     </div>
 
-    <div class="button-container">
-        <a href="{{ $dashboardUrl }}" class="button button-secondary">📊 Mon tableau de bord</a>
-    </div>
-
     <hr class="divider">
 
     <div class="alert-info">
