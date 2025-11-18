@@ -35,7 +35,7 @@ export default function Dashboard() {
   const refundPath = user?.roles[0]?.role === 'admin' ? '/dashboard/refunds' : '/dashboard/refunds-request';
 
   const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard' },
+    { icon: <Home className="w-5 h-5" />, label: t('dashboard.home'), path: '/dashboard' , exact: true},
     ...(user?.roles[0]?.role === 'professionnel'
       ? [{ icon: <BarChart3 className="w-5 h-5" />, label: t('dashboard.earnings'), path: '/dashboard/vendor' }]
       : []),
@@ -66,6 +66,7 @@ export default function Dashboard() {
   const NavLinkItem = ({ item, isChild = false }) => (
     <NavLink
       to={item.path}
+      end={item.exact || false}
       onClick={() => {
         if (isMobile) setMobileMenuOpen(false);
       }}
@@ -104,10 +105,14 @@ export default function Dashboard() {
         } ${mobileMenuOpen ? 'translate-x-0 w-64 sm:w-72' : '-translate-x-full md:translate-x-0'}`}
       >
         <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-          <div className="hidden md:block">
-            <h1 className={`font-bold text-center transition-all ${sidebarOpen ? 'text-xl' : 'text-xs'}`}>
-              {sidebarOpen ? 'Dashboard' : 'DB'}
-            </h1>
+         <div className="hidden md:block">
+            <NavLink 
+              to="/" 
+              className={`font-bold text-center transition-all flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 ${sidebarOpen ? 'text-base' : 'text-xs'}`}
+            >
+              <Home size={sidebarOpen ? 20 : 16} />
+              {sidebarOpen && <span>Accueil</span>}
+            </NavLink>
           </div>
           <ul className="space-y-1">
             {menuItems.map((item, index) => (
