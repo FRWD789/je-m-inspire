@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Notifications\NewEventNotification;
 
 class EventController extends Controller
 {
@@ -207,6 +208,9 @@ class EventController extends Controller
             ]);
 
             DB::commit();
+
+            // Notifier les followers
+            $this->notifyFollowers($user, $event);
 
             if ($debug) {
                 Log::info('[Event] Événement créé', [
@@ -653,6 +657,47 @@ class EventController extends Controller
         } catch (\Exception $e) {
             Log::error('[Event] Erreur récupération événements utilisateur: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la récupération des événements', 500);
+        }
+    }
+
+    /**
+     * Notifier les followers d'un pro quand il crée un événement
+     */
+    protected function notifyFollowers($pro, $event)
+    {
+        try {
+            // Charger l'événement avec toutes les relations nécessaires
+            $event->load(['localisation', 'categorie', 'creator']);
+
+            // Récupérer tous les followers du pro
+            $followers = $pro->followers()->get();
+
+            if ($followers->isEmpty()) {
+                Log::info('[Event] Aucun follower à notifier', [
+                    'pro_id' => $pro->id,
+                    'event_id' => $event->id
+                ]);
+                return;
+            }
+
+            // Envoyer la notification à chaque follower
+            foreach ($followers as $follower) {
+                $follower->notify(new NewEventNotification($event));
+            }
+
+            Log::info('[Event] Followers notifiés', [
+                'pro_id' => $pro->id,
+                'event_id' => $event->id,
+                'followers_count' => $followers->count()
+            ]);
+
+        } catch (\Exception $e) {
+            // Ne pas bloquer la création de l'événement si la notification échoue
+            Log::error('[Event] Erreur notification followers', [
+                'pro_id' => $pro->id,
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

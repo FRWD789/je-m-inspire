@@ -30,6 +30,7 @@ import AdminCommissionPage from "./page/UsersComissons";
 import AbonnementSuccess from "./page/abonnementSuccess";
 import GoogleCallback from "./page/Auth/GoogleCallback";
 import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
+import MyFollowingPage from './features/follow/page/MyFollowingPage';
 
 export default function App() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
               <Route path="my-events" element={<MyEventPage />} />
               <Route path="my-reservations" element={<MyReservationPage />} />
               <Route path="event-calender" element={<CalenderEventPage />} />
+              <Route path="my-following" element={<MyFollowingPage />} />
               {/* Admin-only routes */}
               <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
                 <Route path="approbation" element={<AdminApprovalPage />} />
