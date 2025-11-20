@@ -46,10 +46,10 @@ class ProfileController extends Controller
 
             // URL d'autorisation Stripe OAuth
             $url = "https://connect.stripe.com/oauth/authorize?response_type=code"
-                . "&client_id=" . env('STRIPE_OAUTH_ID')
+                . "&client_id=" . config('services.stripe.oauth_id')
                 . "&scope=read_write"
                 . "&state=" . urlencode($state)
-                . "&redirect_uri=" . env('PUBLIC_FRONTEND_URL') . '/profile/stripe/success';
+                . "&redirect_uri=" . config('app.frontend_url')  . '/profile/stripe/success';
 
             Log::info('[Stripe] OAuth initié', [
                 'user_id' => $user->id,
@@ -81,8 +81,8 @@ class ProfileController extends Controller
                 return $this->unauthenticatedResponse('Non authentifié');
             }
 
-            $clientId = env('PAYPAL_SANDBOX_CLIENT_ID');
-            $redirectUri = env('PUBLIC_FRONTEND_URL') . '/profile/paypal/success';
+            $clientId = config('services.paypal.client_id');
+            $redirectUri = config('app.frontend_url') . '/profile/paypal/success';
 
             $url = "https://www.sandbox.paypal.com/connect/?flowEntry=static"
                 . "&client_id={$clientId}"
@@ -246,7 +246,7 @@ class ProfileController extends Controller
             // Échanger le code contre un access token
             $response = Http::withHeaders([
                 'Authorization' => 'Basic ' . base64_encode(
-                    env('PAYPAL_SANDBOX_CLIENT_ID') . ':' . env('PAYPAL_SANDBOX_CLIENT_SECRET')
+                    config('services.paypal.client_id') . ':' . config('services.paypal.secret')
                 ),
                 'Content-Type' => 'application/x-www-form-urlencoded',
             ])->asForm()->post('https://api.sandbox.paypal.com/v1/identity/openidconnect/tokenservice', [
@@ -486,7 +486,7 @@ class ProfileController extends Controller
                 if ($abonnement && $abonnement->status === 'active') {
                     try {
                         if ($abonnement->stripe_subscription_id) {
-                            Stripe::setApiKey(env('STRIPE_SECRET'));
+                            Stripe::setApiKey(config('services.stripe.secret'));
                             \Stripe\Subscription::update($abonnement->stripe_subscription_id, [
                                 'cancel_at_period_end' => false
                             ]);
@@ -498,10 +498,10 @@ class ProfileController extends Controller
 
                         if ($abonnement->paypal_subscription_id) {
                             $response = Http::withBasicAuth(
-                                env('PAYPAL_CLIENT_ID'),
-                                env('PAYPAL_SECRET')
+                                config('services.paypal.secret'),
+                                config('services.paypal.client_id')
                             )->post(
-                                env('PAYPAL_API_URL') . "/v1/billing/subscriptions/{$abonnement->paypal_subscription_id}/cancel",
+                                config('services.paypal.api_url') . "/v1/billing/subscriptions/{$abonnement->paypal_subscription_id}/cancel",
                                 ['reason' => 'Account deletion']
                             );
                             Log::info('Abonnement PayPal annulé', [
