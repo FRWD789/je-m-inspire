@@ -39,7 +39,7 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-        'pro_plus_price_id' => env('PRO_PLUS_PROD_ID'), // price_1S9A0Z3JJu344kSQ63Nnyivb
+        'pro_plus_price_id' => env('PRO_PLUS_PLAN_ID'), // price_1S9A0Z3JJu344kSQ63Nnyivb
     ],
 
     'paypal' => [
