@@ -768,6 +768,6 @@ Route::get('/test-professional-rejected-email', function () {
 });
 */
 // REDIRECTIONS
-Route::get('/abonnement/success', fn() => redirect(env('FRONTEND_URL') . '/abonnement/success'));
-Route::get('/abonnement/cancel', fn() => redirect(env('FRONTEND_URL') . '/abonnement/cancel'));
-Route::get('/abonnement/paypal/success', fn() => redirect(env('FRONTEND_URL') . '/abonnement/success?provider=paypal'));
+Route::get('/abonnement/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success'));
+Route::get('/abonnement/cancel', fn() => redirect(config('app.frontend_url') . '/abonnement/cancel'));
+Route::get('/abonnement/paypal/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success?provider=paypal'));

@@ -39,8 +39,8 @@ class AbonnementController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'subscription',
-                'success_url' => env('FRONTEND_URL') . '/abonnement/success' . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel',
+                'success_url' => config('app.frontend_url') . '/abonnement/success' . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => config('app.frontend_url') . '/abonnement/cancel',
                 'client_reference_id' => $user->id,
                 'customer_email' => $user->email,
                 'metadata' => [
@@ -169,8 +169,8 @@ class AbonnementController extends Controller
                     'locale' => 'fr-CA',
                     'shipping_preference' => 'NO_SHIPPING',
                     'user_action' => 'SUBSCRIBE_NOW',
-                    'return_url' => env('FRONTEND_URL') . '/abonnement/success',
-                    'cancel_url' => env('FRONTEND_URL') . '/abonnement/cancel'
+                    'return_url' => config('app.frontend_url') . '/abonnement/success',
+                    'cancel_url' => config('app.frontend_url') . '/abonnement/cancel'
                 ],
                 'custom_id' => json_encode([
                     'user_id' => $user->id,
