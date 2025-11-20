@@ -102,7 +102,8 @@ const resources = {
         passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères',
         passwordMismatch: 'Les mots de passe ne correspondent pas',
         requiredField: 'Ce champ est requis',
-        invalidDate: 'Date invalide'
+        invalidDate: 'Date invalide',
+        sessionExpired: 'Votre session a expiré, veuillez vous reconnecter'
       },
 
       // ==========================================
@@ -305,7 +306,7 @@ const resources = {
         unlinkError: 'Erreur lors de la déliaison',
         unlinkConfirm: 'Êtes-vous sûr de vouloir délier ce compte ?',
         imageTooBig: "L'image ne doit pas dépasser 2MB",
-        invalidImageType: "Le fichier doit être une image"
+        invalidImageType: "Le fichier doit être une image",
       },
 
       // ==========================================
@@ -474,6 +475,9 @@ const resources = {
         info: 'Information',
         upgradeAccount: 'Mettre à niveau',
         freeAccount: 'Gratuit',
+        profileOf: 'Profil de',
+        linkCopied: 'Lien du profil copié !',
+        contactFeatureComingSoon: 'Fonction de contact à implémenter',
         
         // Labels
         name: 'Nom',
@@ -534,7 +538,29 @@ const resources = {
         invalidFormat: 'Format invalide',
         fileTooBig: 'Fichier trop volumineux',
         invalidFileType: 'Type de fichier invalide'
-      }
+      },
+
+      // ==========================================
+      // FOLLOWING (ABONNEMENTS)
+      // ==========================================
+      following: {
+        title: 'Mes Abonnements',
+        myFollowing: 'Professionnels suivis',
+        noFollowing: 'Vous ne suivez aucun professionnel',
+        noFollowingDesc: 'Découvrez des professionnels et suivez-les pour rester informé de leurs événements',
+        noResults: 'Aucun professionnel trouvé',
+        searchPlaceholder: 'Rechercher un professionnel...',
+        discoverPros: 'Découvrir des pros',
+        browseEvents: 'Parcourir les événements',
+        professional: 'professionnel',
+        professionals: 'professionnels',
+        unfollow: 'Ne plus suivre',
+        unfollowConfirm: 'Voulez-vous vraiment ne plus suivre {{name}} ?',
+        unfollowSuccess: 'Vous ne suivez plus ce professionnel',
+        unfollowError: 'Erreur lors du désabonnement',
+        mustBeLoggedIn: 'Vous devez être connecté pour suivre un professionnel',
+        followError: 'Erreur lors du suivi'
+      },
     }
   },
 
@@ -637,7 +663,8 @@ const resources = {
         passwordTooShort: 'Password must be at least 8 characters',
         passwordMismatch: 'Passwords do not match',
         requiredField: 'This field is required',
-        invalidDate: 'Invalid date'
+        invalidDate: 'Invalid date',
+        sessionExpired: 'Your session has expired, please log in again',
       },
 
       // ==========================================
@@ -1008,7 +1035,10 @@ const resources = {
         info: 'Information',
         upgradeAccount: 'Upgrade',
         freeAccount: 'Free',
-        
+        profileOf: 'Profile of',
+        linkCopied: 'Profile link copied!',
+        contactFeatureComingSoon: 'Contact feature to be implemented',
+
         // Labels
         name: 'Name',
         description: 'Description',
@@ -1068,7 +1098,28 @@ const resources = {
         invalidFormat: 'Invalid format',
         fileTooBig: 'File too large',
         invalidFileType: 'Invalid file type'
-      }
+      },
+// ==========================================
+      // FOLLOWING (SUBSCRIPTIONS)
+      // ==========================================
+      following: {
+        title: 'My Subscriptions',
+        myFollowing: 'Following Professionals',
+        noFollowing: 'You are not following any professionals',
+        noFollowingDesc: 'Discover professionals and follow them to stay updated on their events',
+        noResults: 'No professionals found',
+        searchPlaceholder: 'Search for a professional...',
+        discoverPros: 'Discover Pros',
+        browseEvents: 'Browse Events',
+        professional: 'professional',
+        professionals: 'professionals',
+        unfollow: 'Unfollow',
+        unfollowConfirm: 'Do you really want to unfollow {{name}}?',
+        unfollowSuccess: 'You are no longer following this professional',
+        unfollowError: 'Error while unfollowing',
+        mustBeLoggedIn: 'You must be logged in to follow a professional',
+        followError: 'Error while following'
+      },
     }
   }
 };

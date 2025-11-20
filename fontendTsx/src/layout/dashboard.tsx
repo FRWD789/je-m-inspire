@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star, ArrowLeft  } from 'lucide-react';
+import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star, ArrowLeft, ChartNoAxesCombined, UserPlus, HandCoins, BanknoteArrowDown, } from 'lucide-react';
 import { Outlet, useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +47,7 @@ export default function Dashboard() {
           { icon: <Percent className="w-5 h-5" />, label: t('dashboard.commissions'), path: '/dashboard/commissions' },
         ]
       : []),
+    { icon: <UserPlus className="w-5 h-5" />, label: t('following.title'), path: "/dashboard/my-following" },
     { icon: refundIcon, label: t('dashboard.refunds'), path: refundPath },
     { icon: <CalendarDays className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard/event-calender' },
     {
