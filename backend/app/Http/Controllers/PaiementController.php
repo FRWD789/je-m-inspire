@@ -32,7 +32,7 @@ class PaiementController extends Controller
                 'event_id' => 'required|exists:events,id',
             ]);
 
-            \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
             $event = Event::with(['localisation', 'categorie'])->findOrFail($validated['event_id']);
             $user = JWTAuth::user();
@@ -261,7 +261,7 @@ class PaiementController extends Controller
      */
     public function stripeWebhook(Request $request)
     {
-        $endpoint_secret = env('STRIPE_WEBHOOK_SECRET');
+        $endpoint_secret = config('services.stripe.webhook_secret');
         $payload = $request->getContent();
         $sig_header = $request->header('Stripe-Signature');
 
