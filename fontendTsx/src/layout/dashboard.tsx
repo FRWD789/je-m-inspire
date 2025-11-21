@@ -195,7 +195,7 @@ export default function Dashboard() {
               >
                 <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
                   {user.profile.profile_picture ? (
-                    <img src={user.profile.profile_picture} alt={user.profile.name} className="w-full h-full object-cover" />
+                    <img src={user.profile.profile_picture} alt={user.profile.name} className="w-1/2 h-full object-cover" />
                   ) : (
                     user.profile.name?.charAt(0).toUpperCase() || 'U'
                   )}
