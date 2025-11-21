@@ -501,32 +501,7 @@ export default function ProfessionalPublicProfile() {
               </div>
             )}
 
-            {/* Contact Button */}
-            {currentUser?.id !== user?.id && (
-              <button 
-                onClick={handleContact}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium"
-              >
-                <MessageCircle size={18} />
-                {t('common.contact')}
-              </button>
-            )}
-
-            {/* Followers Count */}
-            {followersCount > 0 && (
-              <div className="text-center py-2 text-gray-600">
-                <span className="font-semibold">{followersCount}</span> abonné{followersCount > 1 ? 's' : ''}
-              </div>
-            )}
-
-            {/* Contact Button */}
-            <button 
-              onClick={handleContact}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium"
-            >
-              <MessageCircle size={18} />
-              Contacter
-            </button>
+           
 
             {/* Contact Info */}
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
