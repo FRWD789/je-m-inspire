@@ -25,7 +25,7 @@ import {
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import EventCard from '@/features/events/components/EventCard';
 import { UserPlus, UserMinus } from 'lucide-react';
-
+import { useTranslation } from 'react-i18next';
 
 export default function ProfessionalPublicProfile() {
   const { id } = useParams();
@@ -37,6 +37,7 @@ export default function ProfessionalPublicProfile() {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const { events } = useEvent();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchUserById = async () => {
@@ -51,6 +52,7 @@ export default function ProfessionalPublicProfile() {
       }
     };
     fetchUserById();
+
 
     // Vérifier le statut de follow si l'utilisateur est connecté
     const checkFollowStatus = async () => {
@@ -92,25 +94,32 @@ export default function ProfessionalPublicProfile() {
   const handleShareProfile = () => {
     if (navigator.share && user) {
       navigator.share({
-        title: `Profil de ${user.profile.name} ${user.profile.last_name}`,
+        title: `${t('common.profileOf')} ${user.profile.name} ${user.profile.last_name}`,
         url: window.location.href,
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Lien du profil copié !');
+      alert(t('common.linkCopied'));
     }
   };
 
   const handleContact = () => {
-    alert('Fonction de contact à implémenter');
+    alert(t('common.contactFeatureComingSoon'));
   };
 
   const handleFollow = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Vous devez être connecté pour suivre un professionnel');
+      alert(t('following.mustBeLoggedIn'));
       navigate('/login');
       return;
+    }
+
+    // Confirmation pour unfollow
+    if (isFollowing) {
+      if (!confirm(t('following.unfollowConfirm', { name: fullName }))) {
+        return;
+      }
     }
 
     setIsFollowLoading(true);
@@ -122,7 +131,7 @@ export default function ProfessionalPublicProfile() {
       setFollowersCount(res.data.followers_count);
     } catch (err) {
       console.error('Error toggling follow:', err);
-      alert('Erreur lors du suivi');
+      alert(t('following.followError'));
     } finally {
       setIsFollowLoading(false);
     }

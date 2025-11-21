@@ -321,7 +321,7 @@ class AuthController extends Controller
 
             $user->load('roles');
 
-            Notification::route('mail', env('ADMIN_EMAIL'))->notify(new ProfessionalApplicationReceivedNotification(
+            Notification::route('mail', config('mail.admin_email'))->notify(new ProfessionalApplicationReceivedNotification(
                 $user,
                 $validated['motivation_letter']
             ));

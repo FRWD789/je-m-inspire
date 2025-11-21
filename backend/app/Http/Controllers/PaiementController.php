@@ -32,7 +32,7 @@ class PaiementController extends Controller
                 'event_id' => 'required|exists:events,id',
             ]);
 
-            \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
             $event = Event::with(['localisation', 'categorie'])->findOrFail($validated['event_id']);
             $user = JWTAuth::user();
@@ -88,8 +88,8 @@ class PaiementController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => env('FRONTEND_URL') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
+                'success_url' => config('app.frontend_url') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => config('app.frontend_url') . '/payment/cancel',
                 'metadata' => [
                     'user_id' => $user->id,
                     'event_id' => $event->id,
@@ -199,32 +199,39 @@ class PaiementController extends Controller
                 ],
             ];
 
-            // Si vendor avec Pro Plus et compte PayPal
-            if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
-                $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
+            if (config('services.paypal.mode') === 'live') {
+                // Production: Avec platform fees
+                // Si vendor avec Pro Plus et compte PayPal
+                if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
+                    $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
 
-                $purchaseUnit["payee"] = [
-                    "merchant_id" => $vendor->paypalAccount_id,
-                ];
+                    $purchaseUnit["payee"] = [
+                        "merchant_id" => $vendor->paypalAccount_id,
+                    ];
 
-                $purchaseUnit["payment_instruction"] = [
-                    "disbursement_mode" => "INSTANT",
-                    "platform_fees" => [
-                        [
-                            "amount" => [
-                                "currency_code" => "CAD",
-                                "value" => number_format($commissionAmount, 2, '.', '')
+                    $purchaseUnit["payment_instruction"] = [
+                        "disbursement_mode" => "INSTANT",
+                        "platform_fees" => [
+                            [
+                                "amount" => [
+                                    "currency_code" => "CAD",
+                                    "value" => number_format($commissionAmount, 2, '.', '')
+                                ]
                             ]
                         ]
-                    ]
-                ];
+                    ];
+                }
+            } else {
+                // Sandbox: Paiement simple (pas de platform fees)
+                Log::info('[PayPal] Mode sandbox - Platform fees désactivés');
             }
+
 
             $response = $paypal->createOrder([
                 "intent" => "CAPTURE",
                 "application_context" => [
-                    'return_url' => env('FRONTEND_URL') . '/payment/success?payment_id=' . $paiement->paiement_id,
-                    'cancel_url' => env('FRONTEND_URL') . '/payment/cancel',
+                    'return_url' => config('app.frontend_url') . '/payment/success?payment_id=' . $paiement->paiement_id,
+                    'cancel_url' => config('app.frontend_url') . '/payment/cancel',
                 ],
                 "purchase_units" => [$purchaseUnit]
             ]);
@@ -261,7 +268,7 @@ class PaiementController extends Controller
      */
     public function stripeWebhook(Request $request)
     {
-        $endpoint_secret = env('STRIPE_WEBHOOK_SECRET');
+        $endpoint_secret = config('services.stripe.webhook_secret');
         $payload = $request->getContent();
         $sig_header = $request->header('Stripe-Signature');
 
