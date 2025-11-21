@@ -180,55 +180,63 @@ export default function Dashboard() {
 
         {/* User Profile Section - Bottom of Sidebar */}
         {user && (
-          <div className="border-t border-gray-200 p-3 flex items-center md:p-4 space-y-3">
-            {/* User Info Button */}
-            <button
-              className="flex items-center gap-2 w-full hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
-              onClick={() => {
-                navigate("/dashboard/profile-settings");
-                if (isMobile) setMobileMenuOpen(false);
-              }}
-              title= {t('dashboard.profileSettings')}
-            >
-              <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
-                {user.profile.profile_picture ? (
-                  <img src={user.profile.profile_picture} alt={user.profile.name} className="w-full h-full object-cover" />
-                ) : (
-                  user.profile.name?.charAt(0).toUpperCase() || 'U'
-                )}
-              </div>
+          <div className="border-t border-gray-200 p-3 md:p-4">
+            {/* Container flex avec direction column */}
+            <div className="flex flex-col gap-2">
               
-              <div className={`flex flex-col text-left flex-1 min-w-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
-                <span className="font-medium text-sm truncate">{user.profile.name}</span>
-                {user.roles[0].role === "professionnel"?<span className="text-xs text-gray-500 truncate">{hasProPlus?'Pro+': t('common.freeAccount')}</span>:<span></span>}
-              </div>
-               {/* Pro+ Badge or Upgrade Button */}
-            {user.roles[0].role === 'professionnel' && (
-              <div className={`flex flex-col text-left   ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
-                {!hasProPlus ? (
-                  <button
-                    onClick={() => {
-                      navigate("/dashboard/profile-settings?tab=plan");
-                      if (isMobile) setMobileMenuOpen(false);
-                    }}
-                    className={`w-full text-xs font-medium py-1.5 px-2 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition ${
-                      isMobile || sidebarOpen ? 'block' : 'hidden'
-                    }`}
-                  >
-                     {t('common.upgradeAccount')}
-                  </button>
-                ) : (
-                  <div className="w-full flex justify-center">
-                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition">
-                      <Star size={16} fill="currentColor" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            </button>
+              {/* User Info Button - Sans le bouton Upgrade à l'intérieur */}
+              <button
+                className="flex items-center gap-2 w-full hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
+                onClick={() => {
+                  navigate("/dashboard/profile-settings");
+                  if (isMobile) setMobileMenuOpen(false);
+                }}
+                title={t('dashboard.profileSettings')}
+              >
+                <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
+                  {user.profile.profile_picture ? (
+                    <img src={user.profile.profile_picture} alt={user.profile.name} className="w-full h-full object-cover" />
+                  ) : (
+                    user.profile.name?.charAt(0).toUpperCase() || 'U'
+                  )}
+                </div>
+                
+                <div className={`flex flex-col text-left flex-1 min-w-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
+                  <span className="font-medium text-sm truncate">{user.profile.name}</span>
+                  {user.roles[0].role === "professionnel" ? (
+                    <span className="text-xs text-gray-500 truncate">
+                      {hasProPlus ? 'Pro+' : t('common.freeAccount')}
+                    </span>
+                  ) : (
+                    <span></span>
+                  )}
+                </div>
+              </button>
 
-           
+              {/* Pro+ Badge or Upgrade Button - MAINTENANT EN DEHORS du bouton parent */}
+              {user.roles[0].role === 'professionnel' && (
+                <div className={`${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
+                  {!hasProPlus ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Sécurité supplémentaire
+                        navigate("/dashboard/profile-settings?tab=plan");
+                        if (isMobile) setMobileMenuOpen(false);
+                      }}
+                      className="w-full text-xs font-medium py-1.5 px-3 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition"
+                    >
+                      {t('common.upgradeAccount')}
+                    </button>
+                  ) : (
+                    <div className="w-full flex justify-center">
+                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition">
+                        <Star size={16} fill="currentColor" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </aside>
