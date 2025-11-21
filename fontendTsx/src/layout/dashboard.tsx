@@ -200,9 +200,7 @@ export default function Dashboard() {
               
               <div className={`flex flex-col text-left flex-1 min-w-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
                 <span className="font-medium text-sm truncate">{user.profile.name}</span>
-                <span className="text-xs text-gray-500 truncate">
-                  {user.subscription?.has_pro_plus ? 'Pro+' : t('common.freeAccount')}
-                </span>
+                {user.roles[0].role === "professionnel"?<span className="text-xs text-gray-500 truncate">{hasProPlus?'Pro+': t('common.freeAccount')}</span>:<span></span>}
               </div>
                {/* Pro+ Badge or Upgrade Button */}
             {user.roles[0].role === 'professionnel' && (
@@ -210,7 +208,7 @@ export default function Dashboard() {
                 {!hasProPlus ? (
                   <button
                     onClick={() => {
-                      navigate("/dashboard/profile-settings");
+                      navigate("/dashboard/profile-settings?tab=plan");
                       if (isMobile) setMobileMenuOpen(false);
                     }}
                     className={`w-full text-xs font-medium py-1.5 px-2 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition ${
