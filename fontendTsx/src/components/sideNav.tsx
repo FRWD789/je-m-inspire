@@ -71,9 +71,9 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
           {user && (
             <div className="relative flex flex-col gap-2" ref={menuRef}>
               {/* Zone cliquable pour aller au profil */}
-              <button
+             <Link
+                to="/dashboard/profile-settings"
                 className="flex items-center gap-2 hover:bg-gray-100 px-2 py-2 rounded-md transition"
-                onClick={() => navigate("/dashboard/profile-settings")}
               >
                 <div className="w-10 h-10 cursor-pointer rounded-full border hover:scale-110 transition flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden flex-shrink-0">
                   {user.profile.profile_picture ? (
@@ -91,19 +91,16 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
                     </span>
                   )}
                 </div>
-              </button>
+              </Link>
              
               {/* Bouton Upgrade (séparé pour éviter les conflits) */}
               {user.roles[0].role === "professionnel" && !hasProPlus && (
-                <button 
-                  className='w-full text-xs px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors cursor-pointer font-medium'
-                  onClick={(e) => {
-                    e.stopPropagation(); // Empêche la propagation au parent
-                    navigate('/dashboard/profile-settings?tab=plan');
-                  }}
+                <Link
+                  to="/dashboard/profile-settings?tab=plan"
+                  className='w-full text-xs px-3 py-1.5 rounded-full border border-gray-300...'
                 >
                   {t('common.upgradeAccount')}
-                </button>
+                </Link>
               )}
 
               {/* Badge Pro+ pour les utilisateurs ayant déjà l'abonnement */}
