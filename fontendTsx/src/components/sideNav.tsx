@@ -69,42 +69,50 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
 
                
           {user && (
-            <div className="relative flex items-center" ref={menuRef}>
+            <div className="relative flex flex-col gap-2" ref={menuRef}>
+              {/* Zone cliquable pour aller au profil */}
               <button
-                className="flex items-center  gap-1 w-full hover:bg-gray-100 px-2 py-2 rounded-md transition"
+                className="flex items-center gap-2 hover:bg-gray-100 px-2 py-2 rounded-md transition"
                 onClick={() => navigate("/dashboard/profile-settings")}
               >
-                
-                <div className="w-10 h-10 cursor-pointer rounded-full border hover:scale-110 transition flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-                 {user.profile.profile_picture ?  <img src={user.profile.profile_picture} alt="" />:"d"}
-                </div>
-                <div>
-            
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="font-medium text-sm">{user.profile.name}</span>
-                  {user.roles[0].role === "professionnel"?<span className="text-xs text-gray-500 truncate">{hasProPlus?'Pro+': t('common.freeAccount')}</span>:<span></span>}
-                </div>
-             
-               
-              </button>
-              {
-                user.roles[0].role === "professionnel" && (
-                  !hasProPlus ? (
-                    <div className='w-full' onClick={() => navigate('/dashboard/profile-settings?tab=plan')}>
-                      <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>
-                        {t('common.upgradeAccount')}
-                      </button>
-                    </div>
+                <div className="w-10 h-10 cursor-pointer rounded-full border hover:scale-110 transition flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden flex-shrink-0">
+                  {user.profile.profile_picture ? (
+                    <img src={user.profile.profile_picture} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 m-2 shadow-lg">
-                      <Star size={16} fill="currentColor" />
-                    </div>
-                  )
-                )
-              }
-              
+                    "D"
+                  )}
+                </div>
+                
+                <div className="flex flex-col text-left flex-1">
+                  <span className="font-medium text-sm">{user.profile.name}</span>
+                  {user.roles[0].role === "professionnel" && (
+                    <span className="text-xs text-gray-500 truncate">
+                      {hasProPlus ? 'Pro+' : t('common.freeAccount')}
+                    </span>
+                  )}
+                </div>
+              </button>
              
+              {/* Bouton Upgrade (séparé pour éviter les conflits) */}
+              {user.roles[0].role === "professionnel" && !hasProPlus && (
+                <button 
+                  className='w-full text-xs px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors cursor-pointer font-medium'
+                  onClick={(e) => {
+                    e.stopPropagation(); // Empêche la propagation au parent
+                    navigate('/dashboard/profile-settings?tab=plan');
+                  }}
+                >
+                  {t('common.upgradeAccount')}
+                </button>
+              )}
+
+              {/* Badge Pro+ pour les utilisateurs ayant déjà l'abonnement */}
+              {user.roles[0].role === "professionnel" && hasProPlus && (
+                <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full px-3 py-1.5 shadow-lg">
+                  <Star size={14} fill="currentColor" />
+                  <span className="text-xs font-semibold">Pro+</span>
+                </div>
+              )}
             </div>
           )}
         </div>
