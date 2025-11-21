@@ -40,6 +40,7 @@ return [
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'pro_plus_price_id' => env('PRO_PLUS_ID_STRIPE'), // price_1S9A0Z3JJu344kSQ63Nnyivb
+        'oauth_id' => env('STRIPE_OAUTH_ID'),
     ],
 
     'paypal' => [
