@@ -5,6 +5,27 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   fr: {
     translation: {
+
+      home: {
+        heroTitle: "Explorez des événements holistiques près de chez vous",
+        heroSubtitle: "Découvrez, créez et réservez des expériences bien-être, retraites et ateliers qui nourrissent le corps, l'esprit et l'âme.",
+        searchPlaceholder: "Rechercher par nom...",
+        allCities: "Toutes les villes",
+        viewAllWithCount: "Voir tous les {{count}} événements...",
+        viewAll: "Voir tous les événements...",
+        upcomingEvents: "Événements à venir",
+        cards: {
+          title: "Rayonnez vos ateliers",
+          description: "Rejoignez, partagez vos événements holistiques facilement."
+        },
+        newsletter: {
+          title: "Rejoignez plus de 2 000 abonnés",
+          subtitle: "Restez informé·e de tout ce que vous devez savoir.",
+          placeholder: "Inscrivez votre e-mail",
+          button: "Abonnez-vous",
+          privacy: "Nous prenons soin de vos données dans notre politique de confidentialité"
+        }
+      },
       // ==========================================
       // NAVIGATION
       // ==========================================
@@ -307,6 +328,15 @@ const resources = {
         unlinkConfirm: 'Êtes-vous sûr de vouloir délier ce compte ?',
         imageTooBig: "L'image ne doit pas dépasser 2MB",
         invalidImageType: "Le fichier doit être une image",
+        security: 'Sécurité',
+        plan: 'Plan',
+        biography: 'Biographie',
+        biographyPlaceholder: 'Parlez-nous de vous...',
+        accountPlan: 'Plan du compte',
+        accountSecurity: 'Sécurité du compte',
+        selectImage: 'Sélectionnez une image',
+        maxSize: 'Taille maximale: 2MB',
+        uploading: 'Téléchargement...'
       },
 
       // ==========================================
@@ -366,7 +396,7 @@ const resources = {
         reason: 'Raison',
         status: 'Statut',
         process: 'Traiter',
-        
+
         // Messages
         approvalSuccess: 'Utilisateur approuvé',
         approvalError: "Erreur lors de l'approbation",
@@ -439,14 +469,12 @@ const resources = {
       // ==========================================
       // CALENDRIER
       // ==========================================
-      calendar: {
-        title: 'Calendrier des événements',
-        month: 'Mois',
-        week: 'Semaine',
-        day: 'Jour',
-        today: "Aujourd'hui",
-        noEvents: 'Aucun événement ce jour',
-        viewDetails: 'Voir les détails'
+     calendar: {
+        title: "Calendrier",
+        prev: "Mois précédent",
+        next: "Mois suivant",
+        eventsFor: "Événements du",
+        close: "Fermer",
       },
 
       // ==========================================
@@ -566,6 +594,26 @@ const resources = {
 
   en: {
     translation: {
+      home: {
+        heroTitle: "Explore holistic events near you",
+        heroSubtitle: "Discover, create, and book wellness experiences, retreats, and workshops that nourish body, mind, and soul.",
+        searchPlaceholder: "Search by name...",
+        allCities: "All cities",
+        viewAllWithCount: "See all {{count}} events...",
+        viewAll: "See all events...",
+        upcomingEvents: "Upcoming Events",
+        cards: {
+          title: "Showcase your workshops",
+          description: "Join us and share your holistic events easily."
+        },
+        newsletter: {
+          title: "Join over 2,000 subscribers",
+          subtitle: "Stay up to date with everything you need to know.",
+          placeholder: "Enter your email",
+          button: "Subscribe",
+          privacy: "We take care of your data in our privacy policy"
+        }
+      },
       // ==========================================
       // NAVIGATION
       // ==========================================
@@ -866,7 +914,16 @@ const resources = {
         unlinkError: 'Unlinking error',
         unlinkConfirm: 'Are you sure you want to unlink this account?',
         imageTooBig: 'Image must not exceed 2MB',
-        invalidImageType: 'File must be an image'
+        invalidImageType: 'File must be an image',
+        security: 'Security',
+        plan: 'Plan',
+        biography: 'Biography',
+        biographyPlaceholder: 'Tell us about yourself...',
+        accountPlan: 'Account Plan',
+        accountSecurity: 'Account Security',
+        selectImage: 'Select an image',
+        maxSize: 'Maximum size: 2MB',
+        uploading: 'Uploading...'
       },
 
       // ==========================================
@@ -926,7 +983,7 @@ const resources = {
         reason: 'Reason',
         status: 'Status',
         process: 'Process',
-        
+
         // Messages
         approvalSuccess: 'User approved',
         approvalError: 'Approval error',
@@ -1000,13 +1057,11 @@ const resources = {
       // CALENDAR
       // ==========================================
       calendar: {
-        title: 'Events Calendar',
-        month: 'Month',
-        week: 'Week',
-        day: 'Day',
-        today: 'Today',
-        noEvents: 'No events on this day',
-        viewDetails: 'View Details'
+        title: "Calendar",
+        prev: "Previous month",
+        next: "Next month",
+        eventsFor: "Events for",
+        close: "Close",
       },
 
       // ==========================================
