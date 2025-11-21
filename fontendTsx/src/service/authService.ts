@@ -102,4 +102,29 @@ export const authService = {
     }
   },
 
+  linkStripe: async (code: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await privateApi.get("/api/profile/stripe/callback", {
+      params: { code }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error Stripe linking:", error);
+    throw error;
+  }
+},
+
+linkPaypal: async (code: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await privateApi.get("/api/profile/paypal/callback", {
+      params: { code }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error PayPal linking:", error);
+    throw error;
+  }
+},
+
+
 }

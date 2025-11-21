@@ -1,4 +1,4 @@
-// frontend/src/components/profile/PaymentLinkSuccess.jsx
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useApi } from '../../contexts/AuthContext';

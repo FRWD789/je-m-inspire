@@ -31,13 +31,16 @@ import AbonnementSuccess from "./page/abonnementSuccess";
 import GoogleCallback from "./page/Auth/GoogleCallback";
 import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
 import MyFollowingPage from './features/follow/page/MyFollowingPage';
+import LinkedAccountSuccess from "./page/LinkedAccountSuccess";
 
 export default function App() {
   return (
     <EventProvider>
       <Routes>
+
         <Route element={<PersistLogin />}>
-          
+
+          {/* PUBLIC ROUTES */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
@@ -45,13 +48,13 @@ export default function App() {
             <Route path="register-pro" element={<RegisterPro />} />
             <Route path="events" element={<PublicEvents />} />
             <Route path="events/:id" element={<EventDetail />} />
-            <Route path="/google/callback" element={<GoogleCallback />} />
-            <Route path="abonnement/success" element={<AbonnementSuccess/>} />
+            <Route path="google/callback" element={<GoogleCallback />} />
+            <Route path="abonnement/success" element={<AbonnementSuccess />} />
             <Route path="payment/success" element={<PaymentSuccess />} />
-            <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
+            <Route path="user/:id" element={<ProfessionalPublicProfile />} />
           </Route>
 
-          {/* Authenticated Routes */}
+          {/* PROTECTED ROUTES */}
           <Route
             element={
               <PrivateRoute
@@ -59,35 +62,52 @@ export default function App() {
               />
             }
           >
-            <Route path="/dashboard"  element={<OnboardingGuard><Dashboard /></OnboardingGuard>
 
-              }>
+            <Route
+              path="/profile/stripe/success"
+              element={<LinkedAccountSuccess provider="stripe" />}
+            />
+
+            <Route
+              path="/profile/paypal/success"
+              element={<LinkedAccountSuccess provider="paypal" />}
+            />
+
+            <Route
+              path="/dashboard"
+              element={
+                <OnboardingGuard>
+                  <Dashboard />
+                </OnboardingGuard>
+              }
+            >
+              {/* CHILD ROUTES (RELATIVES) */}
               <Route path="profile-settings" element={<User />} />
               <Route path="my-events" element={<MyEventPage />} />
               <Route path="my-reservations" element={<MyReservationPage />} />
               <Route path="event-calender" element={<CalenderEventPage />} />
               <Route path="my-following" element={<MyFollowingPage />} />
-              {/* Admin-only routes */}
+
+              {/* ADMIN ONLY */}
               <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
                 <Route path="approbation" element={<AdminApprovalPage />} />
                 <Route path="commissions" element={<AdminCommissionPage />} />
                 <Route path="refunds" element={<RefundRequestsAdmin />} />
               </Route>
+
               <Route path="refunds-request" element={<RefundRequestPage />} />
-              {/* User/Pro-only refund route */}
+
+              {/* Vendor (Admin + Pro) */}
               <Route
                 element={
-                  <PrivateRoute
-                    allowedRoles={["admin", "professionnel"]}
-                  />
+                  <PrivateRoute allowedRoles={["admin", "professionnel"]} />
                 }
-                
               >
-                  <Route path="vendor" element={<VendorDashboard />} />
-               
-              </Route> 
+                <Route path="vendor" element={<VendorDashboard />} />
+              </Route>
             </Route>
           </Route>
+
         </Route>
       </Routes>
     </EventProvider>
