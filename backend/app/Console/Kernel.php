@@ -41,7 +41,7 @@ class Kernel extends ConsoleKernel
                     'time' => now()->toDateTimeString()
                 ]);
             })->everyMinute();
-
+        }
     }
 
     /**
