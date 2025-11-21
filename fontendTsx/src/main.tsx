@@ -5,15 +5,75 @@ import App from './App.tsx'
 import { AuthContextProvider } from './context/AuthContext.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import './i18n/config'
+import * as Sentry from "@sentry/react";
+
+if (import.meta.env.PROD) {
+  Sentry.init({
+    dsn: "https://b1d9d8e9d23e1badc7bd505874e4854c@o4510400555384832.ingest.us.sentry.io/4510400624590848",
+    environment: "production",
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: false,
+        blockAllMedia: false,
+      }),
+    ],
+    tracesSampleRate: 0.2, // 20% des transactions
+    replaysSessionSampleRate: 0.1, // 10% des sessions
+    replaysOnErrorSampleRate: 1.0, // 100% si erreur
+    beforeSend(event) {
+      // Filtrer les erreurs non pertinentes
+      if (event.exception) {
+        const error = event.exception.values?.[0];
+        // Ignorer les erreurs réseau connues
+        if (error?.type === 'NetworkError') {
+          return null;
+        }
+      }
+      return event;
+    },
+  });
+}
+
+function ErrorFallback() {
+  return (
+    <div style={{ 
+      padding: '40px', 
+      textAlign: 'center',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <h1 style={{ fontSize: '24px', marginBottom: '16px' }}>
+        Une erreur est survenue
+      </h1>
+      <p style={{ color: '#666', marginBottom: '24px' }}>
+        L'équipe technique a été notifiée.
+      </p>
+      <button 
+        onClick={() => window.location.reload()}
+        style={{
+          padding: '12px 24px',
+          fontSize: '16px',
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer'
+        }}
+      >
+        Recharger la page
+      </button>
+    </div>
+  );
+}
 
 createRoot(document.getElementById('root')!).render(
-  
-    <BrowserRouter>
-     <AuthContextProvider>
-     <App />
-    </AuthContextProvider>
-    </BrowserRouter>
-   
-
- ,
-)
+  <StrictMode>
+    <Sentry.ErrorBoundary fallback={<ErrorFallback />} showDialog>
+      <BrowserRouter>
+        <AuthContextProvider>
+          <App />
+        </AuthContextProvider>
+      </BrowserRouter>
+    </Sentry.ErrorBoundary>
+  </StrictMode>
+);

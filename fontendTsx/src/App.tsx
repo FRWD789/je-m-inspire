@@ -56,6 +56,15 @@ export default function App() {
             <Route path="notifications/disable" element={<DisableNotificationsPage />} />
           </Route>
 
+           <Route
+              path="profile/stripe/success"
+              element={<LinkedAccountSuccess provider="stripe" />}
+            />
+
+            <Route
+              path="profile/paypal/success"
+              element={<LinkedAccountSuccess provider="paypal" />}
+            />
           {/* PROTECTED ROUTES */}
           <Route
             element={
@@ -64,17 +73,6 @@ export default function App() {
               />
             }
           >
-
-            <Route
-              path="/profile/stripe/success"
-              element={<LinkedAccountSuccess provider="stripe" />}
-            />
-
-            <Route
-              path="/profile/paypal/success"
-              element={<LinkedAccountSuccess provider="paypal" />}
-            />
-
             <Route
               path="/dashboard"
               element={

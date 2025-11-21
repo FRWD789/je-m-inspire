@@ -16,6 +16,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@react-google-maps/api": "^2.20.7",
     "@react-three/fiber": "^9.3.0",
+    "@sentry/react": "^10.26.0",
     "@tailwindcss/vite": "^4.1.13",
     "@vis.gl/react-google-maps": "^1.5.5",
     "axios": "^1.12.2",

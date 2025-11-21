@@ -16,7 +16,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\ProfessionalProfileController;
 use App\Http\Controllers\VendorEarningsController;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Remboursement;
 use App\Models\Operation;
@@ -622,3 +624,65 @@ Route::prefix('test-emails')->group(function ()
 Route::get('/abonnement/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success'));
 Route::get('/abonnement/cancel', fn() => redirect(config('app.frontend_url') . '/abonnement/cancel'));
 Route::get('/abonnement/paypal/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success?provider=paypal'));
+
+Route::get('/health', function () {
+    $services = [];
+
+    // 1. Test Database
+    try {
+        DB::connection()->getPdo();
+        DB::select('SELECT 1');
+        $services['database'] = 'ok';
+    } catch (\Exception $e) {
+        $services['database'] = 'error';
+    }
+
+    // 2. Test Cache (Redis ou Database selon CACHE_STORE)
+    try {
+        $testKey = 'health_check_' . time();
+        $testValue = 'ok_' . rand(1000, 9999);
+
+        // Écrire dans le cache
+        Cache::put($testKey, $testValue, 60);
+
+        // Lire depuis le cache
+        $cachedValue = Cache::get($testKey);
+
+        // Vérifier que la valeur est correcte
+        $services['cache'] = ($cachedValue === $testValue) ? 'ok' : 'error';
+
+        // Nettoyer
+        Cache::forget($testKey);
+    } catch (\Exception $e) {
+        $services['cache'] = 'error';
+    }
+
+    // 3. Test Storage
+    try {
+        $services['storage'] = Storage::exists('.gitignore') ? 'ok' : 'error';
+    } catch (\Exception $e) {
+        $services['storage'] = 'error';
+    }
+
+    // 4. Test écriture logs
+    try {
+        $logFile = storage_path('logs/health_check.log');
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " - Health check OK\n", FILE_APPEND);
+        $services['logs'] = file_exists($logFile) ? 'ok' : 'error';
+    } catch (\Exception $e) {
+        $services['logs'] = 'error';
+    }
+
+    // Déterminer le status global
+    $allOk = !in_array('error', $services);
+    $status = $allOk ? 'ok' : 'degraded';
+
+    return response()->json([
+        'status' => $status,
+        'timestamp' => now()->toIso8601String(),
+        'services' => $services,
+        'cache_driver' => config('cache.default'), // redis ou database
+        'environment' => config('app.env'),
+        'version' => '1.0.0',
+    ]);
+});

@@ -199,26 +199,33 @@ class PaiementController extends Controller
                 ],
             ];
 
-            // Si vendor avec Pro Plus et compte PayPal
-            if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
-                $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
+            if (config('services.paypal.mode') === 'live') {
+                // Production: Avec platform fees
+                // Si vendor avec Pro Plus et compte PayPal
+                if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
+                    $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
 
-                $purchaseUnit["payee"] = [
-                    "merchant_id" => $vendor->paypalAccount_id,
-                ];
+                    $purchaseUnit["payee"] = [
+                        "merchant_id" => $vendor->paypalAccount_id,
+                    ];
 
-                $purchaseUnit["payment_instruction"] = [
-                    "disbursement_mode" => "INSTANT",
-                    "platform_fees" => [
-                        [
-                            "amount" => [
-                                "currency_code" => "CAD",
-                                "value" => number_format($commissionAmount, 2, '.', '')
+                    $purchaseUnit["payment_instruction"] = [
+                        "disbursement_mode" => "INSTANT",
+                        "platform_fees" => [
+                            [
+                                "amount" => [
+                                    "currency_code" => "CAD",
+                                    "value" => number_format($commissionAmount, 2, '.', '')
+                                ]
                             ]
                         ]
-                    ]
-                ];
+                    ];
+                }
+            } else {
+                // Sandbox: Paiement simple (pas de platform fees)
+                Log::info('[PayPal] Mode sandbox - Platform fees désactivés');
             }
+
 
             $response = $paypal->createOrder([
                 "intent" => "CAPTURE",
