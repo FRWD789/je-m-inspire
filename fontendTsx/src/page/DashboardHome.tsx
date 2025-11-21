@@ -46,13 +46,13 @@ export default function DashboardHome() {
   }, [t]);
 
   const quickStats: QuickStat[] = [
-    {
+    ...(user?.roles[0]?.role === 'professionnel' ? [{
       label: t('dashboard.myEvents'),
       value: '-',
       icon: <Ticket className="w-6 h-6" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
-    },
+    }] : []),
     {
       label: t('dashboard.myReservations'),
       value: '-',
@@ -77,13 +77,13 @@ export default function DashboardHome() {
   ];
 
   const quickLinks: QuickLink[] = [
-    {
+    ...(user?.roles[0]?.role === 'professionnel' ? [{
       title: t('dashboard.myEvents'),
       description: t('dashboard.manageYourEvents'),
       path: '/dashboard/my-events',
       icon: <Ticket className="w-5 h-5" />,
       color: 'blue'
-    },
+    }] : []),
     {
       title: t('dashboard.myReservations'),
       description: t('dashboard.viewReservations'),
