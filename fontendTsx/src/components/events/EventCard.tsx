@@ -32,6 +32,8 @@ interface EventCardData {
   reservation_total?: number;
   reservation_status?: "paid" | "pending" | "failed";
   peut_annuler?: boolean;
+  has_refund_request?: boolean;
+  refund_status?: string;
 }
 
 type Orientation = "horizontale" | "vertical";
@@ -127,8 +129,17 @@ export default function EventCard({
               Paiement: {event.reservation_status}
             </p>
 
-            {/* 🔹 Bouton Annuler */}
-            {event.peut_annuler && onCancel && (
+            {/* 🔹 Bouton Annuler ou Message de demande en cours */}
+            {event.has_refund_request ? (
+              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                <p className="font-semibold">Demande en cours</p>
+                <p className="text-[10px]">
+                  {event.refund_status === 'en_attente' && 'En attente de traitement'}
+                  {event.refund_status === 'approuve' && 'Remboursement approuvé'}
+                  {event.refund_status === 'refuse' && 'Demande refusée'}
+                </p>
+              </div>
+            ) : event.peut_annuler && onCancel ? (
               <Button
                 onClick={() => {
                   console.log("EventCard: click annuler pour event", event.id);
@@ -139,9 +150,9 @@ export default function EventCard({
                   loadingCancel ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                {loadingCancel ? "Annulation..." : "Annuler"}
+                {loadingCancel ? "Annulation..." : "Demander remboursement"}
               </Button>
-            )}
+            ) : null}
           </div>
         ) : (
           <>

@@ -9,6 +9,8 @@ type EventCardProps = {
   onDelete?: (id: number | string) => void
   onCancelReservation?: (reservationId: number) => void
   isReservation?: boolean
+  has_refund_request?: boolean
+  refund_status?: string
 }
 
 export default function EventCard({ 
@@ -150,7 +152,15 @@ export default function EventCard({
         </button>
 
         {/* Reservation Controls */}
-        {isReservation && event.can_cancel && (
+        {isReservation && event.has_refund_request ? (
+          <div className="w-full p-2 bg-orange-50 border border-orange-200 rounded-md md:rounded-[4px] text-center">
+            <p className="text-xs font-semibold text-orange-700">
+              {event.refund_status === 'en_attente' && 'Demande en cours'}
+              {event.refund_status === 'approuve' && 'Remboursement approuvé'}
+              {event.refund_status === 'refuse' && 'Remboursement refusée'}
+              </p>
+          </div>
+        ) : isReservation && event.can_cancel ? (
           <button
             onClick={() => navigate('/dashboard/refunds-request', { state: { eventId: event.id, reservationId: event.reservation_id } })}
             className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-orange-500 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-orange-600 transition-colors active:scale-95"
@@ -158,7 +168,7 @@ export default function EventCard({
             <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
             <span>Demander un remboursement</span>
           </button>
-        )}
+        ) : null}
 
         {/* Creator Controls */}
         {event.is_creator && !isReservation && (

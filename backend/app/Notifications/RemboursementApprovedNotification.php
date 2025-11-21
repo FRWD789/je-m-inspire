@@ -8,7 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Remboursement;
 
-class RemboursementReceivedNotification extends Notification
+class RemboursementApprovedNotification extends Notification
 {
     use Queueable;
 
@@ -31,20 +31,20 @@ class RemboursementReceivedNotification extends Notification
         $paiement = $operation->paiement;
 
         $myReservationsUrl = env("FRONTEND_URL") . '/my-reservations';
-
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
-
-        $processedDate = $this->remboursement->updated_at->locale('fr')->isoFormat('D MMMM YYYY à HH:mm');
+        $processedDate = $this->remboursement->date_traitement->locale('fr')->isoFormat('D MMMM YYYY à HH:mm');
         $paymentMethod = $paiement->provider === 'stripe' ? 'Carte bancaire (Stripe)' : 'PayPal';
 
         return (new MailMessage)
-            ->subject('✅ Demande de remboursement reçue')
-            ->view('emails.notifications.remboursement-received', [
+            ->subject('✅ Votre remboursement a été approuvé')
+            ->view('emails.notifications.remboursement-approved', [
+                'user' => $notifiable,
                 'amount' => $this->remboursement->montant,
-                'receivedDate' => $this->remboursement->created_at->locale('fr')->isoFormat('D MMMM YYYY à HH:mm'),
+                'processedDate' => $processedDate,
                 'refundId' => $this->remboursement->id,
                 'paymentMethod' => $paymentMethod,
                 'event' => $event,
+                'commentaire' => $this->remboursement->commentaire_admin,
                 'myReservationsUrl' => $myReservationsUrl,
                 'greeting' => $greeting,
             ]);
@@ -53,10 +53,10 @@ class RemboursementReceivedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'Demande de remboursement reçue',
-            'remboursement_id' => $this->remboursement->remboursement_id,
+            'message' => 'Remboursement approuvé',
+            'remboursement_id' => $this->remboursement->id,
             'montant' => $this->remboursement->montant,
-            'received_at' => $this->remboursement->created_at,
+            'processed_at' => $this->remboursement->date_traitement,
         ];
     }
 }

@@ -1,37 +1,37 @@
 @extends('emails.layouts.master')
 
 @section('content')
-    <div class="alert-info">
+    <div class="alert-success">
         <p class="content-text" style="margin: 0;">
-            <strong>📩 Votre demande de remboursement a bien été reçue</strong>
+            <strong>✅ Votre remboursement a été approuvé</strong>
         </p>
     </div>
 
     <p class="content-text">
-        Nous avons bien reçu votre demande de remboursement. Notre équipe va l'examiner et la traiter dans les plus brefs délais.
+        Bonne nouvelle ! Votre demande de remboursement a été approuvée et le montant sera crédité sur votre compte.
     </p>
 
     <hr class="divider">
 
     <h3 style="color: #3C493F; font-size: 18px; font-weight: 700; margin: 20px 0 15px 0;">
-        📋 Détails de votre demande
+        💰 Détails du remboursement
     </h3>
 
     <div class="highlight-box">
         <div class="info-row">
-            <span class="info-label">💵 Montant demandé</span>
+            <span class="info-label">💵 Montant remboursé</span>
             <span class="info-value">{{ number_format($amount, 2, ',', ' ') }} CAD</span>
         </div>
         <div class="info-row">
-            <span class="info-label">📅 Date de réception</span>
-            <span class="info-value">{{ $receivedDate }}</span>
+            <span class="info-label">📅 Date de traitement</span>
+            <span class="info-value">{{ $processedDate }}</span>
         </div>
         <div class="info-row">
-            <span class="info-label">🔖 Numéro de transaction</span>
+            <span class="info-label">🔖 Numéro de remboursement</span>
             <span class="info-value">#{{ $refundId }}</span>
         </div>
         <div class="info-row">
-            <span class="info-label">💳 Paiement initial</span>
+            <span class="info-label">💳 Méthode de remboursement</span>
             <span class="info-value">{{ $paymentMethod }}</span>
         </div>
     </div>
@@ -55,35 +55,49 @@
     </div>
     @endif
 
+    @if(!empty($commentaire))
     <hr class="divider">
 
     <h3 style="color: #3C493F; font-size: 18px; font-weight: 700; margin: 20px 0 15px 0;">
-        ⏳ Délai de traitement
+        💬 Commentaire de l'administrateur
+    </h3>
+
+    <div class="highlight-box">
+        <p class="content-text" style="margin: 0; font-style: italic;">
+            "{{ $commentaire }}"
+        </p>
+    </div>
+    @endif
+
+    <hr class="divider">
+
+    <h3 style="color: #3C493F; font-size: 18px; font-weight: 700; margin: 20px 0 15px 0;">
+        ⏰ Délai de réception
     </h3>
 
     <div class="info-list">
-        <div class="info-list-item"><strong>Examen de la demande :</strong> 1 à 2 jours ouvrables</div>
-        <div class="info-list-item"><strong>Traitement du remboursement :</strong> 2 à 3 jours ouvrables</div>
-        <div class="info-list-item"><strong>Réception sur votre compte :</strong> 5 à 10 jours ouvrables (selon votre banque)</div>
+        <div class="info-list-item"><strong>Carte bancaire :</strong> 5 à 10 jours ouvrables</div>
+        <div class="info-list-item"><strong>PayPal :</strong> 1 à 3 jours ouvrables</div>
+        <div class="info-list-item"><strong>Virement bancaire :</strong> 3 à 5 jours ouvrables</div>
     </div>
 
     <div class="alert-info">
         <p class="content-text" style="margin: 0;">
-            💡 <strong>Vous serez notifié par email dès que votre remboursement sera traité.</strong> En attendant, vous pouvez suivre l'état de votre demande dans vos réservations.
+            💡 <strong>Le délai peut varier selon votre institution bancaire.</strong> Si vous ne recevez pas le remboursement dans les délais indiqués, veuillez vérifier auprès de votre banque.
         </p>
     </div>
 
     <hr class="divider">
 
     <h3 style="color: #3C493F; font-size: 18px; font-weight: 700; margin: 20px 0 15px 0;">
-        ℹ️ Prochaines étapes
+        📋 Informations importantes
     </h3>
 
     <div class="info-list">
-        <div class="info-list-item">Notre équipe va vérifier les informations de votre demande</div>
-        <div class="info-list-item">Une fois approuvée, le remboursement sera effectué sur votre moyen de paiement initial</div>
-        <div class="info-list-item">Vous recevrez un email de confirmation une fois le remboursement traité</div>
-        <div class="info-list-item">Le montant apparaîtra sur votre relevé bancaire sous {{ config('app.name') }}</div>
+        <div class="info-list-item">Le remboursement sera effectué sur le moyen de paiement utilisé lors de l'achat</div>
+        <div class="info-list-item">Conservez cet email comme preuve de remboursement</div>
+        <div class="info-list-item">Vous recevrez une confirmation de votre banque une fois le montant crédité</div>
+        <div class="info-list-item">Ce remboursement apparaîtra sur votre relevé bancaire sous {{ config('app.name') }}</div>
     </div>
 
     @if(isset($myReservationsUrl))
@@ -95,7 +109,7 @@
     <hr class="divider">
 
     <p class="content-text">
-        Si vous avez des questions concernant votre demande de remboursement, n'hésitez pas à nous contacter.
+        Si vous avez des questions concernant ce remboursement, n'hésitez pas à nous contacter.
     </p>
 
     <div class="button-container">
@@ -103,6 +117,6 @@
     </div>
 
     <p class="content-text" style="text-align: center; margin-top: 30px;">
-        <strong>Merci de votre patience ! 🙏</strong>
+        <strong>Merci pour votre compréhension ! 🙏</strong>
     </p>
 @endsection

@@ -155,6 +155,13 @@
             border-radius: 4px;
         }
 
+        .alert-error {
+            background-color: #FEF2F2;
+            border: 2px solid #FCA5A5;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
         /* Footer */
         .email-footer {
             background-color: #3C493F;

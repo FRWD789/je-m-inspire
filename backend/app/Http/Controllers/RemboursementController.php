@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use App\Notifications\RemboursementReceivedNotification;
+use App\Notifications\RemboursementApprovedNotification;
+use App\Notifications\RemboursementRejectedNotification;
 
 class RemboursementController extends Controller
 {
@@ -198,6 +200,16 @@ class RemboursementController extends Controller
                         'user_id' => $remboursement->user_id
                     ]);
                 }
+
+                // Charger l'utilisateur et envoyer la notification d'approbation
+                $remboursement->load(['user', 'operation.event', 'operation.paiement']);
+                $remboursement->user->notify(new \App\Notifications\RemboursementApprovedNotification($remboursement));
+
+                Log::info('[Remboursement] Email d\'approbation envoyé', [
+                    'remboursement_id' => $remboursement->id,
+                    'user_id' => $remboursement->user_id,
+                ]);
+
             } else {
                 if ($debug) {
                     Log::info('[Remboursement] Demande refusée', [
@@ -206,6 +218,15 @@ class RemboursementController extends Controller
                         'raison' => $validated['commentaire_admin'] ?? 'Non spécifiée'
                     ]);
                 }
+
+                // Charger l'utilisateur et envoyer la notification de refus
+                $remboursement->load(['user', 'operation.event', 'operation.paiement']);
+                $remboursement->user->notify(new \App\Notifications\RemboursementRejectedNotification($remboursement));
+
+                Log::info('[Remboursement] Email de refus envoyé', [
+                    'remboursement_id' => $remboursement->id,
+                    'user_id' => $remboursement->user_id,
+                ]);
             }
 
             DB::commit();

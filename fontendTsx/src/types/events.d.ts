@@ -12,6 +12,9 @@ export interface Event {
   priority: number;
   thumbnail?: string;
   banner?: string;
+  has_refund_request?: boolean
+  refund_status?: 'en_attente' | 'approuve' | 'refuse'
+  can_cancel?: boolean
   localisation: {
     id?: number;
     name?: string;

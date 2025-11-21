@@ -53,10 +53,11 @@ export default function MyReservations() {
             orientation="horizontale"
             event={{
               ...r.event,
-              // add reservation-specific info for EventCard
               reservation_total: r.total_price,
               reservation_status: r.statut_paiement,
               peut_annuler: r.peut_annuler,
+              has_refund_request: r.has_refund_request,
+              refund_status: r.refund_status,
             }}
             onCancel={() => handleCancel(r.event.id)}
             className="hover:shadow-lg transition"

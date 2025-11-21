@@ -79,9 +79,9 @@ export const CreateRemboursementForm: React.FC<CreateRemboursementFormProps> = (
                 debug('  Type:', typeof r.statut_paiement);
             });
             
-            // ✅ CORRECTION : Utiliser statut_paiement au lieu de status
+            // ✅ CORRECTION : Filtrer les réservations payées uniquement et sans demande de remboursement
             const validReservations = allReservations.filter((r: any) =>
-                r.statut_paiement === 'paid'
+                r.statut_paiement === 'paid' && !r.has_refund_request
             );
             
             debug('\n✅ Réservations payées filtrées:', validReservations.length);
@@ -175,6 +175,9 @@ export const CreateRemboursementForm: React.FC<CreateRemboursementFormProps> = (
                 <h3 className="text-primary text-xl font-semibold mb-4">
                     Aucune réservation éligible
                 </h3>
+                <p className="text-gray-600 mt-2">
+                    Les réservations pour lesquelles vous avez déjà fait une demande de remboursement ne sont pas affichées.
+                </p>
                 <p className="text-gray-600">
                     Vous n'avez aucune réservation payée pour laquelle vous pouvez demander un remboursement.
                 </p>

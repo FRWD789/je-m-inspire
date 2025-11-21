@@ -34,7 +34,7 @@ export default function RefundRequestPage() {
       try {
         const res = await reservationService.getMyReservations();
         const eligible = (res.reservations || []).filter(
-          (r: any) => r.statut_paiement === "paid" && r.peut_annuler
+          (r: any) => r.statut_paiement === "paid" && r.peut_annuler && !r.has_refund_request
         );
         setReservations(eligible);
 
@@ -71,7 +71,7 @@ export default function RefundRequestPage() {
       // Refresh list
       const res = await reservationService.getMyReservations();
       const eligible = (res.reservations || []).filter(
-        (r: any) => r.statut_paiement === "paid" && r.peut_annuler
+        (r: any) => r.statut_paiement === "paid" && r.peut_annuler && !r.has_refund_request
       );
       setReservations(eligible);
     } catch (err) {
@@ -85,7 +85,13 @@ export default function RefundRequestPage() {
   if (loading) return <p className="text-center mt-6">{t("common.loading")}</p>;
   if (error) return <p className="text-red-500 text-center mt-6">{error}</p>;
   if (reservations.length === 0)
-    return <p className="text-center mt-6">{t("refunds.noReservations")}</p>;
+    return <p className="text-center mt-6">
+      {t("refunds.noReservations")}
+      <br />
+      <span className="text-sm text-gray-500 mt-2 block">
+        Les réservations avec une demande de remboursement en cours n'apparaissent pas ici.
+      </span>
+    </p>;
 
   return (
     <div className="max-w-xl mx-auto mt-10 p-4">
