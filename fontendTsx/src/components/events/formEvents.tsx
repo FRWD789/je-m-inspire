@@ -184,7 +184,7 @@ export default function FormEvents({ type, eventId, defaultValues, onSuccess }: 
         </FormFiled>
       </div>
       <div className="grid grid-cols-3 gap-4 mt-4">
-        <FormFiled label="Prix (€) *">
+        <FormFiled label="Prix ($) *">
           <Input type="number" name="base_price" step="0.01" min="0" />
         </FormFiled>
         {type === "create" && (
