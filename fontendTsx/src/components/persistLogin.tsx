@@ -11,23 +11,27 @@ export default function PersistLogin() {
               const verifyAuth = async () => {
                     try {
                     if (!accessToken) {
+                        console.log('🔄 No access token, attempting refresh...');
                         const { access_token, user } = await authService.refresh();
                         if (access_token && user) {
                         setAccessToken(access_token);
                         setUser(user);
+                        console.log("✅ Session restored successfully");
                         } else {
-                        // Refresh failed → redirect to login or just continue
                         console.log("❌ Refresh failed, user needs to login");
                         }
                     } else {
                         console.log("✅ User session is valid");
                     }
-                    } catch (error) {
-                    console.error("❌ Error verifying auth:", error);
-                    // Optionally, redirect to login
-                    // navigate("/login");
+                    } catch (error: any) {
+                    // Only log if it's not a simple 401 (no refresh token)
+                    if (error?.response?.status !== 401) {
+                        console.error("❌ Error verifying auth:", error);
+                    } else {
+                        console.log("ℹ️ No refresh token available");
+                    }
                     } finally {
-                    setIsLoading(false); // ✅ ensure loading stops
+                    setIsLoading(false);
                     }
                 };
             verifyAuth();

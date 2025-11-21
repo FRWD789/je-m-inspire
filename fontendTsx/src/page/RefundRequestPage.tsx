@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import usePrivateApi from "@/hooks/usePrivateApi";
 import { useLocation } from "react-router-dom";
-import { ReservationService } from "@/service/ReservationService";
+import { ReservationService } from "@/service/reservationService";
 import { RefundService } from "@/service/refundService";
 import Button from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,7 @@ export default function RefundRequestPage() {
   const { t } = useTranslation();
 
   const location = useLocation();
-  const eventIdFromState = location.state?.eventId || null;
+  const reservationIdFromState = location.state?.reservationId || null;
 
   const [reservations, setReservations] = useState<any[]>([]);
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
@@ -23,6 +23,10 @@ export default function RefundRequestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  
+  // Check if reCAPTCHA is configured
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const isRecaptchaEnabled = Boolean(recaptchaSiteKey);
 
   // Fetch eligible reservations
   useEffect(() => {
@@ -34,8 +38,8 @@ export default function RefundRequestPage() {
         );
         setReservations(eligible);
 
-        if (eventIdFromState) {
-          const found = eligible.find((r) => r.event.id === eventIdFromState);
+        if (reservationIdFromState) {
+          const found = eligible.find((r) => r.id === reservationIdFromState);
           if (found) setSelectedReservationId(found.id);
         }
       } catch (err) {
@@ -51,7 +55,7 @@ export default function RefundRequestPage() {
   const handleSubmit = async () => {
     if (!selectedReservationId) return alert(t("refunds.selectReservation"));
     if (!motif.trim()) return alert(t("refunds.reason"));
-    if (!captchaToken) return alert(t("common.confirm"));
+    if (isRecaptchaEnabled && !captchaToken) return alert(t("common.pleaseCompleteRecaptcha"));
 
     setSubmitting(true);
     try {
@@ -125,17 +129,19 @@ export default function RefundRequestPage() {
       </div>
 
       {/* reCAPTCHA */}
-      <div className="mb-6 flex justify-center">
-        <ReCAPTCHA
-          sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-          onChange={(token) => setCaptchaToken(token)}
-        />
-      </div>
+      {isRecaptchaEnabled && (
+        <div className="mb-6 flex justify-center">
+          <ReCAPTCHA
+            sitekey={recaptchaSiteKey}
+            onChange={(token) => setCaptchaToken(token)}
+          />
+        </div>
+      )}
 
       <Button
         onClick={handleSubmit}
         className="bg-indigo-600 text-white w-full hover:bg-indigo-700"
-        disabled={!selectedReservationId || !motif.trim() || submitting || !captchaToken}
+        disabled={!selectedReservationId || !motif.trim() || submitting || (isRecaptchaEnabled && !captchaToken)}
       >
         {submitting ? t("refunds.submitting") : t("refunds.submit")}
       </Button>

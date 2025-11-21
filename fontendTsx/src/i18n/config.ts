@@ -537,6 +537,7 @@ const resources = {
         details: 'Détails',
         required: 'Requis',
         optional: 'Optionnel',
+        chooseOption: 'Choisir une option',
         
         // Confirmations
         confirmAction: 'Êtes-vous sûr ?',
@@ -548,6 +549,7 @@ const resources = {
         somethingWentWrong: "Une erreur s'est produite",
         tryAgain: 'Réessayer',
         contactSupport: 'Contactez le support',
+        captchaRequired: 'La vérification Captcha est requise',
         
         // Succès
         operationSuccess: 'Opération réussie',
@@ -1153,6 +1155,7 @@ const resources = {
         details: 'Details',
         required: 'Required',
         optional: 'Optional',
+        chooseOption: 'Choose an option',
         
         // Confirmations
         confirmAction: 'Are you sure?',
@@ -1164,6 +1167,7 @@ const resources = {
         somethingWentWrong: 'Something went wrong',
         tryAgain: 'Try Again',
         contactSupport: 'Contact Support',
+        captchaRequired: 'Captcha verification is required',
         
         // Success
         operationSuccess: 'Operation successful',
@@ -1204,7 +1208,7 @@ const resources = {
         fileTooBig: 'File too large',
         invalidFileType: 'Invalid file type'
       },
-// ==========================================
+      // ==========================================
       // FOLLOWING (SUBSCRIPTIONS)
       // ==========================================
       following: {

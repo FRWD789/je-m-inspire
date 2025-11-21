@@ -56,4 +56,12 @@ class Operation extends Model
     {
         return $this->belongsTo(Abonnement::class, 'abonnement_id', 'abonnement_id');
     }
+
+    /**
+     * Relation avec le remboursement (nullable)
+     */
+    public function remboursement()
+    {
+        return $this->hasOne(Remboursement::class, 'operation_id');
+    }
 }

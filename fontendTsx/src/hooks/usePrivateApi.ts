@@ -89,7 +89,7 @@ export default function usePrivateApi() {
             privateApi.interceptors.request.eject(requestInterceptor);
             privateApi.interceptors.response.eject(responseInterceptor);
         };
-    }, [accessToken, refresh, setAccessToken]) // Keep dependencies to re-setup when token changes
+    }, []) // ✅ Ne réinstaller qu'au montage initial, pas à chaque changement de token
 
     return privateApi;
 }

@@ -33,15 +33,21 @@ class OperationController extends Controller
             $reservations = Operation::with([
                     'event.localisation',
                     'event.categorie',
-                    'paiement'
+                    'paiement',
+                    'remboursement'
                 ])
                 ->where('user_id', $user->id)
                 ->where('type_operation_id', 2)
                 ->orderBy('created_at', 'desc')
                 ->get()
+                ->filter(function ($operation) {
+                    // Filtrer les opérations dont l'événement n'existe plus
+                    return $operation->event !== null;
+                })
                 ->map(function ($operation) {
                     $event = $operation->event;
                     $paiement = $operation->paiement;
+                    $remboursement = $operation->remboursement;
 
                     $now = now();
                     $statut = 'À venir';
@@ -50,6 +56,10 @@ class OperationController extends Controller
                     } elseif ($event->end_date < $now) {
                         $statut = 'Terminé';
                     }
+
+                    // Vérifier si une demande de remboursement existe et est approuvée
+                    $hasApprovedRefund = $remboursement && $remboursement->statut === 'approuve';
+                    $hasPendingRefund = $remboursement && $remboursement->statut === 'en_attente';
 
                     return [
                         'id' => $operation->id,
@@ -63,7 +73,9 @@ class OperationController extends Controller
                         'statut_paiement' => $paiement ? $paiement->status : 'pending',
                         'statut' => $statut,
                         'date_reservation' => $operation->created_at->toIso8601String(),
-                        'peut_annuler' => ($paiement && $paiement->status !== 'paid') || $event->start_date > now()->addHours(24),
+                        'peut_annuler' => !$hasApprovedRefund && (($paiement && $paiement->status !== 'paid') || $event->start_date > now()->addHours(24)),
+                        'has_refund_request' => $remboursement !== null,
+                        'refund_status' => $remboursement ? $remboursement->statut : null,
                         'event' => $event,
                     ];
                 });

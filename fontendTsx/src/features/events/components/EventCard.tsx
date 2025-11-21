@@ -152,11 +152,11 @@ export default function EventCard({
         {/* Reservation Controls */}
         {isReservation && event.can_cancel && (
           <button
-            onClick={() => onCancelReservation && onCancelReservation(event.id)}
-            className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-red-500 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-red-600 transition-colors active:scale-95"
+            onClick={() => navigate('/dashboard/refunds-request', { state: { eventId: event.id, reservationId: event.reservation_id } })}
+            className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-orange-500 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-orange-600 transition-colors active:scale-95"
           >
             <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-            <span>Annuler</span>
+            <span>Demander un remboursement</span>
           </button>
         )}
 

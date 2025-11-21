@@ -1,7 +1,6 @@
-
 import React,{ useEffect, useMemo, useState } from 'react'
 import { Loader2, Plus, Search } from 'lucide-react'
-import { ReservationService } from '@/service/ReservationService'
+import { ReservationService } from '@/service/reservationService'
 import EventCard from '../../components/EventCard'
 import { useNavigate } from 'react-router-dom'
 import { usePagination } from '@/hooks/usePagination'
@@ -30,6 +29,8 @@ export default function MyReservationPage() {
                 total_price: r.total_price,
                 can_cancel: r.peut_annuler,
                 reservation_date: r.date_reservation,
+                has_refund_request: r.has_refund_request,
+                refund_status: r.refund_status,
             },
             ])
         ).values()
@@ -48,20 +49,6 @@ export default function MyReservationPage() {
     fetchMyReservations()
     
   }, [])
-
-  const hadnelCancel = async (id)=>{
-    setLoading(true)
-    try {
-      await service.cancelReservation(id)
-      setReservations(prev => prev.filter(r => r.id !== id))
-    } catch (error) {
-      console.log(error)
-      
-    }finally{
-      setLoading(false)
-    }
-
-  }
 
   // Categories for filter
    const categories = useMemo(
@@ -167,7 +154,7 @@ export default function MyReservationPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedEvents.map(e => (
-              <EventCard key={e.reservation_id} event={e} isReservation={true} onCancelReservation={hadnelCancel}  />
+              <EventCard key={e.reservation_id} event={e} isReservation={true} />
             ))}
           </div>
         )}
