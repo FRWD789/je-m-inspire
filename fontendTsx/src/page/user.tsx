@@ -13,11 +13,7 @@ import { useSearchParams } from "react-router-dom"
 export default function User() {
   const { t } = useTranslation(); 
   const [searchParams] = useSearchParams();
-
-  const tabFromUrl = searchParams.get('tab') as "profile" | "security" | "plan" | null;
-  const [currentTab, setCurrentTab] = useState<"profile" | "security" | "plan">(
-    tabFromUrl && ["profile", "security", "plan"].includes(tabFromUrl) ? tabFromUrl : "profile"
-  );
+  const [currentTab, setCurrentTab] = useState<"profile" | "security" | "plan">("profile");
 
   const {updateProfile,updateProfileImg,updatePassword,user} = useAuth()
   const [defaultValues,setDefaultValues] = useState(null)
@@ -34,6 +30,15 @@ export default function User() {
       : "",
   });
   
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') as "profile" | "security" | "plan" | null;
+    
+    if (tabFromUrl && ["profile", "security", "plan"].includes(tabFromUrl)) {
+      console.log('🔄 Changement de tab détecté:', tabFromUrl);
+      setCurrentTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if(user) {
       setDefaultValues(normalizeUserDate(user.profile));
