@@ -54,16 +54,7 @@ export default function App() {
             <Route path="user/:id" element={<ProfessionalPublicProfile />} />
           </Route>
 
-          {/* PROTECTED ROUTES */}
-          <Route
-            element={
-              <PrivateRoute
-                allowedRoles={["utilisateur", "professionnel", "admin"]}
-              />
-            }
-          >
-
-            <Route
+           <Route
               path="/profile/stripe/success"
               element={<LinkedAccountSuccess provider="stripe" />}
             />
@@ -72,7 +63,14 @@ export default function App() {
               path="/profile/paypal/success"
               element={<LinkedAccountSuccess provider="paypal" />}
             />
-
+          {/* PROTECTED ROUTES */}
+          <Route
+            element={
+              <PrivateRoute
+                allowedRoles={["utilisateur", "professionnel", "admin"]}
+              />
+            }
+          >
             <Route
               path="/dashboard"
               element={
