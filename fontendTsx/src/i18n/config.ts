@@ -512,7 +512,8 @@ const resources = {
         following: 'Abonné',
         share: 'Partager',
         contact: 'Contacter',
-        followers: 'Abonnés',
+        followers: 'abonnés',
+        follower: 'abonné',
         
         // Labels
         name: 'Nom',
@@ -1114,7 +1115,8 @@ const resources = {
         following: 'Following',
         share: 'Share',
         contact: 'Contact',
-        followers: 'Followers',
+        followers: 'followers',
+        follower: 'follower',
 
         // Labels
         name: 'Name',
