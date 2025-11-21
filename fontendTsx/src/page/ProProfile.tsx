@@ -273,14 +273,6 @@ export default function ProfessionalPublicProfile() {
                   <div className="text-2xl font-bold">{stats.total_events}</div>
                   <div className="text-sm text-white/80">Événements</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{stats.avg_rating}/5</div>
-                  <div className="text-sm text-white/80">Note</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{stats.completion_rate}%</div>
-                  <div className="text-sm text-white/80">Réussite</div>
-                </div>
               </div>
             </div>
           </div>
@@ -419,32 +411,7 @@ export default function ProfessionalPublicProfile() {
               )}
             </div>
 
-            {/* Stats Section */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{stats.total_events}</div>
-                <div className="text-sm text-gray-600">Événements créés</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">
-                  {stats.avg_rating}
-                  <Star size={16} className="text-yellow-400 fill-current" />
-                </div>
-                <div className="text-sm text-gray-600">Note moyenne</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{stats.reviews_count}</div>
-                <div className="text-sm text-gray-600">Avis</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{stats.completion_rate}%</div>
-                <div className="text-sm text-gray-600">Taux de réussite</div>
-              </div>
-            </div>
-          </div>
+        
 
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
@@ -490,14 +457,14 @@ export default function ProfessionalPublicProfile() {
             {/* Followers Count - Ne pas afficher si c'est son propre profil */}
             {currentUser?.id !== user?.id && followersCount > 0 && (
               <div className="text-center py-2 text-gray-600">
-                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('profile.followers') : t('profile.follower')}
+                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('common.followers') : t('common.follower')}
               </div>
             )}
 
             {/* Afficher le compte de followers pour son propre profil */}
             {currentUser?.id === user?.id && followersCount > 0 && (
               <div className="text-center py-2 text-gray-600">
-                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('profile.followers') : t('profile.follower')} vous suivent
+                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('common.followers') : t('common.follower')} vous suivent
               </div>
             )}
 
@@ -550,31 +517,6 @@ export default function ProfessionalPublicProfile() {
                     <BookOpen size={18} />
                     <span>Rapports personnalisés</span>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Professional Info */}
-            {isProfessional && user.professional && (
-              <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <h3 className="text-xl font-semibold mb-3">Professionnel vérifié</h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  {user.professional.commission_rate && (
-                    <div className="flex justify-between">
-                      <span>Commission:</span>
-                      <span className="font-semibold">
-                        {user.professional.commission_rate}%
-                      </span>
-                    </div>
-                  )}
-                  {user.professional.professional_since && (
-                    <div className="flex justify-between">
-                      <span>Professionnel depuis:</span>
-                      <span className="font-semibold">
-                        {new Date(user.professional.professional_since).getFullYear()}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
