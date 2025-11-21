@@ -114,18 +114,18 @@ function LinkedAccountsSection() {
   // 🔒 User does NOT have Pro Plus
   if (!subscription.has_pro_plus) {
     return (
-      <div className="p-6 border rounded-lg bg-gray-50 text-center shadow-sm">
+      <div className="p-4 sm:p-6 border rounded-lg bg-gray-50 text-center shadow-sm">
         <Lock size={32} className="mx-auto mb-3 text-gray-500" />
-        <h3 className="text-lg font-semibold mb-2">Fonctionnalité réservée</h3>
-        <p className="text-gray-600 mb-4">
+        <h3 className="text-base sm:text-lg font-semibold mb-2">Fonctionnalité réservée</h3>
+        <p className="text-sm sm:text-base text-gray-600 mb-4">
           Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l'abonnement <strong>Pro Plus</strong>.
         </p>
-        <a
+        <button
           onClick={() => setOpenSubSection(true)}
-          className="inline-block bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary/90 transition cursor-pointer"
+          className="inline-block bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary/90 transition cursor-pointer text-sm sm:text-base"
         >
           Passer à Pro Plus
-        </a>
+        </button>
         {openSubSection && (
           <div className="fixed z-999 w-full inset-0 min-h-screen bg-black/5 backdrop-blur-3xl overflow-y-auto">
             <Abonnement handelClose={() => setOpenSubSection(false)} />
@@ -146,119 +146,125 @@ function LinkedAccountsSection() {
   }
 
   return (
-    <div className="space-y-6">
-     
-
-      {/* Stripe */}
-      <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
-        <div className="flex items-center gap-3">
-          <CreditCard size={22} className="text-purple-600" />
-          <div>
-            <h3 className="font-semibold">Stripe</h3>
-            {accounts.stripe.linked ? (
-              <p className="text-sm text-gray-500">
-                Connecté (ID : {accounts.stripe.account_id})
-              </p>
-            ) : (
-              <p className="text-sm text-gray-500">Aucun compte lié</p>
-            )}
-          </div>
-        </div>
-        {accounts.stripe.linked ? (
-          <button
-            onClick={() => handleUnlink("stripe")}
-            disabled={loading}
-            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
-          >
-            <Unlink size={18} />
-            Délier
-          </button>
-        ) : (
-          <button
-            onClick={() => handleLink("stripe")}
-            disabled={loading}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition"
-          >
-            <LinkIcon size={18} />
-            Lier Stripe
-          </button>
-        )}
-      </div>
-
-      {/* PayPal */}
-      <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
-        <div className="flex items-center gap-3">
-          <CreditCard size={22} className="text-blue-500" />
-          <div>
-            <h3 className="font-semibold">PayPal</h3>
-            {accounts.paypal.linked ? (
-              <p className="text-sm text-gray-500">
-                {accounts.paypal.email || "Compte lié"}
-              </p>
-            ) : (
-              <p className="text-sm text-gray-500">Aucun compte lié</p>
-            )}
-          </div>
-        </div>
-        {accounts.paypal.linked ? (
-          <button
-            onClick={() => handleUnlink("paypal")}
-            disabled={loading}
-            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
-          >
-            <Unlink size={18} />
-            Délier
-          </button>
-        ) : (
-          <button
-            onClick={() => handleLink("paypal")}
-            disabled={loading}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition"
-          >
-            <LinkIcon size={18} />
-            Lier PayPal
-          </button>
-        )}
-      </div>
-
-       {/* Cancel Subscription Button */}
-      <div className="p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Cancel Subscription Button - Responsive */}
+      <div className="p-3 sm:p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="flex-1">
-            <h3 className="font-semibold text-red-900 mb-1">Abonnement Pro Plus actif</h3>
-            <p className="text-sm text-red-700">
+            <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">
+              Abonnement Pro Plus actif
+            </h3>
+            <p className="text-xs sm:text-sm text-red-700">
               Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
             </p>
           </div>
           <button
             onClick={handleCancelSubscription}
             disabled={cancelLoading}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
+            className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition w-full sm:w-auto whitespace-nowrap text-sm sm:text-base"
           >
             {cancelLoading ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
-                Annulation...
+                <span className="hidden xs:inline">Annulation...</span>
+                <span className="xs:hidden">...</span>
               </>
             ) : (
               <>
                 <XCircle size={18} />
-                Annuler l'abonnement
+                <span className="hidden xs:inline">Annuler l'abonnement</span>
+                <span className="xs:hidden">Annuler</span>
               </>
             )}
           </button>
         </div>
       </div>
 
+      {/* Stripe - Responsive */}
+      <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <CreditCard size={22} className="text-purple-600 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base">Stripe</h3>
+              {accounts.stripe.linked ? (
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  Connecté (ID : {accounts.stripe.account_id})
+                </p>
+              ) : (
+                <p className="text-xs sm:text-sm text-gray-500">Aucun compte lié</p>
+              )}
+            </div>
+          </div>
+          {accounts.stripe.linked ? (
+            <button
+              onClick={() => handleUnlink("stripe")}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
+            >
+              <Unlink size={18} />
+              Délier
+            </button>
+          ) : (
+            <button
+              onClick={() => handleLink("stripe")}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
+            >
+              <LinkIcon size={18} />
+              Lier Stripe
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* PayPal - Responsive */}
+      <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <CreditCard size={22} className="text-blue-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base">PayPal</h3>
+              {accounts.paypal.linked ? (
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  {accounts.paypal.email || "Compte lié"}
+                </p>
+              ) : (
+                <p className="text-xs sm:text-sm text-gray-500">Aucun compte lié</p>
+              )}
+            </div>
+          </div>
+          {accounts.paypal.linked ? (
+            <button
+              onClick={() => handleUnlink("paypal")}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
+            >
+              <Unlink size={18} />
+              Délier
+            </button>
+          ) : (
+            <button
+              onClick={() => handleLink("paypal")}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
+            >
+              <LinkIcon size={18} />
+              Lier PayPal
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Status messages */}
       {loading && (
-        <div className="flex items-center text-sm text-gray-600">
+        <div className="flex items-center text-xs sm:text-sm text-gray-600">
           <Loader2 className="animate-spin mr-2" size={16} />
           Traitement en cours...
         </div>
       )}
       {message && (
-        <p className={`text-sm ${message.includes('Erreur') ? 'text-red-600' : 'text-green-600'}`}>
+        <p className={`text-xs sm:text-sm ${message.includes('Erreur') ? 'text-red-600' : 'text-green-600'}`}>
           {message}
         </p>
       )}
