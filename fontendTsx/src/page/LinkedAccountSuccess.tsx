@@ -1,172 +1,158 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "@/service/authService";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 interface LinkedAccountSuccessProps {
-    provider: "stripe" | "paypal";
+  provider: "stripe" | "paypal";
 }
 
+type LinkingState = "loading" | "success" | "error";
+
 export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessProps) {
-    const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-    const [loading, setLoading] = useState(true);
-    const [success, setSuccess] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<LinkingState>("loading");
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const finalize = async () => {
-            try {
-                const code = searchParams.get("code");
-                if (!code) {
-                    throw new Error(`Code ${provider} manquant`);
-                }
+  const providerName = provider === "stripe" ? "Stripe" : "PayPal";
 
-                let response;
+  useEffect(() => {
+    const finalizeLinking = async () => {
+      try {
+        const code = searchParams.get("code");
+        
+        if (!code) {
+          throw new Error(`Code d'autorisation ${providerName} manquant`);
+        }
 
-                if (provider === "stripe") {
-                    response = await authService.linkStripe(code);
-                } else {
-                    response = await authService.linkPaypal(code);
-                }
+        const response = provider === "stripe"
+          ? await authService.linkStripe(code)
+          : await authService.linkPaypal(code);
 
-                if (!response.success) {
-                    throw new Error(response.message || "Erreur lors de la liaison");
-                }
+        if (!response.success) {
+          throw new Error(response.message || "Erreur lors de la liaison du compte");
+        }
 
-                setSuccess(true);
+        setState("success");
 
-                // 🔥 Redirection auto après 2 secondes
-                setTimeout(() => {
-                    navigate("/dashboard/profile-settings");
-                }, 2000);
+        // Redirection automatique après 2 secondes
+        setTimeout(() => {
+          navigate("/dashboard/profile-settings");
+        }, 2000);
 
-            } catch (err: any) {
-                console.error("Erreur :", err);
-                setError(
-                    err?.response?.data?.message ||
-                    err?.message ||
-                    "Une erreur est survenue"
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        finalize();
-    }, [provider, searchParams, navigate]);
-
-    // ------------------------------
-    //         LOADING
-    // ------------------------------
-    if (loading) {
-        return (
-            <div style={{ maxWidth: "600px", margin: "50px auto", textAlign: "center" }}>
-                <div
-                    style={{
-                        width: "50px",
-                        height: "50px",
-                        border: "4px solid #eee",
-                        borderTop: "4px solid #007bff",
-                        borderRadius: "50%",
-                        margin: "0 auto 20px",
-                        animation: "spin 1s linear infinite",
-                    }}
-                />
-                <h2>Finalisation en cours...</h2>
-
-                <style>{`
-                    @keyframes spin {
-                      0% { transform: rotate(0deg); }
-                      100% { transform: rotate(360deg); }
-                    }
-                `}</style>
-            </div>
+      } catch (err: any) {
+        console.error(`[${providerName}] Erreur liaison:`, err);
+        setError(
+          err?.response?.data?.message ||
+          err?.message ||
+          `Une erreur est survenue lors de la liaison avec ${providerName}`
         );
-    }
+        setState("error");
+      }
+    };
 
-    // ------------------------------
-    //         ERROR
-    // ------------------------------
-    if (error) {
-        return (
-            <div style={{
-                maxWidth: "600px",
-                margin: "50px auto",
-                padding: "40px",
-                textAlign: "center",
-                backgroundColor: "#fff3cd",
-                borderRadius: "10px",
-                border: "1px solid #ffc107"
-            }}>
-                <h1 style={{ color: "#856404" }}>Erreur</h1>
-                <p>{error}</p>
+    finalizeLinking();
+  }, [provider, providerName, searchParams, navigate]);
 
-                <button
-                    onClick={() => navigate("/dashboard/profile-settings")}
-                    style={{
-                        padding: "12px 30px",
-                        backgroundColor: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        marginRight: "10px"
-                    }}
-                >
-                    Retour au profil
-                </button>
-
-                <button
-                    onClick={() => window.location.reload()}
-                    style={{
-                        padding: "12px 30px",
-                        backgroundColor: "#6c757d",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "5px",
-                        cursor: "pointer"
-                    }}
-                >
-                    Réessayer
-                </button>
-            </div>
-        );
-    }
-
-    // ------------------------------
-    //         SUCCESS
-    // ------------------------------
+  // ==============================
+  //       LOADING STATE
+  // ==============================
+  if (state === "loading") {
     return (
-        <div style={{
-            maxWidth: "600px",
-            margin: "50px auto",
-            padding: "40px",
-            textAlign: "center",
-            backgroundColor: "#d4edda",
-            borderRadius: "10px",
-            border: "1px solid #c3e6cb"
-        }}>
-            <h1 style={{ color: "#155724" }}>
-                Compte {provider === "stripe" ? "Stripe" : "PayPal"} lié avec succès !
-            </h1>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full text-center">
+          <div className="flex justify-center mb-6">
+            <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            Finalisation en cours...
+          </h2>
+          
+          <p className="text-gray-600">
+            Liaison de votre compte {providerName} en cours
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-            <p>Redirection...</p>
+  // ==============================
+  //       ERROR STATE
+  // ==============================
+  if (state === "error") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-100 px-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full">
+          <div className="flex justify-center mb-6">
+            <div className="bg-red-100 rounded-full p-4">
+              <XCircle className="w-12 h-12 text-red-600" />
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-bold text-gray-800 text-center mb-3">
+            Erreur de liaison
+          </h1>
+          
+          <p className="text-gray-600 text-center mb-6">
+            {error}
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => navigate("/dashboard/profile-settings")}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour au profil
+            </button>
 
             <button
-                onClick={() => navigate("/dashboard/profile-settings")}
-                style={{
-                    padding: "15px 40px",
-                    backgroundColor: "#28a745",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                }}
+              onClick={() => window.location.reload()}
+              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
             >
-                Aller au profil
+              Réessayer
             </button>
+          </div>
         </div>
+      </div>
     );
+  }
+
+  // ==============================
+  //       SUCCESS STATE
+  // ==============================
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full">
+        <div className="flex justify-center mb-6">
+          <div className="bg-green-100 rounded-full p-4 animate-bounce">
+            <CheckCircle2 className="w-12 h-12 text-green-600" />
+          </div>
+        </div>
+        
+        <h1 className="text-2xl font-bold text-gray-800 text-center mb-3">
+          Compte {providerName} lié avec succès !
+        </h1>
+        
+        <p className="text-gray-600 text-center mb-6">
+          Vous pouvez maintenant recevoir des paiements via {providerName}
+        </p>
+
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-6">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Redirection automatique...</span>
+        </div>
+
+        <button
+          onClick={() => navigate("/dashboard/profile-settings")}
+          className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+        >
+          Aller au profil maintenant
+        </button>
+      </div>
+    </div>
+  );
 }
