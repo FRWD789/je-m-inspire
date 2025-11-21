@@ -33,6 +33,7 @@ import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
 import MyFollowingPage from './features/follow/page/MyFollowingPage';
 import DisableNotificationsPage from "./features/follow/page/DisableNotificationsPage";
 import LinkedAccountSuccess from "./page/LinkedAccountSuccess";
+import About from "./components/About";
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="payment/success" element={<PaymentSuccess />} />
             <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
             <Route path="notifications/disable" element={<DisableNotificationsPage />} />
+            <Route path="about" element={<About />} />
           </Route>
 
            <Route
