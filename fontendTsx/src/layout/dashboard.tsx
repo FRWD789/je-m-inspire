@@ -58,7 +58,7 @@ export default function Dashboard() {
         ...(user?.roles[0]?.role === 'professionnel'
       ? [{ label: t('dashboard.myEvents'), path: '/dashboard/my-events', icon: <TicketPlus className="w-4 h-4" /> }]
       : []),
-        ,
+        
         { label: t('dashboard.myReservations'), path: '/dashboard/my-reservations', icon: <TicketCheck className="w-4 h-4" /> },
       ],
     },
