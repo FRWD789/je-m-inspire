@@ -148,7 +148,16 @@ const resources = {
         myEvents: 'Mes événements',
         myReservations: 'Mes réservations',
         settings: 'Paramètres',
-        profileSettings: 'Paramètres du profil'
+        profileSettings: 'Paramètres du profil',
+        goodMorning: "Bon matin",
+        goodAfternoon: "Bon après-midi",
+        goodEvening: "Bonsoir",
+        welcomeBack: "Bienvenue sur votre tableau de bord",
+        quickAccess: "Accès rapide",
+        manageYourEvents: "Gérer vos événements",
+        viewReservations: "Voir vos réservations",
+        trackEarnings: "Suivre vos revenus",
+        manageUsers: "Gérer les utilisateurs"
       },
 
       // ==========================================
@@ -555,7 +564,11 @@ const resources = {
         itemsPerPage: 'Éléments par page',
         showing: 'Affichage',
         to: 'à',
-        results: 'résultats'
+        results: 'résultats',
+
+        upgradeToPro: "Passer à Pro Plus",
+        unlockFeatures: "Débloquez toutes les fonctionnalités premium",
+        upgradeNow: "Mettre à niveau maintenant"
       },
 
       // ==========================================
@@ -751,7 +764,16 @@ const resources = {
         myEvents: 'My Events',
         myReservations: 'My Reservations',
         settings: 'Settings',
-        profileSettings: 'Profile Settings'
+        profileSettings: 'Profile Settings',
+        goodMorning: "Good morning",
+        goodAfternoon: "Good afternoon",
+        goodEvening: "Good evening",
+        welcomeBack: "Welcome to your dashboard",
+        quickAccess: "Quick access",
+        manageYourEvents: "Manage your events",
+        viewReservations: "View your reservations",
+        trackEarnings: "Track your earnings",
+        manageUsers: "Manage users"
       },
 
       // ==========================================
@@ -1158,7 +1180,11 @@ const resources = {
         itemsPerPage: 'Items per page',
         showing: 'Showing',
         to: 'to',
-        results: 'results'
+        results: 'results',
+
+        upgradeToPro: "Upgrade to Pro Plus",
+        unlockFeatures: "Unlock all premium features",
+        upgradeNow: "Upgrade now"
       },
 
       // ==========================================

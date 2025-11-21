@@ -18,7 +18,7 @@ import RefundRequestPage from "./page/RefundRequestPage";
 import RefundRequestsAdmin from "./page/RefundRequestAdmin";
 import PrivateRoute from "./components/privateRoute";
 import PersistLogin from "./components/persistLogin";
-
+import DashboardHome from "./page/DashboardHome";
 import OnboardingGuard from "./components/OnboardingGuard";
 import EventProvider from "./context/EventContext";
 import MyEventPage from "./features/events/page/MyEventPage";
@@ -81,6 +81,7 @@ export default function App() {
                 </OnboardingGuard>
               }
             >
+              <Route index element={<DashboardHome />} />
               {/* CHILD ROUTES (RELATIVES) */}
               <Route path="profile-settings" element={<User />} />
               <Route path="my-events" element={<MyEventPage />} />
