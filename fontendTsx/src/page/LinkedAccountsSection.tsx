@@ -54,7 +54,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
     setLoading(true);
     setMessage(null);
     try {
-      await privateApi.post(`/profile/${provider}/unlink`);
+      await privateApi.delete(`/profile/${provider}/unlink`);
       setMessage(`Compte ${provider} délié avec succès.`);
       fetchLinkedAccounts();
     } catch (err) {
