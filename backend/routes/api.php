@@ -771,3 +771,34 @@ Route::get('/test-professional-rejected-email', function () {
 Route::get('/abonnement/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success'));
 Route::get('/abonnement/cancel', fn() => redirect(config('app.frontend_url') . '/abonnement/cancel'));
 Route::get('/abonnement/paypal/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success?provider=paypal'));
+
+Route::get('/health', function () {
+    try {
+        // Test connexion DB
+        DB::connection()->getPdo();
+        $dbStatus = 'ok';
+    } catch (\Exception $e) {
+        $dbStatus = 'error';
+    }
+
+    try {
+        // Test Redis
+        Redis::ping();
+        $redisStatus = 'ok';
+    } catch (\Exception $e) {
+        $redisStatus = 'error';
+    }
+
+    $status = ($dbStatus === 'ok' && $redisStatus === 'ok') ? 'ok' : 'degraded';
+
+    return response()->json([
+        'status' => $status,
+        'timestamp' => now()->toIso8601String(),
+        'services' => [
+            'database' => $dbStatus,
+            'redis' => $redisStatus,
+            'storage' => Storage::exists('.gitignore') ? 'ok' : 'error',
+        ],
+        'version' => config('app.version', '1.0.0'),
+    ]);
+});
