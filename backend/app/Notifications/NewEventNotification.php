@@ -30,6 +30,17 @@ class NewEventNotification extends Notification implements ShouldQueue
         $proProfileUrl = env("FRONTEND_URL") . '/user/' . $this->event->creator->id;
         $myFollowingUrl = env("FRONTEND_URL") . '/dashboard/my-following';
 
+        // Token sécurisé pour désactiver les notifications
+        $token = hash_hmac('sha256',
+            $notifiable->id . '-' . $this->event->creator->id,
+            config('app.key')
+        );
+        $disableNotificationsUrl = env("FRONTEND_URL") . '/notifications/disable?' . http_build_query([
+            'follower_id' => $notifiable->id,
+            'pro_id' => $this->event->creator->id,
+            'token' => $token
+        ]);
+
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 
         return (new MailMessage)
@@ -41,6 +52,7 @@ class NewEventNotification extends Notification implements ShouldQueue
                 'eventUrl' => $eventUrl,
                 'proProfileUrl' => $proProfileUrl,
                 'myFollowingUrl' => $myFollowingUrl,
+                'disableNotificationsUrl' => $disableNotificationsUrl,
                 'greeting' => $greeting,
             ]);
     }

@@ -1,4 +1,4 @@
-import { publicApi } from '@/api/api';
+import { publicApi, privateApi } from '@/api/api';
 import { useEvent } from '@/context/EventContext'
 import type { User } from '@/types/user'
 import React, { useEffect, useState, useMemo } from 'react'
@@ -26,6 +26,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import EventCard from '@/features/events/components/EventCard';
 import { UserPlus, UserMinus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
+
 
 export default function ProfessionalPublicProfile() {
   const { id } = useParams();
@@ -38,13 +40,14 @@ export default function ProfessionalPublicProfile() {
   const { events } = useEvent();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     const fetchUserById = async () => {
       try {
         const res = await publicApi.get(`/user/${id}/public-profile`);
         setUser(res.data.data);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching user:', err);
         setError('Impossible de charger le profil');
       } finally {
@@ -56,23 +59,30 @@ export default function ProfessionalPublicProfile() {
 
     // Vérifier le statut de follow si l'utilisateur est connecté
     const checkFollowStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
+      if (currentUser) {
         try {
-          const res = await publicApi.get(`/follow/check/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await privateApi.get(`/follow/check/${id}`);
           setIsFollowing(res.data.is_following);
           setFollowersCount(res.data.followers_count);
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error checking follow status:', err);
+          // Ignorer les erreurs 401 silencieusement (utilisateur non connecté)
+        }
+      } else {
+        // Si pas connecté, récupérer juste le nombre de followers
+        try {
+          const res = await publicApi.get(`/user/${id}/public-profile`);
+          setFollowersCount(res.data.data.followers_count || 0);
+        } catch (err) {
+          console.error('Error fetching followers count:', err);
         }
       }
     };
     
     fetchUserById();
     checkFollowStatus();
-  }, [id]);
+
+  }, [id, currentUser]);
 
   const userEvents = useMemo(() => 
     events.filter((event) => event.creator?.id === user?.id),
@@ -108,34 +118,38 @@ export default function ProfessionalPublicProfile() {
   };
 
   const handleFollow = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert(t('following.mustBeLoggedIn'));
-      navigate('/login');
-      return;
-    }
-
-    // Confirmation pour unfollow
-    if (isFollowing) {
-      if (!confirm(t('following.unfollowConfirm', { name: fullName }))) {
+      // Vérifier si l'utilisateur est connecté
+      if (!currentUser) {
+        alert(t('following.mustBeLoggedIn'));
+        navigate('/login');
         return;
       }
-    }
 
-    setIsFollowLoading(true);
-    try {
-      const res = await publicApi.post(`/follow/${id}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setIsFollowing(res.data.is_following);
-      setFollowersCount(res.data.followers_count);
-    } catch (err) {
-      console.error('Error toggling follow:', err);
-      alert(t('following.followError'));
-    } finally {
-      setIsFollowLoading(false);
-    }
-  };
+      // Confirmation pour unfollow
+      if (isFollowing) {
+        if (!confirm(t('following.unfollowConfirm', { name: fullName }))) {
+          return;
+        }
+      }
+
+      setIsFollowLoading(true);
+      try {
+        const res = await privateApi.post(`/follow/${id}`);
+        setIsFollowing(res.data.is_following);
+        setFollowersCount(res.data.followers_count);
+      } catch (err: any) {
+        console.error('Error toggling follow:', err);
+        // Si erreur 401, rediriger vers login
+        if (err.response?.status === 401) {
+          alert(t('auth.sessionExpired'));
+          navigate('/login');
+        } else {
+          alert(t('following.followError'));
+        }
+      } finally {
+        setIsFollowLoading(false);
+      }
+    };
 
   if (loading) {
     return (
@@ -288,6 +302,52 @@ export default function ProfessionalPublicProfile() {
             )}
 
             {/* Events Section */}
+            {/*
+            <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Calendar size={24} className="text-accent" />
+                Événements organisés ({userEvents.length})
+              </h2>
+              
+              {userEvents.length > 0 ? (
+                <Carousel
+                  opts={{
+                    align: "start",
+                  }}
+                  orientation="horizontal"
+                  className="w-full"
+                >
+                  <div className='flex items-center justify-between mb-4'>
+                    <button
+                      onClick={() => navigate('/events')}
+                      className='text-accent hover:underline cursor-pointer text-sm'
+                    >
+                      Voir tous les événements →
+                    </button>
+                    <div className='flex gap-x-[4px] items-center'>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </div>
+                  </div>
+                  
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {userEvents.map((event) => (
+                      <CarouselItem key={event.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                        <EventCard event={event} />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users size={48} className="mx-auto mb-4 text-gray-300" />
+                  <p>Aucun événement organisé pour le moment</p>
+                </div>
+              )}
+            </div>
+            */}
+
+            {/* Events Section */}
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
               <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                 <Calendar size={24} className="text-accent" />
@@ -295,34 +355,38 @@ export default function ProfessionalPublicProfile() {
               </h2>
               
               {userEvents.length > 0 ? (
-                  <Carousel
-      opts={{
-        align: "start",
-      }}
-      orientation="horizontal"
-      className="w-full  "
-    >
-    <div className='flex items-center justify-between'>
-            <p className='text-accent hover:underline  cursor-pointer' onClick={()=>navigate('/events')}>
-                Voir tous les événements →
-            </p>
-      <div className='flex gap-x-[4px] items-center'>
-              <CarouselPrevious  children/>
-              <CarouselNext children/>
-        
-    </div>
-    </div>
-      <CarouselContent className=" h-full mt-[8px] py-2 px-4">
-                
-              {userEvents.map((event) => (
-                <CarouselItem key={event.id} className="w-full  ">
-                    <EventCard
-                    event={event}/>
-      </CarouselItem>
-              ))}
-            </CarouselContent>
-   
-          </Carousel>
+                <Carousel
+                  opts={{
+                    align: "start",
+                    dragFree: true,
+                    containScroll: "trimSnaps",
+                  }}
+                  className="w-full"
+                >
+                  <div className='flex items-center justify-between mb-4'>
+                    <button
+                      onClick={() => navigate('/events')}
+                      className='text-accent hover:underline cursor-pointer'
+                    >
+                      Voir tous les événements →
+                    </button>
+                    <div className='flex gap-x-[4px] items-center'>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </div>
+                  </div>
+                  
+                  <CarouselContent className="-ml-4">
+                    {userEvents.map((event) => (
+                      <CarouselItem 
+                        key={event.id} 
+                        className="basis-full md:basis-1/2 lg:basis-1/3"
+                      >
+                        <EventCard event={event} />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Users size={48} className="mx-auto mb-4 text-gray-300" />
@@ -361,39 +425,68 @@ export default function ProfessionalPublicProfile() {
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
             {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleFollow}
-                disabled={isFollowLoading}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition font-medium ${
-                  isFollowing 
-                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                    : 'bg-accent text-white hover:bg-blue-700'
-                }`}
-              >
-                {isFollowLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                ) : isFollowing ? (
-                  <>
-                    <UserMinus size={18} />
-                    Ne plus suivre
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={18} />
-                    Suivre
-                  </>
-                )}
-              </button>
+{/* Action Buttons */}
+<div className="flex gap-3">
+              {/* Bouton Follow - Ne pas afficher si c'est le profil du user connecté */}
+              {currentUser?.id !== user?.id && (
+                <button
+                  onClick={handleFollow}
+                  disabled={isFollowLoading}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition font-medium ${
+                    isFollowing 
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                      : 'bg-accent text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {isFollowLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                  ) : isFollowing ? (
+                    <>
+                      <UserMinus size={18} />
+                      {t('common.following')}
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={18} />
+                      {t('common.follow')}
+                    </>
+                  )}
+                </button>
+              )}
               
               <button
                 onClick={handleShareProfile}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium"
+                className={`${currentUser?.id === user?.id ? 'flex-1' : 'flex-1'} flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium`}
               >
                 <Share2 size={18} />
-                Partager
+                {t('common.share')}
               </button>
             </div>
+
+            {/* Followers Count - Ne pas afficher si c'est son propre profil */}
+            {currentUser?.id !== user?.id && followersCount > 0 && (
+              <div className="text-center py-2 text-gray-600">
+                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('profile.followers') : t('profile.follower')}
+              </div>
+            )}
+
+            {/* Afficher le compte de followers pour son propre profil */}
+            {currentUser?.id === user?.id && followersCount > 0 && (
+              <div className="text-center py-2 text-gray-600">
+                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('profile.followers') : t('profile.follower')} vous suivent
+              </div>
+            )}
+
+            {/* Contact Button */}
+            {currentUser?.id !== user?.id && (
+              <button 
+                onClick={handleContact}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition font-medium"
+              >
+                <MessageCircle size={18} />
+                {t('common.contact')}
+              </button>
+            )}
 
             {/* Followers Count */}
             {followersCount > 0 && (

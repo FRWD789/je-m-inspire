@@ -475,9 +475,15 @@ const resources = {
         info: 'Information',
         upgradeAccount: 'Mettre à niveau',
         freeAccount: 'Gratuit',
+
+        // Profile & Follow
         profileOf: 'Profil de',
         linkCopied: 'Lien du profil copié !',
         contactFeatureComingSoon: 'Fonction de contact à implémenter',
+        follow: 'Suivre',
+        following: 'Abonné',
+        share: 'Partager',
+        contact: 'Contacter',
         
         // Labels
         name: 'Nom',
@@ -559,7 +565,15 @@ const resources = {
         unfollowSuccess: 'Vous ne suivez plus ce professionnel',
         unfollowError: 'Erreur lors du désabonnement',
         mustBeLoggedIn: 'Vous devez être connecté pour suivre un professionnel',
-        followError: 'Erreur lors du suivi'
+        followError: 'Erreur lors du suivi',
+        enableNotifications: 'Activer les notifications',
+        disableNotifications: 'Désactiver les notifications',
+        notificationsMuted: 'Notifications désactivées',
+        notificationError: 'Erreur lors de la modification des notifications',
+        notificationsDisabled: 'Notifications désactivées',
+        notificationsDisabledSuccess: 'Vous ne recevrez plus de notifications pour ce professionnel',
+        notificationDisableError: 'Erreur lors de la désactivation',
+        invalidLink: 'Lien invalide ou expiré'
       },
     }
   },
@@ -1035,9 +1049,15 @@ const resources = {
         info: 'Information',
         upgradeAccount: 'Upgrade',
         freeAccount: 'Free',
+
+        // Profile & Follow
         profileOf: 'Profile of',
         linkCopied: 'Profile link copied!',
         contactFeatureComingSoon: 'Contact feature to be implemented',
+        follow: 'Follow',
+        following: 'Following',
+        share: 'Share',
+        contact: 'Contact',
 
         // Labels
         name: 'Name',
@@ -1118,7 +1138,15 @@ const resources = {
         unfollowSuccess: 'You are no longer following this professional',
         unfollowError: 'Error while unfollowing',
         mustBeLoggedIn: 'You must be logged in to follow a professional',
-        followError: 'Error while following'
+        followError: 'Error while following',
+        enableNotifications: 'Enable notifications',
+        disableNotifications: 'Disable notifications',
+        notificationsMuted: 'Notifications disabled',
+        notificationError: 'Error updating notification settings',
+        notificationsDisabled: 'Notifications Disabled',
+        notificationsDisabledSuccess: 'You will no longer receive notifications from this professional',
+        notificationDisableError: 'Error disabling notifications',
+        invalidLink: 'Invalid or expired link'
       },
     }
   }

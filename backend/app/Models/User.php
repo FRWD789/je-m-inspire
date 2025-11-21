@@ -226,6 +226,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
     {
         $this->notify(new CustomVerifyEmail());
     }
+
+
     // ========================================
     // RELATIONS FOLLOW
     // ========================================
@@ -236,6 +238,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
     public function following()
     {
         return $this->belongsToMany(User::class, 'follow_pro', 'follower_id', 'pro_id')
+            ->withPivot('notifications_enabled')
             ->withTimestamps();
     }
 
@@ -245,7 +248,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
     public function followers()
     {
         return $this->belongsToMany(User::class, 'follow_pro', 'pro_id', 'follower_id')
+            ->withPivot('notifications_enabled')
             ->withTimestamps();
+    }
+
+    /**
+     * Followers avec notifications activées
+     */
+    public function followersWithNotifications()
+    {
+        return $this->followers()->wherePivot('notifications_enabled', true);
     }
 
     /**
@@ -262,7 +274,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
     public function follow($proId)
     {
         if (!$this->isFollowing($proId)) {
-            $this->following()->attach($proId);
+            $this->following()->attach($proId, ['notifications_enabled' => true]);
             return true;
         }
         return false;
@@ -279,4 +291,19 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail// AJOU
         }
         return false;
     }
+
+    /**
+     * Activer/Désactiver les notifications pour un follow
+     */
+    public function toggleNotifications($proId, $enabled)
+    {
+        if ($this->isFollowing($proId)) {
+            $this->following()->updateExistingPivot($proId, [
+                'notifications_enabled' => $enabled
+            ]);
+            return true;
+        }
+        return false;
+    }
 }
+

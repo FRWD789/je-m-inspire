@@ -79,7 +79,10 @@
 
     <p class="content-text" style="font-size: 14px; color: #666; margin-top: 20px;">
         Vous recevez cet email car vous suivez <strong>{{ $pro->name }} {{ $pro->last_name }}</strong>.
+        <br>
         <a href="{{ $myFollowingUrl }}" style="color: #7C9885;">Gérer mes abonnements</a>
+        •
+        <a href="{{ $disableNotificationsUrl }}" style="color: #999;">Ne plus recevoir de notifications pour ce professionnel</a>
     </p>
 
     <p class="content-text" style="text-align: center; font-size: 18px; margin-top: 30px;">

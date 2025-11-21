@@ -31,6 +31,7 @@ import AbonnementSuccess from "./page/abonnementSuccess";
 import GoogleCallback from "./page/Auth/GoogleCallback";
 import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
 import MyFollowingPage from './features/follow/page/MyFollowingPage';
+import DisableNotificationsPage from "./features/follow/page/DisableNotificationsPage";
 import LinkedAccountSuccess from "./page/LinkedAccountSuccess";
 
 export default function App() {
@@ -51,7 +52,8 @@ export default function App() {
             <Route path="google/callback" element={<GoogleCallback />} />
             <Route path="abonnement/success" element={<AbonnementSuccess />} />
             <Route path="payment/success" element={<PaymentSuccess />} />
-            <Route path="user/:id" element={<ProfessionalPublicProfile />} />
+            <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
+            <Route path="notifications/disable" element={<DisableNotificationsPage />} />
           </Route>
 
           {/* PROTECTED ROUTES */}

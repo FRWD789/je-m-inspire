@@ -58,6 +58,8 @@ class EventController extends Controller
     /**
      * Créer un événement (professionnels uniquement)
      */
+
+     /* OLD VERSION - KEEP FOR REFERENCE
     public function store(Request $request)
     {
         $debug = config('app.debug');
@@ -209,8 +211,15 @@ class EventController extends Controller
 
             DB::commit();
 
-            // Notifier les followers
-            $this->notifyFollowers($user, $event);
+            // Notifier les followers (ne bloque pas si erreur)
+            try {
+                $this->notifyFollowers($user, $event);
+            } catch (\Exception $e) {
+                Log::warning('[Event] Erreur notification (non-bloquant)', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             if ($debug) {
                 Log::info('[Event] Événement créé', [
@@ -233,6 +242,203 @@ class EventController extends Controller
             return $this->errorResponse('Erreur lors de la création de l\'événement', 500);
         }
     }
+    */
+    public function store(Request $request)
+    {
+        $debug = config('app.debug');
+        $user = JWTAuth::user();
+
+        if (!$user) {
+            return $this->unauthenticatedResponse();
+        }
+
+        if (!$user->hasRole('professionnel') && !$user->hasRole('admin')) {
+            return $this->unauthorizedResponse('Seuls les professionnels peuvent créer des événements');
+        }
+
+        // Log des données reçues pour déboguer
+        Log::info('[Event] Données reçues', [
+            'fields' => array_keys($request->all()),
+            'has_thumbnail' => $request->hasFile('thumbnail'),
+            'has_banner' => $request->hasFile('banner'),
+            'has_images' => $request->hasFile('images')
+        ]);
+
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string|max:2000',
+                'start_date' => 'required|date|after_or_equal:now',
+                'end_date' => 'required|date|after:start_date',
+                'base_price' => 'required|numeric|min:0|max:9999.99',
+                'capacity' => 'required|integer|min:1|max:10000',
+                'max_places' => 'required|integer|min:1|max:10000',
+                'level' => 'required|string|max:50',
+                'priority' => 'required|integer|min:1|max:10',
+                'localisation_address' => 'required|string|max:255',
+                'localisation_lat' => 'required|numeric|between:-90,90',
+                'localisation_lng' => 'required|numeric|between:-180,180',
+                'categorie_event_id' => 'required|exists:categorie_events,id',
+                'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
+                'banner' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:4096',
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
+            ]);
+        } catch (ValidationException $e) {
+            // Log des erreurs de validation
+            Log::warning('[Event] Erreurs de validation', [
+                'errors' => $e->errors(),
+                'user_id' => $user->id
+            ]);
+            return $this->validationErrorResponse($e->errors());
+        }
+
+        // Validation des images (max 5)
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            if (count($images) > 5) {
+                return $this->errorResponse('Maximum 5 images autorisées', 422);
+            }
+        }
+
+        if ($validated['capacity'] > $validated['max_places']) {
+            return $this->errorResponse('La capacité ne peut pas dépasser le nombre maximum de places', 422);
+        }
+
+        $validated['available_places'] = $validated['max_places'];
+
+        try {
+            DB::beginTransaction();
+
+            $existingLocalisation = Localisation::where(function($query) use ($validated) {
+                $query->whereBetween('latitude', [
+                    $validated['localisation_lat'] - 0.0001,
+                    $validated['localisation_lat'] + 0.0001
+                ])
+                ->whereBetween('longitude', [
+                    $validated['localisation_lng'] - 0.0001,
+                    $validated['localisation_lng'] + 0.0001
+                ]);
+            })->first();
+
+            if ($existingLocalisation) {
+                $localisation = $existingLocalisation;
+            } else {
+                $localisation = Localisation::create([
+                    'name' => substr($validated['localisation_address'], 0, 100),
+                    'address' => $validated['localisation_address'],
+                    'latitude' => $validated['localisation_lat'],
+                    'longitude' => $validated['localisation_lng'],
+                ]);
+            }
+
+            // Upload thumbnail
+            $thumbnailPath = null;
+            if ($request->hasFile('thumbnail')) {
+                $thumbnailFile = $request->file('thumbnail');
+                $thumbnailName = time() . '_thumb_' . Str::random(10) . '.' . $thumbnailFile->getClientOriginalExtension();
+                $thumbnailPath = $thumbnailFile->storeAs('event_images', $thumbnailName, 'public');
+            }
+
+            // Upload banner
+            $bannerPath = null;
+            if ($request->hasFile('banner')) {
+                $bannerFile = $request->file('banner');
+                $bannerName = time() . '_banner_' . Str::random(10) . '.' . $bannerFile->getClientOriginalExtension();
+                $bannerPath = $bannerFile->storeAs('event_images', $bannerName, 'public');
+            }
+
+            $event = Event::create([
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'base_price' => $validated['base_price'],
+                'capacity' => $validated['capacity'],
+                'max_places' => $validated['max_places'],
+                'available_places' => $validated['available_places'],
+                'level' => $validated['level'],
+                'priority' => $validated['priority'],
+                'localisation_id' => $localisation->id,
+                'categorie_event_id' => $validated['categorie_event_id'],
+                'thumbnail_path' => $thumbnailPath,
+                'banner_path' => $bannerPath,
+
+            ]);
+
+            // Upload thumbnail
+
+            // Upload des images
+            if ($request->hasFile('images')) {
+                $images = $request->file('images');
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                foreach ($images as $index => $image) {
+                    if (!in_array($image->getMimeType(), $allowedMimes)) {
+                        DB::rollBack();
+                        return $this->validationErrorResponse([
+                            'images' => ['Chaque fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
+                        ]);
+                    }
+
+                    $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('event_images', $filename, 'public');
+
+                    EventImage::create([
+                        'event_id' => $event->id,
+                        'image_path' => $imagePath,
+                        'display_order' => $index,
+                    ]);
+
+                    if ($debug) {
+                        Log::info('[Event] Image uploadée', [
+                            'event_id' => $event->id,
+                            'image_path' => $imagePath,
+                            'display_order' => $index
+                        ]);
+                    }
+                }
+            }
+
+            Operation::create([
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'type_operation_id' => 1,
+            ]);
+
+            DB::commit();
+
+            // Notifier les followers (ne bloque pas si erreur)
+            try {
+                $this->notifyFollowers($user, $event);
+            } catch (\Exception $e) {
+                Log::warning('[Event] Erreur notification (non-bloquant)', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            if ($debug) {
+                Log::info('[Event] Événement créé', [
+                    'event_id' => $event->id,
+                    'user_id' => $user->id,
+                    'name' => $event->name,
+                    'images_count' => $event->images()->count()
+                ]);
+            }
+
+            return $this->resourceResponse(
+                new EventResource($event->load(['localisation', 'categorie'])),
+                'Événement créé avec succès',
+                201
+            );
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('[Event] Erreur création: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la création de l\'événement', 500);
+        }
+    }
+
 
     /**
      * Mettre à jour un événement
@@ -666,21 +872,17 @@ class EventController extends Controller
     protected function notifyFollowers($pro, $event)
     {
         try {
-            // Charger l'événement avec toutes les relations nécessaires
             $event->load(['localisation', 'categorie', 'creator']);
-
-            // Récupérer tous les followers du pro
-            $followers = $pro->followers()->get();
+            $followers = $pro->followersWithNotifications()->get();
 
             if ($followers->isEmpty()) {
-                Log::info('[Event] Aucun follower à notifier', [
+                Log::info('[Event] Aucun follower avec notifications', [
                     'pro_id' => $pro->id,
                     'event_id' => $event->id
                 ]);
                 return;
             }
 
-            // Envoyer la notification à chaque follower
             foreach ($followers as $follower) {
                 $follower->notify(new NewEventNotification($event));
             }
@@ -690,14 +892,13 @@ class EventController extends Controller
                 'event_id' => $event->id,
                 'followers_count' => $followers->count()
             ]);
-
         } catch (\Exception $e) {
-            // Ne pas bloquer la création de l'événement si la notification échoue
             Log::error('[Event] Erreur notification followers', [
-                'pro_id' => $pro->id,
-                'event_id' => $event->id,
+                'pro_id' => $pro->id ?? 'N/A',
+                'event_id' => $event->id ?? 'N/A',
                 'error' => $e->getMessage()
             ]);
         }
     }
 }
+

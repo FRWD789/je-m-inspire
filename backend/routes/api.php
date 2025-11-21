@@ -139,6 +139,9 @@ Route::post('/stripe/webhook', [PaiementController::class, 'stripeWebhook']);
 Route::post('/paypal/webhook', [PaiementController::class, 'paypalWebhook']);
 Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonnementPaypalWebhook']);
 
+// Désactivation notifications via email (public)
+Route::post('/follow/notifications/disable', [\App\Http\Controllers\FollowProController::class, 'disableNotificationsByToken']);
+
 // ==========================================
 // ROUTES PROTÉGÉES
 // ==========================================
@@ -197,6 +200,8 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::post('/follow/{proId}', [\App\Http\Controllers\FollowProController::class, 'toggle']);
     Route::get('/follow/check/{proId}', [\App\Http\Controllers\FollowProController::class, 'check']);
     Route::get('/my-following', [\App\Http\Controllers\FollowProController::class, 'myFollowing']);
+    Route::put('/follow/{proId}/notifications', [\App\Http\Controllers\FollowProController::class, 'toggleNotifications']);
+
 
     // ABONNEMENTS
     Route::prefix('abonnement')->group(function () {
@@ -245,7 +250,9 @@ Route::middleware(['auth.jwt'])->group(function () {
 // GROUPE DE ROUTES DE TEST
 // ========================================================================
 
-Route::prefix('test-emails')->group(function () {
+/*
+Route::prefix('test-emails')->group(function ()
+{
 
     // 1️⃣ TEST EMAIL VÉRIFICATION
     Route::get('/verify-email', function () {
@@ -607,167 +614,11 @@ Route::prefix('test-emails')->group(function () {
         ]);
     });
 });
-
-
-/*
-//TEST EMAIL RÉSERVATION CONFIRMÉE
-Route::get('/test-reservation-email', function () {
-    try {
-        // 1. Récupérer l'utilisateur
-        $user = \App\Models\User::where('email', 'user@example.com')->first();
-
-        if (!$user) {
-            return response()->json(['error' => 'Utilisateur non trouvé'], 404);
-        }
-
-        // 2. Chercher une opération existante
-        $operation = \App\Models\Operation::with(['event.localisation', 'paiement'])
-            ->where('type_operation_id', 2)
-            ->where('user_id', $user->id)
-            ->first();
-
-        // 3. ✅ SI AUCUNE OPÉRATION, EN CRÉER UNE
-        if (!$operation) {
-            $event = \App\Models\Event::with('localisation')->first();
-
-            if (!$event) {
-                return response()->json(['error' => 'Aucun événement trouvé'], 404);
-            }
-
-            // Créer le paiement
-            $paiement = \App\Models\Paiement::create([
-                'total' => $event->base_price,
-                'status' => 'paid',
-                'type_paiement_id' => 1,
-                'taux_commission' => 10,
-                'session_id' => 'test_' . uniqid(),
-            ]);
-
-            // Créer l'opération
-            $operation = \App\Models\Operation::create([
-                'user_id' => $user->id,
-                'event_id' => $event->id,
-                'type_operation_id' => 2,
-                'paiement_id' => $paiement->paiement_id,
-            ]);
-
-            $operation->load(['event.localisation', 'paiement']);
-            $created = true;
-        } else {
-            $created = false;
-        }
-
-        // 4. Envoyer l'email
-        $user->notify(new \App\Notifications\ReservationConfirmedNotification($operation));
-
-        return response()->json([
-            '✅ Email envoyé !' => 'Vérifie Mailhog sur http://localhost:8025',
-            'destinataire' => $user->email,
-            'operation_id' => $operation->id,
-            'operation_creee' => $created ? 'Oui' : 'Non (existante)',
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage()
-        ], 500);
-    }
-});
-
-//TEST EMAIL CANDIDATURE PROFESSIONNELLE
-Route::get('/test-professional-application-email', function () {
-    // Créer ou récupérer un professionnel en attente
-    $user = \App\Models\User::where('email', 'pro@example.com')->first();
-
-    if (!$user) {
-        return response()->json(['error' => 'Utilisateur professionnel non trouvé'], 404);
-    }
-
-    // Envoyer l'email
-    $user->notify(new \App\Notifications\ProfessionalApplicationReceivedNotification());
-
-    return response()->json([
-        'message' => 'Email envoyé ! Vérifie Mailhog sur http://localhost:8025',
-        'user_email' => $user->email,
-    ]);
-});
-
-//TEST EMAIL DEMANDE DE REMBOURSEMENT
-Route::get('/test-remboursement-email', function () {
-    $user = \App\Models\User::where('email', 'user@example.com')->first();
-
-    if (!$user) {
-        return response()->json(['error' => 'Utilisateur non trouvé'], 404);
-    }
-
-    $remboursement = \App\Models\Remboursement::with(['operation.event', 'user'])
-        ->where('user_id', $user->id)
-        ->first();
-
-    if (!$remboursement) {
-        $operation = \App\Models\Operation::where('user_id', $user->id)
-            ->where('type_operation_id', 2)
-            ->first();
-
-        if (!$operation) {
-            return response()->json(['error' => 'Aucune réservation trouvée'], 404);
-        }
-
-        $remboursement = \App\Models\Remboursement::create([
-            'user_id' => $user->id,
-            'operation_id' => $operation->id,
-            'montant' => 50.00,
-            'motif' => 'Test de notification email',
-            'statut' => 'en_attente',
-        ]);
-
-        $remboursement->load(['operation.event', 'user']);
-    }
-
-    // ✅ Utiliser la relation user
-    $remboursement->user->notify(new \App\Notifications\RemboursementReceivedNotification($remboursement));
-
-    return response()->json([
-        'message' => 'Email envoyé ! Vérifie Mailhog sur http://localhost:8025',
-        'remboursement_id' => $remboursement->id,
-    ]);
-});
-
-//TEST EMAIL PROFESSIONNEL APPROUVÉ
-Route::get('/test-professional-approved-email', function () {
-    $user = \App\Models\User::where('email', 'pro@example.com')->first();
-
-    if (!$user) {
-        return response()->json(['error' => 'Professionnel non trouvé'], 404);
-    }
-
-    $user->notify(new \App\Notifications\ProfessionalApprovedNotification());
-
-    return response()->json([
-        'message' => 'Email d\'approbation envoyé ! Vérifie Mailhog sur http://localhost:8025',
-        'user_email' => $user->email,
-    ]);
-});
-
-//TEST EMAIL PROFESSIONNEL REJETÉ
-Route::get('/test-professional-rejected-email', function () {
-    $user = \App\Models\User::where('email', 'pro@example.com')->first();
-
-    if (!$user) {
-        return response()->json(['error' => 'Professionnel non trouvé'], 404);
-    }
-
-    $reason = 'Votre lettre de motivation ne correspond pas aux critères requis. Veuillez fournir plus de détails sur votre expérience professionnelle.';
-
-    $user->notify(new \App\Notifications\ProfessionalRejectedNotification($reason));
-
-    return response()->json([
-        'message' => 'Email de rejet envoyé ! Vérifie Mailhog sur http://localhost:8025',
-        'user_email' => $user->email,
-    ]);
-});
 */
+
+// ========================================================================
 // REDIRECTIONS
+// ========================================================================
 Route::get('/abonnement/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success'));
 Route::get('/abonnement/cancel', fn() => redirect(config('app.frontend_url') . '/abonnement/cancel'));
 Route::get('/abonnement/paypal/success', fn() => redirect(config('app.frontend_url') . '/abonnement/success?provider=paypal'));
