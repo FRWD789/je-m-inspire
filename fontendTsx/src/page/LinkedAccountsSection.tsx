@@ -147,38 +147,7 @@ function LinkedAccountsSection() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Cancel Subscription Button - Responsive */}
-      <div className="p-3 sm:p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">
-              Abonnement Pro Plus actif
-            </h3>
-            <p className="text-xs sm:text-sm text-red-700">
-              Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
-            </p>
-          </div>
-          <button
-            onClick={handleCancelSubscription}
-            disabled={cancelLoading}
-            className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition w-full sm:w-auto whitespace-nowrap text-sm sm:text-base"
-          >
-            {cancelLoading ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                <span className="hidden xs:inline">Annulation...</span>
-                <span className="xs:hidden">...</span>
-              </>
-            ) : (
-              <>
-                <XCircle size={18} />
-                <span className="hidden xs:inline">Annuler l'abonnement</span>
-                <span className="xs:hidden">Annuler</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      
 
       {/* Stripe - Responsive */}
       <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
@@ -253,6 +222,39 @@ function LinkedAccountsSection() {
               Lier PayPal
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Cancel Subscription Button - Responsive */}
+      <div className="p-3 sm:p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">
+              Abonnement Pro Plus actif
+            </h3>
+            <p className="text-xs sm:text-sm text-red-700">
+              Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
+            </p>
+          </div>
+          <button
+            onClick={handleCancelSubscription}
+            disabled={cancelLoading}
+            className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition w-full sm:w-auto whitespace-nowrap text-sm sm:text-base"
+          >
+            {cancelLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                <span className="hidden xs:inline">Annulation...</span>
+                <span className="xs:hidden">...</span>
+              </>
+            ) : (
+              <>
+                <XCircle size={18} />
+                <span className="hidden xs:inline">Annuler l'abonnement</span>
+                <span className="xs:hidden">Annuler</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
