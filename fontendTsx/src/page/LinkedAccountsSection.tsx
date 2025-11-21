@@ -74,7 +74,6 @@ function LinkedAccountsSection() {
       "Vous perdrez l'accès aux fonctionnalités suivantes :\n" +
       "• Liaison de comptes Stripe et PayPal\n" +
       "• Réception directe des paiements\n" +
-      "• Gestion des commissions\n\n" +
       "Vos comptes liés seront automatiquement dissociés."
     );
 
