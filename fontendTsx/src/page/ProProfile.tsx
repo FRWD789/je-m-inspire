@@ -355,38 +355,62 @@ export default function ProfessionalPublicProfile() {
               </h2>
               
               {userEvents.length > 0 ? (
-                <Carousel
-                  opts={{
-                    align: "start",
-                    dragFree: true,
-                    containScroll: "trimSnaps",
-                  }}
-                  className="w-full"
-                >
-                  <div className='flex items-center justify-between mb-4'>
-                    <button
-                      onClick={() => navigate('/events')}
-                      className='text-accent hover:underline cursor-pointer'
+                <>
+                  {/* Mobile & Tablet: Carousel */}
+                  <div className="lg:hidden">
+                    <Carousel
+                      opts={{
+                        align: "start",
+                        loop: false,
+                      }}
+                      className="w-full"
                     >
-                      Voir tous les événements →
-                    </button>
-                    <div className='flex gap-x-[4px] items-center'>
-                      <CarouselPrevious />
-                      <CarouselNext />
+                      <div className='flex items-center justify-between mb-4'>
+                        <button
+                          onClick={() => navigate('/events')}
+                          className='text-accent hover:underline cursor-pointer text-sm'
+                        >
+                          Voir tous les événements →
+                        </button>
+                        <div className='flex gap-x-[4px] items-center'>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                        </div>
+                      </div>
+                      
+                      <CarouselContent>
+                        {userEvents.map((event) => (
+                          <CarouselItem key={event.id}>
+                            <EventCard event={event} />
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                    </Carousel>
+                  </div>
+
+                  {/* Desktop: Flex Wrap */}
+                  <div className="hidden lg:block">
+                    <div className="flex items-center justify-end mb-4">
+                      <button
+                        onClick={() => navigate('/events')}
+                        className='text-accent hover:underline cursor-pointer text-sm'
+                      >
+                        Voir tous les événements →
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-4">
+                      {userEvents.map((event) => (
+                        <div 
+                          key={event.id} 
+                          className="w-[calc(33.333%-0.667rem)]"
+                        >
+                          <EventCard event={event} />
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  
-                  <CarouselContent className="-ml-4">
-                    {userEvents.map((event) => (
-                      <CarouselItem 
-                        key={event.id} 
-                        className="basis-full md:basis-1/2 lg:basis-1/3"
-                      >
-                        <EventCard event={event} />
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                </Carousel>
+                </>
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Users size={48} className="mx-auto mb-4 text-gray-300" />
