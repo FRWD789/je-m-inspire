@@ -14,11 +14,6 @@ class Kernel extends ConsoleKernel
                 ->days([1, 3, 5, 0]) // Lundi, Mercredi, Vendredi, Dimanche
                 ->at('02:00');
 
-        // Ou alternative plus simple (tous les 2 jours à partir d'aujourd'hui)
-        $schedule->command('backup:simple')
-                ->twiceWeekly(1, 4) // Lundi et Jeudi
-                ->at('02:00');
-
 
         // Envoyer les rappels d'événements chaque jour à 9h00
         $schedule->job(new SendEventRemindersJob())
