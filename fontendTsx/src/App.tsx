@@ -55,12 +55,12 @@ export default function App() {
           </Route>
 
            <Route
-              path="/profile/stripe/success"
+              path="profile/stripe/success"
               element={<LinkedAccountSuccess provider="stripe" />}
             />
 
             <Route
-              path="/profile/paypal/success"
+              path="profile/paypal/success"
               element={<LinkedAccountSuccess provider="paypal" />}
             />
           {/* PROTECTED ROUTES */}
