@@ -539,6 +539,11 @@ class AbonnementController extends Controller
                 return $this->notFoundResponse('Aucun abonnement actif trouvé');
             }
 
+            // ✅ AJOUT : Vérifier si déjà marqué pour annulation
+            if ($abonnement->cancel_at_period_end) {
+                return $this->errorResponse('Cet abonnement est déjà marqué pour annulation à la fin de la période en cours', 400);
+            }
+
             // Annuler sur Stripe
             if ($abonnement->stripe_subscription_id) {
                 Stripe::setApiKey(config('services.stripe.secret'));
@@ -559,6 +564,16 @@ class AbonnementController extends Controller
                 ]);
                 // TODO: Implémenter l'annulation PayPal via API
             }
+
+            // ✅ AJOUT : Mettre à jour le champ dans la base de données
+            $abonnement->update([
+                'cancel_at_period_end' => true,
+                'status_updated_at' => now()
+            ]);
+
+            Log::info('[Abonnement] Marqué pour annulation en base de données', [
+                'abonnement_id' => $abonnement->abonnement_id
+            ]);
 
             return $this->successResponse(null, 'Votre abonnement sera annulé à la fin de la période en cours');
 

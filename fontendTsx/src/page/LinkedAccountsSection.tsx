@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Loader2, Link as LinkIcon, Unlink, CreditCard, Lock, XCircle } from "lucide-react";
+import { Loader2, Link as LinkIcon, Unlink, CreditCard, Lock, XCircle, CheckCircle } from "lucide-react";
 import { privateApi } from "@/api/api";
 import Abonnement from "./Abonnement";
 
@@ -144,10 +144,11 @@ function LinkedAccountsSection() {
     );
   }
 
+  // ✅ AJOUT : Vérifier si l'abonnement est marqué pour annulation
+  const isCancelPending = subscription.details?.cancel_at_period_end === true;
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      
-
       {/* Stripe - Responsive */}
       <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -157,7 +158,7 @@ function LinkedAccountsSection() {
               <h3 className="font-semibold text-sm sm:text-base">Stripe</h3>
               {accounts.stripe.linked ? (
                 <p className="text-xs sm:text-sm text-gray-500 truncate">
-                  Connecté (ID : {accounts.stripe.account_id})
+                  {accounts.stripe.account_id ? `ID: ${accounts.stripe.account_id}` : "Compte lié"}
                 </p>
               ) : (
                 <p className="text-xs sm:text-sm text-gray-500">Aucun compte lié</p>
@@ -190,7 +191,7 @@ function LinkedAccountsSection() {
       <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <CreditCard size={22} className="text-blue-500 flex-shrink-0" />
+            <CreditCard size={22} className="text-blue-600 flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-sm sm:text-base">PayPal</h3>
               {accounts.paypal.linked ? (
@@ -224,38 +225,61 @@ function LinkedAccountsSection() {
         </div>
       </div>
 
-      {/* Cancel Subscription Button - Responsive */}
-      <div className="p-3 sm:p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">
-              Abonnement Pro Plus actif
-            </h3>
-            <p className="text-xs sm:text-sm text-red-700">
-              Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
-            </p>
+      {/* ✅ MODIFICATION : Affichage conditionnel selon cancel_at_period_end */}
+      {isCancelPending ? (
+        // Si l'abonnement est marqué pour annulation
+        <div className="p-3 sm:p-4 border border-orange-200 rounded-lg bg-orange-50 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+            <CheckCircle size={22} className="text-orange-600 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-orange-900 mb-1 text-sm sm:text-base">
+                Annulation programmée
+              </h3>
+              <p className="text-xs sm:text-sm text-orange-700 mb-2">
+                Votre abonnement Pro Plus sera annulé à la fin de la période en cours.
+              </p>
+              {subscription.end_date && (
+                <p className="text-xs sm:text-sm text-orange-600">
+                  Date de fin : {new Date(subscription.end_date).toLocaleDateString('fr-CA')}
+                </p>
+              )}
+            </div>
           </div>
-          <button
-            onClick={handleCancelSubscription}
-            disabled={cancelLoading}
-            className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition w-full sm:w-auto whitespace-nowrap text-sm sm:text-base"
-          >
-            {cancelLoading ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                <span className="hidden xs:inline">Annulation...</span>
-                <span className="xs:hidden">...</span>
-              </>
-            ) : (
-              <>
-                <XCircle size={18} />
-                <span className="hidden xs:inline">Annuler l'abonnement</span>
-                <span className="xs:hidden">Annuler</span>
-              </>
-            )}
-          </button>
         </div>
-      </div>
+      ) : (
+        // Si l'abonnement est actif et non marqué pour annulation
+        <div className="p-3 sm:p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">
+                Abonnement Pro Plus actif
+              </h3>
+              <p className="text-xs sm:text-sm text-red-700">
+                Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
+              </p>
+            </div>
+            <button
+              onClick={handleCancelSubscription}
+              disabled={cancelLoading}
+              className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition w-full sm:w-auto whitespace-nowrap text-sm sm:text-base"
+            >
+              {cancelLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  <span className="hidden xs:inline">Annulation...</span>
+                  <span className="xs:hidden">...</span>
+                </>
+              ) : (
+                <>
+                  <XCircle size={18} />
+                  <span className="hidden xs:inline">Annuler l'abonnement</span>
+                  <span className="xs:hidden">Annuler</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Status messages */}
       {loading && (

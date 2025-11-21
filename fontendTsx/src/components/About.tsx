@@ -49,9 +49,9 @@ export default function About() {
   ];
 
   const stats = [
-    { value: '1K+', label: 'Événements créés' },
-    { value: '1K+', label: 'Utilisateurs actifs' },
-    { value: '100%', label: 'Satisfaction client' },
+    { value: '10K+', label: 'Événements créés' },
+    { value: '50K+', label: 'Utilisateurs actifs' },
+    { value: '98%', label: 'Satisfaction client' },
     { value: '24/7', label: 'Support disponible' }
   ];
 
@@ -59,9 +59,12 @@ export default function About() {
     <section className="grid gap-y-8 md:gap-y-12">
       {/* Hero Section */}
       <div className="relative h-[40vh] md:h-[50vh] w-full overflow-hidden rounded-lg md:rounded-[12px] shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent via-green-500 to-green-700">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm" />
-        </div>
+        <img
+          src="/assets/img/bg-hero.avif"
+          alt="Hero background"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
         
         <button
           onClick={() => navigate(-1)}
@@ -71,11 +74,9 @@ export default function About() {
           <ArrowLeft size={20} />
         </button>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Target className="w-8 h-8 md:w-10 md:h-10" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-6 z-10">
+
+          <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             À propos de Je m'inspire
           </h1>
           <p className="text-white/90 text-base md:text-lg lg:text-xl max-w-2xl">
@@ -99,19 +100,33 @@ export default function About() {
 
       {/* Mission Section */}
       <div className="bg-white rounded-lg md:rounded-[8px] p-6 md:p-10 border border-gray-200 shadow-sm">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-semibold mb-4">Notre Mission</h2>
-          <p className="text-gray-600 text-base md:text-lg leading-relaxed">
-            Je m'inspire est née d'une vision simple : rendre la découverte et l'organisation 
-            d'événements accessible à tous. Que vous soyez un organisateur passionné cherchant 
-            à partager votre expertise, ou un participant en quête de nouvelles expériences, 
-            notre plateforme vous accompagne à chaque étape.
-          </p>
-          <p className="text-gray-600 text-base md:text-lg leading-relaxed mt-4">
-            Nous croyons que les événements ont le pouvoir de transformer les vies, de créer 
-            des connexions authentiques et d'inspirer le changement. C'est pourquoi nous mettons 
-            tout en œuvre pour offrir une expérience fluide, sécurisée et enrichissante.
-          </p>
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          {/* Image */}
+          <div className="relative h-64 md:h-80 rounded-lg overflow-hidden">
+            <img
+              src="/assets/img/mission.png"
+              alt="Notre mission"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          </div>
+
+          {/* Texte */}
+          <div>
+            <h2 className="text-2xl md:text-3xl font-semibold mb-4">Notre Mission</h2>
+            <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+              Je m'inspire est née d'une vision simple : rendre la découverte et l'organisation 
+              d'événements accessible à tous. Que vous soyez un organisateur passionné cherchant 
+              à partager votre expertise, ou un participant en quête de nouvelles expériences, 
+              notre plateforme vous accompagne à chaque étape.
+            </p>
+            <p className="text-gray-600 text-base md:text-lg leading-relaxed mt-4">
+              Nous croyons que les événements ont le pouvoir de transformer les vies, de créer 
+              des connexions authentiques et d'inspirer le changement. C'est pourquoi nous mettons 
+              tout en œuvre pour offrir une expérience fluide, sécurisée et enrichissante.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -198,7 +213,7 @@ export default function About() {
         <div className="mt-6">
           <Button 
             onClick={() => navigate('/events')}
-            className="bg-white text-accent hover:bg-gray-100"
+            variant="secondary"
           >
             Découvrir les événements
           </Button>
