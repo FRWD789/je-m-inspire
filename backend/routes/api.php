@@ -783,7 +783,7 @@ Route::get('/health', function () {
 
     try {
         // Test Redis
-        Redis::ping();
+        Redis::connection()->ping();
         $redisStatus = 'ok';
     } catch (\Exception $e) {
         $redisStatus = 'error';
