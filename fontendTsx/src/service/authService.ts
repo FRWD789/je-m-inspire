@@ -104,7 +104,7 @@ export const authService = {
 
   linkStripe: async (code: string): Promise<{ success: boolean; message?: string }> => {
   try {
-    const response = await privateApi.get("/api/profile/stripe/callback", {
+    const response = await privateApi.get("/profile/stripe/success", {
       params: { code }
     });
     return response.data;
@@ -116,7 +116,7 @@ export const authService = {
 
 linkPaypal: async (code: string): Promise<{ success: boolean; message?: string }> => {
   try {
-    const response = await privateApi.get("/api/profile/paypal/callback", {
+    const response = await privateApi.get("/profile/paypal/success", {
       params: { code }
     });
     return response.data;
