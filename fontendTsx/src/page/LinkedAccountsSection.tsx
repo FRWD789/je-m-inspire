@@ -147,34 +147,7 @@ function LinkedAccountsSection() {
 
   return (
     <div className="space-y-6">
-      {/* Cancel Subscription Button */}
-      <div className="p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-900 mb-1">Abonnement Pro Plus actif</h3>
-            <p className="text-sm text-red-700">
-              Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
-            </p>
-          </div>
-          <button
-            onClick={handleCancelSubscription}
-            disabled={cancelLoading}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
-          >
-            {cancelLoading ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                Annulation...
-              </>
-            ) : (
-              <>
-                <XCircle size={18} />
-                Annuler l'abonnement
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+     
 
       {/* Stripe */}
       <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
@@ -246,6 +219,35 @@ function LinkedAccountsSection() {
             Lier PayPal
           </button>
         )}
+      </div>
+
+       {/* Cancel Subscription Button */}
+      <div className="p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-red-900 mb-1">Abonnement Pro Plus actif</h3>
+            <p className="text-sm text-red-700">
+              Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
+            </p>
+          </div>
+          <button
+            onClick={handleCancelSubscription}
+            disabled={cancelLoading}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
+          >
+            {cancelLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Annulation...
+              </>
+            ) : (
+              <>
+                <XCircle size={18} />
+                Annuler l'abonnement
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Status messages */}
