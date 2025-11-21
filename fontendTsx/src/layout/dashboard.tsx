@@ -179,14 +179,14 @@ export default function Dashboard() {
         </div>
 
         {/* User Profile Section - Bottom of Sidebar */}
-        {user && (
+       {user && (
           <div className="border-t border-gray-200 p-3 md:p-4">
-            {/* Container flex avec direction column */}
-            <div className="flex flex-col gap-2">
+            {/* Container flex horizontal - les deux éléments côte à côte */}
+            <div className="flex items-center gap-2">
               
-              {/* User Info Button - Sans le bouton Upgrade à l'intérieur */}
+              {/* User Info Button - Partie gauche */}
               <button
-                className="flex items-center gap-2 w-full hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
+                className="flex items-center gap-2 flex-1 hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
                 onClick={() => {
                   navigate("/dashboard/profile-settings");
                   if (isMobile) setMobileMenuOpen(false);
@@ -195,7 +195,7 @@ export default function Dashboard() {
               >
                 <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
                   {user.profile.profile_picture ? (
-                    <img src={user.profile.profile_picture} alt={user.profile.name} className="w-1/2 h-full object-cover" />
+                    <img src={user.profile.profile_picture} alt={user.profile.name} className="w-full h-full object-cover" />
                   ) : (
                     user.profile.name?.charAt(0).toUpperCase() || 'U'
                   )}
@@ -213,9 +213,9 @@ export default function Dashboard() {
                 </div>
               </button>
 
-              {/* Pro+ Badge or Upgrade Button - MAINTENANT EN DEHORS du bouton parent */}
+              {/* Pro+ Badge or Upgrade Button - MAINTENANT à côté (sibling) */}
               {user.roles[0].role === 'professionnel' && (
-                <div className={`${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
+                <div className={`flex-shrink-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
                   {!hasProPlus ? (
                     <button
                       onClick={(e) => {
@@ -223,15 +223,13 @@ export default function Dashboard() {
                         navigate("/dashboard/profile-settings?tab=plan");
                         if (isMobile) setMobileMenuOpen(false);
                       }}
-                      className="w-full text-xs font-medium py-1.5 px-3 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition"
+                      className="text-xs font-medium py-1.5 px-3 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition whitespace-nowrap"
                     >
                       {t('common.upgradeAccount')}
                     </button>
                   ) : (
-                    <div className="w-full flex justify-center">
-                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition">
-                        <Star size={16} fill="currentColor" />
-                      </div>
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition">
+                      <Star size={16} fill="currentColor" />
                     </div>
                   )}
                 </div>
