@@ -91,7 +91,7 @@ export default function SideNav({ open, children, width = '16' }: SideNavProps) 
               {
                 user.roles[0].role === "professionnel" && (
                   !hasProPlus ? (
-                    <div className='w-full' onClick={() => setShowAbonemment(true)}>
+                    <div className='w-full' onClick={() => navigate('/dashboard/profile-settings?tab=plan')}>
                       <button className='my-0 me-0 cursor-default hover:cursor-pointer text-xs p-1 rounded-full border-[1px]'>
                         {t('common.upgradeAccount')}
                       </button>

@@ -8,11 +8,17 @@ import Input from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
 import LinkedAccountsSection from "./LinkedAccountsSection"
 import TextArea from "@/components/ui/textArea"
+import { useSearchParams } from "react-router-dom"
 
 export default function User() {
-  const { t } = useTranslation(); // <-- AJOUTÉ
+  const { t } = useTranslation(); 
+  const [searchParams] = useSearchParams();
 
-  const [currentTab, setCurrentTab] = useState<"profile" | "security" | "plan">("profile")
+  const tabFromUrl = searchParams.get('tab') as "profile" | "security" | "plan" | null;
+  const [currentTab, setCurrentTab] = useState<"profile" | "security" | "plan">(
+    tabFromUrl && ["profile", "security", "plan"].includes(tabFromUrl) ? tabFromUrl : "profile"
+  );
+
   const {updateProfile,updateProfileImg,updatePassword,user} = useAuth()
   const [defaultValues,setDefaultValues] = useState(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
