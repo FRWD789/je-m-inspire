@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Loader2, Link as LinkIcon, Unlink, CreditCard, Lock } from "lucide-react";
+import { Loader2, Link as LinkIcon, Unlink, CreditCard, Lock, XCircle } from "lucide-react";
 import { privateApi } from "@/api/api";
 import Abonnement from "./Abonnement";
 
@@ -8,8 +8,9 @@ function LinkedAccountsSection() {
   const [subscription, setSubscription] = useState<any>(null);
   const [accounts, setAccounts] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-const [openSubSection, setOpenSubSection] = useState(false);
+  const [openSubSection, setOpenSubSection] = useState(false);
 
   // ✅ 1. Fetch abonnement info first
   const fetchSubscription = async () => {
@@ -65,6 +66,42 @@ const [openSubSection, setOpenSubSection] = useState(false);
     }
   };
 
+  // ✅ 3. Handle subscription cancellation
+  const handleCancelSubscription = async () => {
+    // Confirmation avant annulation
+    const confirmed = window.confirm(
+      "Êtes-vous sûr de vouloir annuler votre abonnement Pro Plus ?\n\n" +
+      "Vous perdrez l'accès aux fonctionnalités suivantes :\n" +
+      "• Liaison de comptes Stripe et PayPal\n" +
+      "• Réception directe des paiements\n" +
+      "• Gestion des commissions\n\n" +
+      "Vos comptes liés seront automatiquement dissociés."
+    );
+
+    if (!confirmed) return;
+
+    setCancelLoading(true);
+    setMessage(null);
+    
+    try {
+      const data = await privateApi.post("/abonnement/cancel");
+      setMessage(data.data.message || "Abonnement annulé avec succès.");
+      
+      // Rafraîchir les données
+      await fetchSubscription();
+      setAccounts(null);
+      
+    } catch (err: any) {
+      console.error("Erreur annulation:", err);
+      setMessage(
+        err.response?.data?.message || 
+        "Erreur lors de l'annulation de l'abonnement."
+      );
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   // 🕒 Loading
   if (!subscription)
     return (
@@ -81,20 +118,19 @@ const [openSubSection, setOpenSubSection] = useState(false);
         <Lock size={32} className="mx-auto mb-3 text-gray-500" />
         <h3 className="text-lg font-semibold mb-2">Fonctionnalité réservée</h3>
         <p className="text-gray-600 mb-4">
-          Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l’abonnement <strong>Pro Plus</strong>.
+          Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l'abonnement <strong>Pro Plus</strong>.
         </p>
         <a
-          onClick={()=>setOpenSubSection(true)}
-          className="inline-block bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary/90 transition"
+          onClick={() => setOpenSubSection(true)}
+          className="inline-block bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary/90 transition cursor-pointer"
         >
           Passer à Pro Plus
         </a>
-        {
-            openSubSection&&
-            <div className="fixed z-999  w-full inset-0 min-h-screen bg-black/5 backdrop-blur-3xl overflow-y-auto ">
-                <Abonnement handelClose={()=>setOpenSubSection(false)}/>
-            </div>
-        }
+        {openSubSection && (
+          <div className="fixed z-999 w-full inset-0 min-h-screen bg-black/5 backdrop-blur-3xl overflow-y-auto">
+            <Abonnement handelClose={() => setOpenSubSection(false)} />
+          </div>
+        )}
       </div>
     );
   }
@@ -111,6 +147,35 @@ const [openSubSection, setOpenSubSection] = useState(false);
 
   return (
     <div className="space-y-6">
+      {/* Cancel Subscription Button */}
+      <div className="p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-red-900 mb-1">Abonnement Pro Plus actif</h3>
+            <p className="text-sm text-red-700">
+              Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.
+            </p>
+          </div>
+          <button
+            onClick={handleCancelSubscription}
+            disabled={cancelLoading}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
+          >
+            {cancelLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Annulation...
+              </>
+            ) : (
+              <>
+                <XCircle size={18} />
+                Annuler l'abonnement
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Stripe */}
       <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
         <div className="flex items-center gap-3">
@@ -130,7 +195,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
           <button
             onClick={() => handleUnlink("stripe")}
             disabled={loading}
-            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
           >
             <Unlink size={18} />
             Délier
@@ -139,7 +204,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
           <button
             onClick={() => handleLink("stripe")}
             disabled={loading}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50"
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition"
           >
             <LinkIcon size={18} />
             Lier Stripe
@@ -166,7 +231,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
           <button
             onClick={() => handleUnlink("paypal")}
             disabled={loading}
-            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
           >
             <Unlink size={18} />
             Délier
@@ -175,7 +240,7 @@ const [openSubSection, setOpenSubSection] = useState(false);
           <button
             onClick={() => handleLink("paypal")}
             disabled={loading}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50"
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition"
           >
             <LinkIcon size={18} />
             Lier PayPal
@@ -183,13 +248,18 @@ const [openSubSection, setOpenSubSection] = useState(false);
         )}
       </div>
 
+      {/* Status messages */}
       {loading && (
         <div className="flex items-center text-sm text-gray-600">
           <Loader2 className="animate-spin mr-2" size={16} />
           Traitement en cours...
         </div>
       )}
-      {message && <p className="text-green-600 text-sm">{message}</p>}
+      {message && (
+        <p className={`text-sm ${message.includes('Erreur') ? 'text-red-600' : 'text-green-600'}`}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }
