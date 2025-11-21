@@ -10,12 +10,9 @@ import { useTranslation } from 'react-i18next'
 
 import type { Event } from '@/types/events'
 
-type Tab = 'all' | 'my' | 'reservations'
-
 export default function MyEventPage() {
   const { t } = useTranslation()
-  const { myEvents, events, fetchEvents, deleteEvent, fetchMyEvents, loading } = useEvent()
-  const [selectedTab, setSelectedTab] = useState<Tab>('all')
+  const { myEvents, deleteEvent, fetchMyEvents, loading } = useEvent()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const { user } = useAuth()
@@ -34,16 +31,13 @@ export default function MyEventPage() {
   }, [])
 
   const categories = useMemo(
-    () => [...new Set(events.map(e => e.categorie?.name).filter(Boolean))],
-    [events]
+    () => [...new Set(myEvents.map(e => e.categorie?.name).filter(Boolean))],
+    [myEvents]
   )
 
   // Filtering
   const filteredEvents = useMemo(() => {
-    let displayEvents = events
-    if (selectedTab === 'my') displayEvents = myEvents
-
-    return displayEvents.filter(e => {
+    return myEvents.filter(e => {
       const matchesCategory =
         !selectedCategory || e.categorie?.name === selectedCategory
 
@@ -55,7 +49,7 @@ export default function MyEventPage() {
 
       return matchesCategory && matchesSearch
     })
-  }, [selectedTab, events, myEvents, selectedCategory, searchTerm])
+  }, [myEvents, selectedCategory, searchTerm])
 
   // Close modal if clicking outside
   useEffect(() => {
@@ -89,40 +83,11 @@ export default function MyEventPage() {
 
   return (
     <>
-      <h1>{t('events.title')}</h1>
+      <h1>{t('dashboard.myEvents')}</h1>
 
-      {/* Tabs + Filter */}
+      {/* Search + Category + Add */}
       <div className="space-y-4 sticky top-0 backdrop-blur-xl rounded-b-[8px] z-30 bg-white shadow-sm">
-
-        {/* Tabs */}
-        <div className="flex gap-4 px-4 py-2 border-b border-gray-200">
-
-          {/* All events */}
-          <button
-            onClick={() => setSelectedTab('all')}
-            className={`px-3 py-1 rounded-lg ${
-              selectedTab === 'all' ? 'bg-accent text-white' : 'text-gray-600'
-            }`}
-          >
-            {t('events.availableEvents')}
-          </button>
-
-          {/* My events (professionals only) */}
-          {user.roles[0].role === "professionnel" && (
-            <button
-              onClick={() => setSelectedTab('my')}
-              className={`px-3 py-1 rounded-lg ${
-                selectedTab === 'my' ? 'bg-accent text-white' : 'text-gray-600'
-              }`}
-            >
-              {t('dashboard.myEvents')}
-            </button>
-          )}
-
-        </div>
-
-        {/* Search + Category + Add */}
-        <div className="flex flex-col sm:flex-row gap-3 px-4 py-2">
+        <div className="flex flex-col sm:flex-row gap-3 px-4 py-4 border-b border-gray-200">
 
           {/* Search */}
           <div className="flex items-center flex-1 border border-gray-300 rounded-lg px-2 py-1">
