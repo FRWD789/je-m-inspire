@@ -410,8 +410,7 @@ export default function ProfessionalPublicProfile() {
                 </div>
               )}
             </div>
-
-        
+          </div>
 
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
