@@ -34,10 +34,12 @@ import MyFollowingPage from './features/follow/page/MyFollowingPage';
 import DisableNotificationsPage from "./features/follow/page/DisableNotificationsPage";
 import LinkedAccountSuccess from "./page/LinkedAccountSuccess";
 import About from "./components/About";
+import CookieBar from "./components/CookieBar";
 
 export default function App() {
   return (
     <EventProvider>
+      <CookieBar/>
       <Routes>
 
         <Route element={<PersistLogin />}>
