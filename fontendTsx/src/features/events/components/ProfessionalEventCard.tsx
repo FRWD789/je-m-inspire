@@ -1,4 +1,4 @@
-import { Calendar, Edit3, Eye, Layers, MapPin, Settings, XCircle, CheckCircle, Clock, Download, Printer, X } from "lucide-react"
+import { Calendar, Edit3, Eye, Layers, MapPin, Settings, XCircle, Download, Printer, X } from "lucide-react"
 import { formatEventDate } from "../utils/date"
 import type { Event } from "@/types/events"
 import { useNavigate } from "react-router-dom"
@@ -43,7 +43,6 @@ export default function ProfessionalEventCard({
         responseType: 'blob'
       })
       
-      // Créer un lien de téléchargement
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement('a')
       link.href = url
@@ -70,10 +69,7 @@ export default function ProfessionalEventCard({
         responseType: 'blob'
       })
       
-      // Créer un URL pour le blob
       const url = window.URL.createObjectURL(new Blob([response.data]))
-      
-      // Ouvrir dans une nouvelle fenêtre et déclencher l'impression
       const printWindow = window.open(url)
       if (printWindow) {
         printWindow.addEventListener('load', () => {
@@ -114,12 +110,10 @@ export default function ProfessionalEventCard({
       )
       
       setShowManagePopup(false)
-      
-      // Recharger la page pour refléter les changements
       window.location.reload()
     } catch (error: any) {
       console.error('Erreur annulation événement:', error)
-      alert(error.response?.data?.message || 'Erreur lors de l\'annulation de l\'événement')
+      alert(error.response?.data?.message || error.response?.data?.error || 'Erreur lors de l\'annulation de l\'événement')
     } finally {
       setCancelLoading(false)
     }
@@ -180,46 +174,48 @@ export default function ProfessionalEventCard({
                 : 'Gratuit'}
             </span>
           </div>
-            {event.is_cancelled ? (
-                <div className="mt-1.5">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
-                        Événement annulé
-                    </span>
-                </div>
-            ) : (
-                <>
-                    {/* View Details Button */}
-                    <button
-                        onClick={() => navigate('/events/' + event.id)}
-                        className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
-                    >
-                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span>Voir détails</span>
-                    </button>
 
-                    {/* Professional Controls */}
-                    {event.creator && !isReservation && (
-                        <div className="flex gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
-                            <button
-                                onClick={() => onEdit && onEdit(event)}
-                                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
-                            >
-                                <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                                <span className="hidden sm:inline">Modifier</span>
-                                <span className="sm:hidden">Éditer</span>
-                            </button>
-                            <button
-                                onClick={() => setShowManagePopup(true)}
-                                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-blue-600 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors active:scale-95"
-                            >
-                                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                                <span className="hidden sm:inline">Gérer</span>
-                                <span className="sm:hidden">Gérer</span>
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
+          {/* Badge annulé ou boutons */}
+          {event.is_cancelled ? (
+            <div className="mt-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                Événement annulé
+              </span>
+            </div>
+          ) : (
+            <>
+              {/* View Details Button */}
+              <button
+                onClick={() => navigate('/events/' + event.id)}
+                className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
+              >
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>Voir détails</span>
+              </button>
+
+              {/* Professional Controls */}
+              {event.creator && !isReservation && (
+                <div className="flex gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
+                  <button
+                    onClick={() => onEdit && onEdit(event)}
+                    className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
+                  >
+                    <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Modifier</span>
+                    <span className="sm:hidden">Éditer</span>
+                  </button>
+                  <button
+                    onClick={() => setShowManagePopup(true)}
+                    className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-blue-600 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors active:scale-95"
+                  >
+                    <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Gérer</span>
+                    <span className="sm:hidden">Gérer</span>
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

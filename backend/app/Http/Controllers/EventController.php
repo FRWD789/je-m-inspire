@@ -821,7 +821,10 @@ class EventController extends Controller
     /**
      * Récupérer les événements de l'utilisateur connecté
      */
-    public function myEvents()
+    /**
+     * Récupérer les événements de l'utilisateur connecté
+     */
+     public function myEvents()
     {
         $user = JWTAuth::user();
 
@@ -833,7 +836,6 @@ class EventController extends Controller
             $userOperations = Operation::where('user_id', $user->id)->get();
             $eventIds = $userOperations->pluck('event_id')->unique();
 
-            // ✅ Charger creator dans les relations
             $events = Event::with(['localisation', 'categorie', 'images', 'creator'])
                 ->whereIn('id', $eventIds)
                 ->orderBy('start_date')

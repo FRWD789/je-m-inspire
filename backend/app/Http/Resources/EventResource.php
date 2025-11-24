@@ -23,6 +23,9 @@ class EventResource extends JsonResource
             'priority' => $this->priority,
             'thumbnail' => $this->thumbnail_path ? url('storage/' . $this->thumbnail_path) : null,
             'banner' => $this->banner_path ? url('storage/' . $this->banner_path) : null,
+            'is_cancelled' => (bool) $this->is_cancelled,
+            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+
             // Images triées par ordre d'affichage
             'images' => $this->whenLoaded('images', function() {
                 return $this->images->map(function($image) {
@@ -56,8 +59,6 @@ class EventResource extends JsonResource
             }),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
-            'is_cancelled' => (bool) $this->is_cancelled,
-            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
         ];
     }
 }
