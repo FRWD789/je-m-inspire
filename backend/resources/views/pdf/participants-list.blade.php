@@ -292,6 +292,16 @@
         Document confidentiel généré par Je m'inspire • Page <span class="page-number"></span>
     </div>
 
-
+    <script type="text/php">
+        if (isset($pdf)) {
+            $text = "Page {PAGE_NUM} / {PAGE_COUNT}";
+            $size = 9;
+            $font = $fontMetrics->getFont("DejaVu Sans");
+            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
+            $x = ($pdf->get_width() - $width) / 2;
+            $y = $pdf->get_height() - 35;
+            $pdf->page_text($x, $y, $text, $font, $size, array(0.6,0.6,0.6));
+        }
+    </script>
 </body>
 </html>
