@@ -40,43 +40,45 @@ export const adminService = {
     return response.data;
   },
 
+ // ==========================================
+  // COMMISSIONS - NOUVELLES MÉTHODES
   // ==========================================
-  // COMMISSIONS
-  // ==========================================
 
   /**
-   * Récupérer la liste des commissions
+   * Récupérer les paiements où le professionnel n'a PAS reçu directement
    */
-  getCommissions: async () => {
-    const response = await privateApi.get("/admin/commissions");
+  getPendingTransfers: async () => {
+    const response = await privateApi.get("/admin/commissions/pending-transfers");
     return response.data;
   },
 
   /**
-   * Récupérer les statistiques des commissions
+   * Récupérer tous les professionnels avec leur taux de commission
    */
-  getCommissionStatistics: async () => {
-    const response = await privateApi.get("/admin/commissions/statistics");
+  getProfessionals: async () => {
+    const response = await privateApi.get("/admin/commissions/professionals");
     return response.data;
   },
 
   /**
-   * Mettre à jour une commission
-   * @param id - ID de la commission
-   * @param data - Données de mise à jour
+   * Mettre à jour le taux de commission d'un professionnel
+   * @param userId - ID de l'utilisateur
+   * @param commissionRate - Nouveau taux de commission (0-100)
    */
-  updateCommission: async (id: number | string, data: any) => {
-    const response = await privateApi.put(`/admin/commissions/${id}`, data);
+  updateCommissionRate: async (userId: number | string, commissionRate: number) => {
+    const response = await privateApi.put(`/admin/commissions/professionals/${userId}`, {
+      commission_rate: commissionRate,
+    });
     return response.data;
   },
 
   /**
-   * Mettre à jour plusieurs commissions en masse
-   * @param commissions - Tableau de commissions à mettre à jour
+   * Mettre à jour plusieurs taux de commission en masse
+   * @param updates - Tableau des mises à jour
    */
-  bulkUpdateCommissions: async (commissions: Array<{ id: number | string; [key: string]: any }>) => {
-    const response = await privateApi.post("/admin/commissions/bulk-update", {
-      commissions,
+  bulkUpdateCommissionRates: async (updates: Array<{ user_id: number; commission_rate: number }>) => {
+    const response = await privateApi.post("/admin/commissions/bulk-update-rates", {
+      updates,
     });
     return response.data;
   },

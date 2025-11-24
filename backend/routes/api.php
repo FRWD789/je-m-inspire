@@ -217,10 +217,13 @@ Route::middleware(['auth.jwt'])->group(function () {
     // ✅ ADMIN - TOUTES LES ROUTES ADMIN REGROUPÉES ICI
     Route::prefix('admin')->group(function () {
         // Commissions
-        Route::get('/commissions', [CommissionController::class, 'index']);
-        Route::get('/commissions/statistics', [CommissionController::class, 'statistics']);
-        Route::put('/commissions/{id}', [CommissionController::class, 'update']);
-        Route::post('/commissions/bulk-update', [CommissionController::class, 'bulkUpdate']);
+        Route::get('/commissions/pending-transfers', [CommissionController::class, 'getPendingTransfers']);
+        Route::post('/commissions/{id}/mark-as-paid', [CommissionController::class, 'markAsPaid']);
+        Route::get('/commissions/professionals', [CommissionController::class, 'getProfessionals']);
+        Route::put('/commissions/professionals/{userId}', [CommissionController::class, 'updateCommissionRate']);
+        Route::post('/commissions/bulk-update-rates', [CommissionController::class, 'bulkUpdateRates']);
+        Route::get('/commissions/all', [CommissionController::class, 'getAllCommissions']); // Bonus
+
             //IMPORTANT:api v1
         // // ✅ PROFESSIONNELS - Gestion des approbations/rejets
         // Route::get('/pending-professionals', [AuthController::class, 'getPendingProfessionals']);

@@ -46,4 +46,9 @@ class Paiement extends Model
     {
         return $this->belongsTo(Abonnement::class, 'abonnement_id', 'abonnement_id');
     }
+
+    public function commission()
+    {
+        return $this->hasOne(Commission::class, 'paiement_id', 'paiement_id');
+    }
 }
