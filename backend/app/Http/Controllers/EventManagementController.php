@@ -215,6 +215,7 @@ class EventManagementController extends Controller
                     $remboursement = Remboursement::create([
                         'user_id' => $reservation->user->id,
                         'operation_id' => $reservation->id,
+                        'montant' => $reservation->paiement->total,
                         'motif' => 'Événement annulé par l\'organisateur',
                         'statut' => 'en_attente',
                     ]);
