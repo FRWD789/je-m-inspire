@@ -29,13 +29,20 @@ class EventManagementController extends Controller
         }
 
         try {
-            // Vérifier que l'utilisateur est bien le créateur de l'événement
-            $event = Event::where('id', $eventId)
-                ->where('user_id', $user->id)
-                ->first();
+            // ✅ Vérifier que l'utilisateur est bien le créateur via Operations
+            $isCreator = Operation::where([
+                'event_id' => $eventId,
+                'user_id' => $user->id,
+                'type_operation_id' => 1 // Type = création
+            ])->exists();
 
-            if (!$event) {
+            if (!$isCreator) {
                 return $this->notFoundResponse('Événement introuvable ou vous n\'êtes pas le créateur');
+            }
+
+            $event = Event::find($eventId);
+            if (!$event) {
+                return $this->notFoundResponse('Événement introuvable');
             }
 
             // Récupérer toutes les réservations avec paiement confirmé
@@ -56,8 +63,8 @@ class EventManagementController extends Controller
                         'phone' => $operation->user->phone ?? 'N/A',
                         'total_paid' => $operation->paiement->total ?? 0,
                         'payment_method' => $operation->paiement->session_id ? 'Stripe' :
-                                           ($operation->paiement->paypal_id ? 'PayPal' : 'Autre'),
-                        'reservation_date' => $operation->created_at->format('Y-m-d H:i'),
+                                           ($operation->paiement->paypal_id ? 'PayPal' : 'N/A'),
+                        'reservation_date' => $operation->created_at->format('Y-m-d H:i:s'),
                     ];
                 });
 
@@ -70,15 +77,11 @@ class EventManagementController extends Controller
             }
 
             return $this->successResponse([
-                'event' => [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'start_date' => $event->start_date,
-                    'capacity' => $event->capacity,
-                ],
+                'event_id' => $eventId,
+                'event_name' => $event->name,
                 'participants' => $participants,
                 'total_participants' => $participants->count(),
-            ], 'Participants récupérés avec succès');
+            ], 'Liste des participants récupérée avec succès');
 
         } catch (\Exception $e) {
             Log::error('[EventManagement] Erreur récupération participants: ' . $e->getMessage());
@@ -99,14 +102,20 @@ class EventManagementController extends Controller
         }
 
         try {
-            // Vérifier que l'utilisateur est bien le créateur de l'événement
-            $event = Event::with('localisation', 'categorie')
-                ->where('id', $eventId)
-                ->where('id', $user->id)
-                ->first();
+            // ✅ Vérifier que l'utilisateur est bien le créateur via Operations
+            $isCreator = Operation::where([
+                'event_id' => $eventId,
+                'user_id' => $user->id,
+                'type_operation_id' => 1
+            ])->exists();
 
-            if (!$event) {
+            if (!$isCreator) {
                 return $this->notFoundResponse('Événement introuvable ou vous n\'êtes pas le créateur');
+            }
+
+            $event = Event::with('localisation')->find($eventId);
+            if (!$event) {
+                return $this->notFoundResponse('Événement introuvable');
             }
 
             // Récupérer les participants
@@ -116,35 +125,36 @@ class EventManagementController extends Controller
                 ->whereHas('paiement', function($query) {
                     $query->where('status', 'paid');
                 })
-                ->orderBy('created_at', 'asc')
-                ->get();
-
-            if ($participants->isEmpty()) {
-                return $this->errorResponse('Aucun participant pour cet événement', 404);
-            }
-
-            // Préparer les données pour la vue
-            $data = [
-                'event' => $event,
-                'participants' => $participants,
-                'total_participants' => $participants->count(),
-                'generated_at' => now()->format('d/m/Y à H:i'),
-                'organizer' => $user->name . ' ' . $user->last_name,
-            ];
-
-            // Générer le PDF
-            $pdf = Pdf::loadView('pdf.participants-list', $data);
-            $pdf->setPaper('A4', 'portrait');
+                ->get()
+                ->map(function($operation) {
+                    return [
+                        'name' => $operation->user->name ?? 'N/A',
+                        'last_name' => $operation->user->last_name ?? '',
+                        'email' => $operation->user->email ?? 'N/A',
+                        'phone' => $operation->user->phone ?? 'N/A',
+                        'total_paid' => $operation->paiement->total ?? 0,
+                        'payment_method' => $operation->paiement->session_id ? 'Stripe' :
+                                           ($operation->paiement->paypal_id ? 'PayPal' : 'N/A'),
+                        'reservation_date' => $operation->created_at->format('Y-m-d H:i:s'),
+                    ];
+                });
 
             if ($debug) {
-                Log::info('[EventManagement] PDF généré', [
+                Log::info('[EventManagement] Génération PDF participants', [
                     'event_id' => $eventId,
                     'user_id' => $user->id,
                     'participants_count' => $participants->count()
                 ]);
             }
 
-            // Retourner le PDF en téléchargement
+            // Générer le PDF
+            $pdf = Pdf::loadView('pdf.participants', [
+                'event' => $event,
+                'participants' => $participants,
+                'total_participants' => $participants->count(),
+                'generated_date' => now()->format('Y-m-d H:i:s'),
+            ]);
+
             $filename = 'participants_' . str_replace(' ', '_', $event->name) . '_' . now()->format('Y-m-d') . '.pdf';
             return $pdf->download($filename);
 
@@ -172,14 +182,22 @@ class EventManagementController extends Controller
         try {
             DB::beginTransaction();
 
-            // Vérifier que l'utilisateur est bien le créateur de l'événement
-            $event = Event::where('id', $eventId)
-                ->where('id', $user->id)
-                ->first();
+            // ✅ Vérifier que l'utilisateur est bien le créateur via Operations
+            $isCreator = Operation::where([
+                'event_id' => $eventId,
+                'user_id' => $user->id,
+                'type_operation_id' => 1
+            ])->exists();
 
-            if (!$event) {
+            if (!$isCreator) {
                 DB::rollBack();
                 return $this->notFoundResponse('Événement introuvable ou vous n\'êtes pas le créateur');
+            }
+
+            $event = Event::find($eventId);
+            if (!$event) {
+                DB::rollBack();
+                return $this->notFoundResponse('Événement introuvable');
             }
 
             // Vérifier que l'événement n'est pas déjà annulé
