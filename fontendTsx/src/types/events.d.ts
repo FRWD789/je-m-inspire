@@ -16,6 +16,7 @@ export interface Event {
   refund_status?: 'en_attente' | 'approuve' | 'refuse'
   can_cancel?: boolean
   is_cancelled?: boolean;
+  cancelled_at?: string;
   localisation: {
     id?: number;
     name?: string;

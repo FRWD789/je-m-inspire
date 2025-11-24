@@ -56,6 +56,8 @@ class EventResource extends JsonResource
             }),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
+            'is_cancelled' => (bool) $this->is_cancelled,
+            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
         ];
     }
 }
