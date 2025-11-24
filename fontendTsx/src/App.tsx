@@ -100,7 +100,7 @@ export default function App() {
                 <Route path="commissions" element={<AdminCommissionPage />} />
               </Route>
 
-              <Route path="/refunds" element={<RemboursementsPage />} />
+              <Route path="refunds" element={<RemboursementsPage />} />
 
               {/* Vendor (Admin + Pro) */}
               <Route
