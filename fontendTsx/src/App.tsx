@@ -35,6 +35,7 @@ import DisableNotificationsPage from "./features/follow/page/DisableNotification
 import LinkedAccountSuccess from "./page/LinkedAccountSuccess";
 import About from "./components/About";
 import CookieBar from "./components/CookieBar";
+import RemboursementsPage from "./page/remboursements";
 
 export default function App() {
   return (
@@ -97,17 +98,13 @@ export default function App() {
               <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
                 <Route path="approbation" element={<AdminApprovalPage />} />
                 <Route path="commissions" element={<AdminCommissionPage />} />
-                <Route path="refunds" element={<RefundRequestsAdmin />} />
               </Route>
 
-              <Route path="refunds-request" element={<RefundRequestPage />} />
+              <Route path="/refunds" element={<RemboursementsPage />} />
 
               {/* Vendor (Admin + Pro) */}
               <Route
-                element={
-                  <PrivateRoute allowedRoles={["admin", "professionnel"]} />
-                }
-              >
+                element={<PrivateRoute allowedRoles={["admin", "professionnel"]} />}>
                 <Route path="vendor" element={<VendorDashboard />} />
               </Route>
             </Route>
