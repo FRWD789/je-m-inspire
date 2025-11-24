@@ -25,8 +25,10 @@ class PaiementController extends Controller
     /**
      * Créer une session de paiement Stripe
      */
-    public function stripeCheckout(Request $request)
+   public function stripeCheckout(Request $request)
     {
+        $debug = config('app.debug');
+
         try {
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
@@ -38,20 +40,57 @@ class PaiementController extends Controller
             $user = JWTAuth::user();
             $vendor = $event->creator;
 
-            // Vérifications métier
-            if ($event->available_places < 1) {
-                return $this->errorResponse('Pas assez de places disponibles', 400);
+            DB::beginTransaction();
+
+            // ✅ VALIDATION 1: Vérifier que l'événement n'est pas passé
+            if ($event->start_date <= now()) {
+                DB::rollBack();
+                return $this->errorResponse('Impossible de réserver un événement déjà commencé ou passé', 422);
             }
 
-            if ($event->start_date <= now()) {
-                return $this->errorResponse('Impossible de réserver un événement déjà commencé', 400);
+            // ✅ VALIDATION 2: Vérifier les places disponibles
+            if ($event->available_places < 1) {
+                DB::rollBack();
+                return $this->errorResponse('Pas assez de places disponibles', 422);
+            }
+
+            // ✅ VALIDATION 3: Vérifier doublon avec gestion intelligente
+            $existingReservation = Operation::where([
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'type_operation_id' => 2
+            ])->first();
+
+            if ($existingReservation) {
+                // Si paiement payé → bloquer
+                if ($existingReservation->paiement && $existingReservation->paiement->status === 'paid') {
+                    DB::rollBack();
+                    return $this->errorResponse('Vous avez déjà une réservation payée pour cet événement', 422);
+                }
+
+                // Si paiement en attente depuis < 15 min → bloquer temporairement
+                if ($existingReservation->paiement &&
+                    $existingReservation->paiement->status === 'pending' &&
+                    $existingReservation->created_at->gt(now()->subMinutes(15))) {
+                    DB::rollBack();
+                    return $this->errorResponse('Une réservation est en cours de traitement. Veuillez patienter quelques minutes.', 422);
+                }
+
+                // Sinon → supprimer l'ancienne (paiement échoué ou expiré)
+                if ($debug) {
+                    Log::info('[Stripe] Suppression réservation obsolète', [
+                        'operation_id' => $existingReservation->id,
+                        'user_id' => $user->id,
+                        'event_id' => $event->id,
+                        'paiement_status' => $existingReservation->paiement?->status ?? 'aucun'
+                    ]);
+                }
+                $existingReservation->delete();
             }
 
             // Calcul du montant
             $totalAmount = $event->base_price;
             $amountCents = intval(round($totalAmount * 100));
-
-            DB::beginTransaction();
 
             // Créer le paiement
             $paiement = Paiement::create([
@@ -73,6 +112,10 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
+            // Décrémenter les places disponibles
+            $event->available_places -= 1;
+            $event->save();
+
             // Configuration de base pour la session Stripe
             $sessionParams = [
                 'payment_method_types' => ['card'],
@@ -83,58 +126,62 @@ class PaiementController extends Controller
                             'name' => $event->name,
                             'description' => "1 place pour {$event->name}",
                         ],
-                        'unit_amount' => intval(round($event->base_price * 100)),
+                        'unit_amount' => $amountCents,
                     ],
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
                 'success_url' => config('app.frontend_url') . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => config('app.frontend_url') . '/payment/cancel',
+                'customer_email' => $user->email,
                 'metadata' => [
+                    'payment_id' => $paiement->paiement_id,
                     'user_id' => $user->id,
                     'event_id' => $event->id,
-                    'operation_id' => $operation->id,
-                    'payment_id' => $paiement->paiement_id,
-                    'quantity' => 1,
                 ],
             ];
 
-            // ✅ STRIPE CONNECT : Si le vendor a Pro Plus + compte Stripe lié
-            if ($vendor && $vendor->hasProPlus() && $vendor->stripeAccount_id) {
-                $commissionAmount = intval(round($totalAmount * ($vendor->commission_rate / 100) * 100));
+            // Gestion commission vendor avec Stripe Connect
+            $hasProPlus = $vendor && $vendor->hasProPlus();
+            $hasStripeAccount = $vendor && !empty($vendor->stripeAccount_id);
 
-                // Paiement direct au vendor avec prélèvement de la commission
+            if ($hasProPlus && $hasStripeAccount) {
+                $commissionAmount = intval(round(($totalAmount * ($vendor->commission_rate / 100)) * 100));
                 $sessionParams['payment_intent_data'] = [
                     'application_fee_amount' => $commissionAmount,
                     'transfer_data' => [
                         'destination' => $vendor->stripeAccount_id,
                     ],
                 ];
-
-                Log::info('[Stripe Connect] Paiement avec commission', [
-                    'vendor_id' => $vendor->id,
-                    'total' => $totalAmount,
-                    'commission' => $commissionAmount / 100,
-                    'vendor_reçoit' => ($amountCents - $commissionAmount) / 100,
-                ]);
             }
 
-            // Créer la session Stripe
-            $session = \Stripe\Checkout\Session::create($sessionParams);
+            $session = Session::create($sessionParams);
 
             $paiement->update(['session_id' => $session->id]);
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('[Stripe] Session créée avec validation', [
+                    'session_id' => $session->id,
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'operation_id' => $operation->id,
+                    'places_restantes' => $event->available_places
+                ]);
+            }
+
             return $this->successResponse([
-                'session_id' => $session->id,
                 'url' => $session->url,
+                'session_id' => $session->id,
                 'payment_id' => $paiement->paiement_id,
             ], 'Session de paiement créée avec succès');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur Stripe Checkout: ' . $e->getMessage());
+            Log::error('[Stripe] Erreur Checkout: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la création de la session de paiement', 500);
         }
     }
@@ -144,6 +191,8 @@ class PaiementController extends Controller
      */
     public function paypalCheckout(Request $request)
     {
+        $debug = config('app.debug');
+
         try {
             $validated = $request->validate([
                 'event_id' => 'required|exists:events,id',
@@ -153,16 +202,53 @@ class PaiementController extends Controller
             $user = JWTAuth::user();
             $vendor = $event->creator;
 
-            // Vérifications métier
-            if ($event->available_places < 1) {
-                return $this->errorResponse('Pas assez de places disponibles', 400);
-            }
-
-            if ($event->start_date <= now()) {
-                return $this->errorResponse('Impossible de réserver un événement déjà commencé', 400);
-            }
-
             DB::beginTransaction();
+
+            // ✅ VALIDATION 1: Vérifier que l'événement n'est pas passé
+            if ($event->start_date <= now()) {
+                DB::rollBack();
+                return $this->errorResponse('Impossible de réserver un événement déjà commencé ou passé', 422);
+            }
+
+            // ✅ VALIDATION 2: Vérifier les places disponibles
+            if ($event->available_places < 1) {
+                DB::rollBack();
+                return $this->errorResponse('Pas assez de places disponibles', 422);
+            }
+
+            // ✅ VALIDATION 3: Vérifier doublon avec gestion intelligente
+            $existingReservation = Operation::where([
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'type_operation_id' => 2
+            ])->first();
+
+            if ($existingReservation) {
+                // Si paiement payé → bloquer
+                if ($existingReservation->paiement && $existingReservation->paiement->status === 'paid') {
+                    DB::rollBack();
+                    return $this->errorResponse('Vous avez déjà une réservation payée pour cet événement', 422);
+                }
+
+                // Si paiement en attente depuis < 15 min → bloquer temporairement
+                if ($existingReservation->paiement &&
+                    $existingReservation->paiement->status === 'pending' &&
+                    $existingReservation->created_at->gt(now()->subMinutes(15))) {
+                    DB::rollBack();
+                    return $this->errorResponse('Une réservation est en cours de traitement. Veuillez patienter quelques minutes.', 422);
+                }
+
+                // Sinon → supprimer l'ancienne (paiement échoué ou expiré)
+                if ($debug) {
+                    Log::info('[PayPal] Suppression réservation obsolète', [
+                        'operation_id' => $existingReservation->id,
+                        'user_id' => $user->id,
+                        'event_id' => $event->id,
+                        'paiement_status' => $existingReservation->paiement?->status ?? 'aucun'
+                    ]);
+                }
+                $existingReservation->delete();
+            }
 
             $totalAmount = $event->base_price;
 
@@ -192,44 +278,41 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
+            // Décrémenter les places disponibles
+            $event->available_places -= 1;
+            $event->save();
+
             $purchaseUnit = [
                 "amount" => [
                     "currency_code" => "CAD",
-                    "value" => number_format($totalAmount, 2, '.', '')
+                    "value" => number_format($totalAmount, 2, '.', ''),
                 ],
+                "description" => "1 place pour {$event->name}",
             ];
 
-            if (config('services.paypal.mode') === 'live') {
-                // Production: Avec platform fees
-                // Si vendor avec Pro Plus et compte PayPal
-                if ($vendor && $vendor->hasProPlus() && $vendor->paypalAccount_id) {
-                    $commissionAmount = $totalAmount * ($vendor->commission_rate / 100);
+            // Gestion commission vendor avec PayPal
+            $hasProPlus = $vendor && $vendor->hasProPlus();
+            $hasPaypalAccount = $vendor && !empty($vendor->paypalAccount_id);
 
-                    $purchaseUnit["payee"] = [
-                        "merchant_id" => $vendor->paypalAccount_id,
-                    ];
-
-                    $purchaseUnit["payment_instruction"] = [
-                        "disbursement_mode" => "INSTANT",
-                        "platform_fees" => [
-                            [
-                                "amount" => [
-                                    "currency_code" => "CAD",
-                                    "value" => number_format($commissionAmount, 2, '.', '')
-                                ]
-                            ]
-                        ]
-                    ];
-                }
-            } else {
-                // Sandbox: Paiement simple (pas de platform fees)
-                Log::info('[PayPal] Mode sandbox - Platform fees désactivés');
+            if ($hasProPlus && $hasPaypalAccount && config('paypal.mode') === 'live') {
+                $commissionAmount = number_format($totalAmount * ($vendor->commission_rate / 100), 2, '.', '');
+                $purchaseUnit['payment_instruction'] = [
+                    'disbursement_mode' => 'INSTANT',
+                    'platform_fees' => [[
+                        'amount' => [
+                            'currency_code' => 'CAD',
+                            'value' => $commissionAmount,
+                        ],
+                    ]],
+                ];
+                $purchaseUnit['payee'] = [
+                    'merchant_id' => $vendor->paypalAccount_id,
+                ];
             }
 
-
             $response = $paypal->createOrder([
-                "intent" => "CAPTURE",
-                "application_context" => [
+                'intent' => 'CAPTURE',
+                'application_context' => [
                     'return_url' => config('app.frontend_url') . '/payment/success?payment_id=' . $paiement->paiement_id,
                     'cancel_url' => config('app.frontend_url') . '/payment/cancel',
                 ],
@@ -250,15 +333,27 @@ class PaiementController extends Controller
 
             DB::commit();
 
+            if ($debug) {
+                Log::info('[PayPal] Commande créée avec validation', [
+                    'order_id' => $response['id'],
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'operation_id' => $operation->id,
+                    'places_restantes' => $event->available_places
+                ]);
+            }
+
             return $this->successResponse([
                 'order_id' => $response['id'],
                 'approval_url' => $approveUrl,
                 'payment_id' => $paiement->paiement_id,
             ], 'Commande PayPal créée avec succès');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erreur PayPal Checkout: ' . $e->getMessage());
+            Log::error('[PayPal] Erreur Checkout: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la création de la commande PayPal', 500);
         }
     }
