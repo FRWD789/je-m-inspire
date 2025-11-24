@@ -148,7 +148,7 @@ class EventManagementController extends Controller
             }
 
             // Générer le PDF
-            $pdf = Pdf::loadView('pdf.participants', [
+            $pdf = Pdf::loadView('pdf.participants-list', [
                 'event' => $event,
                 'participants' => $participants,
                 'total_participants' => $participants->count(),
