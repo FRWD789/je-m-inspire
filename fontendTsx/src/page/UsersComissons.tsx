@@ -52,6 +52,18 @@ interface Stats {
   total_commissions: number
 }
 
+// Helper pour convertir en nombre de manière sûre
+const toNumber = (value: any): number => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') return parseFloat(value) || 0
+  return 0
+}
+
+// Helper pour formater les montants
+const formatMontant = (value: any): string => {
+  return toNumber(value).toFixed(2)
+}
+
 export default function AdminCommissionPage() {
   const navigate = useNavigate()
 
@@ -90,8 +102,24 @@ export default function AdminCommissionPage() {
       const commissionsData = data.commissions || []
       const statsData = data.stats || null
       
-      setCommissions(commissionsData)
-      setStats(statsData)
+      // Convertir tous les montants en nombres
+      const normalizedCommissions = commissionsData.map((c: any) => ({
+        ...c,
+        montant_total: toNumber(c.montant_total),
+        taux_commission: toNumber(c.taux_commission),
+        montant_commission: toNumber(c.montant_commission),
+        montant_net: toNumber(c.montant_net)
+      }))
+      
+      // Convertir les stats en nombres
+      const normalizedStats = statsData ? {
+        total_a_transferer: toNumber(statsData.total_a_transferer),
+        nombre_paiements: toNumber(statsData.nombre_paiements),
+        total_commissions: toNumber(statsData.total_commissions)
+      } : null
+      
+      setCommissions(normalizedCommissions)
+      setStats(normalizedStats)
     } catch (err: any) {
       console.error('Erreur lors du chargement des commissions:', err)
       console.error('Réponse complète:', err.response?.data)
@@ -112,7 +140,13 @@ export default function AdminCommissionPage() {
       const data = res.data.data || res.data
       const professionalsData = data.professionals || []
       
-      setProfessionals(professionalsData)
+      // Convertir commission_rate en nombre
+      const normalizedProfessionals = professionalsData.map((p: any) => ({
+        ...p,
+        commission_rate: toNumber(p.commission_rate)
+      }))
+      
+      setProfessionals(normalizedProfessionals)
     } catch (err: any) {
       console.error('Erreur lors du chargement des professionnels:', err)
       console.error('Réponse complète:', err.response?.data)
@@ -160,7 +194,7 @@ export default function AdminCommissionPage() {
 
   const startEdit = (id: number, currentRate: number) => {
     setEditingId(id)
-    setEditValue(currentRate)
+    setEditValue(toNumber(currentRate))
   }
 
   const cancelEdit = () => {
@@ -274,7 +308,7 @@ export default function AdminCommissionPage() {
                 <DollarSign className="text-primary" />
                 <div>
                   <p className="text-sm text-gray-500">Total à transférer</p>
-                  <h3 className="text-lg font-semibold">{stats.total_a_transferer.toFixed(2)} $</h3>
+                  <h3 className="text-lg font-semibold">{formatMontant(stats.total_a_transferer)} $</h3>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-3">
@@ -288,7 +322,7 @@ export default function AdminCommissionPage() {
                 <DollarSign className="text-accent" />
                 <div>
                   <p className="text-sm text-gray-500">Commissions prélevées</p>
-                  <h3 className="text-lg font-semibold">{stats.total_commissions.toFixed(2)} $</h3>
+                  <h3 className="text-lg font-semibold">{formatMontant(stats.total_commissions)} $</h3>
                 </div>
               </div>
             </div>
@@ -328,12 +362,12 @@ export default function AdminCommissionPage() {
                       <td className="py-3 px-4">{c.event_name}</td>
                       <td className="py-3 px-4">{c.customer_name}</td>
                       <td className="py-3 px-4">{c.vendor_name}</td>
-                      <td className="py-3 px-4">{c.montant_total.toFixed(2)} $</td>
+                      <td className="py-3 px-4">{formatMontant(c.montant_total)} $</td>
                       <td className="py-3 px-4">
-                        {c.montant_commission.toFixed(2)} $ ({c.taux_commission}%)
+                        {formatMontant(c.montant_commission)} $ ({formatMontant(c.taux_commission)}%)
                       </td>
                       <td className="py-3 px-4 font-semibold text-green-700">
-                        {c.montant_net.toFixed(2)} $
+                        {formatMontant(c.montant_net)} $
                       </td>
                       <td className="py-3 px-4">{c.payment_method}</td>
                       <td className="py-3 px-4">
@@ -418,13 +452,13 @@ export default function AdminCommissionPage() {
                               max="100"
                               step="0.1"
                               value={editValue}
-                              onChange={e => setEditValue(parseFloat(e.target.value))}
+                              onChange={e => setEditValue(parseFloat(e.target.value) || 0)}
                               className="w-20 px-2 py-1 border border-gray-300 rounded"
                             />
                             <span>%</span>
                           </div>
                         ) : (
-                          <span className="font-semibold">{pro.commission_rate}%</span>
+                          <span className="font-semibold">{formatMontant(pro.commission_rate)}%</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
