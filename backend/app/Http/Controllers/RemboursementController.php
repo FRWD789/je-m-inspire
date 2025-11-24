@@ -131,28 +131,139 @@ class RemboursementController extends Controller
     }
 
     /**
-     * Voir toutes les demandes (Admin)
+     * Voir les remboursements selon le rôle
+     * Admin: remboursements avec commission indirecte uniquement
+     * Pro: remboursements avec commission directe de ses événements
      */
     public function index()
     {
-        try {
-            $demandes = Remboursement::with(['user', 'operation.event'])
-                ->orderBy('created_at', 'desc')
-                ->get();
+        $debug = config('app.debug');
 
-            return $this->collectionResponse(
-                RemboursementResource::collection($demandes),
-                'Toutes les demandes de remboursement récupérées'
-            );
+        try {
+            $user = Auth::user();
+
+            // Vérifier si admin
+            $isAdmin = $user->roles()->where('role', 'admin')->exists();
+
+            if ($isAdmin) {
+                // Admin voit uniquement les remboursements INDIRECTS
+                $remboursements = Remboursement::with([
+                    'user',
+                    'operation.event',
+                    'operation.paiement.commission.vendor'
+                ])
+                ->whereHas('operation.paiement.commission', function($query) {
+                    $query->where('type', 'indirect');
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($remboursement) {
+                    $operation = $remboursement->operation;
+                    $paiement = $operation->paiement;
+                    $commission = $paiement->commission;
+                    $vendor = $commission->vendor;
+
+                    return [
+                        'id' => $remboursement->id,
+                        'date' => $remboursement->created_at->format('Y-m-d H:i:s'),
+                        'evenement' => $operation->event->name ?? 'N/A',
+                        'client' => $remboursement->user->name . ' ' . $remboursement->user->last_name,
+                        'vendeur' => $vendor->name . ' ' . $vendor->last_name,
+                        'courriel' => $remboursement->user->email,
+                        'motif' => $remboursement->motif,
+                        'message' => $remboursement->commentaire_admin ?? '',
+                        'montant' => (float) $remboursement->montant,
+                        'statut' => $remboursement->statut,
+                        'date_traitement' => $remboursement->date_traitement?->format('Y-m-d H:i:s'),
+                    ];
+                });
+
+                if ($debug) {
+                    Log::info('[Remboursement] Remboursements admin (indirects)', [
+                        'user_id' => $user->id,
+                        'count' => $remboursements->count()
+                    ]);
+                }
+
+                return $this->successResponse([
+                    'data' => $remboursements,
+                    'total' => $remboursements->count(),
+                    'type' => 'admin'
+                ]);
+
+            } else {
+                // Professionnel voit uniquement les remboursements DIRECTS de ses événements
+                $eventIds = Operation::where('user_id', $user->id)
+                    ->where('type_operation_id', 1)
+                    ->pluck('event_id')
+                    ->toArray();
+
+                if (empty($eventIds)) {
+                    return $this->successResponse([
+                        'data' => [],
+                        'total' => 0,
+                        'type' => 'pro',
+                        'message' => 'Aucun événement créé'
+                    ]);
+                }
+
+                $remboursements = Remboursement::with([
+                    'user',
+                    'operation.event',
+                    'operation.paiement.commission.vendor'
+                ])
+                ->whereHas('operation', function($query) use ($eventIds) {
+                    $query->whereIn('event_id', $eventIds);
+                })
+                ->whereHas('operation.paiement.commission', function($query) {
+                    $query->where('type', 'direct');
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($remboursement) {
+                    $operation = $remboursement->operation;
+                    $paiement = $operation->paiement;
+                    $commission = $paiement->commission;
+                    $vendor = $commission->vendor;
+
+                    return [
+                        'id' => $remboursement->id,
+                        'date' => $remboursement->created_at->format('Y-m-d H:i:s'),
+                        'evenement' => $operation->event->name ?? 'N/A',
+                        'client' => $remboursement->user->name . ' ' . $remboursement->user->last_name,
+                        'vendeur' => $vendor->name . ' ' . $vendor->last_name,
+                        'courriel' => $remboursement->user->email,
+                        'motif' => $remboursement->motif,
+                        'message' => $remboursement->commentaire_admin ?? '',
+                        'montant' => (float) $remboursement->montant,
+                        'statut' => $remboursement->statut,
+                        'date_traitement' => $remboursement->date_traitement?->format('Y-m-d H:i:s'),
+                    ];
+                });
+
+                if ($debug) {
+                    Log::info('[Remboursement] Remboursements pro (directs)', [
+                        'user_id' => $user->id,
+                        'count' => $remboursements->count(),
+                        'events_count' => count($eventIds)
+                    ]);
+                }
+
+                return $this->successResponse([
+                    'data' => $remboursements,
+                    'total' => $remboursements->count(),
+                    'type' => 'pro'
+                ]);
+            }
 
         } catch (\Exception $e) {
-            Log::error('[Remboursement] Erreur récupération toutes demandes: ' . $e->getMessage());
-            return $this->errorResponse('Erreur lors de la récupération des demandes', 500);
+            Log::error('[Remboursement] Erreur récupération remboursements: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de la récupération des remboursements', 500);
         }
     }
 
     /**
-     * Traiter une demande de remboursement (Admin)
+     * Traiter une demande de remboursement (Admin ou Pro)
      */
     public function traiter(Request $request, $id)
     {
@@ -185,7 +296,6 @@ class RemboursementController extends Controller
 
             if ($validated['statut'] === 'approuve') {
                 $event = $remboursement->operation->event;
-                // ✅ CORRECTION : Rendre 1 place au lieu de $operation->quantity
                 $event->available_places += 1;
                 $event->save();
 
@@ -201,7 +311,6 @@ class RemboursementController extends Controller
                     ]);
                 }
 
-                // Charger l'utilisateur et envoyer la notification d'approbation
                 $remboursement->load(['user', 'operation.event', 'operation.paiement']);
                 $remboursement->user->notify(new \App\Notifications\RemboursementApprovedNotification($remboursement));
 
@@ -219,7 +328,6 @@ class RemboursementController extends Controller
                     ]);
                 }
 
-                // Charger l'utilisateur et envoyer la notification de refus
                 $remboursement->load(['user', 'operation.event', 'operation.paiement']);
                 $remboursement->user->notify(new \App\Notifications\RemboursementRejectedNotification($remboursement));
 

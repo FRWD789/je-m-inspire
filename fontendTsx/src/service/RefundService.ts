@@ -9,11 +9,11 @@ export const RefundService = () => ({
       const res = await privateApi.get("/mes-remboursements");
       return res.data;
     },
+    // Retourne admin (indirect) ou pro (direct) selon le rôle
     getAllRefunds: async () => {
       const res = await privateApi.get("/remboursements");
       return res.data;
     },
-
     processRefund: async (
         id: number,
         data: { statut: "approuve" | "refuse"; commentaire_admin?: string }

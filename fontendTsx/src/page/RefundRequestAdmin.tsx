@@ -6,13 +6,22 @@ import Button from "@/components/ui/button";
 
 interface RefundRequest {
   id: number;
-  user: { id: number; name: string; email: string };
-  operation: { id: number; quantity: number; event: { name: string } };
-  montant: number;
+  date: string;
+  evenement: string;
+  client: string;
+  vendeur: string;
+  courriel: string;
   motif: string;
+  message: string;
+  montant: number;
   statut: "en_attente" | "approuve" | "refuse";
-  date_traitement?: string;
-  message?: string; // admin message
+  date_traitement: string | null;
+}
+
+interface ApiResponse {
+  data: RefundRequest[];
+  total: number;
+  type: 'admin' | 'pro';
 }
 
 export default function RefundRequestAdmin() {
@@ -28,13 +37,16 @@ export default function RefundRequestAdmin() {
   const [actionType, setActionType] = useState<"approve" | "refuse" | null>(null);
   const [adminMessage, setAdminMessage] = useState("");
   const [error, setError] = useState("");
+  const [userType, setUserType] = useState<'admin' | 'pro'>('admin');
 
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await service.getAllRefunds();
-      setRequests(res || []);
-    } catch {
+      const res: ApiResponse = await service.getAllRefunds();
+      setRequests(res.data || []);
+      setUserType(res.type || 'admin');
+    } catch (err) {
+      console.error("Erreur chargement remboursements:", err);
       setError("Impossible de récupérer les demandes de remboursement.");
     } finally {
       setLoading(false);
@@ -71,6 +83,9 @@ export default function RefundRequestAdmin() {
       setModalRequest(null);
       setAdminMessage("");
       setActionType(null);
+    } catch (err) {
+      console.error("Erreur traitement:", err);
+      alert("Erreur lors du traitement de la demande");
     } finally {
       setProcessingId(null);
     }
@@ -83,14 +98,23 @@ export default function RefundRequestAdmin() {
     return true;
   });
 
+  const title = userType === 'admin' 
+    ? 'Remboursements à traiter (Paiements indirects)' 
+    : 'Remboursements de mes événements (Paiements directs)';
+
+  const description = userType === 'admin'
+    ? 'Paiements reçus par la plateforme - vous devez effectuer les remboursements manuellement'
+    : 'Paiements reçus directement - vous devez effectuer les remboursements depuis votre compte Stripe/PayPal';
+
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       {/* Header + Stats */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Shield size={24} /> Gestion des demandes de remboursement
+            <Shield size={24} /> {title}
           </h1>
+          <p className="text-sm text-gray-600 mt-1">{description}</p>
           <div className="flex gap-4 mt-2 text-sm text-gray-600">
             <span>En attente: {requests.filter((r) => r.statut === "en_attente").length}</span>
             <span>Approuvées: {requests.filter((r) => r.statut === "approuve").length}</span>
@@ -117,7 +141,9 @@ export default function RefundRequestAdmin() {
             }`}
             onClick={() => setCurrentTab(tab as any)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === "pending" ? "En attente" : 
+             tab === "approved" ? "Approuvées" : 
+             tab === "refused" ? "Refusées" : "Toutes"}
           </button>
         ))}
       </div>
@@ -125,6 +151,10 @@ export default function RefundRequestAdmin() {
       {/* Table */}
       {loading ? (
         <p className="text-center mt-6">Chargement des demandes...</p>
+      ) : error ? (
+        <div className="text-center bg-red-50 border-2 border-red-200 rounded-lg py-8">
+          <p className="text-red-600">{error}</p>
+        </div>
       ) : filteredRequests.length === 0 ? (
         <div className="text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg py-16">
           <MessageCircle size={40} className="mx-auto text-accent mb-4" />
@@ -136,11 +166,14 @@ export default function RefundRequestAdmin() {
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 text-gray-700 text-left">
               <tr>
-                <th className="py-3 px-4 font-semibold">Utilisateur</th>
+                <th className="py-3 px-4 font-semibold">Date</th>
                 <th className="py-3 px-4 font-semibold">Événement</th>
-                <th className="py-3 px-4 font-semibold">Montant (€)</th>
+                <th className="py-3 px-4 font-semibold">Client</th>
+                <th className="py-3 px-4 font-semibold">Vendeur</th>
+                <th className="py-3 px-4 font-semibold">Courriel</th>
                 <th className="py-3 px-4 font-semibold">Motif</th>
                 <th className="py-3 px-4 font-semibold">Message</th>
+                <th className="py-3 px-4 font-semibold">Montant</th>
                 <th className="py-3 px-4 font-semibold">Statut / Actions</th>
               </tr>
             </thead>
@@ -150,13 +183,15 @@ export default function RefundRequestAdmin() {
                   key={req.id}
                   className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
                 >
-                  <td className="py-3 px-4">
-                    {req.user.name} ({req.user.email})
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {new Date(req.date).toLocaleDateString('fr-CA')}
                   </td>
-                  <td className="py-3 px-4">
-                    {req.operation.event.name} x{req.operation.quantity}
+                  <td className="py-3 px-4 max-w-[150px] truncate" title={req.evenement}>
+                    {req.evenement}
                   </td>
-                  <td className="py-3 px-4">{req.montant}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">{req.client}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">{req.vendeur}</td>
+                  <td className="py-3 px-4">{req.courriel}</td>
 
                   {/* Motif click */}
                   <td
@@ -167,8 +202,7 @@ export default function RefundRequestAdmin() {
                     }
                   >
                     {req.motif
-                      ? req.motif.slice(0, 40) +
-                        (req.motif.length > 40 ? "..." : "")
+                      ? req.motif.slice(0, 40) + (req.motif.length > 40 ? "..." : "")
                       : "Aucun motif"}
                   </td>
 
@@ -176,21 +210,24 @@ export default function RefundRequestAdmin() {
                   <td
                     className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
                     onClick={() =>
-                      req.commentaire_admin &&
-                      setViewContent({ title: "Message de l'administrateur", content: req.commentaire_admin })
+                      req.message &&
+                      setViewContent({ title: "Message de l'administrateur", content: req.message })
                     }
                   >
                     <div className="flex items-center gap-2 truncate">
                       <MessageCircle size={18} />
-                      {req.commentaire_admin
-                        ? req.commentaire_admin.slice(0, 40) +
-                          (req.commentaire_admin.length > 40 ? "..." : "")
+                      {req.message
+                        ? req.message.slice(0, 40) + (req.message.length > 40 ? "..." : "")
                         : "Aucun message"}
                     </div>
                   </td>
 
+                  <td className="py-3 px-4 whitespace-nowrap font-medium">
+                    {req.montant.toFixed(2)} CAD
+                  </td>
+
                   {/* Actions */}
-                  <td className="py-3 px-4 flex flex-col gap-2">
+                  <td className="py-3 px-4">
                     {req.statut === "en_attente" ? (
                       <div className="flex gap-2">
                         <Button
@@ -198,26 +235,26 @@ export default function RefundRequestAdmin() {
                             setModalRequest(req);
                             setActionType("approve");
                           }}
-                          className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
+                          className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1 text-xs px-2 py-1"
                         >
-                          <Check size={16} /> Approuver
+                          <Check size={14} /> Approuver
                         </Button>
                         <Button
                           onClick={() => {
                             setModalRequest(req);
                             setActionType("refuse");
                           }}
-                          className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1"
+                          className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 text-xs px-2 py-1"
                         >
-                          <X size={16} /> Refuser
+                          <X size={14} /> Refuser
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-gray-500 text-sm">
-                        {req.statut === "approuve" ? "Approuvé" : "Refusé"} le{" "}
-                        {req.date_traitement
-                          ? new Date(req.date_traitement).toLocaleString()
-                          : "-"}
+                      <span className="text-gray-500 text-xs">
+                        {req.statut === "approuve" ? "Approuvé" : "Refusé"}
+                        {req.date_traitement && (
+                          <> le {new Date(req.date_traitement).toLocaleDateString('fr-CA')}</>
+                        )}
                       </span>
                     )}
                   </td>
@@ -251,9 +288,13 @@ export default function RefundRequestAdmin() {
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
             <h3 className="text-lg font-semibold mb-3">
-              {actionType === "approve" ? "Approuver" : "Refuser"} la demande de{" "}
-              {modalRequest.user.name}
+              {actionType === "approve" ? "Approuver" : "Refuser"} la demande de {modalRequest.client}
             </h3>
+            <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
+              <p><strong>Événement:</strong> {modalRequest.evenement}</p>
+              <p><strong>Montant:</strong> {modalRequest.montant.toFixed(2)} CAD</p>
+              <p><strong>Motif:</strong> {modalRequest.motif}</p>
+            </div>
             <textarea
               placeholder="Ajouter un message (minimum 5 caractères)..."
               value={adminMessage}

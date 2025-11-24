@@ -8,8 +8,9 @@ import { AlertCircle } from 'lucide-react';
 export default function RemboursementsPage() {
   const { user } = useAuth();
 
-  // Vérifier si l'utilisateur est admin
+  // Vérifier les rôles
   const isAdmin = user?.roles?.some((role: any) => role.role === 'admin');
+  const isPro = user?.roles?.some((role: any) => role.role === 'professionnel');
 
   if (!user) {
     return (
@@ -22,43 +23,58 @@ export default function RemboursementsPage() {
     );
   }
 
+  // Admin ou Pro voient le composant unifié
+  if (isAdmin || isPro) {
+    return (
+      <div className="w-full px-4 sm:px-6 md:px-10 py-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-primary mb-2">
+              {isAdmin ? 'Gestion des remboursements' : 'Remboursements de mes événements'}
+            </h1>
+            <p className="text-gray-600">
+              {isAdmin 
+                ? 'Gérez les remboursements pour les paiements indirects (reçus par la plateforme)' 
+                : 'Gérez les remboursements pour vos événements (paiements directs)'}
+            </p>
+          </div>
+
+          <AdminRemboursements />
+        </div>
+      </div>
+    );
+  }
+
+  // Utilisateur normal
   return (
     <div className="w-full px-4 sm:px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-primary mb-2">
-            {isAdmin ? 'Gestion des remboursements' : 'Mes remboursements'}
+            Mes remboursements
           </h1>
           <p className="text-gray-600">
-            {isAdmin 
-              ? 'Gérez toutes les demandes de remboursement de la plateforme' 
-              : 'Consultez vos demandes de remboursement et créez-en de nouvelles'}
+            Consultez vos demandes de remboursement et créez-en de nouvelles
           </p>
         </div>
 
-        {/* Contenu selon le rôle */}
-        {isAdmin ? (
-          <AdminRemboursements />
-        ) : (
-          <div className="grid gap-8">
-            {/* Formulaire de création */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-primary mb-4">
-                Nouvelle demande de remboursement
-              </h2>
-              <CreateRemboursementForm />
-            </div>
-
-            {/* Liste des demandes */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-primary mb-4">
-                Historique de mes demandes
-              </h2>
-              <MesRemboursements />
-            </div>
+        <div className="grid gap-8">
+          {/* Formulaire de création */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-primary mb-4">
+              Nouvelle demande de remboursement
+            </h2>
+            <CreateRemboursementForm />
           </div>
-        )}
+
+          {/* Liste des demandes */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-primary mb-4">
+              Historique de mes demandes
+            </h2>
+            <MesRemboursements />
+          </div>
+        </div>
       </div>
     </div>
   );
