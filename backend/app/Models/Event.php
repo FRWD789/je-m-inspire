@@ -26,12 +26,16 @@ class Event extends Model
         'user_id',
         'thumbnail_path',
         'banner_path',
+        'is_cancelled',      // ✅ AJOUTÉ
+        'cancelled_at',      // ✅ AJOUTÉ
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'base_price' => 'decimal:2',
+        'is_cancelled' => 'boolean',  // ✅ AJOUTÉ - Cast integer (0/1) vers boolean
+        'cancelled_at' => 'datetime', // ✅ AJOUTÉ
     ];
 
     /**

@@ -29,11 +29,11 @@ class EventManagementController extends Controller
         }
 
         try {
-            // ✅ Vérifier que l'utilisateur est bien le créateur via Operations
+            // Vérifier que l'utilisateur est bien le créateur via Operations
             $isCreator = Operation::where([
                 'event_id' => $eventId,
                 'user_id' => $user->id,
-                'type_operation_id' => 1 // Type = création
+                'type_operation_id' => 1
             ])->exists();
 
             if (!$isCreator) {
@@ -48,7 +48,7 @@ class EventManagementController extends Controller
             // Récupérer toutes les réservations avec paiement confirmé
             $participants = Operation::with(['user', 'paiement'])
                 ->where('event_id', $eventId)
-                ->where('type_operation_id', 2) // Type = réservation
+                ->where('type_operation_id', 2)
                 ->whereHas('paiement', function($query) {
                     $query->where('status', 'paid');
                 })
@@ -102,7 +102,7 @@ class EventManagementController extends Controller
         }
 
         try {
-            // ✅ Vérifier que l'utilisateur est bien le créateur via Operations
+            // Vérifier que l'utilisateur est bien le créateur via Operations
             $isCreator = Operation::where([
                 'event_id' => $eventId,
                 'user_id' => $user->id,
@@ -182,7 +182,7 @@ class EventManagementController extends Controller
         try {
             DB::beginTransaction();
 
-            // ✅ Vérifier que l'utilisateur est bien le créateur via Operations
+            // Vérifier que l'utilisateur est bien le créateur via Operations
             $isCreator = Operation::where([
                 'event_id' => $eventId,
                 'user_id' => $user->id,
