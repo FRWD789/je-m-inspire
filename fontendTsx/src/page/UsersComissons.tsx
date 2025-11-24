@@ -82,10 +82,20 @@ export default function AdminCommissionPage() {
     try {
       setLoading(true)
       const res = await privateApi.get('/admin/commissions/pending-transfers')
-      setCommissions(res.data.data.commissions || [])
-      setStats(res.data.data.stats || null)
-    } catch (err) {
+      
+      console.log('[Debug] Réponse API pending-transfers:', res.data)
+      
+      // Gérer différentes structures de réponse possibles
+      const data = res.data.data || res.data
+      const commissionsData = data.commissions || []
+      const statsData = data.stats || null
+      
+      setCommissions(commissionsData)
+      setStats(statsData)
+    } catch (err: any) {
       console.error('Erreur lors du chargement des commissions:', err)
+      console.error('Réponse complète:', err.response?.data)
+      alert('Erreur lors du chargement des commissions')
     } finally {
       setLoading(false)
     }
@@ -95,9 +105,18 @@ export default function AdminCommissionPage() {
     try {
       setLoading(true)
       const res = await privateApi.get('/admin/commissions/professionals')
-      setProfessionals(res.data.data.professionals || [])
-    } catch (err) {
+      
+      console.log('[Debug] Réponse API professionals:', res.data)
+      
+      // Gérer différentes structures de réponse possibles
+      const data = res.data.data || res.data
+      const professionalsData = data.professionals || []
+      
+      setProfessionals(professionalsData)
+    } catch (err: any) {
       console.error('Erreur lors du chargement des professionnels:', err)
+      console.error('Réponse complète:', err.response?.data)
+      alert('Erreur lors du chargement des professionnels')
     } finally {
       setLoading(false)
     }
@@ -110,7 +129,9 @@ export default function AdminCommissionPage() {
 
     try {
       setProcessingId(id)
-      await privateApi.post(`/admin/commissions/${id}/mark-as-paid`)
+      const res = await privateApi.post(`/admin/commissions/${id}/mark-as-paid`)
+      
+      console.log('[Debug] Réponse mark-as-paid:', res.data)
       
       // Retirer la commission de la liste
       setCommissions(prev => prev.filter(c => c.id !== id))
@@ -126,9 +147,12 @@ export default function AdminCommissionPage() {
           })
         }
       }
-    } catch (err) {
+      
+      alert('Commission marquée comme payée avec succès')
+    } catch (err: any) {
       console.error('Erreur lors du marquage:', err)
-      alert('Erreur lors du marquage de la commission')
+      console.error('Réponse complète:', err.response?.data)
+      alert(`Erreur : ${err.response?.data?.message || 'Erreur lors du marquage de la commission'}`)
     } finally {
       setProcessingId(null)
     }
@@ -147,9 +171,11 @@ export default function AdminCommissionPage() {
   const saveCommissionRate = async (userId: number) => {
     try {
       setSaving(true)
-      await privateApi.put(`/admin/commissions/professionals/${userId}`, {
+      const res = await privateApi.put(`/admin/commissions/professionals/${userId}`, {
         commission_rate: editValue
       })
+      
+      console.log('[Debug] Réponse update rate:', res.data)
       
       // Mettre à jour localement
       setProfessionals(prev =>
@@ -157,9 +183,11 @@ export default function AdminCommissionPage() {
       )
       
       setEditingId(null)
-    } catch (err) {
+      alert('Taux de commission mis à jour avec succès')
+    } catch (err: any) {
       console.error('Erreur lors de la mise à jour:', err)
-      alert('Erreur lors de la mise à jour du taux')
+      console.error('Réponse complète:', err.response?.data)
+      alert(`Erreur : ${err.response?.data?.message || 'Erreur lors de la mise à jour du taux'}`)
     } finally {
       setSaving(false)
     }
