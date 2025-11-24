@@ -180,37 +180,46 @@ export default function ProfessionalEventCard({
                 : 'Gratuit'}
             </span>
           </div>
+            {event.is_cancelled ? (
+                <div className="mt-1.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                        Événement annulé
+                    </span>
+                </div>
+            ) : (
+                <>
+                    {/* View Details Button */}
+                    <button
+                        onClick={() => navigate('/events/' + event.id)}
+                        className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
+                    >
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span>Voir détails</span>
+                    </button>
 
-          {/* View Details Button */}
-          <button
-            onClick={() => navigate('/events/' + event.id)}
-            className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
-          >
-            <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-            <span>Voir détails</span>
-          </button>
-
-          {/* Professional Controls */}
-          {event.is_creator && !isReservation && (
-            <div className="flex gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
-              <button
-                onClick={() => onEdit && onEdit(event)}
-                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
-              >
-                <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Modifier</span>
-                <span className="sm:hidden">Éditer</span>
-              </button>
-              <button
-                onClick={() => setShowManagePopup(true)}
-                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-blue-600 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors active:scale-95"
-              >
-                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Gérer</span>
-                <span className="sm:hidden">Gérer</span>
-              </button>
-            </div>
-          )}
+                    {/* Professional Controls */}
+                    {event.is_creator && !isReservation && (
+                        <div className="flex gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
+                            <button
+                                onClick={() => onEdit && onEdit(event)}
+                                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
+                            >
+                                <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="hidden sm:inline">Modifier</span>
+                                <span className="sm:hidden">Éditer</span>
+                            </button>
+                            <button
+                                onClick={() => setShowManagePopup(true)}
+                                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-blue-600 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors active:scale-95"
+                            >
+                                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="hidden sm:inline">Gérer</span>
+                                <span className="sm:hidden">Gérer</span>
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
       </div>
 
