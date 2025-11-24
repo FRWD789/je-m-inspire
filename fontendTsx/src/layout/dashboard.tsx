@@ -34,7 +34,6 @@ export default function Dashboard() {
     <DollarSign className="w-5 h-5" />
   );
 
-  const refundPath = user?.roles[0]?.role === 'admin' ? '/dashboard/refunds' : '/dashboard/refunds-request';
 
   const menuItems = [
     { icon: <Home className="w-5 h-5" />, label: t('dashboard.home'), path: '/dashboard' , exact: true},
@@ -48,7 +47,7 @@ export default function Dashboard() {
         ]
       : []),
     { icon: <UserPlus className="w-5 h-5" />, label: t('following.title'), path: "/dashboard/my-following" },
-    { icon: refundIcon, label: t('dashboard.refunds'), path: refundPath },
+    { icon: refundIcon, label: t('dashboard.refunds'), path: 'refunds' },
     { icon: <CalendarDays className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard/event-calender' },
     {
       icon: <Ticket className="w-5 h-5" />,
