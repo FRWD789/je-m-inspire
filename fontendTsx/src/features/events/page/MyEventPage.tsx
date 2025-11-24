@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Plus, Search } from 'lucide-react'
-import EventCard from '../components/EventCard'
+import ProfessionalEventCard from '../components/ProfessionalEventCard'
 
 import { useEvent } from '@/context/EventContext'
 import EventForm from '../components/EventForm'
@@ -137,11 +137,10 @@ export default function MyEventPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedEvents.map(e => (
-              <EventCard
+              <ProfessionalEventCard
                 key={e.id}
                 event={e}
                 onEdit={handleEdit}
-                onDelete={deleteEvent}
               />
             ))}
           </div>

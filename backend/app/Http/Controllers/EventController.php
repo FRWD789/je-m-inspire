@@ -28,6 +28,7 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::with(['localisation', 'categorie', 'images', 'creator'])
+            ->where('is_cancelled', false)
             ->where('start_date', '>', now())
             ->orderBy('start_date')
             ->get();

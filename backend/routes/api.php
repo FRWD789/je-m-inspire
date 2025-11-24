@@ -162,6 +162,11 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::post('/events/{id}', [EventController::class, 'update']);
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
     Route::get('/my-events', [EventController::class, 'myEvents']);
+    Route::prefix('events/{eventId}')->group(function () {
+        Route::get('/participants', [App\Http\Controllers\EventManagementController::class, 'getParticipants']);
+        Route::get('/participants/pdf', [App\Http\Controllers\EventManagementController::class, 'generateParticipantsPDF']);
+        Route::post('/cancel', [App\Http\Controllers\EventManagementController::class, 'cancelEvent']);
+    });
 
     // RÉSERVATIONS
     Route::post('/events/{id}/reserve', [EventController::class, 'reserve']);
