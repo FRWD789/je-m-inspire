@@ -118,26 +118,15 @@ class EventManagementController extends Controller
                 return $this->notFoundResponse('Événement introuvable');
             }
 
-            // Récupérer les participants
+            // Récupérer les participants (garder les relations complètes pour la vue)
             $participants = Operation::with(['user', 'paiement'])
                 ->where('event_id', $eventId)
                 ->where('type_operation_id', 2)
                 ->whereHas('paiement', function($query) {
                     $query->where('status', 'paid');
                 })
-                ->get()
-                ->map(function($operation) {
-                    return [
-                        'name' => $operation->user->name ?? 'N/A',
-                        'last_name' => $operation->user->last_name ?? '',
-                        'email' => $operation->user->email ?? 'N/A',
-                        'phone' => $operation->user->phone ?? 'N/A',
-                        'total_paid' => $operation->paiement->total ?? 0,
-                        'payment_method' => $operation->paiement->session_id ? 'Stripe' :
-                                           ($operation->paiement->paypal_id ? 'PayPal' : 'N/A'),
-                        'reservation_date' => $operation->created_at->format('Y-m-d H:i:s'),
-                    ];
-                });
+                ->orderBy('created_at', 'asc')
+                ->get();
 
             if ($debug) {
                 Log::info('[EventManagement] Génération PDF participants', [
@@ -147,13 +136,18 @@ class EventManagementController extends Controller
                 ]);
             }
 
-            // Générer le PDF
-            $pdf = Pdf::loadView('pdf.participants-list', [
+            // Préparer les données pour la vue PDF
+            $data = [
                 'event' => $event,
                 'participants' => $participants,
                 'total_participants' => $participants->count(),
-                'generated_date' => now()->format('Y-m-d H:i:s'),
-            ]);
+                'generated_at' => now()->format('d/m/Y à H:i'),
+                'organizer' => $user->name . ' ' . $user->last_name,
+            ];
+
+            // Générer le PDF
+            $pdf = Pdf::loadView('pdf.participants-list', $data);
+            $pdf->setPaper('A4', 'portrait');
 
             $filename = 'participants_' . str_replace(' ', '_', $event->name) . '_' . now()->format('Y-m-d') . '.pdf';
             return $pdf->download($filename);
