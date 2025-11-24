@@ -21,10 +21,11 @@ return new class extends Migration
             $table->integer('capacity');
             $table->integer('max_places');
             $table->integer('available_places');
+            $table->boolean('is_cancelled')->default(false);
+            $table->timestamp('cancelled_at')->nullable();
             $table->string('level');
             $table->integer('priority');
-            $table->boolean('is_cancelled')->default(false)->after('available_places');
-            $table->timestamp('cancelled_at')->nullable()->after('is_cancelled');
+
 
             // FK localisation
             $table->foreignId('localisation_id')->constrained('localisations')->onDelete('cascade');
