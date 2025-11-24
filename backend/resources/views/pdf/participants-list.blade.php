@@ -2,336 +2,306 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Liste des participants - {{ $event->name }}</title>
     <style>
-        * {
+        /* RESET & BASE */
+        body {
+            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            line-height: 1.4;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
-        body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 11px;
-            color: #333;
-            line-height: 1.5;
-            padding: 20px;
-        }
+        /* UTILITAIRES LAYOUT (Remplacent Flexbox pour compatibilité PDF) */
+        .w-full { width: 100%; }
+        .w-50 { width: 50%; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .align-top { vertical-align: top; }
+        .mb-10 { margin-bottom: 10px; }
+        .mb-20 { margin-bottom: 20px; }
+        .mt-20 { margin-top: 20px; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #3C493F;
-        }
+        /* COULEURS */
+        .text-primary { color: #3C493F; }
+        .bg-light { background-color: #f4f6f5; }
 
-        .header h1 {
-            font-size: 22px;
-            color: #3C493F;
-            margin-bottom: 10px;
+        /* HEADER */
+        .header-table {
+            border-bottom: 2px solid #3C493F;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .logo-placeholder {
+            font-size: 24px;
             font-weight: bold;
+            color: #3C493F;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-
-        .header .subtitle {
-            font-size: 14px;
+        .document-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3C493F;
+            margin: 0;
+        }
+        .document-subtitle {
+            font-size: 10px;
             color: #666;
-            margin-bottom: 5px;
+            margin-top: 5px;
         }
 
-        .event-info {
+        /* INFO BOXES */
+        .info-table {
+            margin-bottom: 20px;
+        }
+        .info-box {
             background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
             border-left: 4px solid #3C493F;
+            padding: 12px;
+            margin-right: 10px; /* Marge simulée */
         }
-
-        .event-info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .event-info-label {
+        .info-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #666;
             font-weight: bold;
-            color: #3C493F;
-            width: 40%;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .info-value {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
         }
 
-        .event-info-value {
-            color: #555;
-            width: 60%;
+        /* STATS BAR (Clean version) */
+        .stats-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px 0;
+            margin-bottom: 30px;
         }
-
-        .stats-row {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 25px;
-            gap: 15px;
+        .stat-item {
+            padding: 0 15px;
+            border-right: 1px solid #e0e0e0;
         }
-
-        .stat-card {
-            flex: 1;
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #3C493F 0%, #2a3529 100%);
-            color: white;
-            border-radius: 8px;
-        }
-
+        .stat-item:last-child { border-right: none; }
         .stat-number {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            opacity: 0.9;
-        }
-
-        .table-container {
-            margin-top: 20px;
-        }
-
-        .table-title {
             font-size: 16px;
             font-weight: bold;
             color: #3C493F;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #3C493F;
+        }
+        .stat-desc {
+            font-size: 9px;
+            color: #777;
+            text-transform: uppercase;
         }
 
-        table {
+        /* TABLEAU DE DONNÉES */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
         }
-
-        thead {
+        .data-table thead th {
             background-color: #3C493F;
             color: white;
-        }
-
-        th {
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: bold;
-            font-size: 11px;
-        }
-
-        tbody tr {
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        tbody tr:hover {
-            background-color: #f0f0f0;
-        }
-
-        td {
             padding: 10px 8px;
             font-size: 10px;
+            text-transform: uppercase;
+            text-align: left;
+        }
+        .data-table tbody td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 11px;
+        }
+        /* Alternance de couleur subtile */
+        .data-table tbody tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+        /* Important pour PDF : empêche de couper une ligne en deux entre deux pages */
+        .data-table tr {
+            page-break-inside: avoid;
         }
 
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
+        /* BADGES */
         .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 3px 6px;
+            border-radius: 3px;
             font-size: 9px;
             font-weight: bold;
+            display: inline-block; /* Nécessaire pour PDF */
         }
+        .badge-stripe { background: #e8f0fe; color: #1967d2; border: 1px solid #d2e3fc; }
+        .badge-paypal { background: #fff4e5; color: #b06000; border: 1px solid #fedfc8; }
+        .badge-other { background: #f1f3f4; color: #5f6368; border: 1px solid #dadce0; }
 
-        .badge-stripe {
-            background-color: #5469d4;
-            color: white;
-        }
-
-        .badge-paypal {
-            background-color: #ffc439;
-            color: #003087;
-        }
-
-        .badge-other {
-            background-color: #95a5a6;
-            color: white;
+        /* FOOTER & TOTAL */
+        .total-row td {
+            background-color: #f4f6f5;
+            font-weight: bold;
+            border-top: 2px solid #3C493F;
+            color: #333;
         }
 
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #e0e0e0;
-            text-align: center;
-            color: #999;
+            position: fixed;
+            bottom: -30px;
+            left: 0px;
+            right: 0px;
+            height: 50px;
             font-size: 9px;
-        }
-
-        .signature-section {
-            margin-top: 50px;
-            padding: 20px;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-        }
-
-        .signature-box {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .signature-item {
-            width: 45%;
+            color: #aaa;
             text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
         }
 
-        .signature-line {
-            border-top: 2px solid #333;
-            margin-top: 40px;
-            padding-top: 8px;
-        }
-
-        .page-break {
-            page-break-after: always;
-        }
+        .page-break { page-break-after: always; }
     </style>
 </head>
 <body>
-    <!-- En-tête -->
-    <div class="header">
-        <h1>📋 Liste des Participants</h1>
-        <p class="subtitle">{{ $event->name }}</p>
-        <p class="subtitle" style="font-size: 11px; color: #999;">Généré le {{ $generated_at }}</p>
-    </div>
 
-    <!-- Informations sur l'événement -->
-    <div class="event-info">
-        <div class="event-info-row">
-            <span class="event-info-label">📅 Date de début:</span>
-            <span class="event-info-value">{{ \Carbon\Carbon::parse($event->start_date)->format('d/m/Y à H:i') }}</span>
-        </div>
-        <div class="event-info-row">
-            <span class="event-info-label">📅 Date de fin:</span>
-            <span class="event-info-value">{{ \Carbon\Carbon::parse($event->end_date)->format('d/m/Y à H:i') }}</span>
-        </div>
-        <div class="event-info-row">
-            <span class="event-info-label">📍 Lieu:</span>
-            <span class="event-info-value">{{ $event->localisation->name ?? 'Non spécifié' }}</span>
-        </div>
-        <div class="event-info-row">
-            <span class="event-info-label">🎯 Catégorie:</span>
-            <span class="event-info-value">{{ $event->categorie->name ?? 'Non spécifiée' }}</span>
-        </div>
-        <div class="event-info-row">
-            <span class="event-info-label">👤 Organisateur:</span>
-            <span class="event-info-value">{{ $organizer }}</span>
-        </div>
-    </div>
+    <table class="w-full header-table">
+        <tr>
+            <td class="w-50 align-top">
+                <div class="logo-placeholder">JE M'INSPIRE</div>
+                <div style="font-size: 10px; color: #777; margin-top: 5px;">
+                    Organisé par : {{ $organizer }}
+                </div>
+            </td>
+            <td class="w-50 text-right align-top">
+                <h1 class="document-title">LISTE DES PARTICIPANTS</h1>
+                <p class="document-subtitle">Événement : {{ $event->name }}</p>
+                <p class="document-subtitle">Généré le : {{ $generated_at }}</p>
+            </td>
+        </tr>
+    </table>
 
-    <!-- Statistiques -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-number">{{ $total_participants }}</div>
-            <div class="stat-label">Participants inscrits</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ $event->capacity }}</div>
-            <div class="stat-label">Capacité maximale</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ number_format(($total_participants / $event->capacity) * 100, 0) }}%</div>
-            <div class="stat-label">Taux de remplissage</div>
-        </div>
-    </div>
+    <table class="w-full info-table" cellspacing="0" cellpadding="0">
+        <tr>
+            <td class="w-50" style="padding-right: 10px;">
+                <div class="info-box">
+                    <span class="info-label">Début de l'événement</span>
+                    <span class="info-value">{{ \Carbon\Carbon::parse($event->start_date)->format('d/m/Y à H:i') }}</span>
+                </div>
+            </td>
+            <td class="w-50" style="padding-left: 10px;">
+                <div class="info-box">
+                    <span class="info-label">Lieu</span>
+                    <span class="info-value">{{ $event->localisation->name ?? 'Non spécifié' }}</span>
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    <!-- Table des participants -->
-    <div class="table-container">
-        <div class="table-title">👥 Liste complète des participants</div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 5%">#</th>
-                    <th style="width: 25%">Nom complet</th>
-                    <th style="width: 25%">Email</th>
-                    <th style="width: 15%">Téléphone</th>
-                    <th style="width: 15%" class="text-right">Montant payé</th>
-                    <th style="width: 10%" class="text-center">Méthode</th>
-                    <th style="width: 15%">Date réservation</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($participants as $index => $participant)
-                <tr>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td>
-                        <strong>{{ $participant->user->name }} {{ $participant->user->last_name }}</strong>
-                    </td>
-                    <td>{{ $participant->user->email }}</td>
-                    <td>{{ $participant->user->phone ?? 'N/A' }}</td>
-                    <td class="text-right">
-                        <strong>{{ number_format($participant->paiement->total, 2) }} $</strong>
-                    </td>
-                    <td class="text-center">
-                        @if($participant->paiement->session_id)
-                            <span class="badge badge-stripe">Stripe</span>
-                        @elseif($participant->paiement->paypal_id)
-                            <span class="badge badge-paypal">PayPal</span>
-                        @else
-                            <span class="badge badge-other">Autre</span>
-                        @endif
-                    </td>
-                    <td>{{ \Carbon\Carbon::parse($participant->created_at)->format('d/m/Y H:i') }}</td>
-                </tr>
-                @endforeach
-            </tbody>
+    <table class="w-full stats-container" cellspacing="0">
+        <tr>
+            <td class="text-center stat-item">
+                <div class="stat-number">{{ $total_participants }}</div>
+                <div class="stat-desc">Inscrits</div>
+            </td>
+            <td class="text-center stat-item">
+                <div class="stat-number">{{ $event->capacity }}</div>
+                <div class="stat-desc">Capacité</div>
+            </td>
+            <td class="text-center stat-item">
+                <div class="stat-number">{{ number_format(($total_participants / ($event->capacity > 0 ? $event->capacity : 1)) * 100, 0) }}%</div>
+                <div class="stat-desc">Remplissage</div>
+            </td>
+            <td class="text-center stat-item" style="border-right: none;">
+                <div class="stat-number">{{ number_format($participants->sum(function($p) { return $p->paiement->total; }), 2) }} $</div>
+                <div class="stat-desc">Total Revenus</div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 5%; text-align: center;">#</th>
+                <th style="width: 25%">Participant</th>
+                <th style="width: 25%">Contact</th>
+                <th style="width: 15%">Date Inscription</th>
+                <th style="width: 10%" class="text-center">Méthode</th>
+                <th style="width: 20%" class="text-right">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($participants as $index => $participant)
+            <tr>
+                <td class="text-center" style="color: #777;">{{ $index + 1 }}</td>
+                <td>
+                    <div style="font-weight: bold; color: #333;">{{ $participant->user->name }} {{ $participant->user->last_name }}</div>
+                    <div style="font-size: 9px; color: #888;">ID: {{ $participant->id }}</div>
+                </td>
+                <td>
+                    <div>{{ $participant->user->email }}</div>
+                    @if($participant->user->phone)
+                        <div style="font-size: 9px; color: #666;">📞 {{ $participant->user->phone }}</div>
+                    @endif
+                </td>
+                <td>
+                    {{ \Carbon\Carbon::parse($participant->created_at)->format('d/m/Y') }}
+                    <div style="font-size: 9px; color: #888;">{{ \Carbon\Carbon::parse($participant->created_at)->format('H:i') }}</div>
+                </td>
+                <td class="text-center">
+                    @if($participant->paiement->session_id)
+                        <span class="badge badge-stripe">Stripe</span>
+                    @elseif($participant->paiement->paypal_id)
+                        <span class="badge badge-paypal">PayPal</span>
+                    @else
+                        <span class="badge badge-other">Autre</span>
+                    @endif
+                </td>
+                <td class="text-right">
+                    <span style="font-weight: bold;">{{ number_format($participant->paiement->total, 2) }} $</span>
+                </td>
+            </tr>
+            @endforeach
+
+            <tr class="total-row">
+                <td colspan="5" class="text-right">TOTAL GÉNÉRAL</td>
+                <td class="text-right">{{ number_format($participants->sum(function($p) { return $p->paiement->total; }), 2) }} $</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 50px; page-break-inside: avoid;">
+        <table class="w-full">
+            <tr>
+                <td class="w-50">
+                    <p style="font-size: 10px; font-weight: bold;">Notes / Commentaires :</p>
+                    <div style="border-bottom: 1px solid #ccc; height: 20px; width: 90%; margin-bottom: 15px;"></div>
+                    <div style="border-bottom: 1px solid #ccc; height: 20px; width: 90%;"></div>
+                </td>
+                <td class="w-50 text-center">
+                    <p style="font-size: 10px; margin-bottom: 40px;">Signature de l'organisateur</p>
+                    <div style="border-bottom: 1px solid #333; width: 60%; margin: 0 auto;"></div>
+                </td>
+            </tr>
         </table>
     </div>
 
-    <!-- Totaux -->
-    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; font-size: 13px;">
-            <span><strong>Total des paiements reçus:</strong></span>
-            <span><strong>{{ number_format($participants->sum(function($p) { return $p->paiement->total; }), 2) }} $</strong></span>
-        </div>
-    </div>
-
-    <!-- Section signature (optionnelle) -->
-    <div class="signature-section">
-        <p style="font-weight: bold; margin-bottom: 10px;">📝 Attestation de présence</p>
-        <p style="font-size: 10px; color: #666;">Ce document peut servir d'attestation de présence pour l'événement.</p>
-
-        <div class="signature-box">
-            <div class="signature-item">
-                <p style="font-size: 10px; color: #666; margin-bottom: 5px;">Organisateur</p>
-                <div class="signature-line">
-                    <p style="font-size: 10px;">{{ $organizer }}</p>
-                </div>
-            </div>
-            <div class="signature-item">
-                <p style="font-size: 10px; color: #666; margin-bottom: 5px;">Date</p>
-                <div class="signature-line">
-                    <p style="font-size: 10px;">{{ now()->format('d/m/Y') }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pied de page -->
     <div class="footer">
-        <p>Document généré automatiquement par Je m'inspire</p>
-        <p>Ce document est confidentiel et destiné uniquement à l'organisateur de l'événement</p>
+        Document confidentiel généré par Je m'inspire • Page <span class="page-number"></span>
     </div>
+
+    <script type="text/php">
+        if (isset($pdf)) {
+            $text = "Page {PAGE_NUM} / {PAGE_COUNT}";
+            $size = 9;
+            $font = $fontMetrics->getFont("DejaVu Sans");
+            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
+            $x = ($pdf->get_width() - $width) / 2;
+            $y = $pdf->get_height() - 35;
+            $pdf->page_text($x, $y, $text, $font, $size, array(0.6,0.6,0.6));
+        }
+    </script>
 </body>
 </html>
