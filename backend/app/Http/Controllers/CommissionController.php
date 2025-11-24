@@ -49,6 +49,7 @@ class CommissionController extends Controller
                         'customer_name' => $commission->paiement->operation->user->name ?? 'N/A',
                         'vendor_id' => $commission->vendor_id,
                         'vendor_name' => $commission->vendor->name . ' ' . $commission->vendor->last_name,
+                        'vendor_email' => $commission->vendor->email,
                         'montant_total' => $commission->montant_total,
                         'taux_commission' => $commission->taux_commission,
                         'montant_commission' => $commission->montant_commission,

@@ -9,7 +9,9 @@ import {
   Edit2,
   Save,
   X,
-  CheckCircle
+  CheckCircle,
+  Copy,
+  Check
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -23,6 +25,7 @@ interface Commission {
   customer_name: string
   vendor_id: number
   vendor_name: string
+  vendor_email: string
   montant_total: number
   taux_commission: number
   montant_commission: number
@@ -71,6 +74,7 @@ export default function AdminCommissionPage() {
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [processingId, setProcessingId] = useState<number | null>(null)
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
   
   // États pour les professionnels
   const [professionals, setProfessionals] = useState<Professional[]>([])
@@ -153,6 +157,21 @@ export default function AdminCommissionPage() {
       alert('Erreur lors du chargement des professionnels')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const copyEmailToClipboard = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email)
+      setCopiedEmail(email)
+      
+      // Réinitialiser après 2 secondes
+      setTimeout(() => {
+        setCopiedEmail(null)
+      }, 2000)
+    } catch (err) {
+      console.error('Erreur lors de la copie:', err)
+      alert('Erreur lors de la copie du courriel')
     }
   }
 
@@ -345,11 +364,10 @@ export default function AdminCommissionPage() {
                     <th className="py-3 px-4 font-semibold">Événement</th>
                     <th className="py-3 px-4 font-semibold">Client</th>
                     <th className="py-3 px-4 font-semibold">Vendeur</th>
+                    <th className="py-3 px-4 font-semibold">Courriel</th>
                     <th className="py-3 px-4 font-semibold">Montant total</th>
                     <th className="py-3 px-4 font-semibold">Commission</th>
                     <th className="py-3 px-4 font-semibold">À transférer</th>
-                    <th className="py-3 px-4 font-semibold">Méthode</th>
-                    <th className="py-3 px-4 font-semibold">Comptes liés</th>
                     <th className="py-3 px-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -362,32 +380,31 @@ export default function AdminCommissionPage() {
                       <td className="py-3 px-4">{c.event_name}</td>
                       <td className="py-3 px-4">{c.customer_name}</td>
                       <td className="py-3 px-4">{c.vendor_name}</td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => copyEmailToClipboard(c.vendor_email)}
+                          className="flex items-center gap-1.5 text-primary hover:text-primary/80 cursor-pointer transition-colors"
+                          title="Cliquer pour copier"
+                        >
+                          {copiedEmail === c.vendor_email ? (
+                            <>
+                              <Check size={14} className="text-green-600" />
+                              <span className="text-green-600 font-medium">Copié !</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} />
+                              <span className="hover:underline">{c.vendor_email}</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
                       <td className="py-3 px-4">{formatMontant(c.montant_total)} $</td>
                       <td className="py-3 px-4">
                         {formatMontant(c.montant_commission)} $ ({formatMontant(c.taux_commission)}%)
                       </td>
                       <td className="py-3 px-4 font-semibold text-green-700">
                         {formatMontant(c.montant_net)} $
-                      </td>
-                      <td className="py-3 px-4">{c.payment_method}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-1 flex-wrap">
-                          {c.vendor_has_stripe && (
-                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-                              Stripe
-                            </span>
-                          )}
-                          {c.vendor_has_paypal && (
-                            <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">
-                              PayPal
-                            </span>
-                          )}
-                          {!c.vendor_has_stripe && !c.vendor_has_paypal && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs">
-                              Aucun
-                            </span>
-                          )}
-                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <button
