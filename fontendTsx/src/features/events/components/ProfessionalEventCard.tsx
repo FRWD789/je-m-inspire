@@ -198,7 +198,7 @@ export default function ProfessionalEventCard({
                     </button>
 
                     {/* Professional Controls */}
-                    {event.is_creator && !isReservation && (
+                    {event.creator && !isReservation && (
                         <div className="flex gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
                             <button
                                 onClick={() => onEdit && onEdit(event)}
