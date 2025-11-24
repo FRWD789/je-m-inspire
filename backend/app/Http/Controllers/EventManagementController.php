@@ -174,7 +174,7 @@ class EventManagementController extends Controller
 
             // Vérifier que l'utilisateur est bien le créateur de l'événement
             $event = Event::where('id', $eventId)
-                ->where('user_id', $user->id)
+                ->where('id', $user->id)
                 ->first();
 
             if (!$event) {
