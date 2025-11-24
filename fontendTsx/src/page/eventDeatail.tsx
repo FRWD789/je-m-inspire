@@ -285,7 +285,7 @@ export default function EventDetail() {
       }
     } catch (error) {
       console.error('Erreur lors du paiement:', error);
-      alert('Impossible de créer la session de paiement. Veuillez réessayer.');
+      alert(error.response?.data?.error || 'Une erreur est survenue lors du paiement. Veuillez réessayer.');
     }
   }, [user, event?.id, method, paymentService, navigate, location]);
 
