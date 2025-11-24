@@ -213,6 +213,7 @@ class EventManagementController extends Controller
                 if (!$existingRefund) {
                     // Créer une demande de remboursement automatique
                     $remboursement = Remboursement::create([
+                        'user_id' => $reservation->user->id,
                         'operation_id' => $reservation->id,
                         'motif' => 'Événement annulé par l\'organisateur',
                         'statut' => 'en_attente',
