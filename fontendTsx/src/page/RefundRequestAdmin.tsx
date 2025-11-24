@@ -174,14 +174,16 @@ export default function RefundRequestAdmin() {
                 <th className="py-3 px-4 font-semibold">Motif</th>
                 <th className="py-3 px-4 font-semibold">Message</th>
                 <th className="py-3 px-4 font-semibold">Montant</th>
-                <th className="py-3 px-4 font-semibold">Statut / Actions</th>
+                <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                  Statut / Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.map((req) => (
                 <tr
                   key={req.id}
-                  className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="border-t border-gray-100 hover:bg-gray-50 transition-colors group"
                 >
                   <td className="py-3 px-4 whitespace-nowrap">
                     {new Date(req.date).toLocaleDateString('fr-CA')}
@@ -227,7 +229,7 @@ export default function RefundRequestAdmin() {
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-2px_0_4px_rgba(0,0,0,0.05)] transition-colors">
                     {req.statut === "en_attente" ? (
                       <div className="flex gap-2">
                         <Button
