@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Operation;
 use App\Models\Remboursement;
 use App\Models\Paiement;
+use App\Notifications\EventCancelledNotification;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -265,8 +266,20 @@ class EventManagementController extends Controller
                 ]);
             }
 
-            // TODO: Envoyer un email au créateur avec la liste des remboursements
-            // Mail::to($user->email)->send(new EventCancelledNotification($event, $refundsList));
+            // Envoyer un email au créateur avec la liste des remboursements
+            try {
+                $user->notify(new EventCancelledNotification($event, $refundsList));
+
+                if ($debug) {
+                    Log::info('[EventManagement] Email annulation envoyé', [
+                        'user_email' => $user->email,
+                        'event_id' => $eventId
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('[EventManagement] Erreur envoi email: ' . $e->getMessage());
+                // Ne pas bloquer la réponse si l'email échoue
+            }
 
             return $this->successResponse([
                 'event_id' => $event->id,
