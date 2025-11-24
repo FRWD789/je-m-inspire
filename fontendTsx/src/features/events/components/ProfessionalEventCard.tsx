@@ -65,11 +65,14 @@ export default function ProfessionalEventCard({
   const handlePrintParticipants = async () => {
     try {
       setLoading(true)
-      const response = await privateApi.get(`/events/${event.id}/participants/pdf`, {
+      const response = await privateApi.get(`/events/${event.id}/participants/pdf?action=print`, {
         responseType: 'blob'
       })
       
-      const url = window.URL.createObjectURL(new Blob([response.data]))
+      // Créer un URL pour le blob
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+      
+      // Ouvrir dans une nouvelle fenêtre et déclencher l'impression
       const printWindow = window.open(url)
       if (printWindow) {
         printWindow.addEventListener('load', () => {

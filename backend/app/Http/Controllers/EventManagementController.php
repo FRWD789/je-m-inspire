@@ -7,6 +7,7 @@ use App\Models\Operation;
 use App\Models\Remboursement;
 use App\Models\Paiement;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -91,8 +92,10 @@ class EventManagementController extends Controller
 
     /**
      * Générer un PDF avec la liste des participants
+     * ?action=print pour ouvrir dans le navigateur (impression)
+     * ?action=download (ou par défaut) pour télécharger
      */
-    public function generateParticipantsPDF($eventId)
+    public function generateParticipantsPDF(Request $request, $eventId)
     {
         $debug = config('app.debug');
         $user = JWTAuth::user();
@@ -132,7 +135,8 @@ class EventManagementController extends Controller
                 Log::info('[EventManagement] Génération PDF participants', [
                     'event_id' => $eventId,
                     'user_id' => $user->id,
-                    'participants_count' => $participants->count()
+                    'participants_count' => $participants->count(),
+                    'action' => $request->query('action', 'download')
                 ]);
             }
 
@@ -150,6 +154,13 @@ class EventManagementController extends Controller
             $pdf->setPaper('A4', 'portrait');
 
             $filename = 'participants_' . str_replace(' ', '_', $event->name) . '_' . now()->format('Y-m-d') . '.pdf';
+
+            // Si action=print, ouvrir dans le navigateur, sinon télécharger
+            $action = $request->query('action', 'download');
+            if ($action === 'print') {
+                return $pdf->stream($filename);
+            }
+
             return $pdf->download($filename);
 
         } catch (\Exception $e) {
