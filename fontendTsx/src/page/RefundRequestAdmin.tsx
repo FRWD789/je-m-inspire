@@ -171,9 +171,9 @@ export default function RefundRequestAdmin() {
                 <th className="py-3 px-4 font-semibold">Client</th>
                 <th className="py-3 px-4 font-semibold">Vendeur</th>
                 <th className="py-3 px-4 font-semibold">Courriel</th>
+                <th className="py-3 px-4 font-semibold">Montant</th>
                 <th className="py-3 px-4 font-semibold">Motif</th>
                 <th className="py-3 px-4 font-semibold">Message</th>
-                <th className="py-3 px-4 font-semibold">Montant</th>
                 <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
                   Statut / Actions
                 </th>
@@ -194,6 +194,9 @@ export default function RefundRequestAdmin() {
                   <td className="py-3 px-4 whitespace-nowrap">{req.client}</td>
                   <td className="py-3 px-4 whitespace-nowrap">{req.vendeur}</td>
                   <td className="py-3 px-4">{req.courriel}</td>
+                  <td className="py-3 px-4 whitespace-nowrap font-medium">
+                    {req.montant.toFixed(2)} CAD
+                  </td>
 
                   {/* Motif click */}
                   <td
@@ -224,9 +227,7 @@ export default function RefundRequestAdmin() {
                     </div>
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap font-medium">
-                    {req.montant.toFixed(2)} CAD
-                  </td>
+                 
 
                   {/* Actions */}
                   <td className="py-3 px-4 sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-2px_0_4px_rgba(0,0,0,0.05)] transition-colors">
