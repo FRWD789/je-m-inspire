@@ -355,7 +355,7 @@ export default function AdminCommissionPage() {
                           <th className="py-3 px-4 font-semibold">Montant total</th>
                           <th className="py-3 px-4 font-semibold">Commission</th>
                           <th className="py-3 px-4 font-semibold">À transférer</th>
-                          <th className="py-3 px-4 font-semibold">Actions</th>
+                          <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -391,7 +391,7 @@ export default function AdminCommissionPage() {
                             <td className="py-3 px-4 font-semibold text-green-700">
                               {formatMontant(c.montant_net)} $
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-4 sticky right-0 bg-white hover:bg-gray-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">
                               <button
                                 onClick={() => markCommissionAsPaid(c.id)}
                                 disabled={processingId === c.id}
@@ -518,7 +518,7 @@ export default function AdminCommissionPage() {
                           <th className="py-3 px-4 font-semibold">Taux actuel</th>
                           <th className="py-3 px-4 font-semibold">Statut</th>
                           <th className="py-3 px-4 font-semibold">Comptes</th>
-                          <th className="py-3 px-4 font-semibold">Actions</th>
+                          <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -577,7 +577,7 @@ export default function AdminCommissionPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-4 sticky right-0 bg-white hover:bg-gray-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">
                               {editingId === pro.id ? (
                                 <div className="flex gap-2">
                                   <button
