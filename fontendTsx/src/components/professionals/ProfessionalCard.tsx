@@ -69,7 +69,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
       {/* Informations */}
       <div className="p-5">
         <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-primary transition-colors">
-          {professional.name} {professional.last_name}
+          {professional.profile.name} {professional.profile.last_name}
         </h3>
         
         {professional.city && (
