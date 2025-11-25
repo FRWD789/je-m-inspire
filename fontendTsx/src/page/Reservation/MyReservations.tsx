@@ -29,7 +29,7 @@ export default function MyReservations() {
 
    const handleCancel = (eventId: any) => {
     console.log("MyReservations: handleCancel called with id:", eventId);
-    navigate("/dashboard/refunds-request", {
+    navigate("/dashboard/refunds", {
       state: { eventId },
     });
   };
