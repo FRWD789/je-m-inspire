@@ -13,7 +13,6 @@ import PublicEvents from "./page/publicEvents";
 import EventDetail from "./page/eventDeatail";
 import AdminApprovalPage from "./components/userAprrobation";
 import PaymentSuccess from "./page/PaymentSuccess";
-import MyReservations from "./page/Reservation/MyReservations";
 import RefundRequestPage from "./page/RefundRequestPage";
 import RefundRequestsAdmin from "./page/RefundRequestAdmin";
 import PrivateRoute from "./components/privateRoute";
