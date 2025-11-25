@@ -134,7 +134,7 @@ export default function MyReservationPage() {
             ))}
           </select>
           <button
-            onClick={()=>navigate('/dashboard/refunds-request')}
+            onClick={()=>navigate('/dashboard/refunds')}
             
             className="flex items-center gap-2 bg-accent text-white px-3 py-2 rounded-lg hover:bg-primary"
           >
