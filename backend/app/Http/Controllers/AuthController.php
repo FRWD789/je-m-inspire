@@ -206,12 +206,12 @@ class AuthController extends Controller
                 ]);
             }
 
-            $user = User::create([
-                'name' => $validated['name'],
-                'last_name' => $validated['last_name'],
+           $user = User::create([
+                'name' => $this->formatName($validated['name']),
+                'last_name' => $this->formatName($validated['last_name']),
                 'email' => $validated['email'],
                 'date_of_birth' => $validated['date_of_birth'],
-                'city' => $validated['city'] ?? null,
+                'city' => $this->formatName($validated['city'] ?? null),
                 'password' => Hash::make($validated['password']),
                 'profile_picture' => $profilePicturePath,
                 'is_approved' => true,
@@ -302,11 +302,11 @@ class AuthController extends Controller
             }
 
             $user = User::create([
-                'name' => $validated['name'],
-                'last_name' => $validated['last_name'],
+                'name' => $this->formatName($validated['name']),
+                'last_name' => $this->formatName($validated['last_name']),
                 'email' => $validated['email'],
                 'date_of_birth' => $validated['date_of_birth'],
-                'city' => $validated['city'] ?? null,
+                'city' => $this->formatName($validated['city'] ?? null),
                 'password' => Hash::make($validated['password']),
                 'motivation_letter' => $validated['motivation_letter'],
                 'profile_picture' => $profilePicturePath,
@@ -975,5 +975,26 @@ class AuthController extends Controller
     private function generateAccessToken(User $user): string
     {
         return JWTAuth::claims(['type' => 'access'])->fromUser($user);
+    }
+
+    private function formatName(?string $name): ?string
+    {
+        if (empty($name)) {
+            return null;
+        }
+
+        // Trim les espaces
+        $name = trim($name);
+
+        // Convertir tout en minuscule d'abord
+        $name = mb_strtolower($name, 'UTF-8');
+
+        // Mettre en majuscule la première lettre de chaque mot
+        // Gère les espaces, tirets et apostrophes
+        $name = preg_replace_callback('/\b(\w)/u', function($matches) {
+            return mb_strtoupper($matches[1], 'UTF-8');
+        }, $name);
+
+        return $name;
     }
 }
