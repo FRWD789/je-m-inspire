@@ -175,14 +175,20 @@ export default function UserPage() {
 
               <div className="flex flex-col items-start gap-4">
                 <div
-                  className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-gray-200 dark:border-gray-700 cursor-pointer group flex-shrink-0"
+                  className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-gray-200 dark:border-gray-700 cursor-pointer group flex-shrink-0 bg-gray-100"
                   onClick={() => setShowAvatarModal(true)}
                 >
-                  <img
-                    src={preview || avatarUrl ||<User size={64} className="text-gray-300 mx-auto mb-4" />}
-                    alt="Avatar"
-                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  />
+                  {preview || avatarUrl ? (
+                    <img
+                      src={preview || avatarUrl}
+                      alt="Avatar"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User size={48} className="text-gray-300" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 rounded-full">
                     <span className="text-white text-xs md:text-sm font-medium">{t('profile.changePicture')}</span>
                   </div>
@@ -329,12 +335,18 @@ export default function UserPage() {
               <div className="flex flex-col items-center gap-4 md:gap-5">
 
                 {/* Avatar Preview */}
-                <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-gray-200 group flex-shrink-0">
-                  <img
-                    src={preview || avatarUrl || "/default-avatar.png"}
-                    alt="Preview"
-                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  />
+                <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-gray-200 group flex-shrink-0 bg-gray-100">
+                  {preview || avatarUrl ? (
+                    <img
+                      src={preview || avatarUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User size={48} className="text-gray-300" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 rounded-full">
                     <span className="text-white text-xs md:text-sm">{t('profile.changePicture')}</span>
                   </div>
