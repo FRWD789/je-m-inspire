@@ -109,7 +109,7 @@ export default function MyFollowingPage() {
 
         {/* Bouton Découvrir */}
         <button
-          onClick={() => navigate('/events')}
+          onClick={() => navigate('/professionals')}
           className="flex items-center justify-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition whitespace-nowrap"
         >
           <UserPlus className="w-4 h-4" />
