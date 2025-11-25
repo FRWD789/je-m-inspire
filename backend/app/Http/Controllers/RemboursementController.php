@@ -75,17 +75,27 @@ class RemboursementController extends Controller
 
             DB::commit();
 
-            $remboursement->load(['operation.event']);
+            // CORRECTION: Charger les relations une seule fois APRÈS le commit
+            $remboursement->load(['operation.event', 'operation.paiement', 'user']);
 
             // Envoyer la notification à l'utilisateur
-            $remboursement->load(['operation.event', 'user']);
-            $remboursement->user->notify(new RemboursementReceivedNotification($remboursement));
+            try {
+                $remboursement->user->notify(new RemboursementReceivedNotification($remboursement));
 
-            Log::info('[Remboursement] Demande créée et email envoyé', [
-                'remboursement_id' => $remboursement->id,
-                'user_id' => Auth::id(),
-                'montant' => $remboursement->montant,
-            ]);
+                Log::info('[Remboursement] Demande créée et email envoyé', [
+                    'remboursement_id' => $remboursement->id,
+                    'user_id' => Auth::id(),
+                    'montant' => $remboursement->montant,
+                    'user_email' => $remboursement->user->email
+                ]);
+            } catch (\Exception $e) {
+                // Ne pas faire échouer toute la demande si l'email échoue
+                Log::error('[Remboursement] Erreur envoi email de confirmation', [
+                    'remboursement_id' => $remboursement->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
 
             if ($debug) {
                 Log::info('[Remboursement] Demande créée', [
@@ -96,14 +106,16 @@ class RemboursementController extends Controller
             }
 
             return $this->resourceResponse(
-                new RemboursementResource($remboursement->load(['user', 'operation.event'])),
+                new RemboursementResource($remboursement),
                 'Demande de remboursement créée avec succès',
                 201
             );
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[Remboursement] Erreur création: ' . $e->getMessage());
+            Log::error('[Remboursement] Erreur création: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return $this->errorResponse('Erreur lors de la création de la demande', 500);
         }
     }
@@ -281,8 +293,11 @@ class RemboursementController extends Controller
         try {
             DB::beginTransaction();
 
-            $remboursement = Remboursement::with(['operation.event', 'operation.paiement'])
-                ->findOrFail($id);
+            $remboursement = Remboursement::with([
+                'user',
+                'operation.event',
+                'operation.paiement'
+            ])->findOrFail($id);
 
             if ($remboursement->statut !== 'en_attente') {
                 return $this->errorResponse('Cette demande a déjà été traitée', 400);
@@ -311,13 +326,26 @@ class RemboursementController extends Controller
                     ]);
                 }
 
+                // CORRECTION: S'assurer que toutes les relations sont chargées
+                $remboursement->refresh();
                 $remboursement->load(['user', 'operation.event', 'operation.paiement']);
-                $remboursement->user->notify(new \App\Notifications\RemboursementApprovedNotification($remboursement));
 
-                Log::info('[Remboursement] Email d\'approbation envoyé', [
-                    'remboursement_id' => $remboursement->id,
-                    'user_id' => $remboursement->user_id,
-                ]);
+                // Envoyer l'email d'approbation
+                try {
+                    $remboursement->user->notify(new RemboursementApprovedNotification($remboursement));
+
+                    Log::info('[Remboursement] Email d\'approbation envoyé', [
+                        'remboursement_id' => $remboursement->id,
+                        'user_id' => $remboursement->user_id,
+                        'user_email' => $remboursement->user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('[Remboursement] Erreur envoi email d\'approbation', [
+                        'remboursement_id' => $remboursement->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
 
             } else {
                 if ($debug) {
@@ -328,13 +356,26 @@ class RemboursementController extends Controller
                     ]);
                 }
 
+                // CORRECTION: S'assurer que toutes les relations sont chargées
+                $remboursement->refresh();
                 $remboursement->load(['user', 'operation.event', 'operation.paiement']);
-                $remboursement->user->notify(new \App\Notifications\RemboursementRejectedNotification($remboursement));
 
-                Log::info('[Remboursement] Email de refus envoyé', [
-                    'remboursement_id' => $remboursement->id,
-                    'user_id' => $remboursement->user_id,
-                ]);
+                // Envoyer l'email de refus
+                try {
+                    $remboursement->user->notify(new RemboursementRejectedNotification($remboursement));
+
+                    Log::info('[Remboursement] Email de refus envoyé', [
+                        'remboursement_id' => $remboursement->id,
+                        'user_id' => $remboursement->user_id,
+                        'user_email' => $remboursement->user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('[Remboursement] Erreur envoi email de refus', [
+                        'remboursement_id' => $remboursement->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
             }
 
             DB::commit();
@@ -344,7 +385,7 @@ class RemboursementController extends Controller
                 : 'Demande de remboursement refusée';
 
             return $this->resourceResponse(
-                new RemboursementResource($remboursement->load(['user', 'operation.event'])),
+                new RemboursementResource($remboursement),
                 $message
             );
 
@@ -352,7 +393,9 @@ class RemboursementController extends Controller
             return $this->notFoundResponse('Demande de remboursement non trouvée');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[Remboursement] Erreur traitement: ' . $e->getMessage());
+            Log::error('[Remboursement] Erreur traitement: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return $this->errorResponse('Erreur lors du traitement de la demande', 500);
         }
     }
