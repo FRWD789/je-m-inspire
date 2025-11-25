@@ -28,8 +28,8 @@ class EventCancelledNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $eventUrl = env("FRONTEND_URL") . '/events/' . $this->event->id;
-        $myEventsUrl = env("FRONTEND_URL") . '/dashboard/my-events';
+        $eventUrl = config('app.frontend_url') . '/events/' . $this->event->id;
+        $myEventsUrl = config('app.frontend_url') . '/dashboard/my-events';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 

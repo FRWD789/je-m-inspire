@@ -23,7 +23,7 @@ class ProfessionalApprovedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $loginUrl = env("FRONTEND_URL") . '/login';
+        $loginUrl = config('app.frontend_url') . '/login';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 

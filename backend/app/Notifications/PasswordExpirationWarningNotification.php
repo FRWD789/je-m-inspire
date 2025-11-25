@@ -24,7 +24,7 @@ class PasswordExpirationWarningNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $loginUrl = env('FRONTEND_URL') . '/login';
+        $loginUrl = config('app.frontend_url') . '/login';
 
         return (new MailMessage)
             ->subject("Votre mot de passe expire dans {$this->daysRemaining} jours")

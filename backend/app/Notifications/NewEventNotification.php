@@ -26,16 +26,16 @@ class NewEventNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $eventUrl = env("FRONTEND_URL") . '/events/' . $this->event->id;
-        $proProfileUrl = env("FRONTEND_URL") . '/user/' . $this->event->creator->id;
-        $myFollowingUrl = env("FRONTEND_URL") . '/dashboard/my-following';
+        $eventUrl = config('app.frontend_url') . '/events/' . $this->event->id;
+        $proProfileUrl = config('app.frontend_url') . '/user/' . $this->event->creator->id;
+        $myFollowingUrl = config('app.frontend_url') . '/dashboard/my-following';
 
         // Token sécurisé pour désactiver les notifications
         $token = hash_hmac('sha256',
             $notifiable->id . '-' . $this->event->creator->id,
             config('app.key')
         );
-        $disableNotificationsUrl = env("FRONTEND_URL") . '/notifications/disable?' . http_build_query([
+        $disableNotificationsUrl = config('app.frontend_url') . '/notifications/disable?' . http_build_query([
             'follower_id' => $notifiable->id,
             'pro_id' => $this->event->creator->id,
             'token' => $token

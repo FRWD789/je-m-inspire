@@ -28,7 +28,7 @@ class AccountReactivationRequestReceivedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $adminUrl = env("FRONTEND_URL") . '/admin/users/' . $this->user->id;
+        $adminUrl = config('app.frontend_url') . '/admin/users/' . $this->user->id;
 
         $greeting = 'Bonjour l\'équipe administrative,';
 

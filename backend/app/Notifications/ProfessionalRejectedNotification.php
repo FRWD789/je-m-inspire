@@ -25,8 +25,8 @@ class ProfessionalRejectedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $contactUrl = env("FRONTEND_URL") . '/contact';
-        $loginUrl = env("FRONTEND_URL") . '/login';
+        $contactUrl = config('app.frontend_url') . '/contact';
+        $loginUrl = config('app.frontend_url') . '/login';
 
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
 

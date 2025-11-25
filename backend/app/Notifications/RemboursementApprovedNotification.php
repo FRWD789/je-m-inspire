@@ -30,7 +30,7 @@ class RemboursementApprovedNotification extends Notification
         $event = $operation->event;
         $paiement = $operation->paiement;
 
-        $myReservationsUrl = env("FRONTEND_URL") . '/my-reservations';
+        $myReservationsUrl = config('app.frontend_url') . '/my-reservations';
         $greeting = 'Bonjour ' . $notifiable->name . ' ' . $notifiable->last_name . ',';
         $processedDate = $this->remboursement->date_traitement->locale('fr')->isoFormat('D MMMM YYYY à HH:mm');
         $paymentMethod = $paiement->provider === 'stripe' ? 'Carte bancaire (Stripe)' : 'PayPal';
