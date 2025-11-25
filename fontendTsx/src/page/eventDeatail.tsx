@@ -61,7 +61,7 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
       />
       <div className="absolute inset-0 bg-black/15 flex flex-col justify-end p-8 text-white">
         <button
-          onClick={() => navigate("/events")}
+          onClick={() => navigate(-1)}
           className="absolute top-4 left-4 bg-white/20 hover:bg-white/30 rounded-full p-2 transition backdrop-blur-sm"
           aria-label="Retour aux événements"
         >
