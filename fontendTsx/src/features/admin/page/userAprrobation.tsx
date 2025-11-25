@@ -30,6 +30,7 @@ export default function AdminApprovalPage() {
     try {
       setLoading(true)
       const response = await privateApi.get('/admin/approvals', { params: { status: 'all' } })
+      console.log('Fetched professionals:', response)
       const profData = response.data?.data || []
       setAllProfessionals(Array.isArray(profData) ? profData : [])
     } catch {
@@ -41,9 +42,9 @@ export default function AdminApprovalPage() {
 
   const filterProfessionals = (tab: string) => {
     const filtered = allProfessionals.filter(pro => {
-      if (tab === 'pending') return !pro.auth_info.is_approved && !pro.auth_info.rejection_reason
-      if (tab === 'approved') return pro.auth_info.is_approved
-      if (tab === 'rejected') return !!pro.auth_info.rejection_reason
+      if (tab === 'pending') return !pro.is_approved && !pro.rejection_reason
+      if (tab === 'approved') return pro.is_approved
+      if (tab === 'rejected') return !!pro.rejection_reason
       return true // 'all'
     })
     setProfessionals(filtered)
