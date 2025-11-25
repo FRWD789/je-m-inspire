@@ -162,7 +162,7 @@ export default function EventCard({
           </div>
         ) : isReservation && event.can_cancel ? (
           <button
-            onClick={() => navigate('/dashboard/refunds-request', { state: { eventId: event.id, reservationId: event.reservation_id } })}
+            onClick={() => navigate('/dashboard/refunds', { state: { eventId: event.id, reservationId: event.reservation_id } })}
             className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-orange-500 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-orange-600 transition-colors active:scale-95"
           >
             <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
