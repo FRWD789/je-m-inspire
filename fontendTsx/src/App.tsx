@@ -90,7 +90,7 @@ export default function App() {
             >
               <Route index element={<DashboardHome />} />
               {/* CHILD ROUTES (RELATIVES) */}
-              <Route path="profile-settings" element={<User />} />
+              <Route path="profile-settings" element={<UserPage />} />
               <Route path="my-events" element={<MyEventPage />} />
               <Route path="my-reservations" element={<MyReservationPage />} />
               <Route path="event-calender" element={<CalenderEventPage />} />
