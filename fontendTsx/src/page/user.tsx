@@ -25,7 +25,6 @@ export default function UserPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   
-  // ✅ Écouter les changements d'URL pour mettre à jour le tab
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as "profile" | "security" | "plan" | null;
     
@@ -33,30 +32,22 @@ export default function UserPage() {
       console.log('🔄 Changement de tab depuis URL:', tabFromUrl);
       setCurrentTab(tabFromUrl);
       
-      // Scroll vers le haut avec animation douce
       setTimeout(() => {
         topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     } else if (!tabFromUrl) {
-      // Si pas de paramètre tab, on affiche "profile" par défaut
       setCurrentTab("profile");
     }
   }, [searchParams]);
 
-  // ✅ Fonction pour changer de tab ET mettre à jour l'URL
   const handleTabChange = (tab: "profile" | "security" | "plan") => {
     console.log('👆 Clic sur tab:', tab);
     
-    // Mettre à jour l'URL avec le nouveau tab
     if (tab === "profile") {
-      // Pour profile, on enlève le paramètre (comportement par défaut)
       setSearchParams({});
     } else {
-      // Pour security et plan, on ajoute le paramètre
       setSearchParams({ tab });
     }
-    
-    // Le useEffect ci-dessus va gérer le changement de currentTab
   };
 
   const normalizeUserDate = (user:any) => ({
@@ -73,7 +64,7 @@ export default function UserPage() {
     if (user?.profile.profile_picture) {
       setPreview(user.profile.profile_picture);
     } else {
-      setPreview("/assets/img/default-avatar.png");
+      setPreview(undefined);
     }
   }, [user]);
 
@@ -140,7 +131,6 @@ export default function UserPage() {
           <Settings className="w-5 h-5 md:w-6 md:h-6" /> {t('dashboard.profileSettings')}
         </h1>
         
-        {/* Tabs - Responsive - AVEC MISE À JOUR DE L'URL */}
         <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 md:pb-0">
           {tabs.map((tab) => (
             <button
@@ -160,7 +150,6 @@ export default function UserPage() {
         </div>
       </div>
 
-      {/* Contenu principal avec animation de transition */}
       <div className="rounded-lg animate-fadeIn">
         
         {currentTab === "profile" && ( 
@@ -317,7 +306,6 @@ export default function UserPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 p-4">
           <div className="bg-white rounded-2xl p-4 md:p-8 shadow-xl w-full max-w-sm relative animate-fadeIn">
             
-            {/* Close button */}
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
               onClick={() => setShowAvatarModal(false)}
@@ -325,7 +313,6 @@ export default function UserPage() {
               <X size={20} />
             </button>
 
-            {/* Modal Title */}
             <div className="flex items-center gap-2 mb-4 md:mb-6">
               <Upload size={20} className="text-primary flex-shrink-0" />
               <h2 className="text-lg md:text-xl font-semibold">{t('profile.changePicture')}</h2>
@@ -334,7 +321,6 @@ export default function UserPage() {
             <Form schema={userAvtarProfileSchema} onSubmit={handleUpload}>
               <div className="flex flex-col items-center gap-4 md:gap-5">
 
-                {/* Avatar Preview */}
                 <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-gray-200 group flex-shrink-0 bg-gray-100">
                   {preview || avatarUrl ? (
                     <img
@@ -352,7 +338,6 @@ export default function UserPage() {
                   </div>
                 </div>
 
-                {/* File Input */}
                 <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 md:px-5 py-2 md:py-2.5 rounded-lg flex items-center gap-2 transition w-full justify-center text-sm md:text-base font-medium">
                   <Upload size={18} className="flex-shrink-0" /> {t('profile.selectImage')}
                   <Input
@@ -367,7 +352,6 @@ export default function UserPage() {
                   />
                 </label>
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={loading || !preview}
