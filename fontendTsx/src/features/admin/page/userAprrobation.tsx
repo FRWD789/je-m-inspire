@@ -168,13 +168,13 @@ export default function AdminApprovalPage() {
                               <td className="py-3 px-4">{pro.timestamps.created_at ? new Date(pro.timestamps.created_at).toLocaleDateString('fr-FR') : 'N/A'}</td>
                               <td
                                 className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
-                                title={pro.profile.motivation_lettre || ''}
-                                onClick={() => setShowModal({ type: 'message', content: pro.profile.motivation_lettre })}
+                                title={pro.admin.motivation_letter || ''}
+                                onClick={() => setShowModal({ type: 'message', content: pro.admin.motivation_letter })}
                               >
                                 <div className="flex items-center gap-2 truncate">
                                   <MessageCircle size={18} />
-                                  {pro.profile.motivation_lettre
-                                    ? pro.profile.motivation_lettre.slice(0, 40) + (pro.profile.motivation_lettre.length > 40 ? "..." : "")
+                                  {pro.admin.motivation_letter
+                                    ? pro.admin.motivation_letter.slice(0, 40) + (pro.admin.motivation_letter.length > 40 ? "..." : "")
                                     : "Aucun message"}
                                 </div>
                               </td>
