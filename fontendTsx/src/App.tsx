@@ -36,6 +36,7 @@ import LinkedAccountSuccess from "./page/LinkedAccountSuccess";
 import About from "./components/About";
 import CookieBar from "./components/CookieBar";
 import RemboursementsPage from "./page/remboursements";
+import ProfessionalsPage from "./page/ProfessionalsPage";
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
             <Route path="notifications/disable" element={<DisableNotificationsPage />} />
             <Route path="about" element={<About />} />
+            <Route path="professionals" element={<ProfessionalsPage />} />
           </Route>
 
            <Route
