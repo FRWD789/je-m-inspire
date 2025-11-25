@@ -113,7 +113,7 @@ class AdminApprovalController extends Controller
                 'rejection_reason' => $validated['reason']
             ]);
             Log::error('[Admin] user updated');
-            $user->notify(new ProfessionalRejectedNotification($validated['rejection_reason']));
+            $user->notify(new ProfessionalRejectedNotification($validated['reason']));
             Log::error('[Admin] notification sent');
             Log::info('[Admin] Professionnel rejeté', ['user_id' => $user->id]);
 
