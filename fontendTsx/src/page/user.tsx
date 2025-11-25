@@ -73,7 +73,7 @@ export default function User() {
     if (user?.profile.profile_picture) {
       setPreview(user.profile.profile_picture);
     } else {
-      setPreview("/assets/default-avatar.png");
+      setPreview("/src/assets/default-avatar.png");
     }
   }, [user]);
 
