@@ -186,7 +186,7 @@ export default function ProfessionalPublicProfile() {
       <div className="relative h-[50vh] w-full overflow-hidden rounded-t-[12px]">
               {/* Back Button */}
          <button
-                  onClick={() => navigate("/events")}
+                  onClick={() => navigate(-1)}
                   className="absolute top-4 left-4 bg-white/20 hover:bg-white/30 rounded-full p-2 z-50 text-white transition backdrop-blur-sm"
                   aria-label="Retour aux événements"
                 >
