@@ -125,7 +125,7 @@ class AdminApprovalController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return $this->notFoundResponse('Professionnel non trouvé');
         } catch (\Exception $e) {
-            return $this->errorResponse('Erreur lors du rejet', 500);
+            return $this->errorResponse('Erreur lors du rejet' . $e, 500);
         }
     }
 
