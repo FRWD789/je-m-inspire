@@ -96,6 +96,7 @@ class AdminApprovalController extends Controller
      */
     public function reject($id, Request $request)
     {
+        Log::info('[Admin] Rejet d\'un professionnel', ['user_id' => $id, 'request_data' => $request->all()]);
         try {
             $validated = $request->validate([
                 'reason' => 'required|min:10'
