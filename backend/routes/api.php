@@ -125,9 +125,13 @@ Route::get('/google/callback', [AuthController::class, 'googleCallback']);
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
 
+// Professionnels publics
+Route::get('/professionnels', [AuthController::class, 'getProfessionnels']);
+Route::get('/user/{id}/public-profile', [ProfessionalProfileController::class, 'show']);
+
 // Rôles
 Route::get('/roles', [RoleController::class, 'index']);
-Route::get('/user/{id}/public-profile', [ProfessionalProfileController::class, 'show']);
+
 // Statut de paiement
 Route::get('/payment/status', [PaiementController::class, 'getPaymentStatus']);
 
@@ -185,7 +189,6 @@ Route::middleware(['auth.jwt'])->group(function () {
     Route::put('/remboursements/{id}/traiter', [RemboursementController::class, 'traiter']);
 
     // GESTION UTILISATEURS
-    Route::get('/professionnels', [AuthController::class, 'getProfessionnels']);
     Route::get('/utilisateurs', [AuthController::class, 'getUtilisateurs']);
     Route::put('/users/{id}/toggle-status', [AuthController::class, 'toggleUserStatus']);
 
