@@ -226,25 +226,12 @@ export default function ProfessionalPublicProfile() {
                   </div>
                 )}
               </div>
-              
-              {/* Pro+ Badge */}
-              {hasProPlus && (
-                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg">
-                  <Star size={16} fill="currentColor" />
-                </div>
-              )}
             </div>
 
             {/* Profile Info */}
             <div className="flex-1 space-y-3">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-4xl md:text-5xl text-white font-bold">{fullName}</h1>
-                {hasProPlus && (
-                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                    <Zap size={14} />
-                    Pro+
-                  </span>
-                )}
                 {isProfessional && (
                   <span className="bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 text-green-100">
                     <CheckCircle size={14} />
@@ -415,8 +402,8 @@ export default function ProfessionalPublicProfile() {
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
             {/* Action Buttons */}
-{/* Action Buttons */}
-<div className="flex gap-3">
+            {/* Action Buttons */}
+            <div className="flex gap-3">
               {/* Bouton Follow - Ne pas afficher si c'est le profil du user connecté */}
               {currentUser?.id !== user?.id && (
                 <button
