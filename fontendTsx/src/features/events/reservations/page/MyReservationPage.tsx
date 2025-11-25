@@ -154,7 +154,14 @@ export default function MyReservationPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedEvents.map(e => (
-              <EventCard key={e.reservation_id} event={e} isReservation={true} />
+              <EventCard 
+                key={e.reservation_id} 
+                event={e} 
+                isReservation={true}
+                onCancel={(event) => navigate('/dashboard/refunds', {
+                  state: { reservationId: event.reservation_id }
+                })}
+              />
             ))}
           </div>
         )}
