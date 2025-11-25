@@ -120,9 +120,6 @@ export default function EventCard({
         {mode === "reservation" ? (
           <div className="text-right">
             <p>
-              <span className="font-semibold">Quantité:</span> {event.reservation_quantity}
-            </p>
-            <p>
               <span className="font-semibold">Total:</span> {event.reservation_total} €
             </p>
             <p className={`mt-1 text-sm ${paymentColor}`}>
