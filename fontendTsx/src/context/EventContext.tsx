@@ -1,5 +1,5 @@
 import usePrivateApi from "@/hooks/usePrivateApi";
-import { createEventService } from "@/service/eventService";
+import { createEventService } from "@/features/events/service/eventService";
 import type { CreateEventData, UpdateEventData,Event } from "@/types/events";
 import { createContext, useContext, useEffect, useState } from "react";
 
