@@ -493,33 +493,6 @@ export default function ProfessionalPublicProfile() {
               </div>
             </div>
 
-            {/* Pro Features */}
-            {hasProPlus && (
-              <div className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-900">
-                  <Award size={20} />
-                  Fonctionnalités Pro+
-                </h3>
-                
-                <div className="grid gap-3">
-                  <div className="flex items-center gap-3 text-blue-800">
-                    <BarChart3 size={18} />
-                    <span>Analyses avancées</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 text-blue-800">
-                    <Shield size={18} />
-                    <span>Support prioritaire</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 text-blue-800">
-                    <BookOpen size={18} />
-                    <span>Rapports personnalisés</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Member Since */}
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
               <h3 className="text-xl font-semibold mb-3">Informations</h3>
