@@ -32,7 +32,7 @@
         </div>
         <div class="info-row">
             <span class="info-label">💰 Prix</span>
-            <span class="info-value">{{ number_format($event->base_price, 2, ',', ' ') }} €</span>
+            <span class="info-value">{{ number_format($event->base_price, 2, ',', ' ') }} $</span>
         </div>
         <div class="info-row">
             <span class="info-label">👥 Places disponibles</span>
