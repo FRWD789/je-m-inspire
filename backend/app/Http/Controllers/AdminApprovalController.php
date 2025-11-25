@@ -104,17 +104,17 @@ class AdminApprovalController extends Controller
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         }
-        Log::error('[Admin] validation done');
+
         try {
             $user = User::findOrFail($id);
-            Log::error('[Admin] user found');
+
             $user->update([
                 'is_approved' => false,
                 'rejection_reason' => $validated['reason']
             ]);
             Log::error('[Admin] user updated');
             $user->notify(new ProfessionalRejectedNotification($validated['reason']));
-            Log::error('[Admin] notification sent');
+
             Log::info('[Admin] Professionnel rejeté', ['user_id' => $user->id]);
 
             return $this->resourceResponse(
