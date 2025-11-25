@@ -718,6 +718,16 @@ class AuthController extends Controller
                 'date_of_birth' => 'sometimes|date|before:today',
             ]);
 
+           if (isset($validated['name'])) {
+                $validated['name'] = $this->formatName($validated['name']);
+            }
+            if (isset($validated['last_name'])) {
+                $validated['last_name'] = $this->formatName($validated['last_name']);
+            }
+            if (isset($validated['city'])) {
+                $validated['city'] = $this->formatName($validated['city']);
+            }
+
             $user->update($validated);
             $user->load('roles');
 
