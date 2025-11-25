@@ -179,7 +179,7 @@ export default function UserPage() {
                   onClick={() => setShowAvatarModal(true)}
                 >
                   <img
-                    src={preview || avatarUrl || "/default-avatar.png"}
+                    src={preview || avatarUrl ||<User size={64} className="text-gray-300 mx-auto mb-4" />}
                     alt="Avatar"
                     className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                   />
