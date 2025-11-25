@@ -6,7 +6,7 @@ import EventCard from "@/components/events/EventCard";
 
 export default function MyReservations() {
   const privateApi = usePrivateApi();
-  const service = ReservationService(privateApi);
+  const service = ReservationService();
   const navigate = useNavigate();
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,10 +27,10 @@ export default function MyReservations() {
     fetchReservations();
   }, []);
 
-   const handleCancel = (eventId: any) => {
-    console.log("MyReservations: handleCancel called with id:", eventId);
+   const handleCancel = (reservationId: number) => {
+    console.log("MyReservations: handleCancel called with id:", reservationId);
     navigate("/dashboard/refunds", {
-      state: { eventId },
+      state: { reservationId },  // ✅ Nom correct
     });
   };
  
@@ -59,9 +59,8 @@ export default function MyReservations() {
               has_refund_request: r.has_refund_request,
               refund_status: r.refund_status,
             }}
-            onCancel={() => handleCancel(r.event.id)}
+            onCancel={() => handleCancel(r.id)}  // ✅ Passe l'ID de la RÉSERVATION, pas de l'event
             className="hover:shadow-lg transition"
-            onEdit={r.peut_annuler ? () => alert("Annuler réservation") : undefined}
             mode="reservation"
           />
         ))}
