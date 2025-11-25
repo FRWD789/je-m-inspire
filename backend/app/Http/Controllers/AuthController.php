@@ -903,6 +903,18 @@ class AuthController extends Controller
         );
     }
 
+    public function getProfessionnels()
+    {
+        $utilisateurs = User::whereHas('roles', fn($query) => $query->where('role', 'professionnel'))
+            ->with('roles')
+            ->get();
+
+        return $this->collectionResponse(
+            UserResource::collection($utilisateurs),
+            'Professionnels récupérés'
+        );
+    }
+
     /**
      * Basculer le statut actif d'un utilisateur (V2)
      */
