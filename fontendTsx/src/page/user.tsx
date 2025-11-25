@@ -1,6 +1,6 @@
 import React, { use, useEffect, useState, useRef } from "react"
 import axios from "axios"
-import { ImageUp, Settings, Shield, SlidersHorizontal, Upload, User2,User, X } from "lucide-react"
+import { ImageUp, Settings, Shield, SlidersHorizontal, Upload, User2, User, X } from "lucide-react"
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useNavigate } from "react-router-dom"
 import Form from "@/components/form"
