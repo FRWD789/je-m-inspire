@@ -1,6 +1,6 @@
 import React, { use, useEffect, useState, useRef } from "react"
 import axios from "axios"
-import { ImageUp, Settings, Shield, SlidersHorizontal, Upload, User2, X } from "lucide-react"
+import { ImageUp, Settings, Shield, SlidersHorizontal, Upload, User2,User, X } from "lucide-react"
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useNavigate } from "react-router-dom"
 import Form from "@/components/form"
@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext"
 import LinkedAccountsSection from "./LinkedAccountsSection"
 import TextArea from "@/components/ui/textArea"
 
-export default function User() {
+export default function UserPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();

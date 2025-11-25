@@ -5,7 +5,7 @@ import Login from "./page/Auth/login";
 import Register from "./page/Auth/register";
 import RegisterPro from "./page/Auth/registerPro";
 import Home from "./page/home";
-import User from "./page/user";
+import UserPage from "./page/user";
 import Dashboard from "./layout/dashboard";
 import Events from "./page/Events/Events";
 import MyEvents from "./page/Events/MyEvents";
