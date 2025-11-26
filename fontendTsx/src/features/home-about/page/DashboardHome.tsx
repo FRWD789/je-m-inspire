@@ -12,7 +12,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 // ✅ CORRECTION : Import depuis src/service/ et non src/features/home-about/service/
-import { dashboardService, DashboardStats } from '@/features/home-about/service/DashboardService';
+import { dashboardService, DashboardStats } from '@/features/home-about/service/dashboardService';
 
 interface QuickStat {
   label: string;
