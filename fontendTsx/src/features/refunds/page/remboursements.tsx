@@ -194,32 +194,34 @@ export default function RemboursementsPage() {
     : 'Paiements reçus directement - vous devez effectuer les remboursements depuis votre compte Stripe/PayPal';
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Onglets principaux */}
-      <div className="flex gap-3 mb-6 border-b border-gray-200">
+    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+      {/* Onglets principaux - Responsive */}
+      <div className="flex gap-2 sm:gap-3 mb-6 border-b border-gray-200 overflow-x-auto">
         <button
-          className={`px-6 py-3 font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+          className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${
             mainTab === "myRequests"
               ? "border-primary text-primary"
               : "border-transparent text-gray-600 hover:text-gray-900"
           }`}
           onClick={() => setMainTab("myRequests")}
         >
-          <FileText size={20} />
-          Mes demandes
+          <FileText size={18} className="sm:w-5 sm:h-5" />
+          <span className="hidden xs:inline">Mes demandes</span>
+          <span className="xs:hidden">Demandes</span>
         </button>
         
         {canManage && (
           <button
-            className={`px-6 py-3 font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${
               mainTab === "manage"
                 ? "border-primary text-primary"
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
             onClick={() => setMainTab("manage")}
           >
-            <ClipboardList size={20} />
-            Gestion des remboursements
+            <ClipboardList size={18} className="sm:w-5 sm:h-5" />
+            <span className="hidden xs:inline">Gestion des remboursements</span>
+            <span className="xs:hidden">Gestion</span>
           </button>
         )}
       </div>
@@ -227,7 +229,7 @@ export default function RemboursementsPage() {
       {/* Contenu de l'onglet "Mes demandes" */}
       {mainTab === "myRequests" && (
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-semibold mb-6 text-center">
+          <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-center">
             {t("dashboard.refundRequest")}
           </h1>
 
@@ -236,25 +238,25 @@ export default function RemboursementsPage() {
           ) : errorReservations ? (
             <p className="text-red-500 text-center mt-6">{errorReservations}</p>
           ) : reservations.length === 0 ? (
-            <div className="text-center mt-6 p-6 bg-gray-50 rounded-lg">
-              <p>{t("refunds.noReservations")}</p>
-              <span className="text-sm text-gray-500 mt-2 block">
+            <div className="text-center mt-6 p-4 sm:p-6 bg-gray-50 rounded-lg">
+              <p className="text-sm sm:text-base">{t("refunds.noReservations")}</p>
+              <span className="text-xs sm:text-sm text-gray-500 mt-2 block">
                 Les réservations avec une demande de remboursement en cours n'apparaissent pas ici.
               </span>
             </div>
           ) : (
             <>
-              {/* Formulaire de demande */}
-              <div className="bg-white rounded-lg shadow-md p-6">
+              {/* Formulaire de demande - Responsive */}
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                 <div className="mb-4">
-                  <label htmlFor="reservation" className="block mb-2 font-medium text-gray-700">
+                  <label htmlFor="reservation" className="block mb-2 font-medium text-gray-700 text-sm sm:text-base">
                     {t("refunds.selectReservation")}
                   </label>
                   <select
                     id="reservation"
                     value={selectedReservationId || ""}
                     onChange={(e) => setSelectedReservationId(Number(e.target.value))}
-                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary text-sm sm:text-base"
                   >
                     <option value="">{t("common.chooseOption") || "--"}</option>
                     {reservations.map((r) => (
@@ -266,7 +268,7 @@ export default function RemboursementsPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="motif" className="block mb-2 font-medium text-gray-700">
+                  <label htmlFor="motif" className="block mb-2 font-medium text-gray-700 text-sm sm:text-base">
                     {t("refunds.reason")}
                   </label>
                   <textarea
@@ -274,13 +276,13 @@ export default function RemboursementsPage() {
                     value={motif}
                     onChange={(e) => setMotif(e.target.value)}
                     rows={4}
-                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary text-sm sm:text-base"
                     placeholder={t("refunds.reasonPlaceholder")}
                   />
                 </div>
 
                 {isRecaptchaEnabled && (
-                  <div className="mb-6 flex justify-center">
+                  <div className="mb-6 flex justify-center overflow-x-auto">
                     <ReCAPTCHA
                       sitekey={recaptchaSiteKey}
                       onChange={(token) => setCaptchaToken(token)}
@@ -290,7 +292,7 @@ export default function RemboursementsPage() {
 
                 <Button
                   onClick={handleSubmit}
-                  className="bg-primary text-white w-full hover:bg-primary/80"
+                  className="bg-primary text-white w-full hover:bg-primary/80 text-sm sm:text-base py-2 sm:py-3"
                   disabled={
                     !selectedReservationId ||
                     !motif.trim() ||
@@ -309,172 +311,301 @@ export default function RemboursementsPage() {
       {/* Contenu de l'onglet "Gestion" */}
       {mainTab === "manage" && canManage && (
         <>
-          {/* Header + Stats */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold flex items-center gap-2">
-                <Shield size={24} /> {title}
+          {/* Header + Stats - Responsive */}
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
+            <div className="flex-1">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold flex items-center gap-2">
+                <Shield size={20} className="sm:w-6 sm:h-6" />
+                <span className="line-clamp-2">{title}</span>
               </h1>
-              <p className="text-sm text-gray-600 mt-1">{description}</p>
-              <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                <span>En attente: {requests.filter((r) => r.statut === "en_attente").length}</span>
-                <span>Approuvées: {requests.filter((r) => r.statut === "approuve").length}</span>
-                <span>Refusées: {requests.filter((r) => r.statut === "refuse").length}</span>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">{description}</p>
+              <div className="flex flex-wrap gap-3 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-600">
+                <span className="bg-yellow-50 px-2 py-1 rounded">
+                  En attente: <strong>{requests.filter((r) => r.statut === "en_attente").length}</strong>
+                </span>
+                <span className="bg-green-50 px-2 py-1 rounded">
+                  Approuvées: <strong>{requests.filter((r) => r.statut === "approuve").length}</strong>
+                </span>
+                <span className="bg-red-50 px-2 py-1 rounded">
+                  Refusées: <strong>{requests.filter((r) => r.statut === "refuse").length}</strong>
+                </span>
               </div>
             </div>
             <button
               onClick={fetchManageRequests}
-              className="px-3 py-2 rounded-[4px] bg-primary/60 text-white hover:bg-primary/80 transition-all text-sm flex items-center gap-2"
+              className="px-3 py-2 rounded-[4px] bg-primary/60 text-white hover:bg-primary/80 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 w-full lg:w-auto"
             >
-              <RefreshCcw size={15} /> Rafraîchir
+              <RefreshCcw size={15} /> 
+              <span className="hidden xs:inline">Rafraîchir</span>
+              <span className="xs:hidden">Actualiser</span>
             </button>
           </div>
 
-          {/* Tabs filtres */}
-          <div className="flex gap-3 mb-4">
-            {["pending", "approved", "refused", "all"].map((tab) => (
+          {/* Tabs filtres - Responsive */}
+          <div className="flex gap-2 sm:gap-3 mb-4 overflow-x-auto pb-2">
+            {[
+              { key: "pending", label: "En attente", labelShort: "Attente" },
+              { key: "approved", label: "Approuvées", labelShort: "OK" },
+              { key: "refused", label: "Refusées", labelShort: "Refusées" },
+              { key: "all", label: "Toutes", labelShort: "Tous" }
+            ].map((tab) => (
               <button
-                key={tab}
-                className={`px-4 py-2 rounded-md font-medium ${
-                  currentTab === tab
+                key={tab.key}
+                className={`px-3 sm:px-4 py-2 rounded-md font-medium whitespace-nowrap text-xs sm:text-sm ${
+                  currentTab === tab.key
                     ? "bg-primary text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
-                onClick={() => setCurrentTab(tab as any)}
+                onClick={() => setCurrentTab(tab.key as any)}
               >
-                {tab === "pending" ? "En attente" : 
-                 tab === "approved" ? "Approuvées" : 
-                 tab === "refused" ? "Refusées" : "Toutes"}
+                <span className="hidden xs:inline">{tab.label}</span>
+                <span className="xs:hidden">{tab.labelShort}</span>
               </button>
             ))}
           </div>
 
-          {/* Table */}
+          {/* Table - Desktop / Cards - Mobile */}
           {loadingManage ? (
-            <p className="text-center mt-6">Chargement des demandes...</p>
+            <p className="text-center mt-6 text-sm sm:text-base">Chargement des demandes...</p>
           ) : errorManage ? (
-            <div className="text-center bg-red-50 border-2 border-red-200 rounded-lg py-8">
-              <p className="text-red-600">{errorManage}</p>
+            <div className="text-center bg-red-50 border-2 border-red-200 rounded-lg py-6 sm:py-8 px-4">
+              <p className="text-red-600 text-sm sm:text-base">{errorManage}</p>
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div className="text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg py-16">
-              <MessageCircle size={40} className="mx-auto text-accent mb-4" />
-              <h2 className="text-lg font-semibold mb-2">Aucune demande trouvée</h2>
-              <p className="text-gray-500">Aucune demande correspondant à ce filtre</p>
+            <div className="text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg py-12 sm:py-16 px-4">
+              <MessageCircle size={32} className="sm:w-10 sm:h-10 mx-auto text-accent mb-4" />
+              <h2 className="text-base sm:text-lg font-semibold mb-2">Aucune demande trouvée</h2>
+              <p className="text-gray-500 text-sm sm:text-base">Aucune demande correspondant à ce filtre</p>
             </div>
           ) : (
-            <div className="overflow-x-auto bg-white rounded-[4px] shadow-sm border border-gray-200">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100 text-gray-700 text-left">
-                  <tr>
-                    <th className="py-3 px-4 font-semibold">Date</th>
-                    <th className="py-3 px-4 font-semibold">Événement</th>
-                    <th className="py-3 px-4 font-semibold">Client</th>
-                    <th className="py-3 px-4 font-semibold">Vendeur</th>
-                    <th className="py-3 px-4 font-semibold">Courriel</th>
-                    <th className="py-3 px-4 font-semibold">Montant</th>
-                    <th className="py-3 px-4 font-semibold">Motif</th>
-                    <th className="py-3 px-4 font-semibold">Message</th>
-                    <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
-                      Statut / Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.map((req) => (
-                    <tr
-                      key={req.id}
-                      className="border-t border-gray-100 hover:bg-gray-50 transition-colors group"
-                    >
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {new Date(req.date).toLocaleDateString('fr-CA')}
-                      </td>
-                      <td className="py-3 px-4 max-w-[150px] truncate" title={req.evenement}>
-                        {req.evenement}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">{req.client}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{req.vendeur}</td>
-                      <td className="py-3 px-4">{req.courriel}</td>
-                      <td className="py-3 px-4 whitespace-nowrap font-medium">
-                        {req.montant.toFixed(2)} CAD
-                      </td>
+            <>
+              {/* Desktop Table (hidden on mobile) */}
+              <div className="hidden lg:block overflow-x-auto bg-white rounded-[4px] shadow-sm border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-100 text-gray-700 text-left">
+                    <tr>
+                      <th className="py-3 px-4 font-semibold">Date</th>
+                      <th className="py-3 px-4 font-semibold">Événement</th>
+                      <th className="py-3 px-4 font-semibold">Client</th>
+                      <th className="py-3 px-4 font-semibold">Vendeur</th>
+                      <th className="py-3 px-4 font-semibold">Courriel</th>
+                      <th className="py-3 px-4 font-semibold">Montant</th>
+                      <th className="py-3 px-4 font-semibold">Motif</th>
+                      <th className="py-3 px-4 font-semibold">Message</th>
+                      <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                        Statut / Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequests.map((req) => (
+                      <tr
+                        key={req.id}
+                        className="border-t border-gray-100 hover:bg-gray-50 transition-colors group"
+                      >
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {new Date(req.date).toLocaleDateString('fr-CA')}
+                        </td>
+                        <td className="py-3 px-4 max-w-[150px] truncate" title={req.evenement}>
+                          {req.evenement}
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">{req.client}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">{req.vendeur}</td>
+                        <td className="py-3 px-4">{req.courriel}</td>
+                        <td className="py-3 px-4 whitespace-nowrap font-medium">
+                          {req.montant.toFixed(2)} CAD
+                        </td>
 
-                      {/* Motif click */}
-                      <td
-                        className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
+                        {/* Motif click */}
+                        <td
+                          className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
+                          onClick={() =>
+                            req.motif &&
+                            setViewContent({ title: "Motif de remboursement", content: req.motif })
+                          }
+                        >
+                          {req.motif
+                            ? req.motif.slice(0, 40) + (req.motif.length > 40 ? "..." : "")
+                            : "Aucun motif"}
+                        </td>
+
+                        {/* Message click */}
+                        <td
+                          className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
+                          onClick={() =>
+                            req.message &&
+                            setViewContent({ title: "Message de l'administrateur", content: req.message })
+                          }
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <MessageCircle size={18} />
+                            {req.message
+                              ? req.message.slice(0, 40) + (req.message.length > 40 ? "..." : "")
+                              : "Aucun message"}
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-4 sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-2px_0_4px_rgba(0,0,0,0.05)] transition-colors">
+                          {req.statut === "en_attente" ? (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => {
+                                  setModalRequest(req);
+                                  setActionType("approve");
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1 text-xs px-2 py-1"
+                              >
+                                <Check size={14} /> Approuver
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setModalRequest(req);
+                                  setActionType("refuse");
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 text-xs px-2 py-1"
+                              >
+                                <X size={14} /> Refuser
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-xs">
+                              {req.statut === "approuve" ? "Approuvé" : "Refusé"}
+                              {req.date_traitement && (
+                                <> le {new Date(req.date_traitement).toLocaleDateString('fr-CA')}</>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards (visible only on mobile) */}
+              <div className="lg:hidden space-y-4">
+                {filteredRequests.map((req) => (
+                  <div key={req.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-1">
+                          {req.evenement}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {new Date(req.date).toLocaleDateString('fr-CA')}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 ${
+                        req.statut === "en_attente" 
+                          ? "bg-yellow-100 text-yellow-800"
+                          : req.statut === "approuve"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        {req.statut === "en_attente" ? "En attente" : 
+                         req.statut === "approuve" ? "Approuvé" : "Refusé"}
+                      </span>
+                    </div>
+
+                    {/* Details */}
+                    <div className="space-y-2 text-sm mb-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Client:</span>
+                        <span className="font-medium">{req.client}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Vendeur:</span>
+                        <span className="font-medium">{req.vendeur}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Courriel:</span>
+                        <span className="font-medium text-xs break-all">{req.courriel}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Montant:</span>
+                        <span className="font-bold text-primary">{req.montant.toFixed(2)} CAD</span>
+                      </div>
+                    </div>
+
+                    {/* Motif & Message */}
+                    <div className="space-y-2 mb-3">
+                      <button
                         onClick={() =>
                           req.motif &&
                           setViewContent({ title: "Motif de remboursement", content: req.motif })
                         }
+                        className="w-full text-left bg-gray-50 rounded p-2 text-xs hover:bg-gray-100 transition-colors"
                       >
-                        {req.motif
-                          ? req.motif.slice(0, 40) + (req.motif.length > 40 ? "..." : "")
-                          : "Aucun motif"}
-                      </td>
+                        <span className="text-gray-600 block mb-1">Motif:</span>
+                        <span className="text-primary line-clamp-2">
+                          {req.motif || "Aucun motif"}
+                        </span>
+                      </button>
 
-                      {/* Message click */}
-                      <td
-                        className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
-                        onClick={() =>
-                          req.message &&
-                          setViewContent({ title: "Message de l'administrateur", content: req.message })
-                        }
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <MessageCircle size={18} />
-                          {req.message
-                            ? req.message.slice(0, 40) + (req.message.length > 40 ? "..." : "")
-                            : "Aucun message"}
-                        </div>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3 px-4 sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-2px_0_4px_rgba(0,0,0,0.05)] transition-colors">
-                        {req.statut === "en_attente" ? (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => {
-                                setModalRequest(req);
-                                setActionType("approve");
-                              }}
-                              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1 text-xs px-2 py-1"
-                            >
-                              <Check size={14} /> Approuver
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setModalRequest(req);
-                                setActionType("refuse");
-                              }}
-                              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 text-xs px-2 py-1"
-                            >
-                              <X size={14} /> Refuser
-                            </Button>
+                      {req.message && (
+                        <button
+                          onClick={() =>
+                            setViewContent({ title: "Message de l'administrateur", content: req.message })
+                          }
+                          className="w-full text-left bg-blue-50 rounded p-2 text-xs hover:bg-blue-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <MessageCircle size={14} className="text-blue-600" />
+                            <span className="text-gray-600">Message admin:</span>
                           </div>
-                        ) : (
-                          <span className="text-gray-500 text-xs">
-                            {req.statut === "approuve" ? "Approuvé" : "Refusé"}
-                            {req.date_traitement && (
-                              <> le {new Date(req.date_traitement).toLocaleDateString('fr-CA')}</>
-                            )}
-                          </span>
+                          <span className="text-primary line-clamp-2">{req.message}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    {req.statut === "en_attente" ? (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            setModalRequest(req);
+                            setActionType("approve");
+                          }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1 text-xs py-2"
+                        >
+                          <Check size={14} /> Approuver
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setModalRequest(req);
+                            setActionType("refuse");
+                          }}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-1 text-xs py-2"
+                        >
+                          <X size={14} /> Refuser
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center text-xs text-gray-500 py-2 bg-gray-50 rounded">
+                        {req.statut === "approuve" ? "✅ Approuvé" : "❌ Refusé"}
+                        {req.date_traitement && (
+                          <> le {new Date(req.date_traitement).toLocaleDateString('fr-CA')}</>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </>
       )}
 
-      {/* View Content Modal (motif / message) */}
+      {/* View Content Modal (motif / message) - Responsive */}
       {viewContent && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
-            <h3 className="text-lg font-semibold mb-3">{viewContent.title}</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{viewContent.content}</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-base sm:text-lg font-semibold mb-3">{viewContent.title}</h3>
+            <p className="text-gray-700 whitespace-pre-wrap text-sm sm:text-base max-h-96 overflow-y-auto">
+              {viewContent.content}
+            </p>
             <div className="flex justify-end mt-4">
               <button
                 onClick={() => setViewContent(null)}
@@ -487,14 +618,14 @@ export default function RemboursementsPage() {
         </div>
       )}
 
-      {/* Modal for admin approval/refusal */}
+      {/* Modal for admin approval/refusal - Responsive */}
       {modalRequest && actionType && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
-            <h3 className="text-lg font-semibold mb-3">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold mb-3">
               {actionType === "approve" ? "Approuver" : "Refuser"} la demande de {modalRequest.client}
             </h3>
-            <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
+            <div className="mb-4 p-3 bg-gray-50 rounded text-xs sm:text-sm space-y-1">
               <p><strong>Événement:</strong> {modalRequest.evenement}</p>
               <p><strong>Montant:</strong> {modalRequest.montant.toFixed(2)} CAD</p>
               <p><strong>Motif:</strong> {modalRequest.motif}</p>
@@ -504,28 +635,28 @@ export default function RemboursementsPage() {
               value={adminMessage}
               onChange={(e) => setAdminMessage(e.target.value)}
               rows={4}
-              className="w-full rounded-md p-2 mb-2 border border-gray-300 focus:ring-primary focus:border-primary text-sm"
+              className="w-full rounded-md p-2 mb-2 border border-gray-300 focus:ring-primary focus:border-primary text-xs sm:text-sm"
             />
             {adminMessage.length > 0 && adminMessage.length < 5 && (
-              <p className="text-red-600 text-sm mb-2">
+              <p className="text-red-600 text-xs sm:text-sm mb-2">
                 Le message doit contenir au moins 5 caractères.
               </p>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   setModalRequest(null);
                   setActionType(null);
                   setAdminMessage("");
                 }}
-                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
+                className="flex-1 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm"
               >
                 Annuler
               </button>
               <button
                 onClick={handleProcess}
                 disabled={adminMessage.length < 5 || processingId === modalRequest.id}
-                className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-all ${
+                className={`flex-1 px-4 py-2 rounded-lg text-white text-xs sm:text-sm font-medium transition-all ${
                   adminMessage.length < 5
                     ? "bg-gray-400 cursor-not-allowed"
                     : actionType === "approve"
