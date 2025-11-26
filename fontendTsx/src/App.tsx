@@ -26,7 +26,7 @@ import GoogleCallback from "./features/auth/page/GoogleCallback";
 import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
 import MyFollowingPage from './features/follow/page/MyFollowingPage';
 import DisableNotificationsPage from "./features/follow/page/DisableNotificationsPage";
-import LinkedAccountSuccess from "./features/auth/page/LinkedAccountSuccess";
+import LinkedAccountSuccess from "./features/abonnement/page/LinkedAccountSuccess";
 import About from "./features/home-about/page/About";
 import CookieBar from "./components/CookieBar";
 import RemboursementsPage from "./features/refunds/page/remboursements";

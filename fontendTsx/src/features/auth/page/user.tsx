@@ -7,7 +7,7 @@ import Form from "@/components/form"
 import { userAvtarProfileSchema, userPasswordSchema, userProfileSchema, type UserAvtarProfileFormType, type UserPasswordFormType, type UserProfileFormType } from "@/schema/userSchema"
 import Input from "@/components/ui/input"
 import { useAuth } from "@/context/AuthContext"
-import LinkedAccountsSection from "./LinkedAccountsSection"
+import LinkedAccountsSection from "../../abonnement/page/LinkedAccountsSection"
 import TextArea from "@/components/ui/textArea"
 
 export default function UserPage() {
