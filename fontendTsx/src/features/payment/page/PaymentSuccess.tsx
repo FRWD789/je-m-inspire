@@ -314,7 +314,7 @@ export default function PaymentSuccess() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => navigate("/my-reservations")}
+            onClick={() => navigate("/dashboard/my-reservations")}
             className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Voir mes réservations
