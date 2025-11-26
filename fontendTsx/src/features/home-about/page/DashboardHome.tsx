@@ -98,24 +98,6 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {quickStats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${stat.bgColor} ${stat.color} p-3 rounded-lg`}>
-                {stat.icon}
-              </div>
-            </div>
-            <p className="text-lg font-bold text-gray-900 break-words">{stat.value}</p>
-            <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Quick Links Section */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
