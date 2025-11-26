@@ -11,15 +11,6 @@ import {
   Star,
   TrendingUp
 } from 'lucide-react';
-import { dashboardService, type DashboardStats } from '@/features/home-about/service/dashboardService';
-
-interface QuickStat {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-}
 
 interface QuickLink {
   title: string;
@@ -34,8 +25,6 @@ export default function DashboardHome() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState('');
-  const [dashboardData, setDashboardData] = useState<DashboardStats>({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -48,60 +37,7 @@ export default function DashboardHome() {
     }
   }, [t]);
 
-  // ✅ Charger les données du dashboard avec UN SEUL appel API
-  // Les données sont déjà formatées par le service
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        // ✅ UN SEUL appel API qui retourne toutes les stats FORMATÉES selon le rôle
-        const stats = await dashboardService.getStats();
-        setDashboardData(stats);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
-
-  // ✅ SIMPLIFICATION : Plus besoin de fonctions de formatage, 
-  // les données arrivent déjà formatées du service
-
-  const quickStats: QuickStat[] = [
-    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.best_event_display !== undefined ? [{
-      label: t('dashboard.myEvents'),
-      value: loading ? '...' : dashboardData.best_event_display,
-      icon: <Ticket className="w-6 h-6" />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    }] : []),
-    ...(dashboardData.next_reservation_display !== undefined ? [{
-      label: t('dashboard.nextEvent'),
-      value: loading ? '...' : dashboardData.next_reservation_display,
-      icon: <Calendar className="w-6 h-6" />,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
-    }] : []),
-    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.monthly_earnings_display !== undefined ? [{
-      label: t('dashboard.earnings'),
-      value: loading ? '...' : dashboardData.monthly_earnings_display,
-      icon: <BarChart3 className="w-6 h-6" />,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
-    }] : []),
-    ...(user?.roles[0]?.role === 'admin' && dashboardData.pending_approvals_display !== undefined ? [{
-      label: t('dashboard.users'),
-      value: loading ? '...' : dashboardData.pending_approvals_display,
-      icon: <Users className="w-6 h-6" />,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    }] : [])
-  ];
+  
 
   const quickLinks: QuickLink[] = [
     ...(user?.roles[0]?.role === 'professionnel' ? [{
