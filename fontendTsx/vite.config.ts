@@ -24,4 +24,7 @@ export default defineConfig({
       port: 5173,
     },
   },
+  build: {
+    sourcemap: true, // ✅ Active les source maps
+  }
 })
