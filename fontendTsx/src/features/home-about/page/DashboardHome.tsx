@@ -11,7 +11,6 @@ import {
   Star,
   TrendingUp
 } from 'lucide-react';
-// ✅ CORRECTION : Import depuis src/service/ et non src/features/home-about/service/
 import { dashboardService, type DashboardStats } from '@/features/home-about/service/dashboardService';
 
 interface QuickStat {
@@ -50,12 +49,13 @@ export default function DashboardHome() {
   }, [t]);
 
   // ✅ Charger les données du dashboard avec UN SEUL appel API
+  // Les données sont déjà formatées par le service
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // ✅ UN SEUL appel API qui retourne toutes les stats selon le rôle
-        const stats = await dashboardService.getStats();
+        // ✅ UN SEUL appel API qui retourne toutes les stats FORMATÉES selon le rôle
+        const stats = await dashboardService.getStats(t, hasProPlus);
         setDashboardData(stats);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -67,78 +67,36 @@ export default function DashboardHome() {
     if (user) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, t, hasProPlus]);
 
-  // Formater la date de réservation
-  const formatTimeUntilEvent = (dateString?: string, daysUntil?: number): string => {
-    if (!dateString) return '-';
-    
-    // Arrondir vers le haut pour éviter les décimales
-    const days = daysUntil !== undefined ? Math.ceil(daysUntil) : null;
-    
-    if (days !== null) {
-      if (days === 0) return t('common.today');
-      if (days === 1) return t('common.tomorrow');
-      return `${days} ${t('common.days')}`;
-    }
-    
-    // Calcul manuel si nécessaire
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = date.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return t('common.today');
-    if (diffDays === 1) return t('common.tomorrow');
-    return `${diffDays} ${t('common.days')}`;
-  };
-
-  // ✅ Formater la prochaine réservation
-  const formatNextReservation = (): string => {
-    if (loading) return '...';
-    if (!dashboardData.next_reservation) return '-';
-
-    const { event_name, date, days_until } = dashboardData.next_reservation;
-    const timeUntil = formatTimeUntilEvent(date, days_until);
-    
-    return `${event_name} - Dans ${timeUntil}`;
-  };
+  // ✅ SIMPLIFICATION : Plus besoin de fonctions de formatage, 
+  // les données arrivent déjà formatées du service
 
   const quickStats: QuickStat[] = [
-    ...(user?.roles[0]?.role === 'professionnel' ? [{
+    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.best_event_display ? [{
       label: t('dashboard.myEvents'),
-      value: loading 
-        ? '...' 
-        : dashboardData.best_event
-          ? `${dashboardData.best_event.name} (${dashboardData.best_event.reservations})`
-          : '-',
+      value: loading ? '...' : dashboardData.best_event_display,
       icon: <Ticket className="w-6 h-6" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     }] : []),
-    {
+    ...(dashboardData.next_reservation_display ? [{
       label: t('dashboard.nextEvent'),
-      value: formatNextReservation(),
+      value: loading ? '...' : dashboardData.next_reservation_display,
       icon: <Calendar className="w-6 h-6" />,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
-    },
-    ...(user?.roles[0]?.role === 'professionnel' ? [{
+    }] : []),
+    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.monthly_earnings_display ? [{
       label: t('dashboard.earnings'),
-      value: loading
-        ? '...'
-        : hasProPlus && dashboardData.monthly_earnings !== undefined
-          ? `${dashboardData.monthly_earnings.toFixed(2)} $`
-          : t('common.upgradeToPro'),
+      value: loading ? '...' : dashboardData.monthly_earnings_display,
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     }] : []),
-    ...(user?.roles[0]?.role === 'admin' ? [{
+    ...(user?.roles[0]?.role === 'admin' && dashboardData.pending_approvals_display ? [{
       label: t('dashboard.users'),
-      value: loading
-        ? '...'
-        : `${dashboardData.pending_approvals || 0} ${t('common.pending')}`,
+      value: loading ? '...' : dashboardData.pending_approvals_display,
       icon: <Users className="w-6 h-6" />,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50'

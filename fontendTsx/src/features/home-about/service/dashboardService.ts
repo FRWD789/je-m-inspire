@@ -1,38 +1,144 @@
 import { privateApi } from "@/api/api";
 
-// ✅ EXPORT de l'interface pour utilisation dans les composants
+// ✅ Interface pour les données formatées retournées au composant
 export interface DashboardStats {
   // Pour professionnels
+  best_event_display?: string; // Formaté : "Nom événement (X réservations)"
+  
+  // Pour tous les utilisateurs
+  next_reservation_display?: string; // Formaté : "Nom événement - Dans X jours"
+  
+  // Pour professionnels avec Pro Plus
+  monthly_earnings_display?: string; // Formaté : "XXX.XX $" ou texte d'upgrade
+  
+  // Pour admins
+  pending_approvals_display?: string; // Formaté : "X en attente"
+  
+  // Données brutes (si nécessaire pour navigation)
+  best_event_id?: number;
+  next_reservation_id?: number;
+}
+
+// ==========================================
+// FONCTIONS DE FORMATAGE
+// ==========================================
+
+/**
+ * Formate le temps jusqu'à un événement en texte lisible
+ */
+const formatTimeUntilEvent = (dateString: string, daysUntil?: number, t?: any): string => {
+  if (!dateString) return '-';
+  
+  // Arrondir vers le haut pour éviter les décimales
+  const days = daysUntil !== undefined ? Math.ceil(daysUntil) : null;
+  
+  if (days !== null) {
+    if (days === 0) return t?.('common.today') || "Aujourd'hui";
+    if (days === 1) return t?.('common.tomorrow') || "Demain";
+    return `${days} ${t?.('common.days') || 'jours'}`;
+  }
+  
+  // Calcul manuel si nécessaire
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = date.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return t?.('common.today') || "Aujourd'hui";
+  if (diffDays === 1) return t?.('common.tomorrow') || "Demain";
+  return `${diffDays} ${t?.('common.days') || 'jours'}`;
+};
+
+/**
+ * Formate le meilleur événement
+ */
+const formatBestEvent = (data: any): string => {
+  if (!data?.name) return '-';
+  return `${data.name} (${data.reservations})`;
+};
+
+/**
+ * Formate la prochaine réservation
+ */
+const formatNextReservation = (data: any, t?: any): string => {
+  if (!data?.event_name) return '-';
+  
+  const timeUntil = formatTimeUntilEvent(data.date, data.days_until, t);
+  return `${data.event_name} - Dans ${timeUntil}`;
+};
+
+/**
+ * Formate les revenus mensuels
+ */
+const formatMonthlyEarnings = (earnings: number | undefined, hasProPlus: boolean, t?: any): string => {
+  if (!hasProPlus) {
+    return t?.('common.upgradeToPro') || 'Passer à Pro+';
+  }
+  
+  if (earnings === undefined) return '-';
+  return `${earnings.toFixed(2)} $`;
+};
+
+/**
+ * Formate les approbations en attente
+ */
+const formatPendingApprovals = (count: number | undefined, t?: any): string => {
+  if (count === undefined) return '-';
+  return `${count} ${t?.('common.pending') || 'en attente'}`;
+};
+
+// ==========================================
+// INTERFACE BRUTE DE L'API (non exportée)
+// ==========================================
+interface RawDashboardStats {
   best_event?: {
     name: string;
     reservations: number;
     event_id: number;
   };
-  
-  // Pour tous les utilisateurs
   next_reservation?: {
     event_name: string;
     event_id: number;
     date: string;
     days_until: number;
   };
-  
-  // Pour professionnels avec Pro Plus
   monthly_earnings?: number;
-  
-  // Pour admins
   pending_approvals?: number;
+  has_pro_plus?: boolean;
 }
 
 export const dashboardService = {
   /**
-   * ✅ MÉTHODE PRINCIPALE : Récupérer toutes les statistiques du dashboard
-   * Cette méthode fait UN SEUL appel API qui retourne toutes les stats selon le rôle
+   * ✅ MÉTHODE PRINCIPALE : Récupérer toutes les statistiques du dashboard FORMATÉES
+   * Cette méthode fait UN SEUL appel API et retourne les données déjà formatées
    */
-  getStats: async (): Promise<DashboardStats> => {
+  getStats: async (t?: any, hasProPlus?: boolean): Promise<DashboardStats> => {
     try {
       const response = await privateApi.get('/dashboard/stats');
-      return response.data;
+      const raw: RawDashboardStats = response.data;
+
+      // ✅ Formater toutes les données avant de les retourner
+      return {
+        best_event_display: raw.best_event 
+          ? formatBestEvent(raw.best_event)
+          : undefined,
+        
+        next_reservation_display: raw.next_reservation
+          ? formatNextReservation(raw.next_reservation, t)
+          : undefined,
+        
+        monthly_earnings_display: raw.monthly_earnings !== undefined || hasProPlus !== undefined
+          ? formatMonthlyEarnings(raw.monthly_earnings, hasProPlus ?? raw.has_pro_plus ?? false, t)
+          : undefined,
+        
+        pending_approvals_display: raw.pending_approvals !== undefined
+          ? formatPendingApprovals(raw.pending_approvals, t)
+          : undefined,
+        
+        // Garder les IDs pour navigation
+        best_event_id: raw.best_event?.event_id,
+        next_reservation_id: raw.next_reservation?.event_id,
+      };
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       throw error;
