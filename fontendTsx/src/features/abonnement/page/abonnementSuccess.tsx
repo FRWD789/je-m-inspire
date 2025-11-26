@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate } from "react-router-dom";
-const navigate = useNavigate();
+
 
 export default function AbonnementSuccess() {
-   const [subscribed, setSubscribed] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubscribe = () => {
     // ✅ Hard-coded action
