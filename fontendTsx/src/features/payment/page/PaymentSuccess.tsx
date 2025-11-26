@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, Loader2, ArrowLeft, Calendar, MapPin, Tag, DollarSign } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, ArrowLeft, Calendar, MapPin, Tag, DollarSign, CalendarDays } from "lucide-react";
 import { PayementService } from "@/features/payment/service/paymentService";
 
 interface PaymentResponse {
@@ -217,12 +217,18 @@ export default function PaymentSuccess() {
         {/* Event Card */}
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 mb-6 border border-gray-200">
           <div className="flex flex-col sm:flex-row gap-4 items-start">
-            {/* Event Image */}
-            <img
-              src={event.thumbnail || "/assets/img/default-event.png"}
-              alt={event.name}
-              className="w-full sm:w-32 h-32 object-cover rounded-lg shadow-md"
-            />
+            {/* Event Image or Placeholder */}
+            {event.thumbnail ? (
+              <img
+                src={event.thumbnail}
+                alt={event.name}
+                className="w-full sm:w-32 h-32 object-cover rounded-lg shadow-md"
+              />
+            ) : (
+              <div className="w-full sm:w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg shadow-md flex items-center justify-center">
+                <CalendarDays className="w-16 h-16 text-blue-600 opacity-60" />
+              </div>
+            )}
 
             {/* Event Details */}
             <div className="flex-1 space-y-3">
