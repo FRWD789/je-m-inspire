@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { useNavigate } from "react-router-dom";
+const navigate = useNavigate();
 
 export default function AbonnementSuccess() {
    const [subscribed, setSubscribed] = useState(false);
@@ -25,7 +27,7 @@ export default function AbonnementSuccess() {
 
             {/* Continue Button */}
             <button
-              onClick={() => alert("Redirect action here")}
+              onClick={() => navigate("/dashboard/my-reservations")}
               className="w-full mt-8 py-3 bg-accent hover:bg-primary text-white font-semibold rounded-lg transition"
             >
               Continuer
