@@ -112,7 +112,8 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // Décrémenter les places disponibles
+            // ✅ CORRECTION: Décrémenter les places UNE SEULE FOIS ici
+            // Cela réserve la place immédiatement et évite les problèmes
             $event->available_places -= 1;
             $event->save();
 
@@ -278,7 +279,8 @@ class PaiementController extends Controller
                 'paiement_id' => $paiement->paiement_id,
             ]);
 
-            // Décrémenter les places disponibles
+            // ✅ CORRECTION: Décrémenter les places UNE SEULE FOIS ici
+            // Cela réserve la place immédiatement et évite les problèmes
             $event->available_places -= 1;
             $event->save();
 
@@ -530,6 +532,7 @@ class PaiementController extends Controller
 
     /**
      * Traiter le succès du paiement PayPal (appelé UNE SEULE FOIS)
+     * ✅ CORRECTION: Ne plus décrémenter les places ici - déjà fait au checkout
      */
     private function handlePaypalPaymentSuccess(Paiement $paiement, $payload, $captureId = null)
     {
@@ -555,51 +558,55 @@ class PaiementController extends Controller
 
             $event = $operation->event;
 
-            // Vérifier les places disponibles
-            if ($event->available_places >= 1) {
-                // Déduire les places
-                $event->available_places -= 1;
-                $event->save();
-
-                // Extraire le montant selon le format du payload
-                $amount = null;
-                if (isset($payload['purchase_units'][0]['payments']['captures'][0]['amount']['value'])) {
-                    // Format: réponse de capture API
-                    $amount = $payload['purchase_units'][0]['payments']['captures'][0]['amount']['value'];
-                } elseif (isset($payload['resource']['amount']['value'])) {
-                    // Format: webhook PAYMENT.CAPTURE.COMPLETED
-                    $amount = $payload['resource']['amount']['value'];
-                }
-
-                // Marquer comme payé
-                $paiement->update([
-                    'status' => 'paid',
-                    'paypal_capture_id' => $captureId,
-                    'total' => $amount ?? $paiement->total,
-                    'updated_at' => now(),
-                ]);
-
-                Log::info('✅ Paiement PayPal confirmé', [
-                    'payment_id' => $paiement->paiement_id,
-                    'operation_id' => $operation->id,
-                    'event_id' => $event->id,
-                    'capture_id' => $captureId
-                ]);
-            } else {
-                // Pas assez de places : remboursement
-                $paiement->update([
-                    'status' => 'refunded',
-                    'updated_at' => now(),
-                ]);
-                $operation->delete();
-
-                Log::warning('⚠️ Remboursement automatique PayPal - pas assez de places', [
-                    'payment_id' => $paiement->paiement_id,
-                    'places_disponibles' => $event->available_places
-                ]);
+            // Extraire le montant selon le format du payload
+            $amount = null;
+            if (isset($payload['purchase_units'][0]['payments']['captures'][0]['amount']['value'])) {
+                // Format: réponse de capture API
+                $amount = $payload['purchase_units'][0]['payments']['captures'][0]['amount']['value'];
+            } elseif (isset($payload['resource']['amount']['value'])) {
+                // Format: webhook PAYMENT.CAPTURE.COMPLETED
+                $amount = $payload['resource']['amount']['value'];
             }
 
+            // ✅ CORRECTION: Marquer simplement comme payé
+            // Les places ont déjà été décrémentées lors de la création du checkout
+            $paiement->update([
+                'status' => 'paid',
+                'paypal_capture_id' => $captureId,
+                'total' => $amount ?? $paiement->total,
+                'updated_at' => now(),
+            ]);
+
+            Log::info('✅ Paiement PayPal confirmé', [
+                'payment_id' => $paiement->paiement_id,
+                'operation_id' => $operation->id,
+                'event_id' => $event->id,
+                'capture_id' => $captureId,
+                'places_restantes' => $event->available_places
+            ]);
+
             DB::commit();
+
+            // ✅ Envoyer l'email de confirmation de réservation
+            try {
+                // Charger toutes les relations nécessaires pour l'email
+                $operation->load(['event.localisation', 'paiement', 'user']);
+
+                $operation->user->notify(new \App\Notifications\ReservationConfirmedNotification($operation));
+
+                Log::info('[PayPal] Email de confirmation envoyé', [
+                    'payment_id' => $paiement->paiement_id,
+                    'user_id' => $operation->user_id,
+                    'user_email' => $operation->user->email
+                ]);
+            } catch (\Exception $e) {
+                // Ne pas faire échouer le paiement si l'email échoue
+                Log::error('[PayPal] Erreur envoi email de confirmation', [
+                    'payment_id' => $paiement->paiement_id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -612,6 +619,7 @@ class PaiementController extends Controller
 
     /**
      * Gérer le succès du paiement Stripe
+     * ✅ CORRECTION: Ne plus décrémenter les places ici - déjà fait au checkout
      */
     private function handleStripeCheckoutCompleted($session)
     {
@@ -667,30 +675,42 @@ class PaiementController extends Controller
 
             $event = $operation->event;
 
-            // Vérifier les places disponibles
-            if ($event->available_places >= 1) {
-                $event->available_places -= 1;
-                $event->save();
+            // ✅ CORRECTION: Marquer simplement comme payé
+            // Les places ont déjà été décrémentées lors de la création du checkout
+            $paiement->update([
+                'status' => 'paid',
+                'total' => ($session->amount_total ?? $paiement->total) / 100,
+            ]);
 
-                $paiement->update([
-                    'status' => 'paid',
-                    'total' => ($session->amount_total ?? $paiement->total) / 100,
-                ]);
-
-                Log::info('✅ Paiement Stripe confirmé', [
-                    'payment_id' => $paiement->paiement_id,
-                    'session_id' => $session->id,
-                ]);
-            } else {
-                $paiement->update(['status' => 'refunded']);
-                $operation->delete();
-
-                Log::warning('⚠️ Remboursement automatique Stripe - pas assez de places', [
-                    'payment_id' => $paymentId
-                ]);
-            }
+            Log::info('✅ Paiement Stripe confirmé', [
+                'payment_id' => $paiement->paiement_id,
+                'session_id' => $session->id,
+                'event_id' => $event->id,
+                'places_restantes' => $event->available_places
+            ]);
 
             DB::commit();
+
+            // ✅ Envoyer l'email de confirmation de réservation
+            try {
+                // Charger toutes les relations nécessaires pour l'email
+                $operation->load(['event.localisation', 'paiement', 'user']);
+
+                $operation->user->notify(new \App\Notifications\ReservationConfirmedNotification($operation));
+
+                Log::info('[Stripe] Email de confirmation envoyé', [
+                    'payment_id' => $paiement->paiement_id,
+                    'user_id' => $operation->user_id,
+                    'user_email' => $operation->user->email
+                ]);
+            } catch (\Exception $e) {
+                // Ne pas faire échouer le paiement si l'email échoue
+                Log::error('[Stripe] Erreur envoi email de confirmation', [
+                    'payment_id' => $paiement->paiement_id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
