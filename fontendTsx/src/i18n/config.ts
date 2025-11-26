@@ -568,9 +568,13 @@ const resources = {
         to: 'à',
         results: 'résultats',
 
+        today: "Aujourd'hui",
+        tomorrow: 'Demain',
+        days: 'jours',
+        pending: 'en attente',
         upgradeToPro: "Passer à Pro Plus",
         unlockFeatures: "Débloquez toutes les fonctionnalités premium",
-        upgradeNow: "Mettre à niveau maintenant"
+        upgradeNow: "Mettre à niveau maintenant",
       },
 
       // ==========================================
@@ -1186,6 +1190,10 @@ const resources = {
         to: 'to',
         results: 'results',
 
+        today: 'Today',
+        tomorrow: 'Tomorrow',
+        days: 'days',
+        pending: 'pending',
         upgradeToPro: "Upgrade to Pro Plus",
         unlockFeatures: "Unlock all premium features",
         upgradeNow: "Upgrade now"

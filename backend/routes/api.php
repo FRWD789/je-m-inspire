@@ -38,6 +38,7 @@ use App\Notifications\AccountDeactivatedNotification;
 use App\Notifications\EventReminderNotification;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
+use App\Http\Controllers\DashboardController;
 
 
 
@@ -152,6 +153,8 @@ Route::post('/follow/notifications/disable', [\App\Http\Controllers\FollowProCon
 // ROUTES PROTÉGÉES
 // ==========================================
 Route::middleware(['auth.jwt'])->group(function () {
+
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 
     // AUTHENTIFICATION & PROFIL
     Route::get('/me', [AuthController::class, 'me']);

@@ -11,6 +11,7 @@ import {
   Star,
   TrendingUp
 } from 'lucide-react';
+import { dashboardService, DashboardStats } from '@/features/home-about/service/dashboardService';
 
 interface QuickStat {
   label: string;
@@ -33,6 +34,8 @@ export default function DashboardHome() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState('');
+  const [dashboardData, setDashboardData] = useState<DashboardStats>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -45,31 +48,89 @@ export default function DashboardHome() {
     }
   }, [t]);
 
+  // ✅ Charger les données du dashboard avec UN SEUL appel API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // ✅ UN SEUL appel API qui retourne toutes les stats selon le rôle
+        const stats = await dashboardService.getStats();
+        setDashboardData(stats);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  // Formater la date de réservation
+  const formatReservationDate = (dateString?: string, daysUntil?: number): string => {
+    if (!dateString) return '-';
+    
+    // Si le backend a déjà calculé les jours
+    if (daysUntil !== undefined) {
+      if (daysUntil === 0) return t('common.today');
+      if (daysUntil === 1) return t('common.tomorrow');
+      if (daysUntil < 7) return `${daysUntil} ${t('common.days')}`;
+    }
+    
+    // Sinon, calculer manuellement
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return t('common.today');
+    if (diffDays === 1) return t('common.tomorrow');
+    if (diffDays < 7) return `${diffDays} ${t('common.days')}`;
+    
+    return date.toLocaleDateString();
+  };
+
   const quickStats: QuickStat[] = [
     ...(user?.roles[0]?.role === 'professionnel' ? [{
       label: t('dashboard.myEvents'),
-      value: '-',
+      value: loading 
+        ? '...' 
+        : dashboardData.best_event
+          ? `${dashboardData.best_event.name} (${dashboardData.best_event.reservations})`
+          : '-',
       icon: <Ticket className="w-6 h-6" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     }] : []),
     {
       label: t('dashboard.myReservations'),
-      value: '-',
+      value: loading
+        ? '...'
+        : dashboardData.next_reservation
+          ? `${dashboardData.next_reservation.event_name} (${formatReservationDate(dashboardData.next_reservation.date, dashboardData.next_reservation.days_until)})`
+          : '-',
       icon: <Calendar className="w-6 h-6" />,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     ...(user?.roles[0]?.role === 'professionnel' ? [{
       label: t('dashboard.earnings'),
-      value: '-',
+      value: loading
+        ? '...'
+        : hasProPlus && dashboardData.monthly_earnings !== undefined
+          ? `${dashboardData.monthly_earnings.toFixed(2)} $`
+          : t('common.upgradeToPro'),
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     }] : []),
     ...(user?.roles[0]?.role === 'admin' ? [{
       label: t('dashboard.users'),
-      value: '-',
+      value: loading
+        ? '...'
+        : `${dashboardData.pending_approvals || 0} ${t('common.pending')}`,
       icon: <Users className="w-6 h-6" />,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50'
@@ -147,7 +208,7 @@ export default function DashboardHome() {
                 {stat.icon}
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+            <p className="text-lg font-bold text-gray-900 break-words">{stat.value}</p>
             <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
           </div>
         ))}
