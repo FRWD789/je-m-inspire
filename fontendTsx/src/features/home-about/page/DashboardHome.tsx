@@ -70,17 +70,19 @@ export default function DashboardHome() {
   }, [user]);
 
   // Formater la date de réservation
-  const formatReservationDate = (dateString?: string, daysUntil?: number): string => {
+  const formatTimeUntilEvent = (dateString?: string, daysUntil?: number): string => {
     if (!dateString) return '-';
     
-    // Si le backend a déjà calculé les jours
-    if (daysUntil !== undefined) {
-      if (daysUntil === 0) return t('common.today');
-      if (daysUntil === 1) return t('common.tomorrow');
-      if (daysUntil < 7) return `${daysUntil} ${t('common.days')}`;
+    // Arrondir vers le haut pour éviter les décimales
+    const days = daysUntil !== undefined ? Math.ceil(daysUntil) : null;
+    
+    if (days !== null) {
+      if (days === 0) return t('common.today');
+      if (days === 1) return t('common.tomorrow');
+      return `${days} ${t('common.days')}`;
     }
     
-    // Sinon, calculer manuellement
+    // Calcul manuel si nécessaire
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = date.getTime() - now.getTime();
@@ -88,9 +90,18 @@ export default function DashboardHome() {
 
     if (diffDays === 0) return t('common.today');
     if (diffDays === 1) return t('common.tomorrow');
-    if (diffDays < 7) return `${diffDays} ${t('common.days')}`;
+    return `${diffDays} ${t('common.days')}`;
+  };
+
+  // ✅ Formater la prochaine réservation
+  const formatNextReservation = (): string => {
+    if (loading) return '...';
+    if (!dashboardData.next_reservation) return '-';
+
+    const { event_name, date, days_until } = dashboardData.next_reservation;
+    const timeUntil = formatTimeUntilEvent(date, days_until);
     
-    return date.toLocaleDateString();
+    return `${event_name} - Dans ${timeUntil}`;
   };
 
   const quickStats: QuickStat[] = [
@@ -106,12 +117,8 @@ export default function DashboardHome() {
       bgColor: 'bg-blue-50'
     }] : []),
     {
-      label: t('dashboard.myReservations'),
-      value: loading
-        ? '...'
-        : dashboardData.next_reservation
-          ? `${dashboardData.next_reservation.event_name} (${formatReservationDate(dashboardData.next_reservation.date, dashboardData.next_reservation.days_until)})`
-          : '-',
+      label: t('dashboard.nextEvent'),
+      value: formatNextReservation(),
       icon: <Calendar className="w-6 h-6" />,
       color: 'text-green-600',
       bgColor: 'bg-green-50'

@@ -131,6 +131,7 @@ const resources = {
       // DASHBOARD
       // ==========================================
       dashboard: {
+        nextEvent: "Prochain événement",
         title: 'Tableau de bord',
         welcome: 'Bienvenue',
         titleSideNav: 'Navigation',
@@ -754,6 +755,7 @@ const resources = {
       // DASHBOARD
       // ==========================================
       dashboard: {
+        nextEvent: "Next Event",
         title: 'Dashboard',
         welcome: 'Welcome',
         titleSideNav: 'Navigation',
