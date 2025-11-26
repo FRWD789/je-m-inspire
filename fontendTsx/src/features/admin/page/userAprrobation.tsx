@@ -404,7 +404,7 @@ export default function AdminApprovalPage() {
         <button
           onClick={() => setShowModal({ type: 'reject', user: pro })}
           disabled={processing === pro.id}
-          className={`${buttonClass} px-3 py-1.5 rounded-md bg-[#A4031F]/70 text-white hover:bg-[#A4031F]/90 text-sm disabled:opacity-50`}
+          className={`${buttonClass} px-3 py-1.5 rounded-md bg-[#A4031F]/70 text-white hover:bg-[#A4031F]/90 text-sm disabled:opacity-50 pr-3`}
         >
           Révoquer
         </button>
