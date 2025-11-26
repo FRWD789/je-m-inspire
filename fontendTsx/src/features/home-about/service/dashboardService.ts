@@ -1,5 +1,6 @@
 import { privateApi } from "@/api/api";
 
+// ✅ EXPORT de l'interface pour utilisation dans les composants
 export interface DashboardStats {
   // Pour professionnels
   best_event?: {
