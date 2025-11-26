@@ -8,8 +8,8 @@ export interface DashboardStats {
   // Pour tous les utilisateurs
   next_reservation_display?: string; // Formaté : "Nom événement - Dans X jours"
   
-  // Pour professionnels avec Pro Plus
-  monthly_earnings_display?: string; // Formaté : "XXX.XX $" ou texte d'upgrade
+  // Pour professionnels (Pro Plus ou gratuit)
+  monthly_earnings_display?: string; // Formaté : "XXX.XX $ ce mois"
   
   // Pour admins
   pending_approvals_display?: string; // Formaté : "X en attente"
@@ -26,16 +26,16 @@ export interface DashboardStats {
 /**
  * Formate le temps jusqu'à un événement en texte lisible
  */
-const formatTimeUntilEvent = (dateString: string, daysUntil?: number, t?: any): string => {
+const formatTimeUntilEvent = (dateString: string, daysUntil?: number): string => {
   if (!dateString) return '-';
   
   // Arrondir vers le haut pour éviter les décimales
   const days = daysUntil !== undefined ? Math.ceil(daysUntil) : null;
   
   if (days !== null) {
-    if (days === 0) return t?.('common.today') || "Aujourd'hui";
-    if (days === 1) return t?.('common.tomorrow') || "Demain";
-    return `${days} ${t?.('common.days') || 'jours'}`;
+    if (days === 0) return "Aujourd'hui";
+    if (days === 1) return "Demain";
+    return `${days} jours`;
   }
   
   // Calcul manuel si nécessaire
@@ -44,43 +44,53 @@ const formatTimeUntilEvent = (dateString: string, daysUntil?: number, t?: any): 
   const diffTime = date.getTime() - now.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return t?.('common.today') || "Aujourd'hui";
-  if (diffDays === 1) return t?.('common.tomorrow') || "Demain";
-  return `${diffDays} ${t?.('common.days') || 'jours'}`;
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === 1) return "Demain";
+  return `${diffDays} jours`;
 };
 
 /**
  * Formate le meilleur événement
  */
 const formatBestEvent = (data: any): string => {
-  if (!data?.name) return '-';
-  return `${data.name} (${data.reservations})`;
+  if (!data?.name) {
+    return 'Aucun événement créé';
+  }
+  
+  const reservationText = data.reservations === 0 
+    ? 'Aucune réservation'
+    : `${data.reservations} réservations`;
+  
+  return `${data.name} (${reservationText})`;
 };
 
 /**
  * Formate la prochaine réservation
  */
-const formatNextReservation = (data: any, t?: any): string => {
+const formatNextReservation = (data: any): string => {
   if (!data?.event_name) return '-';
   
-  const timeUntil = formatTimeUntilEvent(data.date, data.days_until, t);
+  const timeUntil = formatTimeUntilEvent(data.date, data.days_until);
   return `${data.event_name} - Dans ${timeUntil}`;
 };
 
 /**
  * Formate les revenus mensuels
+ * ✅ Toujours retourne une valeur, même pour les comptes gratuits
  */
-const formatMonthlyEarnings = (earnings: number | undefined, t?: any): string => {
-  if (earnings === undefined) return '-';
-  return `${earnings.toFixed(2)} $ ${t('common.thisMonth')}`;
+const formatMonthlyEarnings = (earnings: number | undefined): string => {
+  if (earnings === undefined || earnings === null) {
+    return '0.00 $ ce mois';
+  }
+  return `${earnings.toFixed(2)} $ ce mois`;
 };
 
 /**
  * Formate les approbations en attente
  */
-const formatPendingApprovals = (count: number | undefined, t?: any): string => {
+const formatPendingApprovals = (count: number | undefined): string => {
   if (count === undefined) return '-';
-  return `${count} ${t?.('common.pending') || 'en attente'}`;
+  return `${count} en attente`;
 };
 
 // ==========================================
@@ -100,7 +110,6 @@ interface RawDashboardStats {
   };
   monthly_earnings?: number;
   pending_approvals?: number;
-  has_pro_plus?: boolean;
 }
 
 export const dashboardService = {
@@ -108,33 +117,40 @@ export const dashboardService = {
    * ✅ MÉTHODE PRINCIPALE : Récupérer toutes les statistiques du dashboard FORMATÉES
    * Cette méthode fait UN SEUL appel API et retourne les données déjà formatées
    */
-  getStats: async (t?: any, hasProPlus?: boolean): Promise<DashboardStats> => {
+  getStats: async (): Promise<DashboardStats> => {
     try {
       const response = await privateApi.get('/dashboard/stats');
       const raw: RawDashboardStats = response.data;
 
       // ✅ Formater toutes les données avant de les retourner
-      return {
-        best_event_display: raw.best_event 
-          ? formatBestEvent(raw.best_event)
-          : undefined,
-        
+      const formattedStats: DashboardStats = {
         next_reservation_display: raw.next_reservation
-          ? formatNextReservation(raw.next_reservation, t)
+          ? formatNextReservation(raw.next_reservation)
           : undefined,
         
-        monthly_earnings_display: raw.monthly_earnings !== undefined || hasProPlus !== undefined
-          ? formatMonthlyEarnings(raw.monthly_earnings, hasProPlus ?? raw.has_pro_plus ?? false, t)
-          : undefined,
-        
-        pending_approvals_display: raw.pending_approvals !== undefined
-          ? formatPendingApprovals(raw.pending_approvals, t)
-          : undefined,
-        
-        // Garder les IDs pour navigation
+        // ✅ Garder les IDs pour navigation
         best_event_id: raw.best_event?.event_id,
         next_reservation_id: raw.next_reservation?.event_id,
       };
+
+      // ✅ TOUJOURS inclure best_event_display si l'API a retourné ce champ (même null)
+      // Cela permet d'afficher "Aucun événement créé" pour les professionnels
+      if ('best_event' in raw) {
+        formattedStats.best_event_display = formatBestEvent(raw.best_event);
+      }
+
+      // ✅ TOUJOURS inclure monthly_earnings_display si l'API a retourné ce champ (même null)
+      // Permet d'afficher "0.00 $ ce mois" pour les professionnels gratuits
+      if ('monthly_earnings' in raw) {
+        formattedStats.monthly_earnings_display = formatMonthlyEarnings(raw.monthly_earnings);
+      }
+
+      // ✅ Inclure pending_approvals_display si présent
+      if (raw.pending_approvals !== undefined) {
+        formattedStats.pending_approvals_display = formatPendingApprovals(raw.pending_approvals);
+      }
+
+      return formattedStats;
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       throw error;

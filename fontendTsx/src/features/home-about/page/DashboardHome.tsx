@@ -55,7 +55,7 @@ export default function DashboardHome() {
       setLoading(true);
       try {
         // ✅ UN SEUL appel API qui retourne toutes les stats FORMATÉES selon le rôle
-        const stats = await dashboardService.getStats(t, hasProPlus);
+        const stats = await dashboardService.getStats();
         setDashboardData(stats);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -67,34 +67,34 @@ export default function DashboardHome() {
     if (user) {
       fetchDashboardData();
     }
-  }, [user, t, hasProPlus]);
+  }, [user]);
 
   // ✅ SIMPLIFICATION : Plus besoin de fonctions de formatage, 
   // les données arrivent déjà formatées du service
 
   const quickStats: QuickStat[] = [
-    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.best_event_display ? [{
+    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.best_event_display !== undefined ? [{
       label: t('dashboard.myEvents'),
       value: loading ? '...' : dashboardData.best_event_display,
       icon: <Ticket className="w-6 h-6" />,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     }] : []),
-    ...(dashboardData.next_reservation_display ? [{
+    ...(dashboardData.next_reservation_display !== undefined ? [{
       label: t('dashboard.nextEvent'),
       value: loading ? '...' : dashboardData.next_reservation_display,
       icon: <Calendar className="w-6 h-6" />,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     }] : []),
-    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.monthly_earnings_display ? [{
+    ...(user?.roles[0]?.role === 'professionnel' && dashboardData.monthly_earnings_display !== undefined ? [{
       label: t('dashboard.earnings'),
       value: loading ? '...' : dashboardData.monthly_earnings_display,
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     }] : []),
-    ...(user?.roles[0]?.role === 'admin' && dashboardData.pending_approvals_display ? [{
+    ...(user?.roles[0]?.role === 'admin' && dashboardData.pending_approvals_display !== undefined ? [{
       label: t('dashboard.users'),
       value: loading ? '...' : dashboardData.pending_approvals_display,
       icon: <Users className="w-6 h-6" />,
@@ -210,28 +210,6 @@ export default function DashboardHome() {
           ))}
         </div>
       </div>
-
-      {/* Upgrade Banner for Free Professionals */}
-      {user?.roles[0]?.role === 'professionnel' && !hasProPlus && (
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h3 className="text-xl font-bold mb-2">
-                {t('common.upgradeToPro')}
-              </h3>
-              <p className="text-blue-100">
-                {t('common.unlockFeatures')}
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/dashboard/profile-settings?tab=plan')}
-              className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors whitespace-nowrap"
-            >
-              {t('common.upgradeNow')}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -41,14 +41,14 @@ class DashboardController extends Controller
                 ]);
             }
 
-            // 🎫 STATS PROFESSIONNELS : Meilleur événement
+            // 🎫 STATS PROFESSIONNELS
             if ($role === 'professionnel') {
+                // Meilleur événement
                 $stats['best_event'] = $this->getBestEvent($user);
 
-                // 💰 STATS PRO PLUS : Revenus du mois
-                if ($this->hasProPlus($user)) {
-                    $stats['monthly_earnings'] = $this->getMonthlyEarnings($user);
-                }
+                // 💰 REVENUS DU MOIS - POUR TOUS LES PROFESSIONNELS (gratuit ou Pro Plus)
+                // Le frontend affichera "0.00 $ ce mois" si aucun revenu
+                $stats['monthly_earnings'] = $this->getMonthlyEarnings($user);
             }
 
             // 📅 STATS POUR TOUS : Prochaine réservation
@@ -168,7 +168,9 @@ class DashboardController extends Controller
     }
 
     /**
-     * Récupérer les revenus du mois en cours (pour Pro Plus uniquement)
+     * Récupérer les revenus du mois en cours
+     * ✅ MODIFICATION : Retourne les revenus pour TOUS les professionnels (pas seulement Pro Plus)
+     * Si pas de revenus, retourne 0.0 (le frontend affichera "0.00 $ ce mois")
      */
     private function getMonthlyEarnings($user): float
     {
