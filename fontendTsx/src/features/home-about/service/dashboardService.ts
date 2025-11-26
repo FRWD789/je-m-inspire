@@ -76,7 +76,7 @@ const formatMonthlyEarnings = (earnings: number | undefined, hasProPlus: boolean
   }
   
   if (earnings === undefined) return '-';
-  return `${earnings.toFixed(2)} $`;
+  return `${earnings.toFixed(2)} $ ${t('common.thisMonth')}`;
 };
 
 /**
