@@ -88,6 +88,7 @@ export default function RemboursementsPage() {
     setLoadingReservations(true);
     try {
       const res = await reservationService.getMyReservations();
+      console.log("Réservations récupérées pour remboursement:", res);
       const eligible = (res.reservations || []).filter(
         (r: any) => r.statut_paiement === "paid" && r.peut_annuler && !r.has_refund_request
       );
