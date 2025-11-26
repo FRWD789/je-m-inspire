@@ -70,11 +70,7 @@ const formatNextReservation = (data: any, t?: any): string => {
 /**
  * Formate les revenus mensuels
  */
-const formatMonthlyEarnings = (earnings: number | undefined, hasProPlus: boolean, t?: any): string => {
-  if (!hasProPlus) {
-    return t?.('common.upgradeToPro') || 'Passer à Pro+';
-  }
-  
+const formatMonthlyEarnings = (earnings: number | undefined, t?: any): string => {
   if (earnings === undefined) return '-';
   return `${earnings.toFixed(2)} $ ${t('common.thisMonth')}`;
 };
