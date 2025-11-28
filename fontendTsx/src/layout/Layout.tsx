@@ -54,7 +54,7 @@ export default function Layout() {
               : 'bg-gradient-to-bl from-white pb-8 md:pb-16 to-background px-3 sm:px-4 md:px-10 lg:px-[60px]'
           }`}
           style={{ 
-            paddingTop: isPublicEventsPage ? `${headerHeight}px` : `${headerHeight + 32}px`
+            marginTop: isPublicEventsPage ? `${headerHeight}px` : `${headerHeight + 32}px`
           }}
         >
           <Outlet />
