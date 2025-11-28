@@ -141,3 +141,18 @@
     flex: 0 0 33.333%;
   }
 }
+
+/* Fix scroll mobile */
+html, body {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+main {
+  overflow-x: hidden;
+}
+
+/* Désactiver le scroll momentum sur iOS qui cause des stops */
+* {
+  -webkit-overflow-scrolling: auto !important;
+}
