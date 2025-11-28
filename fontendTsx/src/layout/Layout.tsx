@@ -48,13 +48,13 @@ export default function Layout() {
         )}
         
         <main
-          className={`flex flex-col ${
+          className={`flex flex-col min-h-screen ${
             isPublicEventsPage 
-              ? 'h-screen overflow-hidden bg-white p-0' 
-              : 'min-h-screen bg-gradient-to-bl from-white pb-8 md:pb-16 to-background px-3 sm:px-4 md:px-10 lg:px-[60px]'
+              ? 'bg-white p-0' 
+              : 'bg-gradient-to-bl from-white pb-8 md:pb-16 to-background px-3 sm:px-4 md:px-10 lg:px-[60px]'
           }`}
           style={{ 
-            paddingTop: isPublicEventsPage ? '0' : `${headerHeight + 32}px`
+            paddingTop: isPublicEventsPage ? `${headerHeight}px` : `${headerHeight + 32}px`
           }}
         >
           <Outlet />
