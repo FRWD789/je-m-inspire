@@ -87,8 +87,8 @@ export default function PublicEvents() {
   return (
     <div className="w-full min-h-screen bg-gray-50" style={{ paddingTop: `${headerHeight}px` }}>
       <div className="flex h-[calc(100vh-var(--header-height))] overflow-hidden">
-        {/* Section Événements - 75% */}
-        <div className="w-full lg:w-3/4 overflow-y-auto">
+        {/* Section Événements - 60% */}
+        <div className="w-full lg:w-3/5 overflow-y-auto">
           <div className="p-4 lg:p-6">
             {/* Barre de recherche et filtres */}
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
@@ -264,7 +264,7 @@ export default function PublicEvents() {
                 <p className="text-gray-400 text-sm">Essayez de modifier vos filtres de recherche</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredEvents.map((event) => (
                   <div
                     key={event.id}
@@ -388,9 +388,9 @@ export default function PublicEvents() {
           </div>
         </div>
 
-        {/* Section Carte - 25% (Desktop uniquement) */}
+        {/* Section Carte - 40% (Desktop uniquement) */}
         {!isMobile && (
-          <div className="hidden lg:block lg:w-1/4 border-l border-gray-300 bg-white">
+          <div className="hidden lg:block lg:w-2/5 border-l border-gray-300 bg-white">
             <div className="sticky top-0 h-[calc(100vh-var(--header-height))]">
               {/* Header de la carte */}
               <div className="bg-primary/5 border-b border-primary/20 p-3">
@@ -417,11 +417,33 @@ export default function PublicEvents() {
 
               {/* Contenu de la carte */}
               <div className="h-[calc(100%-60px)]">
-                <MapEvents
-                  events={filteredEvents}
-                  selectedEventId={selectedEventId}
-                  onEventSelect={setSelectedEventId}
-                />
+                {filteredEvents.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-400">
+                    <div className="text-center p-6">
+                      <svg
+                        className="w-16 h-16 mx-auto mb-3 opacity-50"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                        />
+                      </svg>
+                      <p className="text-sm font-medium">Aucun événement à afficher</p>
+                      <p className="text-xs mt-1">Les événements apparaîtront ici</p>
+                    </div>
+                  </div>
+                ) : (
+                  <MapEvents
+                    events={filteredEvents}
+                    selectedEventId={selectedEventId}
+                    onEventSelect={setSelectedEventId}
+                  />
+                )}
               </div>
             </div>
           </div>
