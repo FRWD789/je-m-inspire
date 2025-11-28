@@ -31,6 +31,8 @@ import About from "./features/home-about/page/About";
 import CookieBar from "./components/CookieBar";
 import RemboursementsPage from "./features/refunds/page/remboursements";
 import ProfessionalsPage from "./features/professional/page/ProfessionalsPage";
+import ForgotPasswordPage from "./features/auth/page/ForgotPasswordPage";
+import ResetPasswordPage from "./features/auth/page/ResetPasswordPage";
 
 export default function App() {
   return (
@@ -43,6 +45,8 @@ export default function App() {
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="register-pro" element={<RegisterPro />} />

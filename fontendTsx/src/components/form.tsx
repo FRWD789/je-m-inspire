@@ -50,7 +50,7 @@ export default function Form<T extends ZodType<any, any, any>>({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(handleFormSubmit)}  className="grid  gap-y-[12px]">{children}</form>
+      <form onSubmit={methods.handleSubmit(handleFormSubmit)}  className="grid  gap-y-3">{children}</form>
     </FormProvider>
   );
 }

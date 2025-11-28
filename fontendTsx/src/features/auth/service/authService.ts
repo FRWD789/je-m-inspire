@@ -15,6 +15,15 @@ export const authService = {
       throw error;
     }
   },
+   senResetLink: async (data:any): Promise<RefreshResponse> => {
+    try {
+      const response = await publicApi.post("/forgot-password",{email:data.email});
+      return response.data;
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      throw error;
+    }
+  },
   googleCallback: async (code: string): Promise<LoginResponse> => {
     try {
       // Send as query parameter, not body
@@ -69,6 +78,20 @@ export const authService = {
       throw error;
     }
   },
+    resetPassword: async (data: any): Promise<{ message: string }> => {
+    try {
+      const response = await publicApi.post("/reset-password", {
+        token: data.token,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.password_confirmation,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      throw error;
+    }
+},
 
   updateProfile: async (data: any, isImg: boolean = false) => {
     try {
