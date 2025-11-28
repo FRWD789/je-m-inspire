@@ -142,6 +142,7 @@ export default function FormEvents({ type, eventId, defaultValues, onSuccess }: 
       <div className='grid gap-y-3'>
         <FormFiled label="Nom de l'événement *">
           <Input name="name" placeholder="Nom de l'événement" />
+          
         </FormFiled>
         <FormFiled label="Description *">
           <TextArea name="description" />
