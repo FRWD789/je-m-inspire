@@ -416,7 +416,7 @@ export default function PublicEvents() {
               </div>
 
               {/* Contenu de la carte */}
-              <div className="h-[calc(100%-60px)]">
+              <div className="h-[calc(100%-60px)] relative">
                 {filteredEvents.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-400">
                     <div className="text-center p-6">
