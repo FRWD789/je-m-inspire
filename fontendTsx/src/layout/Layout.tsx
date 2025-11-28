@@ -48,12 +48,13 @@ export default function Layout() {
         )}
         
         <main
-          className="flex flex-col bg-gradient-to-bl from-white to-background px-4"
+          className={`flex flex-col min-h-screen ${
+            isPublicEventsPage 
+              ? 'bg-white p-0' 
+              : 'bg-gradient-to-bl from-white pb-8 md:pb-16 to-background px-3 sm:px-4 md:px-10 lg:px-[60px]'
+          }`}
           style={{ 
-            // ✅ Utilise la hauteur optimale - headerHeight
-            height: `calc(var(--full-height) - ${headerHeight}px)`,
-            paddingTop: '32px',  // Espace en haut
-            paddingBottom: '64px'  // Espace en bas
+            paddingTop: isPublicEventsPage ? `${headerHeight}px` : `${headerHeight + 32}px`
           }}
         >
           <Outlet />

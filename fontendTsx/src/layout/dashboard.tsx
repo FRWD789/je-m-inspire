@@ -108,7 +108,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex" style={{ height: 'var(--full-height)' }}>
+    <div className="flex h-screen bg-gray-100">
       {/* Overlay for mobile */}
       {mobileMenuOpen && isMobile && (
         <div
@@ -287,10 +287,7 @@ export default function Dashboard() {
         </header>
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-6">
-          <div className="bg-white rounded-lg md:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-full" style={{ 
-            // ✅ Prend toute la hauteur restante
-            height: 'calc(var(--full-height) - 4rem)'  // 4rem = h-16 du header
-          }}>
+          <div className="bg-white rounded-lg md:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-full">
             <Outlet />
           </div>
         </div>
