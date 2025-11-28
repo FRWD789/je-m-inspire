@@ -134,6 +134,36 @@
   .embla__slide {
     flex: 0 0 50%;
   }
+  
+  html {
+    overflow: hidden;
+    height: 100%;
+  }
+  
+  body {
+    overflow: hidden;
+    height: 100%;
+    position: relative;
+  }
+  
+  main {
+    height: 100%;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Empêcher le scroll imbriqué dans les listes */
+  main * {
+    overscroll-behavior: contain;
+  }
+  
+  /* Pas de scroll interne dans les grids/listes */
+  .grid, 
+  [class*="grid-cols"],
+  [class*="overflow-y"] {
+    overflow-y: visible !important;
+  }
 }
 
 @media (min-width: 1024px) {
