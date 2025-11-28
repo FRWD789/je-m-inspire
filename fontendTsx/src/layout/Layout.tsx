@@ -22,9 +22,7 @@ export function useHeaderHeight() {
 export default function Layout() {
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
-
   const location = useLocation(); 
-  
   useLayoutEffect(() => {
     const updateHeight = () => {
       if (headerRef.current) {
@@ -37,7 +35,7 @@ export default function Layout() {
   }, []);
 
   const isHomePage = location.pathname === '/';
-  const isAuth = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/register-pro';
+  const isAuth = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/register-pro' || location.pathname === "/reset-password" || location.pathname ==="/forgot-password";
   const isPublicEventsPage = location.pathname === '/events';
 
   return (

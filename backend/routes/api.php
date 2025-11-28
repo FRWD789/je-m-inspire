@@ -78,12 +78,26 @@ Route::post('/email/resend', function (Request $request) {
 
 Route::post('/forgot-password', function (Request $request) {
     $request->validate(['email' => 'required|email']);
+    
 
-    $status = Password::sendResetLink($request->only('email'));
+    // Find user by email
+    $user = User::where('email', $request->email)->first();
 
-    return $status === Password::RESET_LINK_SENT
-        ? response()->json(['message' => ($status)], 200)
-        : response()->json(['message' => ($status)], 400);
+    if (!$user) {
+        return response()->json([
+            'message' => 'User not found'
+        ], 404);
+    }
+
+    // Generate reset token
+    $token = Password::createToken($user);
+
+    // Send custom notification
+    $user->notify(new CustomResetPassword($token));
+
+    return response()->json([
+        'message' => 'Password reset link sent successfully'
+    ], 200);
 });
 
 Route::post('/reset-password', function (Request $request) {

@@ -54,6 +54,8 @@ const resources = {
         sonotherapy: 'Sonothérapie',
         circles: 'Cercles de partage'
       },
+      
+  
 
       // ==========================================
       // FOOTER
@@ -87,6 +89,16 @@ const resources = {
         middleText: 'Ou avec votre email',
         googleButton: 'Continuer avec Google',
         googleLoading: 'Connexion en cours...',
+        resetPassword: "Réinitialiser le mot de passe",
+        resetPasswordDescription: "Entrez votre nouveau mot de passe ci-dessous",
+        newPassword: "Nouveau mot de passe",
+        enterNewPassword: "Entrez votre nouveau mot de passe",
+        confirmPassword: "Confirmer le mot de passe",
+        confirmNewPassword: "Confirmez votre nouveau mot de passe",
+        resetting: "Réinitialisation...",
+        invalidResetLink: "Lien de réinitialisation invalide. Veuillez demander une nouvelle réinitialisation de mot de passe.",
+        requestNewReset: "Demander une nouvelle réinitialisation de mot de passe",
+        
         
         // Register User
         registerUserTitle: 'Créez votre compte',
@@ -103,7 +115,10 @@ const resources = {
         registerButton: "S'inscrire",
         alreadyAccount: 'Déjà un compte ?',
         registerPro: 'Rejoignez-nous en tant que professionnel',
-        
+        forgotPasswordDescription: "Enter your email and we'll send you a password reset link",
+        sendResetLink: "Send Reset Link",
+        sending: "Sending...",
+        backToLogin: "Back to Login",
         // Register Professional
         registerProTitle: 'Rejoignez en tant que professionnel',
         registerProSubtitle: 'Soumettez votre inscription pour devenir un professionnel vérifié',
