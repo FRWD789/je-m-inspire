@@ -127,8 +127,8 @@ export default function PublicEvents() {
   }, [isResizing]);
 
   return (
-    <div className="w-full min-h-screen bg-gray-50" style={{ paddingTop: `${headerHeight}px` }}>
-      <div className="flex h-screen overflow-hidden" style={{ height: `calc(100vh - ${headerHeight}px)` }}>
+    <div className="w-full h-screen bg-gray-50 overflow-hidden" style={{ paddingTop: `${headerHeight}px` }}>
+      <div className="flex overflow-hidden" style={{ height: `calc(100vh - ${headerHeight}px)` }}>
         {/* Section Événements - Largeur dynamique */}
         <div 
           className="w-full lg:w-auto overflow-y-auto"
