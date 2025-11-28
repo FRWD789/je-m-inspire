@@ -19,6 +19,10 @@ export default function PublicEvents() {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // États pour le redimensionnement
+  const [mapWidth, setMapWidth] = useState(40); // Pourcentage (40% par défaut)
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -84,11 +88,52 @@ export default function PublicEvents() {
     setSelectedCity(city);
   }, [location.search]);
 
+  // Gestion du redimensionnement
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const windowWidth = window.innerWidth;
+      const newMapWidth = ((windowWidth - e.clientX) / windowWidth) * 100;
+      
+      // Limiter entre 20% et 60%
+      if (newMapWidth >= 20 && newMapWidth <= 60) {
+        setMapWidth(newMapWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
+
   return (
     <div className="w-full min-h-screen bg-gray-50" style={{ paddingTop: `${headerHeight}px` }}>
       <div className="flex h-screen overflow-hidden" style={{ height: `calc(100vh - ${headerHeight}px)` }}>
-        {/* Section Événements - 60% */}
-        <div className="w-full lg:w-3/5 overflow-y-auto">
+        {/* Section Événements - Largeur dynamique */}
+        <div 
+          className="w-full lg:w-auto overflow-y-auto"
+          style={{ width: isMobile ? '100%' : `${100 - mapWidth}%` }}
+        >
           <div className="p-4 lg:p-6">
             {/* Barre de recherche et filtres */}
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
@@ -388,9 +433,28 @@ export default function PublicEvents() {
           </div>
         </div>
 
-        {/* Section Carte - 40% (Desktop uniquement) */}
+        {/* Section Carte - Largeur dynamique (Desktop uniquement) */}
         {!isMobile && (
-          <div className="hidden lg:flex lg:w-2/5 border-l border-gray-300 bg-white">
+          <>
+            {/* Handle de redimensionnement */}
+            <div
+              onMouseDown={handleMouseDown}
+              className="hidden lg:block w-1 bg-gray-300 hover:bg-primary hover:w-1.5 cursor-col-resize transition-all relative group"
+              style={{ flexShrink: 0 }}
+            >
+              {/* Indicateur visuel */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="bg-primary text-white px-2 py-1 rounded text-xs whitespace-nowrap shadow-lg">
+                  ← Glisser pour redimensionner →
+                </div>
+              </div>
+            </div>
+
+            {/* Carte */}
+            <div 
+              className="hidden lg:flex bg-white"
+              style={{ width: `${mapWidth}%`, flexShrink: 0 }}
+            >
             <div className="w-full flex flex-col">
               {/* Header de la carte */}
               <div className="bg-primary/5 border-b border-primary/20 p-3 flex-shrink-0">
@@ -449,6 +513,7 @@ export default function PublicEvents() {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
     </div>
