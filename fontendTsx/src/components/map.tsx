@@ -3,7 +3,8 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { Calendar, MapPin, Users } from 'lucide-react';
 
-const API_KEY = "AIzaSyCLD-sPCtHIZVGtpp8K-ok97RR26UStQqM";
+// ✅ CORRECTION: Utiliser la variable d'environnement au lieu d'une clé en dur
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 // Event Marker Component
 const EventMarker = ({ event, onClick, setMarkerRef }) => {
@@ -96,7 +97,6 @@ const ClusteredEventMarkers = ({ events, selectedEventId, onEventSelect }) => {
     <>
       {events.map(event => (
         <EventMarker
-        
           key={event.id}
           event={event}
           onClick={handleMarkerClick}
@@ -151,7 +151,7 @@ const ClusteredEventMarkers = ({ events, selectedEventId, onEventSelect }) => {
 
             <div className="flex items-center justify-between text-sm border-t pt-2 mt-2">
               <span className="font-semibold text-gray-800">
-                {selectedEvent.base_price} €
+                {selectedEvent.base_price} $
               </span>
               <div className="flex items-center gap-1 text-gray-600 text-xs">
                 <Users size={12} className="text-gray-400" />
@@ -166,14 +166,61 @@ const ClusteredEventMarkers = ({ events, selectedEventId, onEventSelect }) => {
 };
 
 export const MapEvents = ({ events = [], selectedEventId = null, onEventSelect = () => {} }) => {
-  const center = events.length > 0
-    ? { lat: events[0].localisation.lat, lng: events[0].localisation.lng }
-    : { lat: 48.8566, lng: 2.3522 };
+  // Vérifier qu'on a des événements avec coordonnées valides
+  const validEvents = useMemo(() => {
+    return events.filter(e => 
+      e.localisation?.lat && 
+      e.localisation?.lng &&
+      !isNaN(parseFloat(e.localisation.lat)) &&
+      !isNaN(parseFloat(e.localisation.lng))
+    );
+  }, [events]);
+
+  const center = validEvents.length > 0
+    ? { lat: parseFloat(validEvents[0].localisation.lat), lng: parseFloat(validEvents[0].localisation.lng) }
+    : { lat: 46.0422, lng: -73.1136 }; // Sorel-Tracy par défaut
+
+  // Log pour debug
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('🗺️ MapEvents Debug:');
+      console.log('  - API Key présente:', !!API_KEY);
+      console.log('  - Total événements:', events.length);
+      console.log('  - Événements valides:', validEvents.length);
+      if (validEvents.length > 0) {
+        console.log('  - Premier événement:', validEvents[0].name, 
+          'lat:', validEvents[0].localisation.lat, 
+          'lng:', validEvents[0].localisation.lng);
+      }
+    }
+  }, [events, validEvents]);
+
+  if (!API_KEY) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-red-50 text-red-600 p-4">
+        <div className="text-center">
+          <p className="font-semibold mb-2">❌ Clé API Google Maps manquante</p>
+          <p className="text-sm">Ajoutez VITE_GOOGLE_MAPS_API_KEY dans votre fichier .env</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (validEvents.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400 p-4">
+        <div className="text-center">
+          <p className="font-semibold mb-2">📍 Aucune localisation disponible</p>
+          <p className="text-xs">Les événements sans coordonnées GPS ne peuvent pas être affichés</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full">
       <APIProvider apiKey={API_KEY}>
-        <div style={{ width: '100%',height:'100%', borderRadius: '4px', overflow: 'hidden'}}>
+        <div style={{ width: '100%', height:'100%', borderRadius: '4px', overflow: 'hidden'}}>
           <Map
             mapId={'bf51a910020fa25a'}
             defaultCenter={center}
@@ -183,10 +230,9 @@ export const MapEvents = ({ events = [], selectedEventId = null, onEventSelect =
             streetView={false}
             streetViewControl={false}
             minZoom={4}
-            
           >
             <ClusteredEventMarkers 
-              events={events} 
+              events={validEvents} 
               selectedEventId={selectedEventId}
               onEventSelect={onEventSelect}
             />
