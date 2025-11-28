@@ -86,7 +86,7 @@ export default function PublicEvents() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50" style={{ paddingTop: `${headerHeight}px` }}>
-      <div className="flex h-[calc(100vh-var(--header-height))] overflow-hidden">
+      <div className="flex h-screen overflow-hidden" style={{ height: `calc(100vh - ${headerHeight}px)` }}>
         {/* Section Événements - 60% */}
         <div className="w-full lg:w-3/5 overflow-y-auto">
           <div className="p-4 lg:p-6">
@@ -247,7 +247,7 @@ export default function PublicEvents() {
               </p>
             </div>
 
-            {/* Grille d'événements - 3 colonnes */}
+            {/* Grille d'événements - 2 colonnes */}
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <div className="text-center">
@@ -390,10 +390,10 @@ export default function PublicEvents() {
 
         {/* Section Carte - 40% (Desktop uniquement) */}
         {!isMobile && (
-          <div className="hidden lg:block lg:w-2/5 border-l border-gray-300 bg-white">
-            <div className="sticky top-0 h-[calc(100vh-var(--header-height))]">
+          <div className="hidden lg:flex lg:w-2/5 border-l border-gray-300 bg-white">
+            <div className="w-full flex flex-col">
               {/* Header de la carte */}
-              <div className="bg-primary/5 border-b border-primary/20 p-3">
+              <div className="bg-primary/5 border-b border-primary/20 p-3 flex-shrink-0">
                 <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
                   <svg
                     className="w-5 h-5"
@@ -415,10 +415,10 @@ export default function PublicEvents() {
                 </p>
               </div>
 
-              {/* Contenu de la carte */}
-              <div className="h-[calc(100%-60px)]">
+              {/* Contenu de la carte - HAUTEUR FIXE */}
+              <div className="flex-1 relative" style={{ minHeight: '400px' }}>
                 {filteredEvents.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-400">
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
                     <div className="text-center p-6">
                       <svg
                         className="w-16 h-16 mx-auto mb-3 opacity-50"
@@ -438,11 +438,13 @@ export default function PublicEvents() {
                     </div>
                   </div>
                 ) : (
-                  <MapEvents
-                    events={filteredEvents}
-                    selectedEventId={selectedEventId}
-                    onEventSelect={setSelectedEventId}
-                  />
+                  <div className="absolute inset-0">
+                    <MapEvents
+                      events={filteredEvents}
+                      selectedEventId={selectedEventId}
+                      onEventSelect={setSelectedEventId}
+                    />
+                  </div>
                 )}
               </div>
             </div>
