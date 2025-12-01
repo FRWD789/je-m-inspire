@@ -141,3 +141,101 @@
     flex: 0 0 33.333%;
   }
 }
+
+@media (max-width: 767px) {
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Utiliser svh pour éviter le débordement initial */
+    height: 100svh;
+    height: var(--vh-small-full);
+  }
+  
+  main {
+    overflow-x: hidden;
+    /* Hauteur calculée avec svh */
+    min-height: 100svh;
+    min-height: var(--vh-small-full);
+  }
+}
+
+/* Variables CSS pour les unités viewport modernes avec fallback */
+:root {
+  /* Hauteur viewport - Small (UI maximisée - contenu minimum) */
+  --vh-small: 1svh;
+  --vh-small-full: 100svh;
+  
+  /* Hauteur viewport - Large (UI minimisée - contenu maximum) */
+  --vh-large: 1lvh;
+  --vh-large-full: 100lvh;
+  
+  /* Hauteur viewport - Dynamic (change avec le scroll) - À UTILISER AVEC PRÉCAUTION */
+  --vh-dynamic: 1dvh;
+  --vh-dynamic-full: 100dvh;
+  
+  /* Par défaut, on utilise svh pour éviter le débordement initial */
+  --vh: 1svh;
+  --vh-full: 100svh;
+  
+  /* Fallback pour navigateurs non compatibles */
+  --vh-fallback: 1vh;
+  --vh-full-fallback: 100vh;
+}
+
+/* Support pour navigateurs anciens */
+@supports not (height: 100svh) {
+  :root {
+    --vh: var(--vh-fallback);
+    --vh-full: var(--vh-full-fallback);
+  }
+}
+
+@layer utilities {
+  /* Hauteurs viewport Small (recommandé pour mobile) */
+  .h-svh {
+    height: 100svh;
+    height: var(--vh-small-full);
+  }
+  
+  .min-h-svh {
+    min-height: 100svh;
+    min-height: var(--vh-small-full);
+  }
+  
+  .max-h-svh {
+    max-height: 100svh;
+    max-height: var(--vh-small-full);
+  }
+  
+  /* Hauteurs viewport Large (UI minimale) */
+  .h-lvh {
+    height: 100lvh;
+    height: var(--vh-large-full);
+  }
+  
+  .min-h-lvh {
+    min-height: 100lvh;
+    min-height: var(--vh-large-full);
+  }
+  
+  .max-h-lvh {
+    max-height: 100lvh;
+    max-height: var(--vh-large-full);
+  }
+  
+  /* Hauteurs viewport Dynamic (à éviter sauf cas spécifique) */
+  .h-dvh {
+    height: 100dvh;
+    height: var(--vh-dynamic-full);
+  }
+  
+  .min-h-dvh {
+    min-height: 100dvh;
+    min-height: var(--vh-dynamic-full);
+  }
+  
+  .max-h-dvh {
+    max-height: 100dvh;
+    max-height: var(--vh-dynamic-full);
+  }
+}
