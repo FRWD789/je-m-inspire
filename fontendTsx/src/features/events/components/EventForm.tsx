@@ -114,7 +114,7 @@ const DatesCapacitySection = ({ type }: any) => (
       <FormFiled htmlFor='end_date' label="Date de fin *">
         <Input type="datetime-local" name="end_date" placeholder="Sélectionnez la date de fin" />
       </FormFiled>
-      <FormFiled htmlFor='base_price' label="Prix (€) *">
+      <FormFiled htmlFor='base_price' label="Prix ($) *">
         <Input type="number" name="base_price" placeholder="Entrez le prix par participant" />
       </FormFiled>
     <FormFiled htmlFor='capacity' label="Capacité *">
