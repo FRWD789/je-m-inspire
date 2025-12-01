@@ -4,7 +4,7 @@ import FormFiled from '@/components/utils/form/formFiled'
 import Input from '@/components/ui/input'
 import { z } from "zod";
 import Form from '@/components/form';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {  useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import TextArea from '@/components/ui/textArea';
 import Button from '@/components/ui/button';
@@ -30,7 +30,7 @@ export const registerSchema = z.object({
       { message: "Date of birth must be a valid date before today" }
     ),
 
-  city: z.string()
+  city: z.string().min(1,'city is required')
     .max(255, "City must not exceed 255 characters")
     .optional()
     .nullable(),
@@ -114,42 +114,42 @@ export default function RegisterPro() {
            <Form schema={registerSchema} onSubmit={handelRegister}>
           {/* Name Fields */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label={t('auth.firstName')}>
+            <FormFiled htmlFor='name' label={t('auth.firstName')}>
               <Input name='name' />
             </FormFiled>
-            <FormFiled label={t('auth.lastName')}>
+            <FormFiled htmlFor='last_name' label={t('auth.lastName')}>
               <Input name='last_name' />
             </FormFiled>
           </div>
 
           {/* City & Date of Birth */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label={t('auth.city')}>
+            <FormFiled htmlFor='city'  label={t('auth.city')}>
               <Input name='city' />
             </FormFiled>
-            <FormFiled label={t('auth.dateOfBirth')}>
+            <FormFiled htmlFor='date_of_birth' label={t('auth.dateOfBirth')}>
               <Input name='date_of_birth' type='date' />
             </FormFiled>
           </div>
 
           {/* Email */}
-          <FormFiled label={t('auth.email')} className='mb-4'>
+          <FormFiled htmlFor="email" label={t('auth.email')} >
             <Input name='email' type='email' />
           </FormFiled>
 
           {/* Password Fields */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <FormFiled label={t('auth.password')}>
+            <FormFiled htmlFor="password" label={t('auth.password')}>
               <Input name='password' type='password' />
             </FormFiled>
-            <FormFiled label={t('auth.passwordConfirmation')}>
+            <FormFiled htmlFor="password_confirmation" label={t('auth.passwordConfirmation')}>
               <Input name='password_confirmation' type='password' />
             </FormFiled>
           </div>
 
           {/* Motivation Letter */}
-          <FormFiled label={t('auth.motivationLetter')} className='mb-6'>
-            <TextArea name='motivation_letter' rows={6} />
+          <FormFiled  htmlFor="motivation_letter" label={t('auth.motivationLetter')}>
+            <TextArea name='motivation_letter'  />
           </FormFiled>
 
           {/* Submit Button */}

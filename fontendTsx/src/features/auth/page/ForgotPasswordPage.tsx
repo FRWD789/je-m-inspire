@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
           schema={ForgotPasswordSchema}
           onSubmit={handleForgotPassword}
         >
-          <FormFiled label={t('auth.email')} >
+          <FormFiled htmlFor='email' label={t('auth.email')} >
             <Input
               name="email"
               type="email"

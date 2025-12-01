@@ -78,10 +78,10 @@ export default function EventForm({ type, eventId, defaultValues, onSuccess }: F
 const GeneralInfoSection = () => (
   <div className="mb-6">
     <SectionHeader icon={<TextAlignStart />} title="Informations générales" />
-    <FormFiled label="Nom de l'événement *">
+    <FormFiled  htmlFor='name' label="Nom de l'événement *">
       <Input name="name" placeholder="Entrez le nom de votre événement" />
     </FormFiled>
-    <FormFiled label="Description *">
+    <FormFiled  htmlFor='description' label="Description *">
       <TextArea name="description" placeholder="Décrivez votre événement..." />
     </FormFiled>
   </div>
@@ -108,19 +108,19 @@ const DatesCapacitySection = ({ type }: any) => (
   <div className="mb-6">
     <SectionHeader icon={<Users />} title="Dates et capacité" />
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <FormFiled label="Date de début *">
+      <FormFiled htmlFor='start_date' label="Date de début *">
         <Input type="datetime-local" name="start_date" placeholder="Sélectionnez la date de début" />
       </FormFiled>
-      <FormFiled label="Date de fin *">
+      <FormFiled htmlFor='end_date' label="Date de fin *">
         <Input type="datetime-local" name="end_date" placeholder="Sélectionnez la date de fin" />
       </FormFiled>
-      <FormFiled label="Prix (€) *">
+      <FormFiled htmlFor='base_price' label="Prix (€) *">
         <Input type="number" name="base_price" placeholder="Entrez le prix par participant" />
       </FormFiled>
-    <FormFiled label="Capacité *">
+    <FormFiled htmlFor='capacity' label="Capacité *">
         <Input type="number" name="capacity" placeholder="Nombre de participants maximum" />
     </FormFiled>
-      <FormFiled label="Places max *">
+      <FormFiled htmlFor='max_places' label="Places max *">
         <Input type="number" name="max_places" placeholder="Nombre de places disponibles" />
       </FormFiled>
     </div>
@@ -132,10 +132,10 @@ const EventSettingsSection = () => (
   <div className="mb-6">
     <SectionHeader icon={<Settings />} title="Paramètres de l'événement" />
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <FormFiled label="Niveau *">
+      <FormFiled htmlFor='level' label="Niveau *">
         <Select options={LEVEL_OPTIONS} name="level" placeholder="Sélectionnez le niveau" />
       </FormFiled>
-      <FormFiled label="Catégorie">
+      <FormFiled htmlFor="categorie_event_id" label="Catégorie">
         <Select options={CATEGORY_OPTIONS} name="categorie_event_id" placeholder="Sélectionnez une catégorie" />
       </FormFiled>
     </div>
@@ -166,7 +166,7 @@ const ImagesSection = () => {
       <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
 
       {/* Thumbnail */}
-      <FormFiled label="Thumbnail">
+      <FormFiled htmlFor='thumbnail' label="Thumbnail">
         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition">
        <Input
             name="thumbnail"
@@ -193,7 +193,7 @@ const ImagesSection = () => {
       </FormFiled>
 
       {/* Banner */}
-      <FormFiled label="Banner">
+      <FormFiled htmlFor='banner' label="Banner">
         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition">
           <input
             type="file"
@@ -216,7 +216,7 @@ const ImagesSection = () => {
       </FormFiled>
 
       {/* Multiple Images */}
-      <FormFiled label="Images">
+      <FormFiled htmlFor='images' label="Images">
         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition">
           <input
             type="file"

@@ -49,7 +49,7 @@ export default function Login() {
 
     return (
         <section className='w-full min-h-full flex flex-col flex-1 justify-center items-center'>
-            <div className='max-w-xl grid gap-y-[32px] w-full px-4'>
+            <div className='max-w-xl grid gap-y-8 w-full px-4'>
                 <div className='text-center'>
                     <h1>{t('auth.loginTitle')}</h1>
                     <p>{t('auth.loginSubtitle')}</p>
@@ -81,10 +81,10 @@ export default function Login() {
 
                     {/* Email/Password Form */}
                     <Form schema={LoginSchema} onSubmit={handelLogin}>
-                        <FormFiled label={t('auth.email')}>
+                        <FormFiled htmlFor='email' label={t('auth.email')}>
                             <Input name='email' />
                         </FormFiled>
-                        <FormFiled label={t('auth.password')}>
+                        <FormFiled htmlFor='password' label={t('auth.password')}>
                             <Input name='password' type='password' />
                         </FormFiled>
                         <Button loadingText='connecting...' isLoading={isSubmitting}  type='submit'>{t('auth.loginButton')}</Button>

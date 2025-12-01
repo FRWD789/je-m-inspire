@@ -108,7 +108,7 @@ export default function ResetPasswordPage() {
             token: token || '',
           }}
         >
-          <FormFiled label={t('auth.email')}>
+          <FormFiled htmlFor='email' label={t('auth.email')}>
             <Input
               name="email"
               type="email"
@@ -118,7 +118,7 @@ export default function ResetPasswordPage() {
             />
           </FormFiled>
 
-          <FormFiled label={t('auth.newPassword')}>
+          <FormFiled  htmlFor='password' label={t('auth.newPassword')}>
             <Input
               name="password"
               type="password"
