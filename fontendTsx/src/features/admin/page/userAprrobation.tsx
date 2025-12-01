@@ -3,6 +3,7 @@ import type { User } from '@/types/user'
 import { ArrowLeft, CheckCheck, LoaderCircle, MessageCircle, RefreshCcw, Users } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export default function AdminApprovalPage() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export default function AdminApprovalPage() {
   const [showModal, setShowModal] = useState<any | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [currentTab, setCurrentTab] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
+  const { t } = useTranslation()
 
   useEffect(() => {
     fetchAllProfessionals()
@@ -98,7 +100,7 @@ export default function AdminApprovalPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-gray-600">
         <LoaderCircle className='animate-spin text-accent' size={30} />
-        <p className="mt-4 text-xl font-medium">Chargement...</p>
+        <p className="mt-4 text-xl font-medium">{t('approval.loading')}</p>
       </div>
     )
   }
@@ -111,17 +113,17 @@ export default function AdminApprovalPage() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
-                <Users className="hidden sm:block" /> Approbation des Professionnels
+                <Users className="hidden sm:block" /> {t('approval.title')}
               </h1>
               <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
                 <span className="bg-yellow-50 px-2 py-1 rounded">
-                  En attente: <strong>{allProfessionals.filter(p => !p.admin?.is_approved && !p.admin?.rejection_reason).length}</strong>
+                  {t('approval.pending')} <strong>{allProfessionals.filter(p => !p.admin?.is_approved && !p.admin?.rejection_reason).length}</strong>
                 </span>
                 <span className="bg-green-50 px-2 py-1 rounded">
-                  Approuvés: <strong>{allProfessionals.filter(p => p.admin?.is_approved).length}</strong>
+                  {t('approval.approved')} <strong>{allProfessionals.filter(p => p.admin?.is_approved).length}</strong>
                 </span>
                 <span className="bg-red-50 px-2 py-1 rounded">
-                  Rejetés: <strong>{allProfessionals.filter(p => p.admin?.rejection_reason).length}</strong>
+                  {t('approval.rejected')} <strong>{allProfessionals.filter(p => p.admin?.rejection_reason).length}</strong>
                 </span>
               </div>
             </div>
@@ -131,14 +133,14 @@ export default function AdminApprovalPage() {
                 className="flex-1 sm:flex-none px-3 py-2 rounded-md bg-primary/60 text-white hover:bg-primary/80 transition-all text-sm flex items-center justify-center gap-2"
               >
                 <RefreshCcw size={15} />
-                <span className="hidden sm:inline">Rafraîchir</span>
+                <span className="hidden sm:inline">{t('approval.refresh')}</span>
               </button>
               <button
                 onClick={() => navigate('/')}
                 className="flex-1 sm:flex-none px-3 py-2 rounded-md bg-accent/60 text-white hover:bg-accent/80 transition-all text-sm flex items-center justify-center gap-2"
               >
                 <ArrowLeft size={15} />
-                <span className="hidden sm:inline">Retour</span>
+                <span className="hidden sm:inline">{t('approval.back')}</span>
               </button>
             </div>
           </div>
@@ -147,10 +149,10 @@ export default function AdminApprovalPage() {
         {/* Tabs */}
         <div className="grid grid-cols-4 gap-2 mb-6">
           {[
-            { key: 'pending', label: 'En attente' },
-            { key: 'approved', label: 'Approuvés' },
-            { key: 'rejected', label: 'Rejetés' },
-            { key: 'all', label: 'Tous' }
+            { key: 'pending', label: t('approval.pending') },
+            { key: 'approved', label: t('approval.approved') },
+            { key: 'rejected', label: t('approval.rejected') },
+            { key: 'all', label: t('approval.all') },
           ].map(tab => (
             <button
               key={tab.key}
@@ -170,8 +172,8 @@ export default function AdminApprovalPage() {
         {professionals.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-200 py-12 text-center">
             <CheckCheck size={40} className="mx-auto text-accent mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Aucune demande trouvée</h2>
-            <p className="text-gray-500">Aucun professionnel correspondant à ce filtre</p>
+            <h2 className="text-lg font-semibold mb-2">{t('approval.noRequestsFound')}</h2>
+            <p className="text-gray-500">{t('approval.noMatchingProfessional')}</p>
           </div>
         ) : (
           <>
@@ -181,12 +183,12 @@ export default function AdminApprovalPage() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-100 text-gray-700 text-left">
                     <tr>
-                      <th className="py-3 px-4 font-semibold">Nom</th>
-                      <th className="py-3 px-4 font-semibold">Email</th>
-                      <th className="py-3 px-4 font-semibold">Ville</th>
-                      <th className="py-3 px-4 font-semibold">Inscription</th>
-                      <th className="py-3 px-4 font-semibold">Message</th>
-                      <th className="py-3 px-4 font-semibold">Actions</th>
+                      <th className="py-3 px-4 font-semibold">{t('approval.name')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('approval.email')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('approval.city')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('approval.registration')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('approval.message')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('approval.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -207,7 +209,7 @@ export default function AdminApprovalPage() {
                             <MessageCircle size={18} />
                             {pro.admin?.motivation_letter
                               ? pro.admin.motivation_letter.slice(0, 40) + (pro.admin.motivation_letter.length > 40 ? "..." : "")
-                              : "Aucun message"}
+                              : t('approval.noMessage')}
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -234,11 +236,11 @@ export default function AdminApprovalPage() {
 
                   <div className="space-y-2 text-sm mb-4">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Ville:</span>
+                      <span className="text-gray-500">{t('approval.city')}:</span>
                       <span className="text-gray-900">{pro.profile.city || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Inscription:</span>
+                      <span className="text-gray-500">{t('approval.registration')}:</span>
                       <span className="text-gray-900">
                         {pro.timestamps.created_at ? new Date(pro.timestamps.created_at).toLocaleDateString('fr-FR') : 'N/A'}
                       </span>
@@ -250,7 +252,7 @@ export default function AdminApprovalPage() {
                           className="text-primary hover:underline flex items-center gap-2 text-sm"
                         >
                           <MessageCircle size={16} />
-                          Voir le message
+                          {t('approval.viewMessage')}
                         </button>
                       </div>
                     )}
@@ -270,17 +272,17 @@ export default function AdminApprovalPage() {
           <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
             <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-lg border border-secondary/30">
               <h3 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
-                <MessageCircle size={22} className="text-accent" /> Message du professionnel
+                <MessageCircle size={22} className="text-accent" /> {t('approval.professionalMessage')}
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg text-sm max-h-[400px] overflow-y-auto break-words">
-                {showModal.content || "Aucun message"}
+                {showModal.content || t('approval.noMessage')}
               </div>
               <div className="flex justify-end mt-4">
                 <button
                   onClick={() => setShowModal(null)}
                   className="px-4 py-2 rounded-lg bg-secondary text-white hover:opacity-90 transition-all text-sm"
                 >
-                  Fermer
+                  {t('approval.close')}
                 </button>
               </div>
             </div>
@@ -292,15 +294,15 @@ export default function AdminApprovalPage() {
           <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
               <h3 className="text-lg font-semibold mb-3">
-                Rejeter {showModal.user.profile.last_name || 'cet utilisateur'}
+                {t('approval.rejectTitle')} {showModal.user.profile.last_name || t('approval.thisUser')}
               </h3>
               <p className="text-red-600 bg-red-50 border border-red-100 rounded-md p-3 text-sm mb-4">
-                ⚠️ Attention : Le compte sera rejeté et l'utilisateur sera informé.
+                {t('approval.rejectWarning')}
               </p>
               <textarea
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
-                placeholder="Raison du rejet (minimum 10 caractères)..."
+                placeholder={t('approval.rejectPlaceholder')}
                 rows={4}
                 className={`w-full rounded-md p-2 mb-2 border ${
                   rejectionReason.length < 10
@@ -309,11 +311,11 @@ export default function AdminApprovalPage() {
                 } text-sm`}
               />
               <small className="text-gray-500 mb-4 block">
-                {rejectionReason.length}/500 caractères
+                {rejectionReason.length}/500 {t('approval.characters')}
               </small>
               {rejectionReason.length < 10 && (
                 <p className="text-red-600 text-sm mb-2">
-                  La raison doit comporter au moins 10 caractères.
+                  {t('approval.rejectMinLength')}
                 </p>
               )}
               <div className="flex gap-2">
@@ -321,7 +323,7 @@ export default function AdminApprovalPage() {
                   onClick={() => setShowModal(null)}
                   className="flex-1 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
                 >
-                  Annuler
+                  {t('approval.cancel')}
                 </button>
                 <button
                   onClick={() => handleReject(showModal.user.id)}
@@ -332,7 +334,7 @@ export default function AdminApprovalPage() {
                       : 'bg-[#A4031F]/70 hover:bg-[#A4031F]/90'
                   }`}
                 >
-                  {processing === showModal.user.id ? '⏳' : 'Confirmer'}
+                  {processing === showModal.user.id ? '⏳' : t('approval.confirm')}
                 </button>
               </div>
             </div>
@@ -350,7 +352,7 @@ export default function AdminApprovalPage() {
     if (isApproved) {
       return (
         <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-          Approuvé
+          {t('approval.statusApproved')}
         </span>
       )
     }
@@ -360,13 +362,13 @@ export default function AdminApprovalPage() {
           className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold cursor-help"
           title={`Raison: ${rejectionReason}`}
         >
-          Rejeté
+          {t('approval.statusRejected')}
         </span>
       )
     }
     return (
       <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-        En attente
+        {t('approval.statusPending')}
       </span>
     )
   }
@@ -385,14 +387,15 @@ export default function AdminApprovalPage() {
             disabled={processing === pro.id}
             className={`${buttonClass} px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm disabled:opacity-50`}
           >
-            Approuver
+            {t('approval.approve')}
           </button>
           <button
             onClick={() => setShowModal({ type: 'reject', user: pro })}
             disabled={processing === pro.id}
             className={`${buttonClass} px-3 py-1.5 rounded-md bg-[#A4031F]/70 text-white hover:bg-[#A4031F]/90 text-sm disabled:opacity-50`}
           >
-            Rejeter
+            {t('approval.reject')}
+
           </button>
         </>
       )
@@ -406,7 +409,7 @@ export default function AdminApprovalPage() {
           disabled={processing === pro.id}
           className={`${buttonClass} px-3 py-1.5 rounded-md bg-[#A4031F]/70 text-white hover:bg-[#A4031F]/90 text-sm disabled:opacity-50`}
         >
-          Révoquer
+          {t('approval.revoke')}
         </button>
       )
     }
@@ -419,7 +422,7 @@ export default function AdminApprovalPage() {
           disabled={processing === pro.id}
           className={`${buttonClass} px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm disabled:opacity-50`}
         >
-          Ré-approuver
+          {t('approval.reApprove')}
         </button>
       )
     }

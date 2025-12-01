@@ -1,5 +1,6 @@
 // fontendTsx/src/i18n/config.ts
 import i18n from 'i18next';
+//import { ref } from 'process';
 import { initReactI18next } from 'react-i18next';
 
 const resources = {
@@ -174,6 +175,62 @@ const resources = {
         viewReservations: "Voir vos réservations",
         trackEarnings: "Suivre vos revenus",
         manageUsers: "Gérer les utilisateurs"
+      },
+
+      // ==========================================
+      // APPROVAL (ADMIN)
+      // ==========================================
+      approval: {
+        title: 'Approbation des Professionnels',
+        loading: 'Chargement...',
+        
+        // Stats
+        pending: 'En attente',
+        approved: 'Approuvés',
+        rejected: 'Rejetés',
+        all: 'Tous',
+        
+        // Actions
+        refresh: 'Rafraîchir',
+        back: 'Retour',
+        approve: 'Approuver',
+        reject: 'Rejeter',
+        revoke: 'Révoquer',
+        reApprove: 'Ré-approuver',
+        
+        // Table headers
+        name: 'Nom',
+        email: 'Email',
+        city: 'Ville',
+        registration: 'Inscription',
+        message: 'Message',
+        actions: 'Actions',
+        
+        // Empty state
+        noRequestsFound: 'Aucune demande trouvée',
+        noMatchingProfessional: 'Aucun professionnel correspondant à ce filtre',
+        
+        // Messages
+        viewMessage: 'Voir le message',
+        professionalMessage: 'Message du professionnel',
+        noMessage: 'Aucun message',
+        close: 'Fermer',
+        thisUser: 'Cet utilisateur',
+        
+        // Reject modal
+        rejectTitle: 'Rejeter',
+        rejectWarning: '⚠️ Attention : Le compte sera rejeté et l\'utilisateur sera informé.',
+        rejectPlaceholder: 'Raison du rejet (minimum 10 caractères)...',
+        rejectMinLength: 'La raison doit comporter au moins 10 caractères.',
+        cancel: 'Annuler',
+        confirm: 'Confirmer',
+        characters: 'caractères',
+        reason: 'Raison',
+        
+        // Status badges
+        statusApproved: 'Approuvé',
+        statusRejected: 'Rejeté',
+        statusPending: 'En attente'
       },
 
       // ==========================================
@@ -434,27 +491,93 @@ const resources = {
       },
 
       // ==========================================
-      // REMBOURSEMENTS (UTILISATEUR)
+      // REFUNDS
       // ==========================================
       refunds: {
-        title: 'Mes demandes de remboursement',
-        newRequest: 'Nouvelle demande',
-        myRequests: 'Mes demandes',
-        selectReservation: 'Sélectionner une réservation',
-        reason: 'Raison du remboursement',
+        // Titres principaux
+        title: 'Mes Demandes de Remboursement',
+        newRequest: 'Nouvelle Demande',
+        myRequests: 'Mes Demandes',
+        myRequestShort: 'Demandes',
+        manage: 'Gestion des Remboursements',
+        manageShort: 'Gestion',
+        
+        // Titres de gestion
+        adminTitle: 'Remboursements à traiter (Paiements indirects)',
+        proTitle: 'Remboursements de mes événements (Paiements directs)',
+        
+        // Formulaire
+        selectReservation: 'Sélectionner une Réservation',
+        reason: 'Motif du remboursement',
         reasonPlaceholder: 'Expliquez pourquoi vous demandez un remboursement',
         submit: 'Soumettre',
         submitting: 'Envoi en cours...',
         
-        // Status
-        pending: 'En attente',
-        approved: 'Approuvé',
-        rejected: 'Refusé',
+        // Onglets de gestion
+        pending: 'En Attente',
+        approved: 'Approuvés',
+        refused: 'Refusés',
+        rejected: 'Rejetés',
+        all: 'Tous',
         
         // Messages
-        submitSuccess: 'Demande de remboursement envoyée',
-        submitError: "Erreur lors de l'envoi",
-        noReservations: 'Aucune réservation éligible au remboursement'
+        submitSuccess: 'Demande de remboursement soumise',
+        submitError: 'Erreur lors de l\'envoi',
+        noReservations: 'Aucune réservation éligible au remboursement',
+        pleaseCompleteRecaptcha: 'Veuillez compléter le captcha',
+        
+        // Page de gestion
+        noRequestsYet: 'Aucune demande de remboursement pour le moment',
+        noRequestsDesc: 'Les demandes apparaîtront ici dès qu\'elles seront soumises',
+        loading: 'Chargement...',
+        refresh: 'Rafraîchir',
+        
+        // Tableau
+        date: 'Date',
+        event: 'Événement',
+        client: 'Client',
+        vendor: 'Vendeur',
+        email: 'Courriel',
+        amount: 'Montant',
+        motive: 'Motif',
+        message: 'Message',
+        status: 'Statut',
+        actions: 'Actions',
+        
+        // Détails
+        refundReason: 'Motif de remboursement',
+        adminMessage: 'Message de l\'administrateur',
+        noReason: 'Aucun motif',
+        viewReason: 'Voir le motif',
+        viewMessage: 'Voir le message',
+        close: 'Fermer',
+        
+        // Actions
+        approve: 'Approuver',
+        refuse: 'Refuser',
+        approveRequest: 'Approuver la demande de',
+        refuseRequest: 'Refuser la demande de',
+        addMessage: 'Ajouter un message (minimum 5 caractères)...',
+        messageMinLength: 'Le message doit contenir au moins 5 caractères.',
+        cancel: 'Annuler',
+        confirm: 'Confirmer',
+        
+        // Statuts
+        statusPending: 'En attente',
+        statusApproved: 'Approuvé',
+        statusRefused: 'Refusé',
+        approvedOn: 'Approuvé le',
+        refusedOn: 'Refusé le',
+        
+        // Formulaire de nouvelle demande
+        selectReservationFirst: 'Veuillez sélectionner une réservation',
+        noEligibleReservations: 'Vous n\'avez aucune réservation éligible au remboursement',
+        eligibleReservationsDesc: 'Seules les réservations payées et annulables sans demande existante sont affichées',
+        
+        // Erreurs
+        errorLoading: 'Erreur lors du chargement',
+        errorProcessing: 'Erreur lors du traitement de la demande',
+        cannotLoadRequests: 'Impossible de récupérer les demandes de remboursement.'
       },
 
       // ==========================================
@@ -800,6 +923,62 @@ const resources = {
       },
 
       // ==========================================
+      // APPROVAL (ADMIN)
+      // ==========================================
+      approval: {
+        title: 'Professional Approvals',
+        loading: 'Loading...',
+        
+        // Stats
+        pending: 'Pending',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        all: 'All',
+        
+        // Actions
+        refresh: 'Refresh',
+        back: 'Back',
+        approve: 'Approve',
+        reject: 'Reject',
+        revoke: 'Revoke',
+        reApprove: 'Re-approve',
+        
+        // Table headers
+        name: 'Name',
+        email: 'Email',
+        city: 'City',
+        registration: 'Registration',
+        message: 'Message',
+        actions: 'Actions',
+        
+        // Empty state
+        noRequestsFound: 'No requests found',
+        noMatchingProfessional: 'No professional matching this filter',
+        
+        // Messages
+        viewMessage: 'View message',
+        professionalMessage: 'Professional\'s message',
+        noMessage: 'No message',
+        close: 'Close',
+        thisUser: 'This user',
+        
+        // Reject modal
+        rejectTitle: 'Reject',
+        rejectWarning: '⚠️ Warning: The account will be rejected and the user will be notified.',
+        rejectPlaceholder: 'Reason for rejection (minimum 10 characters)...',
+        rejectMinLength: 'The reason must be at least 10 characters long.',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        characters: 'characters',
+        reason: 'Reason',
+        
+        // Status badges
+        statusApproved: 'Approved',
+        statusRejected: 'Rejected',
+        statusPending: 'Pending'
+      },
+
+      // ==========================================
       // EVENTS
       // ==========================================
       events: {
@@ -1057,29 +1236,94 @@ const resources = {
       },
 
       // ==========================================
-      // REFUNDS (USER)
+      // REFUNDS
       // ==========================================
       refunds: {
+        // Main titles
         title: 'My Refund Requests',
         newRequest: 'New Request',
         myRequests: 'My Requests',
+        myRequestShort: 'Requests',
+        manage: 'Refund Management',
+        manageShort: 'Management',
+        
+        // Management titles
+        adminTitle: 'Refunds to Process (Indirect Payments)',
+        proTitle: 'Refunds for My Events (Direct Payments)',
+        
+        // Form
         selectReservation: 'Select a Reservation',
         reason: 'Refund Reason',
         reasonPlaceholder: 'Explain why you are requesting a refund',
         submit: 'Submit',
         submitting: 'Submitting...',
         
-        // Status
+        // Management tabs
         pending: 'Pending',
         approved: 'Approved',
+        refused: 'Refused',
         rejected: 'Rejected',
+        all: 'All',
         
         // Messages
         submitSuccess: 'Refund request submitted',
         submitError: 'Submission error',
-        noReservations: 'No reservations eligible for refund'
+        noReservations: 'No reservations eligible for refund',
+        pleaseCompleteRecaptcha: 'Please complete the captcha',
+        
+        // Management page
+        noRequestsYet: 'No refund requests yet',
+        noRequestsDesc: 'Requests will appear here once submitted',
+        loading: 'Loading...',
+        refresh: 'Refresh',
+        
+        // Table
+        date: 'Date',
+        event: 'Event',
+        client: 'Customer',
+        vendor: 'Vendor',
+        email: 'Email',
+        amount: 'Amount',
+        motive: 'Reason',
+        message: 'Message',
+        status: 'Status',
+        actions: 'Actions',
+        
+        // Details
+        refundReason: 'Refund Reason',
+        adminMessage: 'Administrator Message',
+        noReason: 'No reason',
+        viewReason: 'View reason',
+        viewMessage: 'View message',
+        close: 'Close',
+        
+        // Actions
+        approve: 'Approve',
+        refuse: 'Refuse',
+        approveRequest: 'Approve request from',
+        refuseRequest: 'Refuse request from',
+        addMessage: 'Add a message (minimum 5 characters)...',
+        messageMinLength: 'Message must be at least 5 characters long.',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        
+        // Statuses
+        statusPending: 'Pending',
+        statusApproved: 'Approved',
+        statusRefused: 'Refused',
+        approvedOn: 'Approved on',
+        refusedOn: 'Refused on',
+        
+        // New request form
+        selectReservationFirst: 'Please select a reservation',
+        noEligibleReservations: 'You have no reservations eligible for refund',
+        eligibleReservationsDesc: 'Only paid and cancellable reservations without existing requests are shown',
+        
+        // Errors
+        errorLoading: 'Error loading',
+        errorProcessing: 'Error processing request',
+        cannotLoadRequests: 'Unable to retrieve refund requests.'
       },
-
       // ==========================================
       // EARNINGS (VENDOR)
       // ==========================================
@@ -1267,7 +1511,9 @@ const resources = {
 };
 
 // Récupérer la langue sauvegardée ou utiliser 'fr' par défaut
-const savedLanguage = localStorage.getItem('language') || 'fr';
+const savedLanguage = typeof window !== 'undefined' 
+  ? localStorage.getItem('language') || 'fr'
+  : 'fr';
 
 i18n
   .use(initReactI18next)
@@ -1282,7 +1528,8 @@ i18n
 
 // Sauvegarder automatiquement la langue à chaque changement
 i18n.on('languageChanged', (lng) => {
-  localStorage.setItem('language', lng);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('language', lng);
+  }
 });
-
 export default i18n;

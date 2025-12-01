@@ -1,5 +1,5 @@
 // components/common/LoadingSpinner.jsx
-export const LoadingSpinner = ({ size = 'medium', message = 'Chargement...' }) => {
+export const LoadingSpinner = ({ size = 'medium', message = t('common.loading') }) => {
     const sizes = {
         small: 'w-4 h-4',
         medium: 'w-8 h-8',

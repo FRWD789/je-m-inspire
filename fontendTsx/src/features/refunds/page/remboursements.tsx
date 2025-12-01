@@ -99,17 +99,17 @@ export default function RemboursementsPage() {
       }
     } catch (err) {
       console.error(err);
-      setErrorReservations(t("common.somethingWentWrong"));
+      setErrorReservations(t("refunds.errorLoading"));
     } finally {
       setLoadingReservations(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedReservationId) return alert(t("refunds.selectReservation"));
+    if (!selectedReservationId) return alert(t("refunds.selectReservationFirst"));
     if (!motif.trim()) return alert(t("refunds.reason"));
-    if (isRecaptchaEnabled && !captchaToken) return alert(t("common.pleaseCompleteRecaptcha"));
-
+    if (isRecaptchaEnabled && !captchaToken) return alert(t("refunds.pleaseCompleteRecaptcha"));
+    
     setSubmitting(true);
     try {
       const reservation = reservations.find((r) => r.id === selectedReservationId);
@@ -138,7 +138,7 @@ export default function RemboursementsPage() {
       setUserType(res.type || 'admin');
     } catch (err) {
       console.error("Erreur chargement remboursements:", err);
-      setErrorManage("Impossible de récupérer les demandes de remboursement.");
+      setErrorManage(t("refunds.cannotLoadRequests"));
     } finally {
       setLoadingManage(false);
     }
@@ -172,7 +172,7 @@ export default function RemboursementsPage() {
       setActionType(null);
     } catch (err) {
       console.error("Erreur traitement:", err);
-      alert("Erreur lors du traitement de la demande");
+      alert(t("refunds.errorProcessing"));
     } finally {
       setProcessingId(null);
     }
@@ -186,8 +186,8 @@ export default function RemboursementsPage() {
   });
 
   const title = userType === 'admin' 
-    ? 'Remboursements à traiter (Paiements indirects)' 
-    : 'Remboursements de mes événements (Paiements directs)';
+  ? t('refunds.adminTitle')
+  : t('refunds.proTitle');
 
   const description = userType === 'admin'
     ? 'Paiements reçus par la plateforme - vous devez effectuer les remboursements manuellement'
@@ -206,8 +206,8 @@ export default function RemboursementsPage() {
           onClick={() => setMainTab("myRequests")}
         >
           <FileText size={18} className="sm:w-5 sm:h-5" />
-          <span className="hidden xs:inline">Mes demandes</span>
-          <span className="xs:hidden">Demandes</span>
+          <span className="hidden xs:inline">{t('refunds.myRequests')}</span>
+          <span className="xs:hidden">{t('refunds.myRequestShort')}</span>
         </button>
         
         {canManage && (
@@ -220,8 +220,8 @@ export default function RemboursementsPage() {
             onClick={() => setMainTab("manage")}
           >
             <ClipboardList size={18} className="sm:w-5 sm:h-5" />
-            <span className="hidden xs:inline">Gestion des remboursements</span>
-            <span className="xs:hidden">Gestion</span>
+            <span className="hidden xs:inline">{t('refunds.manage')}</span>
+            <span className="xs:hidden">{t('refunds.manageShort')}</span>
           </button>
         )}
       </div>
@@ -241,7 +241,7 @@ export default function RemboursementsPage() {
             <div className="text-center mt-6 p-4 sm:p-6 bg-gray-50 rounded-lg">
               <p className="text-sm sm:text-base">{t("refunds.noReservations")}</p>
               <span className="text-xs sm:text-sm text-gray-500 mt-2 block">
-                Les réservations avec une demande de remboursement en cours n'apparaissent pas ici.
+                {t('refunds.eligibleReservationsDesc')}
               </span>
             </div>
           ) : (
@@ -321,13 +321,13 @@ export default function RemboursementsPage() {
               <p className="text-xs sm:text-sm text-gray-600 mt-1">{description}</p>
               <div className="flex flex-wrap gap-3 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-600">
                 <span className="bg-yellow-50 px-2 py-1 rounded">
-                  En attente: <strong>{requests.filter((r) => r.statut === "en_attente").length}</strong>
+                  {t("refunds.pending")} <strong>{requests.filter((r) => r.statut === "en_attente").length}</strong>
                 </span>
                 <span className="bg-green-50 px-2 py-1 rounded">
-                  Approuvées: <strong>{requests.filter((r) => r.statut === "approuve").length}</strong>
+                  {t("refunds.approved")}: <strong>{requests.filter((r) => r.statut === "approuve").length}</strong>
                 </span>
                 <span className="bg-red-50 px-2 py-1 rounded">
-                  Refusées: <strong>{requests.filter((r) => r.statut === "refuse").length}</strong>
+                  {t('refunds.refused')}: <strong>{requests.filter((r) => r.statut === "refuse").length}</strong>
                 </span>
               </div>
             </div>
@@ -336,18 +336,18 @@ export default function RemboursementsPage() {
               className="px-3 py-2 rounded-[4px] bg-primary/60 text-white hover:bg-primary/80 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 w-full lg:w-auto"
             >
               <RefreshCcw size={15} /> 
-              <span className="hidden xs:inline">Rafraîchir</span>
-              <span className="xs:hidden">Actualiser</span>
+              <span className="hidden xs:inline">{t('refunds.refresh')}</span>
+              <span className="xs:hidden">{t('refunds.refresh')}</span>
             </button>
           </div>
 
           {/* Tabs filtres - Responsive */}
           <div className="flex gap-2 sm:gap-3 mb-4 overflow-x-auto pb-2">
             {[
-              { key: "pending", label: "En attente", labelShort: "Attente" },
-              { key: "approved", label: "Approuvées", labelShort: "OK" },
-              { key: "refused", label: "Refusées", labelShort: "Refusées" },
-              { key: "all", label: "Toutes", labelShort: "Tous" }
+              { key: "pending", label: t('refunds.pending'), labelShort: t('refunds.pending') },
+              { key: "approved", label: t('refunds.approved'), labelShort: t('refunds.approved') },
+              { key: "refused", label: t('refunds.refused'), labelShort: t('refunds.refused') },
+              { key: "all", label: t('refunds.all'), labelShort: t('refunds.all') }
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -366,7 +366,7 @@ export default function RemboursementsPage() {
 
           {/* Table - Desktop / Cards - Mobile */}
           {loadingManage ? (
-            <p className="text-center mt-6 text-sm sm:text-base">Chargement des demandes...</p>
+            <p className="text-center mt-6 text-sm sm:text-base">{t('refunds.loading')}</p>
           ) : errorManage ? (
             <div className="text-center bg-red-50 border-2 border-red-200 rounded-lg py-6 sm:py-8 px-4">
               <p className="text-red-600 text-sm sm:text-base">{errorManage}</p>
@@ -374,8 +374,8 @@ export default function RemboursementsPage() {
           ) : filteredRequests.length === 0 ? (
             <div className="text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg py-12 sm:py-16 px-4">
               <MessageCircle size={32} className="sm:w-10 sm:h-10 mx-auto text-accent mb-4" />
-              <h2 className="text-base sm:text-lg font-semibold mb-2">Aucune demande trouvée</h2>
-              <p className="text-gray-500 text-sm sm:text-base">Aucune demande correspondant à ce filtre</p>
+              <h2 className="text-base sm:text-lg font-semibold mb-2">{t('refunds.noRequestYet')}</h2>
+              <p className="text-gray-500 text-sm sm:text-base">{t('refunds.noRequestDesc')}</p>
             </div>
           ) : (
             <>
@@ -384,16 +384,16 @@ export default function RemboursementsPage() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-100 text-gray-700 text-left">
                     <tr>
-                      <th className="py-3 px-4 font-semibold">Date</th>
-                      <th className="py-3 px-4 font-semibold">Événement</th>
-                      <th className="py-3 px-4 font-semibold">Client</th>
-                      <th className="py-3 px-4 font-semibold">Vendeur</th>
-                      <th className="py-3 px-4 font-semibold">Courriel</th>
-                      <th className="py-3 px-4 font-semibold">Montant</th>
-                      <th className="py-3 px-4 font-semibold">Motif</th>
-                      <th className="py-3 px-4 font-semibold">Message</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.date')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.event')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.client')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.vendor')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.email')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.amount')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.motive')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('refunds.message')}</th>
                       <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
-                        Statut / Actions
+                        {t('refunds.status')} / {t('refunds.actions')}
                       </th>
                     </tr>
                   </thead>
@@ -421,7 +421,7 @@ export default function RemboursementsPage() {
                           className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
                           onClick={() =>
                             req.motif &&
-                            setViewContent({ title: "Motif de remboursement", content: req.motif })
+                            setViewContent({ title: t('refunds.refundReason'), content: req.motif })
                           }
                         >
                           {req.motif
@@ -434,7 +434,7 @@ export default function RemboursementsPage() {
                           className="py-3 px-4 cursor-pointer text-primary hover:underline max-w-[200px] truncate"
                           onClick={() =>
                             req.message &&
-                            setViewContent({ title: "Message de l'administrateur", content: req.message })
+                            setViewContent({ title: t('refunds.adminMessage'), content: req.message })
                           }
                         >
                           <div className="flex items-center gap-2 truncate">
@@ -456,7 +456,7 @@ export default function RemboursementsPage() {
                                 }}
                                 className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1 text-xs px-2 py-1"
                               >
-                                <Check size={14} /> Approuver
+                                <Check size={14} /> {t('refunds.approve')}
                               </Button>
                               <Button
                                 onClick={() => {
@@ -465,7 +465,7 @@ export default function RemboursementsPage() {
                                 }}
                                 className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 text-xs px-2 py-1"
                               >
-                                <X size={14} /> Refuser
+                                <X size={14} /> {t('refunds.refuse')}
                               </Button>
                             </div>
                           ) : (
@@ -498,33 +498,33 @@ export default function RemboursementsPage() {
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 ${
-                        req.statut === "en_attente" 
+                        req.statut === "en_attente"
                           ? "bg-yellow-100 text-yellow-800"
                           : req.statut === "approuve"
                           ? "bg-green-100 text-green-800"
                           : "bg-red-100 text-red-800"
                       }`}>
-                        {req.statut === "en_attente" ? "En attente" : 
-                         req.statut === "approuve" ? "Approuvé" : "Refusé"}
+                        {req.statut === "en_attente" ? t('refunds.statusPending') : 
+                         req.statut === "approuve" ? t('refunds.statusApproved') : t('refunds.statusRefused')}
                       </span>
                     </div>
 
                     {/* Details */}
                     <div className="space-y-2 text-sm mb-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Client:</span>
+                        <span className="text-gray-600">{t('refunds.client')}:</span>
                         <span className="font-medium">{req.client}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Vendeur:</span>
+                        <span className="text-gray-600">{t('refunds.vendor')}:</span>
                         <span className="font-medium">{req.vendeur}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Courriel:</span>
+                        <span className="text-gray-600">{t('refunds.email')}:</span>
                         <span className="font-medium text-xs break-all">{req.courriel}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Montant:</span>
+                        <span className="text-gray-600">{t('refunds.amount')}:</span>
                         <span className="font-bold text-primary">{req.montant.toFixed(2)} CAD</span>
                       </div>
                     </div>
@@ -534,20 +534,20 @@ export default function RemboursementsPage() {
                       <button
                         onClick={() =>
                           req.motif &&
-                          setViewContent({ title: "Motif de remboursement", content: req.motif })
+                          setViewContent({ title: t('refunds.refundMotive'), content: req.motif })
                         }
                         className="w-full text-left bg-gray-50 rounded p-2 text-xs hover:bg-gray-100 transition-colors"
                       >
-                        <span className="text-gray-600 block mb-1">Motif:</span>
+                        <span className="text-gray-600 block mb-1">{t('refunds.motive')}:</span>
                         <span className="text-primary line-clamp-2">
-                          {req.motif || "Aucun motif"}
+                          {req.motif || t('refunds.noReason')}
                         </span>
                       </button>
 
                       {req.message && (
                         <button
                           onClick={() =>
-                            setViewContent({ title: "Message de l'administrateur", content: req.message })
+                            setViewContent({ title: t('refunds.adminMessage'), content: req.message })
                           }
                           className="w-full text-left bg-blue-50 rounded p-2 text-xs hover:bg-blue-100 transition-colors"
                         >
@@ -570,7 +570,7 @@ export default function RemboursementsPage() {
                           }}
                           className="flex-1 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-1 text-xs py-2"
                         >
-                          <Check size={14} /> Approuver
+                          <Check size={14} /> {t('refunds.approve')}
                         </Button>
                         <Button
                           onClick={() => {
@@ -579,7 +579,7 @@ export default function RemboursementsPage() {
                           }}
                           className="flex-1 bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-1 text-xs py-2"
                         >
-                          <X size={14} /> Refuser
+                          <X size={14} /> {t('refunds.refuse')}
                         </Button>
                       </div>
                     ) : (
@@ -611,7 +611,7 @@ export default function RemboursementsPage() {
                 onClick={() => setViewContent(null)}
                 className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/80 text-sm"
               >
-                Fermer
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -623,15 +623,15 @@ export default function RemboursementsPage() {
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
           <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-base sm:text-lg font-semibold mb-3">
-              {actionType === "approve" ? "Approuver" : "Refuser"} la demande de {modalRequest.client}
+              {actionType === "approve" ? t('refunds.approve') : t('refunds.refuse')} la demande de {modalRequest.client}
             </h3>
             <div className="mb-4 p-3 bg-gray-50 rounded text-xs sm:text-sm space-y-1">
-              <p><strong>Événement:</strong> {modalRequest.evenement}</p>
-              <p><strong>Montant:</strong> {modalRequest.montant.toFixed(2)} CAD</p>
-              <p><strong>Motif:</strong> {modalRequest.motif}</p>
+              <p><strong>{t('refunds.event')}:</strong> {modalRequest.evenement}</p>
+              <p><strong>{t('refunds.amount')}:</strong> {modalRequest.montant.toFixed(2)} CAD</p>
+              <p><strong>{t('refunds.motive')}:</strong> {modalRequest.motif}</p>
             </div>
             <textarea
-              placeholder="Ajouter un message (minimum 5 caractères)..."
+              placeholder={t('refunds.addMessage')}
               value={adminMessage}
               onChange={(e) => setAdminMessage(e.target.value)}
               rows={4}
@@ -639,7 +639,7 @@ export default function RemboursementsPage() {
             />
             {adminMessage.length > 0 && adminMessage.length < 5 && (
               <p className="text-red-600 text-xs sm:text-sm mb-2">
-                Le message doit contenir au moins 5 caractères.
+                {t('refunds.messageMinLength')}
               </p>
             )}
             <div className="flex gap-2">
@@ -651,7 +651,7 @@ export default function RemboursementsPage() {
                 }}
                 className="flex-1 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleProcess}
@@ -664,7 +664,7 @@ export default function RemboursementsPage() {
                     : "bg-red-600 hover:bg-red-700"
                 }`}
               >
-                {processingId === modalRequest.id ? "⏳" : "Confirmer"}
+                {processingId === modalRequest.id ? "⏳" : t('common.confirm')}
               </button>
             </div>
           </div>
