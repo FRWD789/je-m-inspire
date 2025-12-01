@@ -28,7 +28,7 @@ export default function AbonnementSuccess() {
 
             {/* Continue Button */}
             <button
-              onClick={() => navigate("/dashboard/my-reservations")}
+              onClick={() => navigate("/dashboard/profile-settings?tab=plan")}
               className="w-full mt-8 py-3 bg-accent hover:bg-primary text-white font-semibold rounded-lg transition"
             >
               Continuer
