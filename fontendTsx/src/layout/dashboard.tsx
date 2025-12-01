@@ -108,7 +108,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-[100svh] bg-gray-100">
       {/* Overlay for mobile */}
       {mobileMenuOpen && isMobile && (
         <div
