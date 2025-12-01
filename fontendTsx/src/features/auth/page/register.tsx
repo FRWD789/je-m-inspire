@@ -19,10 +19,7 @@ export const registerSchema = z.object({
     .min(1, "Last name is required")
     .max(255, "Last name must not exceed 255 characters"),
 
-  email: z.string()
-    .min(1, "Email is required")
-    .email("Invalid email format")
-    .max(255, "Email must not exceed 255 characters"),
+  email: z.email(),
     // Laravel also checks `unique:users`, but that's DB-level, so you’ll handle it separately
 
   date_of_birth: z.string()

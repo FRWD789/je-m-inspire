@@ -10,7 +10,7 @@ import Form from '@/components/form';
 import { authService } from '../service/authService';
 
 const ResetPasswordSchema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.email('Invalid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   password_confirmation: z.string().min(8, 'Password confirmation is required'),
   token: z.string().min(1, 'Invalid reset token'),
