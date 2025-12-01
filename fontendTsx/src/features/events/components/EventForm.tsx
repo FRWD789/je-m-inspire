@@ -11,7 +11,6 @@ import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import Form from '@/components/form'
 import AutocompleteInputV2 from '@/components/ui/autoCompleteInputV2'
-import { useFormContext } from 'react-hook-form'
 
 interface FormEventsProps {
   type: 'create' | 'edit'
@@ -87,21 +86,17 @@ const GeneralInfoSection = () => (
   </div>
 )
 
-
 const LocationSection = ({ type, defaultValues }: any) => (
   <div className="mb-6">
     <SectionHeader icon={<MapPinned />} title="Localisation" />
-        <APIProvider apiKey="AIzaSyCLD-sPCtHIZVGtpp8K-ok97RR26UStQqM" libraries={['places']}>
-        <AutocompleteInputV2 name={'localisation_address'} value={defaultValues?.localisation_address}  />
-        {
-            type==="edit"&&<Input type="hidden" name="localisation_id" value={defaultValues?.localisation?.id || ''} />
-        }
-      
-      </APIProvider>
+    <APIProvider apiKey="AIzaSyCLD-sPCtHIZVGtpp8K-ok97RR26UStQqM" libraries={['places']}>
+      <AutocompleteInputV2 name={'localisation_address'} value={defaultValues?.localisation_address}  />
+      {
+        type==="edit"&&<Input type="hidden" name="localisation_id" value={defaultValues?.localisation?.id || ''} />
+      }
+    </APIProvider>
   </div>
 )
-
-
 
 // Dates & Capacity Section
 const DatesCapacitySection = ({ type }: any) => (
@@ -117,9 +112,9 @@ const DatesCapacitySection = ({ type }: any) => (
       <FormFiled htmlFor='base_price' label="Prix ($) *">
         <Input type="number" name="base_price" placeholder="Entrez le prix par participant" />
       </FormFiled>
-    <FormFiled htmlFor='capacity' label="Capacité *">
+      <FormFiled htmlFor='capacity' label="Capacité *">
         <Input type="number" name="capacity" placeholder="Nombre de participants maximum" />
-    </FormFiled>
+      </FormFiled>
       <FormFiled htmlFor='max_places' label="Places max *">
         <Input type="number" name="max_places" placeholder="Nombre de places disponibles" />
       </FormFiled>
@@ -141,10 +136,12 @@ const EventSettingsSection = () => (
     </div>
   </div>
 )
+
 const ImagesSection = () => {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [imagesPreview, setImagesPreview] = useState<string[]>([])
+  
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setPreview: (v: any) => void,
@@ -153,10 +150,17 @@ const ImagesSection = () => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
+    // 🔍 LOG: Fichiers sélectionnés
+    console.log(`📸 [ImagesSection] ${multiple ? 'Images' : 'Fichier'} sélectionné(s):`, files.length)
+    
     if (multiple) {
-      const urls = Array.from(files).map((file) => URL.createObjectURL(file))
+      const urls = Array.from(files).map((file) => {
+        console.log(`  ✅ ${file.name} (${(file.size / 1024).toFixed(2)} KB)`)
+        return URL.createObjectURL(file)
+      })
       setPreview(urls)
     } else {
+      console.log(`  ✅ ${files[0].name} (${(files[0].size / 1024).toFixed(2)} KB)`)
       setPreview(URL.createObjectURL(files[0]))
     }
   }
@@ -168,24 +172,27 @@ const ImagesSection = () => {
       {/* Thumbnail */}
       <FormFiled htmlFor='thumbnail' label="Thumbnail">
         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition">
-       <Input
+          <Input
             name="thumbnail"
             type="file"
-            className="hidden"
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             accept="image/*"
             onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleFileChange(e, setThumbnailPreview);
-        }}
-        />
+              const file = e.target.files?.[0]
+              if (file) {
+                console.log('🖼️  [ImagesSection] Thumbnail sélectionné:', file.name)
+                handleFileChange(e, setThumbnailPreview)
+              }
+            }}
+          />
           {thumbnailPreview ? (
             <img
               src={thumbnailPreview}
               alt="Thumbnail Preview"
-              className="w-32 h-32 object-cover rounded"
+              className="w-32 h-32 object-cover rounded pointer-events-none"
             />
           ) : (
-            <p className="text-gray-400 text-sm text-center">
+            <p className="text-gray-400 text-sm text-center pointer-events-none">
               Cliquez ou glissez pour ajouter une image
             </p>
           )}
@@ -195,20 +202,27 @@ const ImagesSection = () => {
       {/* Banner */}
       <FormFiled htmlFor='banner' label="Banner">
         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition">
-          <input
+          <Input
             type="file"
             name="banner"
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            onChange={(e) => handleFileChange(e, setBannerPreview)}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) {
+                console.log('🎨 [ImagesSection] Banner sélectionné:', file.name)
+                handleFileChange(e, setBannerPreview)
+              }
+            }}
           />
           {bannerPreview ? (
             <img
               src={bannerPreview}
               alt="Banner Preview"
-              className="w-full max-h-40 object-cover rounded"
+              className="w-full max-h-40 object-cover rounded pointer-events-none"
             />
           ) : (
-            <p className="text-gray-400 text-sm text-center">
+            <p className="text-gray-400 text-sm text-center pointer-events-none">
               Cliquez ou glissez pour ajouter une image
             </p>
           )}
@@ -218,15 +232,19 @@ const ImagesSection = () => {
       {/* Multiple Images */}
       <FormFiled htmlFor='images' label="Images">
         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition">
-          <input
+          <Input
             type="file"
             name="images"
             multiple
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            onChange={(e) => handleFileChange(e, setImagesPreview, true)}
+            accept="image/*"
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            onChange={(e) => {
+              console.log('📸 [ImagesSection] Images multiples sélectionnées:', e.target.files?.length || 0)
+              handleFileChange(e, setImagesPreview, true)
+            }}
           />
           {imagesPreview.length > 0 ? (
-            <div className="flex gap-2 flex-wrap mt-2">
+            <div className="flex gap-2 flex-wrap mt-2 pointer-events-none">
               {imagesPreview.map((src, i) => (
                 <img
                   key={i}
@@ -237,8 +255,8 @@ const ImagesSection = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-400 text-sm text-center">
-              Cliquez ou glissez pour ajouter des images
+            <p className="text-gray-400 text-sm text-center pointer-events-none">
+              Cliquez ou glissez pour ajouter des images (max 5)
             </p>
           )}
         </div>

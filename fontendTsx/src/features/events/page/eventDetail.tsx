@@ -4,8 +4,9 @@ import { useEvent } from '@/context/EventContext';
 import { useAuth } from '@/context/AuthContext';
 import usePrivateApi from '@/hooks/usePrivateApi';
 import { PayementService } from '@/features/payment/service/paymentService';
-import { Calendar, MapPin, ArrowLeft, DollarSignIcon, CreditCard, Plus, Minus } from 'lucide-react';
+import { Calendar, MapPin, ArrowLeft, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { User } from '@/types/user';
+
 // --- Types ---
 interface Event {
   id: string | number;
@@ -17,6 +18,12 @@ interface Event {
   capacity: number;
   available_places?: number;
   thumbnail?: string;
+  banner?: string;
+  images?: Array<{
+    id: number;
+    url: string;
+    display_order: number;
+  }>;
   localisation: {
     address?: string;
   };
@@ -54,7 +61,7 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
   return (
     <div className="relative h-[40vh] w-full overflow-hidden rounded-t-[12px]">
       <img
-        src={event.thumbnail || "/assets/img/bg-hero.avif"}
+        src={event.banner || event.thumbnail || "/assets/img/bg-hero.avif"}
         alt={event.name}
         className="absolute inset-0 w-full h-full object-cover"
         loading="lazy"
@@ -83,30 +90,100 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
   );
 };
 
-const OrganizerInfo = ({ creator }: { creator?:User }) => (
-  <Link to={`/user/${creator?.id}`}>
-  
+const ImageCarousel = ({ images }: { images: Array<{ id: number; url: string; display_order: number }> }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  <div className="flex items-center gap-3">
-    <div    className="w-10 h-10 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-      {creator?.profile.profile_picture ? (
-        <img 
-          src={`${creator?.profile.profile_picture}`} 
-          alt={`Photo de ${creator.profile}`}
+  const handlePrevious = useCallback(() => {
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  }, [images.length]);
+
+  const handleNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  }, [images.length]);
+
+  if (!images || images.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <h2 className="text-2xl font-semibold mb-3">Photos de l'événement</h2>
+      <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gray-100">
+        <img
+          src={images[currentIndex].url}
+          alt={`Photo ${currentIndex + 1}`}
           className="w-full h-full object-cover"
+          loading="lazy"
         />
-      ) : (
-        <span className="font-semibold">
-          {creator?.profile.name?.[0]?.toUpperCase() || 'T'}
-        </span>
-      )}
+        
+        {images.length > 1 && (
+          <>
+            {/* Navigation buttons */}
+            <button
+              onClick={handlePrevious}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 transition shadow-lg"
+              aria-label="Image précédente"
+            >
+              <ChevronLeft size={24} className="text-gray-800" />
+            </button>
+            <button
+              onClick={handleNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 transition shadow-lg"
+              aria-label="Image suivante"
+            >
+              <ChevronRight size={24} className="text-gray-800" />
+            </button>
+
+            {/* Indicators */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-2 h-2 rounded-full transition ${
+                    index === currentIndex ? 'bg-white w-8' : 'bg-white/50'
+                  }`}
+                  aria-label={`Aller à l'image ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Counter */}
+            <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              {currentIndex + 1} / {images.length}
+            </div>
+          </>
+        )}
+      </div>
     </div>
-    <div>
-      <p className="text-sm text-gray-600">Organisé par</p>
-      <p className="font-semibold text-gray-800">{creator?.profile.name || "Organisateur anonyme"}</p>
-    </div>
-  </div>
+  );
+};
+
+const OrganizerInfo = ({ creator }: { creator?: User }) => (
+  <div className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+    <h3 className="text-xl font-semibold mb-4">Organisateur</h3>
+    <Link to={`/user/${creator?.id}`} className="block hover:opacity-80 transition">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
+          {creator?.profile.profile_picture ? (
+            <img 
+              src={`${creator?.profile.profile_picture}`} 
+              alt={`Photo de ${creator.profile}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="font-semibold text-lg">
+              {creator?.profile.name?.[0]?.toUpperCase() || 'T'}
+            </span>
+          )}
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">Organisé par</p>
+          <p className="font-semibold text-gray-800 text-lg">{creator?.profile.name || "Organisateur anonyme"}</p>
+        </div>
+      </div>
     </Link>
+  </div>
 );
 
 const ReservationCard: React.FC<ReservationCardProps> = ({
@@ -120,7 +197,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
   location,
   navigate
 }) => {
-  const total =  event.base_price;
+  const total = event.base_price;
 
   const handleReserveClick = useCallback(() => {
     if (!user) {
@@ -131,13 +208,23 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
     setExpanded(true);
   }, [user, navigate, location, setExpanded]);
 
- 
-
-  
   return (
-    <aside className={`transition-all duration-300 h-fit rounded-2xl p-6 border border-gray-100 shadow-md flex flex-col gap-4 ${expanded ? "flex-1" : "w-64"}`}>
+    <aside className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md flex flex-col gap-4 bg-white relative">
+      {/* Bouton X pour fermer (visible uniquement quand expanded) */}
+      {expanded && (
+        <button
+          onClick={() => setExpanded(false)}
+          className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full transition"
+          aria-label="Fermer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      )}
+
       <h3 className="text-xl font-semibold">Réserver votre place</h3>
-      
 
       {!expanded && (
         <>
@@ -155,7 +242,6 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
 
       {expanded && user && (
         <div className="space-y-5">
-
           {/* Total */}
           <div className="flex items-center justify-between text-xl font-bold text-indigo-600">
             <span>Total</span>
@@ -226,7 +312,7 @@ const MapSection: React.FC<MapSectionProps> = ({ address }) => {
   }
 
   return (
-    <div className="mt-4 w-full h-64 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+    <div className="w-full h-[400px] rounded-xl overflow-hidden border border-gray-200 shadow-sm">
       <iframe
         title="Event Location"
         src={mapSrc}
@@ -246,7 +332,7 @@ export default function EventDetail() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const {event, fetchEventById, loading } = useEvent();
+  const { event, fetchEventById, loading } = useEvent();
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [method, setMethod] = useState<'stripe' | 'paypal'>('stripe');
@@ -254,9 +340,8 @@ export default function EventDetail() {
   
   const paymentService = useMemo(() => PayementService(api), [api]);
 
-  // Add debug logging
   console.log('🔍 EventDetail rendered:', { id, loading, event: event?.id, user: user?.id });
-  console.log(event)
+
   useEffect(() => {
     console.log('🔄 useEffect triggered, id:', id);
     if (id) {
@@ -315,35 +400,90 @@ export default function EventDetail() {
   return (
     <section className="bg-white/40 backdrop-blur-3xl min-h-screen">
       <HeroSection event={event} navigate={navigate} />
-      <div className="px-[42px] py-[24px] flex gap-8 flex-col lg:flex-row">
-        <div className="space-y-6 flex-1">
-          <OrganizerInfo creator={event.creator} />
-          <div>
-            <h2 className="text-2xl font-semibold mb-3">À propos de l'événement</h2>
-            <div className='max-h-[20vh] overflow-y-auto pr-2'>
+      
+      <div className="px-[42px] py-[24px]">
+        {/* Container flex avec tous les éléments au même niveau */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+          {/* Organisateur - Ordre 1 en mobile, colonne gauche en desktop */}
+          <div className="order-1 lg:order-none lg:flex-1 lg:flex lg:flex-col lg:gap-6">
+            <OrganizerInfo creator={event.creator} />
+            
+            {/* Photos - Desktop seulement (dans la même colonne que Organisateur) */}
+            <div className="hidden lg:block">
+              {event.images && event.images.length > 0 ? (
+                <ImageCarousel images={event.images} />
+              ) : (
+                <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
+                  <p className="text-gray-400">Aucune image disponible</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Réservation - Ordre 2 en mobile, colonne droite en desktop */}
+          <div className="order-2 lg:order-none lg:flex-1 lg:flex lg:flex-col lg:gap-6">
+            <ReservationCard
+              event={event}
+              user={user}
+              expanded={expanded}
+              setExpanded={setExpanded}
+              method={method}
+              setMethod={setMethod}
+              handleCheckout={handleCheckout}
+              location={location}
+              navigate={navigate}
+            />
+            
+            {/* Description - Desktop seulement (dans la même colonne que Réservation) */}
+            <div className="hidden lg:block h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+              <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
+              <div className="max-h-[300px] overflow-y-auto pr-2 mb-4">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  {event.description || "Aucune description disponible."}
+                </p>
+              </div>
+
+              {event.categorie && (
+                <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
+                  Catégorie #{event.categorie.name}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Description - Ordre 3 en mobile uniquement */}
+          <div className="order-3 lg:hidden h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+            <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
+            <div className="max-h-[300px] overflow-y-auto pr-2 mb-4">
               <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                 {event.description || "Aucune description disponible."}
               </p>
             </div>
+
+            {event.categorie && (
+              <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
+                Catégorie #{event.categorie.name}
+              </span>
+            )}
           </div>
-          {event.categorie && (
-            <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
-              Catégorie #{event.categorie.name}
-            </span>
-          )}
+
+          {/* Photos - Ordre 4 en mobile uniquement */}
+          <div className="order-4 lg:hidden">
+            {event.images && event.images.length > 0 ? (
+              <ImageCarousel images={event.images} />
+            ) : (
+              <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
+                <p className="text-gray-400">Aucune image disponible</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Map en pleine largeur - Cachée en mobile, visible en desktop */}
+        <div className="hidden lg:block rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+          <h2 className="text-2xl font-semibold mb-4">Localisation</h2>
           <MapSection address={event.localisation.address} />
         </div>
-        <ReservationCard
-          event={event}
-          user={user}
-          expanded={expanded}
-          setExpanded={setExpanded}
-          method={method}
-          setMethod={setMethod}
-          handleCheckout={handleCheckout}
-          location={location}
-          navigate={navigate}
-        />
       </div>
     </section>
   );
