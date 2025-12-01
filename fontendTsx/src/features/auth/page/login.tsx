@@ -37,7 +37,7 @@ export default function Login() {
     }
 
     const LoginSchema = z.object({
-        email: z.email(),
+        email: z.email({ message: t('validation.email') }),
         password: z.string().min(6, { message: t('validation.minLength', { count: 6 }) }),
     });
 
