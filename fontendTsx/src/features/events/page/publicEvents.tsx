@@ -327,6 +327,7 @@ export default function PublicEvents() {
                       {event.thumbnail ? (
                        <ThumbnailImage
                           src={event.thumbnail_path}
+                          variants={event.thumbnail_variants}  // ← AJOUTÉ
                           alt={event.name}
                           size="md"
                           className="w-full aspect-square object-cover"

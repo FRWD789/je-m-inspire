@@ -6,6 +6,17 @@ interface ImageCarouselProps {
   images: Array<{
     id: number;
     url: string;
+    image_path?: string;
+    variants?: {
+      sm?: string;
+      md?: string;
+      lg?: string;
+      xl?: string;
+      sm_webp?: string;
+      md_webp?: string;
+      lg_webp?: string;
+      xl_webp?: string;
+    };
     display_order?: number;
   }>;
 }
@@ -86,12 +97,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
               }}
             >
               <ResponsiveImage
-                src={image.url}
-                alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : 'low'}
-              />
+                    src={image.image_path || image.url}
+                    variants={image.variants}  // ← AJOUTÉ
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={index === 0 ? 'high' : 'low'}
+                />
             </div>
           ))}
         </div>

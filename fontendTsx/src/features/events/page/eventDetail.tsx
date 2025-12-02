@@ -63,7 +63,8 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
   return (
     <div className="relative h-[40vh] w-full overflow-hidden rounded-t-[12px]">
       <ResponsiveImage
-        src={event.banner || event.thumbnail}
+        src={event.banner_path || event.thumbnail_path}
+        variants={event.banner_variants || event.thumbnail_variants}  // ← AJOUTÉ
         alt={event.name}
         className="absolute inset-0 w-full h-full object-cover"
         loading="eager"
