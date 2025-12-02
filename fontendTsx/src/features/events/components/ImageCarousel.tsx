@@ -1,22 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import ResponsiveImage from '@/components/ui/ResponsiveImage';
 
 interface ImageData {
   id: number;
   image_path: string;
   url?: string;
-  variants?: {
-    original?: string;
-    sm?: string;
-    md?: string;
-    lg?: string;
-    xl?: string;
-    sm_webp?: string;
-    md_webp?: string;
-    lg_webp?: string;
-    xl_webp?: string;
-  };
+  variants?: any;
 }
 
 interface ImageCarouselProps {
@@ -26,27 +15,33 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [imageLoadStatus, setImageLoadStatus] = useState<Record<number, 'loading' | 'loaded' | 'error'>>({});
 
   // Filtrer les images valides
   const validImages = Array.isArray(images) && images.length > 0 
     ? images.filter(img => img.image_path || img.url)
     : [];
 
+  // 🔍 DEBUG: Afficher la structure des images
+  useEffect(() => {
+    console.group('🖼️ IMAGE CAROUSEL DEBUG');
+    console.log('Total images reçues:', images?.length);
+    console.log('Images valides:', validImages.length);
+    console.log('Données complètes:', JSON.stringify(images, null, 2));
+    console.groupEnd();
+  }, [images]);
+
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
-    
     setIsTransitioning(true);
     setCurrentIndex((prev) => prev === 0 ? validImages.length - 1 : prev - 1);
-    
     setTimeout(() => setIsTransitioning(false), 300);
   }, [validImages.length, isTransitioning]);
 
   const handleNext = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
-    
     setIsTransitioning(true);
     setCurrentIndex((prev) => prev === validImages.length - 1 ? 0 : prev + 1);
-    
     setTimeout(() => setIsTransitioning(false), 300);
   }, [validImages.length, isTransitioning]);
 
@@ -81,37 +76,100 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     );
   }
 
+  // 🔍 Construction d'URL ultra-simple
+  const buildSimpleUrl = (image: ImageData): string => {
+    const API_BASE = 'https://api.jminspire.com';
+    const path = image.image_path || image.url || '';
+    
+    // Si déjà une URL complète
+    if (path.startsWith('http')) {
+      console.log('✅ URL complète détectée:', path);
+      return path;
+    }
+    
+    // Si c'est un chemin relatif
+    const fullUrl = `${API_BASE}/storage/${path}`;
+    console.log('🔨 URL construite:', fullUrl);
+    return fullUrl;
+  };
+
   return (
     <div className="mb-6">
       <h2 className="text-2xl font-semibold mb-3">
         Photos de l'événement ({validImages.length})
       </h2>
       
-      {/* ✅ Conteneur avec position relative et hauteur fixe */}
-      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-900 group">
+      {/* 🎯 DEBUG: Afficher les infos de l'image courante */}
+      <div className="mb-2 p-3 bg-blue-50 rounded text-xs font-mono">
+        <div><strong>Image actuelle:</strong> {currentIndex + 1}/{validImages.length}</div>
+        <div><strong>ID:</strong> {validImages[currentIndex]?.id}</div>
+        <div><strong>Path:</strong> {validImages[currentIndex]?.image_path}</div>
+        <div><strong>URL construite:</strong> {buildSimpleUrl(validImages[currentIndex])}</div>
+        <div><strong>Variants:</strong> {validImages[currentIndex]?.variants ? 'Présents' : 'Absents'}</div>
+        <div><strong>Status:</strong> {imageLoadStatus[validImages[currentIndex]?.id] || 'non chargée'}</div>
+      </div>
+      
+      {/* Conteneur principal avec hauteur fixe et fond visible pour debug */}
+      <div 
+        className="relative w-full rounded-xl overflow-hidden group"
+        style={{
+          height: '500px',
+          backgroundColor: '#1a1a1a', // Fond noir pour voir si image charge
+        }}
+      >
         
-        {/* ✅ Images avec position absolute pour occuper tout l'espace */}
-        {validImages.map((image, index) => (
-          <div
-            key={image.id}
-            className="absolute inset-0 transition-opacity duration-300"
-            style={{
-              opacity: index === currentIndex ? 1 : 0,
-              zIndex: index === currentIndex ? 10 : 0,
-              pointerEvents: index === currentIndex ? 'auto' : 'none',
-            }}
-          >
-            {/* ✅ Image avec width et height à 100% + object-fit */}
-            <ResponsiveImage
-              src={image.image_path || image.url}
-              variants={image.variants}
-              alt={`Photo ${index + 1}`}
-              className="w-full h-full object-cover object-center"
-              loading={index === 0 ? 'eager' : 'lazy'}
-              fetchPriority={index === 0 ? 'high' : 'auto'}
-            />
-          </div>
-        ))}
+        {/* Images avec absolute positioning */}
+        {validImages.map((image, index) => {
+          const imageUrl = buildSimpleUrl(image);
+          
+          return (
+            <div
+              key={image.id}
+              className="absolute inset-0 transition-opacity duration-300"
+              style={{
+                opacity: index === currentIndex ? 1 : 0,
+                zIndex: index === currentIndex ? 10 : 0,
+                pointerEvents: index === currentIndex ? 'auto' : 'none',
+              }}
+            >
+              {/* 🎯 IMAGE ULTRA-SIMPLE sans srcset, sans variants */}
+              <img
+                src={imageUrl}
+                alt={`Photo ${index + 1}`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                  display: 'block', // Elimine les espaces inline
+                }}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                onLoad={() => {
+                  console.log(`✅ Image ${index + 1} chargée:`, imageUrl);
+                  setImageLoadStatus(prev => ({ ...prev, [image.id]: 'loaded' }));
+                }}
+                onError={(e) => {
+                  console.error(`❌ Erreur chargement image ${index + 1}:`, imageUrl);
+                  console.error('Détails:', e);
+                  setImageLoadStatus(prev => ({ ...prev, [image.id]: 'error' }));
+                }}
+              />
+              
+              {/* Indicateur de chargement */}
+              {imageLoadStatus[image.id] === 'error' && (
+                <div 
+                  className="absolute inset-0 flex items-center justify-center bg-red-900/50 text-white"
+                  style={{ zIndex: 20 }}
+                >
+                  <div className="text-center p-4">
+                    <p className="font-bold mb-2">❌ Erreur de chargement</p>
+                    <p className="text-sm opacity-80 break-all">{imageUrl}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Boutons de navigation */}
         {validImages.length > 1 && (
