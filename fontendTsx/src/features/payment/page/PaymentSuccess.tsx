@@ -220,14 +220,16 @@ export default function PaymentSuccess() {
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             {/* Event Image or Placeholder */}
             {event.thumbnail ? (
-              <ThumbnailImage
-                src={event.thumbnail_path}
-                variants={event.thumbnail_variants}  
-                alt={event.name}
-                size="md"
-                className="w-1/2 sm:w-32 h-32 rounded-lg object-cover shadow-md"
-                loading="lazy"
-              />
+              <div> 
+                <ThumbnailImage
+                  src={event.thumbnail_path}
+                  variants={event.thumbnail_variants}  
+                  alt={event.name}
+                  size="md"
+                  className="w-full sm:w-32 h-32 rounded-lg object-cover shadow-md"
+                  loading="lazy"
+                />
+              </div>
             ) : (
               <div className="w-full sm:w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg shadow-md flex items-center justify-center">
                 <CalendarDays className="w-16 h-16 text-blue-600 opacity-60" />
