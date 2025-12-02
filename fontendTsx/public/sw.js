@@ -104,11 +104,11 @@ async function cacheFirstStrategy(request) {
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
-      console.log('📸 Cache HIT:', request.url);
+     
       return cachedResponse;
     }
 
-    console.log('⬇️ Cache MISS, téléchargement:', request.url);
+    
     const networkResponse = await fetch(request);
 
     // Mettre en cache seulement si succès
