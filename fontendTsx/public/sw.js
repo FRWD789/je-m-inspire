@@ -1,123 +1,193 @@
-const CACHE_NAME = 'jminspire-v1';
-const STATIC_CACHE = 'jminspire-static-v1';
-const IMAGE_CACHE = 'jminspire-images-v1';
+// ==========================================
+// SERVICE WORKER - VERSION CORRIGÉE
+// ==========================================
+// Empêche le cache des requêtes POST
+// Optimise le cache pour les assets statiques
 
-// Fichiers critiques à mettre en cache lors de l'installation
-const STATIC_FILES = [
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `jminspire-cache-${CACHE_VERSION}`;
+
+// Assets à mettre en cache immédiatement
+const STATIC_ASSETS = [
   '/',
-  '/assets/img/bg-hero.avif',
-  // Ajoute ici les assets critiques
+  '/index.html',
+  '/assets/img/logo.png',
+  '/assets/img/logo-white.png',
 ];
 
-// Installation du Service Worker
+// ==========================================
+// INSTALLATION - Mise en cache initiale
+// ==========================================
 self.addEventListener('install', (event) => {
   console.log('✅ Service Worker: Installation');
   
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      console.log('📦 Service Worker: Mise en cache des fichiers statiques');
-      return cache.addAll(STATIC_FILES);
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('📦 Service Worker: Mise en cache des assets statiques');
+      return cache.addAll(STATIC_ASSETS).catch((error) => {
+        console.error('❌ Erreur cache initial:', error);
+      });
     })
   );
   
-  // Force l'activation immédiate
+  // Activer immédiatement le nouveau SW
   self.skipWaiting();
 });
 
-// Activation du Service Worker
+// ==========================================
+// ACTIVATION - Nettoyage des anciens caches
+// ==========================================
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker: Activation');
+  console.log('🔄 Service Worker: Activation');
   
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => {
-            // Supprimer les anciens caches
-            return name !== STATIC_CACHE && 
-                   name !== IMAGE_CACHE && 
-                   name !== CACHE_NAME;
-          })
-          .map((name) => {
-            console.log('🗑️ Service Worker: Suppression ancien cache:', name);
-            return caches.delete(name);
-          })
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('🗑️ Service Worker: Suppression ancien cache', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
       );
     })
   );
   
-  // Prendre le contrôle immédiatement
+  // Prendre contrôle immédiatement
   return self.clients.claim();
 });
 
-// Interception des requêtes
+// ==========================================
+// FETCH - Gestion des requêtes réseau
+// ==========================================
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  // Stratégie pour les images
-  if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|avif|svg)$/)) {
-    event.respondWith(handleImageRequest(event.request));
-    return;
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // ✅ CRITIQUE: Ne JAMAIS cacher les requêtes POST/PUT/DELETE
+  if (request.method !== 'GET') {
+    console.log('🚫 Service Worker: Requête non-GET ignorée', request.method, url.pathname);
+    return; // Laisser passer sans intervenir
   }
-  
-  // Stratégie pour les autres fichiers
-  event.respondWith(handleRequest(event.request));
+
+  // Ne pas cacher les requêtes API
+  if (url.pathname.startsWith('/api/')) {
+    console.log('🌐 Service Worker: Requête API passthrough', url.pathname);
+    return; // Laisser passer sans cache
+  }
+
+  // Stratégie de cache pour les assets statiques
+  event.respondWith(handleRequest(request));
 });
 
-// Gestion des requêtes d'images (Cache First)
-async function handleImageRequest(request) {
+// ==========================================
+// GESTION DES REQUÊTES AVEC CACHE
+// ==========================================
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  
+  // Stratégie différente selon le type de ressource
+  if (isImageRequest(url)) {
+    return cacheFirstStrategy(request);
+  } else if (isStaticAsset(url)) {
+    return cacheFirstStrategy(request);
+  } else {
+    return networkFirstStrategy(request);
+  }
+}
+
+// ==========================================
+// STRATÉGIE: Cache d'abord (images, fonts, CSS, JS)
+// ==========================================
+async function cacheFirstStrategy(request) {
   try {
-    // 1. Chercher dans le cache
     const cachedResponse = await caches.match(request);
+    
     if (cachedResponse) {
       console.log('📸 Cache HIT:', request.url);
       return cachedResponse;
     }
-    
-    // 2. Sinon, fetch depuis le réseau
-    console.log('🌐 Cache MISS:', request.url);
-    const response = await fetch(request);
-    
-    // 3. Mettre en cache si succès
-    if (response.ok) {
-      const cache = await caches.open(IMAGE_CACHE);
-      cache.put(request, response.clone());
-    }
-    
-    return response;
-  } catch (error) {
-    console.error('❌ Erreur fetch image:', error);
-    // Retourner une image placeholder en cas d'erreur
-    return new Response('Image non disponible', { status: 404 });
-  }
-}
 
-// Gestion des autres requêtes (Network First avec fallback cache)
-async function handleRequest(request) {
-  try {
-    // 1. Essayer le réseau d'abord
-    const response = await fetch(request);
-    
-    // 2. Mettre en cache si succès
-    if (response.ok) {
+    console.log('⬇️ Cache MISS, téléchargement:', request.url);
+    const networkResponse = await fetch(request);
+
+    // Mettre en cache seulement si succès
+    if (networkResponse && networkResponse.status === 200) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, networkResponse.clone());
     }
-    
-    return response;
+
+    return networkResponse;
   } catch (error) {
-    // 3. Fallback sur le cache si erreur réseau
+    console.error('❌ Erreur cacheFirstStrategy:', error);
+    
+    // Fallback vers le cache même si réseau échoue
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
-      console.log('📦 Fallback cache:', request.url);
       return cachedResponse;
     }
     
-    // 4. Si rien dans le cache non plus
-    console.error('❌ Aucune réponse disponible:', error);
-    return new Response('Contenu non disponible hors ligne', { 
-      status: 503,
-      statusText: 'Service Unavailable' 
-    });
+    throw error;
   }
 }
+
+// ==========================================
+// STRATÉGIE: Réseau d'abord (HTML, données)
+// ==========================================
+async function networkFirstStrategy(request) {
+  try {
+    const networkResponse = await fetch(request);
+    
+    // Mettre à jour le cache si succès
+    if (networkResponse && networkResponse.status === 200) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.error('❌ Réseau inaccessible, fallback cache:', request.url);
+    
+    // Fallback vers le cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    throw error;
+  }
+}
+
+// ==========================================
+// HELPERS - Détection types de ressources
+// ==========================================
+function isImageRequest(url) {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'];
+  return imageExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext));
+}
+
+function isStaticAsset(url) {
+  const staticExtensions = ['.css', '.js', '.woff', '.woff2', '.ttf', '.otf', '.eot'];
+  return staticExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext));
+}
+
+// ==========================================
+// MESSAGE HANDLER - Communication avec le client
+// ==========================================
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
+  }
+});
+
+console.log('🚀 Service Worker chargé et prêt');
