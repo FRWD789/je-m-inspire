@@ -513,26 +513,6 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
           </div>
         </div>
       </div>
-
-      {/* Call to action final */}
-      <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-center text-white shadow-2xl">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-          Prêt à booster vos revenus ?
-        </h2>
-        <p className="text-xl mb-8 text-blue-100">
-          Rejoignez les professionnels qui ont déjà fait le choix de Pro+
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => handleSubscribe("stripe")}
-            disabled={!!actionLoading}
-            className="flex items-center justify-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 disabled:opacity-50 transition-all font-bold text-lg shadow-lg"
-          >
-            <ArrowRight size={20} />
-            Passer à Pro+ maintenant
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
