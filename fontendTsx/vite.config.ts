@@ -24,4 +24,19 @@ export default defineConfig({
       port: 5173,
     },
   },
-})
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Séparer les vendors pour meilleur caching
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['lucide-react'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+    // Optimisation des images statiques
+    assetsInlineLimit: 0, // Ne pas inline les images en base64
+  },
+});

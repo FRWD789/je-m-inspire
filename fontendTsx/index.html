@@ -1,19 +1,94 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/assets/img/logo-white.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#4F46E5" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     
-    <title>Jminspire</title>
+    <!-- SEO Meta -->
+    <meta name="description" content="Je m'inspire - Plateforme d'événements et de découvertes" />
+    <title>Je m'inspire</title>
+    
+    <!-- ========================================
+         OPTIMISATIONS LIGHTHOUSE - CRITICAL
+         ======================================== -->
+    
+    <!-- 1. DNS Prefetch + Preconnect pour API Backend -->
+    <!-- Établit la connexion AVANT la première requête → Gain ~200-500ms -->
+    <link rel="dns-prefetch" href="https://api.jminspire.com" />
+    <link rel="preconnect" href="https://api.jminspire.com" crossorigin />
+    
+    <!-- 2. Preconnect Google Maps (utilisé dans plusieurs pages) -->
+    <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+    <link rel="preconnect" href="https://maps.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://maps.gstatic.com" crossorigin />
+    
+    <!-- 3. Preload des fonts CRITIQUES uniquement -->
+    <!-- IMPORTANT: Charger SEULEMENT les fonts utilisées above-the-fold -->
+    <!-- Formats modernes (woff2) prioritaires -->
+    <link
+      rel="preload"
+      href="/fonts/AktivGrotesk-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/Luimp-Bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    
+    <!-- 4. Preload du CSS principal (inline le CSS critique si possible) -->
+    <!-- Note: Vite génère automatiquement le nom avec hash -->
+    
+    <!-- ========================================
+         SECURITY HEADERS
+         ======================================== -->
+    
+    <!-- Content Security Policy (CSP) -->
+    <meta 
+      http-equiv="Content-Security-Policy" 
+      content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        img-src 'self' data: https: blob: https://api.jminspire.com https://maps.gstatic.com https://maps.googleapis.com;
+        font-src 'self' data: https://fonts.gstatic.com;
+        connect-src 'self' https://api.jminspire.com https://maps.googleapis.com;
+        frame-src 'self' https://www.google.com;
+      "
+    />
+    
+    <!-- Permissions Policy -->
+    <meta 
+      http-equiv="Permissions-Policy" 
+      content="geolocation=(self), microphone=(), camera=()"
+    />
+    
+    <!-- ========================================
+         PWA & MOBILE OPTIMIZATION
+         ======================================== -->
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#60993E" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/logo-192.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- 
+      IMPORTANT: Script chargé avec type="module" 
+      → Moderne, non-bloquant, defer automatique 
+    -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

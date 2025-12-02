@@ -26,15 +26,19 @@ class EventResource extends JsonResource
             'is_cancelled' => (bool) $this->is_cancelled,
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
 
-            // Images triées par ordre d'affichage
-            'images' => $this->whenLoaded('images', function() {
-                return $this->images->map(function($image) {
-                    return [
-                        'id' => $image->id,
-                        'url' => $image->image_url,
-                        'display_order' => $image->display_order,
-                    ];
-                });
+            'thumbnail' => $this->thumbnail_path,
+            'thumbnail_variants' => $this->getImageVariants($this->thumbnail_path),
+
+            'banner' => $this->banner_path,
+            'banner_variants' => $this->getImageVariants($this->banner_path),
+
+            'images' => $this->eventImages->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'url' => $image->image_path,
+                    'variants' => $this->getImageVariants($image->image_path),
+                    'display_order' => $image->display_order,
+                ];
             }),
 
             'localisation' => $this->whenLoaded('localisation', function() {

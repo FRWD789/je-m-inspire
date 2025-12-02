@@ -4,6 +4,7 @@ import { MapEvents } from '@/components/map';
 import { useEvent } from '@/context/EventContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useHeaderHeight } from '@/layout/Layout';
+import { ThumbnailImage } from '@/components/ui/ResponsiveImage';
 
 export default function PublicEvents() {
   const location = useLocation();
@@ -324,10 +325,12 @@ export default function PublicEvents() {
                     {/* Image */}
                     <div className="relative h-48 overflow-hidden bg-gray-200">
                       {event.thumbnail ? (
-                        <img
-                          src={event.thumbnail}
+                       <ThumbnailImage
+                          src={event.thumbnail_path}
                           alt={event.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          size="md"
+                          className="w-full aspect-square object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">

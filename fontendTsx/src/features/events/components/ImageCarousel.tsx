@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ResponsiveImage from '@/components/ui/ResponsiveImage';
 
 interface ImageCarouselProps {
   images: Array<{
@@ -67,21 +68,14 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gray-100">
         {/* Images */}
         {images.map((image, index) => (
-          <img
-            key={image.id}
-            src={image.url}
-            alt={`Photo ${index + 1}`}
-            loading={loadedImages.has(index) ? 'eager' : 'lazy'}
-            decoding="async"
-            fetchPriority={index === currentIndex ? 'high' : 'low'}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-            }`}
-            style={{
-              // Précharger les images adjacentes en arrière-plan
-              visibility: loadedImages.has(index) ? 'visible' : 'hidden',
-            }}
-          />
+            <ResponsiveImage
+                key={image.id}
+                src={image.url}
+                alt={`Photo ${index + 1}`}
+                loading={loadedImages.has(index) ? 'eager' : 'lazy'}
+                fetchPriority={index === currentIndex ? 'high' : 'low'}
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            />
         ))}
         
         {images.length > 1 && (

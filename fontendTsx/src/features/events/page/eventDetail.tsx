@@ -7,6 +7,7 @@ import { PayementService } from '@/features/payment/service/paymentService';
 import { Calendar, MapPin, ArrowLeft, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { User } from '@/types/user';
 import ImageCarousel from '@/features/events/components/ImageCarousel';
+import ResponsiveImage from '@/components/ui/ResponsiveImage';
 
 // --- Types ---
 interface Event {
@@ -61,13 +62,12 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
 
   return (
     <div className="relative h-[40vh] w-full overflow-hidden rounded-t-[12px]">
-      <img
-        src={event.banner || event.thumbnail || "/assets/img/bg-hero.avif"}
+      <ResponsiveImage
+        src={event.banner || event.thumbnail}
         alt={event.name}
         className="absolute inset-0 w-full h-full object-cover"
-        loading="eager"        
-        fetchpriority="high"   
-        decoding="async"  
+        loading="eager"
+        fetchPriority="high"
       />
       <div className="absolute inset-0 bg-black/15 flex flex-col justify-end p-8 text-white">
         <button
