@@ -7,12 +7,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Trait OptimizesImages - VERSION CORRIGÉE
+ * Trait OptimizesImages - VERSION CORRIGÉE (Sans padding noir)
  *
- * ✅ Convertit TOUJOURS en JPG (même si PNG uploadé)
+ * ✅ Préserve TOUJOURS l'aspect ratio original
+ * ✅ Ne ajoute JAMAIS de padding noir
  * ✅ Génère TOUTES les variantes (sm, md, lg, xl)
  * ✅ Crée WebP pour chaque variante
- * ✅ Supprime le PNG temporaire
  */
 trait OptimizesImages
 {
@@ -30,7 +30,7 @@ trait OptimizesImages
         $baseFilename = time() . '_' . Str::random(10);
         $originalExtension = strtolower($file->getClientOriginalExtension());
 
-        // ✅ ÉTAPE 1 : Sauvegarder temporairement (garder extension originale)
+        // ÉTAPE 1 : Sauvegarder temporairement
         $tempFilename = $baseFilename . '.' . $originalExtension;
         $tempPath = $file->storeAs($directory, $tempFilename, 'public');
         $tempFullPath = storage_path('app/public/' . $tempPath);
@@ -40,7 +40,7 @@ trait OptimizesImages
         ini_set('memory_limit', '1024M');
 
         try {
-            // ✅ ÉTAPE 2 : Charger l'image
+            // ÉTAPE 2 : Charger l'image
             $imageInfo = getimagesize($tempFullPath);
             if (!$imageInfo) {
                 throw new \Exception("Impossible de lire l'image");
@@ -53,17 +53,23 @@ trait OptimizesImages
                 throw new \Exception("Impossible de charger l'image");
             }
 
-            // ✅ ÉTAPE 3 : Sauvegarder l'ORIGINAL en JPG + WebP
+            // ÉTAPE 3 : Sauvegarder l'ORIGINAL en JPG + WebP
             $originalJpgPath = storage_path("app/public/{$directory}/{$baseFilename}.jpg");
             $originalWebpPath = storage_path("app/public/{$directory}/{$baseFilename}.webp");
 
-            // Redimensionner si nécessaire
-            if ($originalWidth > $maxWidth) {
-                $ratio = $maxWidth / $originalWidth;
-                $newWidth = $maxWidth;
+            // ✅ CORRECTION : Préserver l'aspect ratio, ne PAS forcer carré
+            if ($originalWidth > $maxWidth || $originalHeight > $maxWidth) {
+                // Calculer les nouvelles dimensions EN PRÉSERVANT L'ASPECT RATIO
+                $ratio = min($maxWidth / $originalWidth, $maxWidth / $originalHeight);
+                $newWidth = (int)($originalWidth * $ratio);
                 $newHeight = (int)($originalHeight * $ratio);
 
                 $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+                // ✅ Fond blanc (au cas où il y aurait de la transparence)
+                $white = imagecolorallocate($resized, 255, 255, 255);
+                imagefill($resized, 0, 0, $white);
+
                 imagecopyresampled(
                     $resized, $source,
                     0, 0, 0, 0,
@@ -75,12 +81,18 @@ trait OptimizesImages
                 imagewebp($resized, $originalWebpPath, $quality);
                 imagedestroy($resized);
             } else {
-                // Image déjà assez petite, juste convertir
-                imagejpeg($source, $originalJpgPath, $quality);
-                imagewebp($source, $originalWebpPath, $quality);
+                // Image déjà assez petite, juste convertir SANS REDIMENSIONNER
+                $newImg = imagecreatetruecolor($originalWidth, $originalHeight);
+                $white = imagecolorallocate($newImg, 255, 255, 255);
+                imagefill($newImg, 0, 0, $white);
+                imagecopy($newImg, $source, 0, 0, 0, 0, $originalWidth, $originalHeight);
+
+                imagejpeg($newImg, $originalJpgPath, $quality);
+                imagewebp($newImg, $originalWebpPath, $quality);
+                imagedestroy($newImg);
             }
 
-            // ✅ ÉTAPE 4 : Générer les variantes responsive
+            // ÉTAPE 4 : Générer les variantes responsive
             $this->generateResponsiveVariants(
                 $originalJpgPath,
                 $directory,
@@ -90,7 +102,7 @@ trait OptimizesImages
                 $quality
             );
 
-            // ✅ ÉTAPE 5 : Supprimer le fichier temporaire (PNG)
+            // ÉTAPE 5 : Supprimer le fichier temporaire
             if ($originalExtension !== 'jpg' && $originalExtension !== 'jpeg') {
                 if (file_exists($tempFullPath)) {
                     unlink($tempFullPath);
@@ -118,12 +130,12 @@ trait OptimizesImages
             ini_set('memory_limit', $originalMemoryLimit);
         }
 
-        // ✅ RETOURNER le chemin du JPG (pas du PNG)
         return "{$directory}/{$baseFilename}.jpg";
     }
 
     /**
-     * Génère TOUTES les variantes responsive (sm, md, lg, xl)
+     * Génère TOUTES les variantes responsive EN PRÉSERVANT L'ASPECT RATIO
+     * ✅ CORRECTION : Ne jamais ajouter de padding noir
      */
     private function generateResponsiveVariants($originalJpgPath, $directory, $basename, $originalWidth, $originalHeight, $quality)
     {
@@ -138,18 +150,13 @@ trait OptimizesImages
         if (!$source) return;
 
         foreach ($sizes as $sizeKey => $targetWidth) {
-            // ✅ FIX : Générer MÊME si l'image est plus petite
-            // Dans ce cas, on duplique l'image à sa taille réelle
-
-            if ($originalWidth <= $targetWidth) {
-                // Image trop petite : dupliquer sans redimensionner
+            // Si l'image est plus petite que la cible, dupliquer sans redimensionner
+            if ($originalWidth <= $targetWidth && $originalHeight <= $targetWidth) {
                 $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
                 $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
 
-                // Copier l'original
                 copy($originalJpgPath, $jpgPath);
 
-                // Créer WebP
                 $tempSource = imagecreatefromjpeg($originalJpgPath);
                 imagewebp($tempSource, $webpPath, $quality);
                 imagedestroy($tempSource);
@@ -157,13 +164,19 @@ trait OptimizesImages
                 continue;
             }
 
-            // Calculer nouvelles dimensions
-            $ratio = $targetWidth / $originalWidth;
-            $newWidth = $targetWidth;
+            // ✅ CORRECTION : Calculer dimensions EN PRÉSERVANT L'ASPECT RATIO
+            // Ne PAS forcer à être carré !
+            $ratio = min($targetWidth / $originalWidth, $targetWidth / $originalHeight);
+            $newWidth = (int)($originalWidth * $ratio);
             $newHeight = (int)($originalHeight * $ratio);
 
-            // Créer image redimensionnée
+            // ✅ Créer image aux dimensions CALCULÉES (pas forcément carrée)
             $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+            // Fond blanc au cas où
+            $white = imagecolorallocate($resized, 255, 255, 255);
+            imagefill($resized, 0, 0, $white);
+
             imagecopyresampled(
                 $resized, $source,
                 0, 0, 0, 0,
@@ -215,38 +228,5 @@ trait OptimizesImages
             default:
                 return false;
         }
-    }
-
-    /**
-     * Retourne les chemins relatifs de toutes les variantes
-     *
-     * @param string $originalPath (ex: 'event_images/123_abc.jpg')
-     * @return array Chemins relatifs
-     */
-    public function getImageVariants($originalPath)
-    {
-        if (!$originalPath) {
-            return [
-                'original' => null,
-                'sm' => null, 'md' => null, 'lg' => null, 'xl' => null,
-                'sm_webp' => null, 'md_webp' => null, 'lg_webp' => null, 'xl_webp' => null,
-            ];
-        }
-
-        $pathInfo = pathinfo($originalPath);
-        $directory = $pathInfo['dirname'];
-        $filename = $pathInfo['filename'];
-
-        return [
-            'original' => $originalPath,
-            'sm' => "{$directory}/{$filename}_sm.jpg",
-            'md' => "{$directory}/{$filename}_md.jpg",
-            'lg' => "{$directory}/{$filename}_lg.jpg",
-            'xl' => "{$directory}/{$filename}_xl.jpg",
-            'sm_webp' => "{$directory}/{$filename}_sm.webp",
-            'md_webp' => "{$directory}/{$filename}_md.webp",
-            'lg_webp' => "{$directory}/{$filename}_lg.webp",
-            'xl_webp' => "{$directory}/{$filename}_xl.webp",
-        ];
     }
 }
