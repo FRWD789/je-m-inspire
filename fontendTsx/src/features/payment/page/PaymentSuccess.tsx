@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2, ArrowLeft, Calendar, MapPin, Tag, DollarSign, CalendarDays } from "lucide-react";
 import { PayementService } from "@/features/payment/service/paymentService";
+import { ThumbnailImage } from "@/components/ui/ResponsiveImage"
 
 interface PaymentResponse {
   success: boolean;
@@ -219,10 +220,13 @@ export default function PaymentSuccess() {
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             {/* Event Image or Placeholder */}
             {event.thumbnail ? (
-              <img
-                src={event.thumbnail}
+              <ThumbnailImage
+                src={event.thumbnail_path}
+                variants={event.thumbnail_variants}  
                 alt={event.name}
-                className="w-full sm:w-32 h-32 object-cover rounded-lg shadow-md"
+                size="md"
+                className="w-full aspect-square object-cover"
+                loading="lazy"
               />
             ) : (
               <div className="w-full sm:w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg shadow-md flex items-center justify-center">
