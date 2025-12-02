@@ -1,108 +1,110 @@
 import React from 'react';
 
 /**
- * ResponsiveImage - Composant optimisé pour Lighthouse
+ * ResponsiveImage - VERSION CORRIGÉE
  * 
- * Utilise <picture> + srcset pour servir la bonne taille selon:
- * - Format du navigateur (WebP prioritaire, fallback JPG)
- * - Taille de l'écran (mobile, tablet, desktop)
- * 
- * Résultat : Économies de 50-70% sur le poids des images
+ * Utilise les variantes retournées par l'API (chemins relatifs)
+ * et construit les URLs complètes
  */
 
 interface ResponsiveImageProps {
-  /** Chemin de l'image originale depuis l'API (ex: 'event_images/123_abc.jpg') */
+  /** Chemin de l'image originale (ex: 'event_images/123_abc.jpg') */
   src: string;
   
-  /** Texte alternatif */
+  /** Variantes déjà calculées par l'API (optionnel) */
+  variants?: {
+    original?: string;
+    sm?: string;
+    md?: string;
+    lg?: string;
+    xl?: string;
+    sm_webp?: string;
+    md_webp?: string;
+    lg_webp?: string;
+    xl_webp?: string;
+  };
+  
   alt: string;
-  
-  /** Classes Tailwind/CSS */
   className?: string;
-  
-  /** Loading strategy - 'lazy' par défaut, 'eager' pour LCP */
   loading?: 'lazy' | 'eager';
-  
-  /** Priorité de fetch - 'high' pour LCP uniquement */
   fetchPriority?: 'high' | 'low' | 'auto';
-  
-  /** Callback quand l'image est chargée */
   onLoad?: () => void;
 }
 
 const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   src,
+  variants,
   alt,
   className = '',
   loading = 'lazy',
   fetchPriority = 'auto',
   onLoad,
 }) => {
-  // Extraire le chemin de base et construire les variantes
-  const getImageVariants = (originalPath: string) => {
-    if (!originalPath) return null;
-    
-    const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
-    const pathParts = originalPath.split('/');
-    const filename = pathParts[pathParts.length - 1];
-    const directory = pathParts.slice(0, -1).join('/');
-    const basename = filename.split('.')[0]; // Enlever l'extension
-    
-    const baseUrl = `${API_BASE}/storage/${directory}`;
-    
-    return {
-      // WebP (format moderne, prioritaire)
-      sm_webp: `${baseUrl}/${basename}_sm.webp`,
-      md_webp: `${baseUrl}/${basename}_md.webp`,
-      lg_webp: `${baseUrl}/${basename}_lg.webp`,
-      xl_webp: `${baseUrl}/${basename}_xl.webp`,
-      
-      // JPEG (fallback pour navigateurs anciens)
-      sm: `${baseUrl}/${basename}_sm.jpg`,
-      md: `${baseUrl}/${basename}_md.jpg`,
-      lg: `${baseUrl}/${basename}_lg.jpg`,
-      xl: `${baseUrl}/${basename}_xl.jpg`,
-      
-      // Original (ultime fallback)
-      original: `${API_BASE}/storage/${originalPath}`,
-    };
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
+  
+  // Construire les URLs complètes à partir des variantes
+  const buildUrl = (path: string | undefined | null) => {
+    if (!path) return null;
+    // Si c'est déjà une URL complète, la retourner telle quelle
+    if (path.startsWith('http')) return path;
+    // Sinon, construire l'URL
+    return `${API_BASE}/storage/${path}`;
   };
 
-  const variants = getImageVariants(src);
-  
+  // Si pas de variantes, fallback sur le comportement par défaut
   if (!variants) {
-    return <div className={`bg-gray-200 ${className}`} aria-label="Image non disponible" />;
+    return (
+      <img
+        src={buildUrl(src) || ''}
+        alt={alt}
+        className={className}
+        loading={loading}
+        fetchpriority={fetchPriority}
+        decoding="async"
+        onLoad={onLoad}
+      />
+    );
   }
+
+  // Construire les URLs pour srcset WebP
+  const webpSrcset = [
+    variants.sm_webp ? `${buildUrl(variants.sm_webp)} 300w` : null,
+    variants.md_webp ? `${buildUrl(variants.md_webp)} 600w` : null,
+    variants.lg_webp ? `${buildUrl(variants.lg_webp)} 1200w` : null,
+    variants.xl_webp ? `${buildUrl(variants.xl_webp)} 1920w` : null,
+  ].filter(Boolean).join(', ');
+
+  // Construire les URLs pour srcset JPEG
+  const jpegSrcset = [
+    variants.sm ? `${buildUrl(variants.sm)} 300w` : null,
+    variants.md ? `${buildUrl(variants.md)} 600w` : null,
+    variants.lg ? `${buildUrl(variants.lg)} 1200w` : null,
+    variants.xl ? `${buildUrl(variants.xl)} 1920w` : null,
+  ].filter(Boolean).join(', ');
 
   return (
     <picture>
-      {/* WebP sources - Format moderne (50% plus léger) */}
-      <source
-        type="image/webp"
-        srcSet={`
-          ${variants.sm_webp} 300w,
-          ${variants.md_webp} 600w,
-          ${variants.lg_webp} 1200w,
-          ${variants.xl_webp} 1920w
-        `}
-        sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, (max-width: 1536px) 1200px, 1920px"
-      />
+      {/* WebP sources - Format moderne */}
+      {webpSrcset && (
+        <source
+          type="image/webp"
+          srcSet={webpSrcset}
+          sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, (max-width: 1536px) 1200px, 1920px"
+        />
+      )}
       
-      {/* JPEG sources - Fallback pour navigateurs anciens */}
-      <source
-        type="image/jpeg"
-        srcSet={`
-          ${variants.sm} 300w,
-          ${variants.md} 600w,
-          ${variants.lg} 1200w,
-          ${variants.xl} 1920w
-        `}
-        sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, (max-width: 1536px) 1200px, 1920px"
-      />
+      {/* JPEG sources - Fallback */}
+      {jpegSrcset && (
+        <source
+          type="image/jpeg"
+          srcSet={jpegSrcset}
+          sizes="(max-width: 640px) 300px, (max-width: 1024px) 600px, (max-width: 1536px) 1200px, 1920px"
+        />
+      )}
       
-      {/* Fallback IMG - Si <picture> pas supporté */}
+      {/* Fallback IMG */}
       <img
-        src={variants.original}
+        src={buildUrl(variants.original || src) || ''}
         alt={alt}
         className={className}
         loading={loading}
@@ -117,13 +119,13 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
 /**
  * Variante simplifiée pour les thumbnails (cartes d'événements)
  */
-interface ThumbnailImageProps extends ResponsiveImageProps {
-  /** Taille max du thumbnail */
+interface ThumbnailImageProps extends Omit<ResponsiveImageProps, 'size'> {
   size?: 'sm' | 'md' | 'lg';
 }
 
 export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   src,
+  variants,
   alt,
   className = '',
   size = 'md',
@@ -131,35 +133,38 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   fetchPriority = 'auto',
   onLoad,
 }) => {
-  const variants = React.useMemo(() => {
-    if (!src) return null;
-    
-    const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
-    const pathParts = src.split('/');
-    const filename = pathParts[pathParts.length - 1];
-    const directory = pathParts.slice(0, -1).join('/');
-    const basename = filename.split('.')[0];
-    
-    const baseUrl = `${API_BASE}/storage/${directory}`;
-    
-    // Pour les thumbnails, on utilise seulement sm et md
-    return {
-      webp: `${baseUrl}/${basename}_${size}.webp`,
-      jpg: `${baseUrl}/${basename}_${size}.jpg`,
-      fallback: `${API_BASE}/storage/${src}`,
-    };
-  }, [src, size]);
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
+  
+  const buildUrl = (path: string | undefined | null) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${API_BASE}/storage/${path}`;
+  };
 
   if (!variants) {
-    return <div className={`bg-gray-200 ${className}`} aria-label="Image non disponible" />;
+    return (
+      <img
+        src={buildUrl(src) || ''}
+        alt={alt}
+        className={className}
+        loading={loading}
+        fetchpriority={fetchPriority}
+        decoding="async"
+        onLoad={onLoad}
+      />
+    );
   }
+
+  // Choisir la bonne taille selon le prop
+  const webpSrc = size === 'sm' ? variants.sm_webp : size === 'md' ? variants.md_webp : variants.lg_webp;
+  const jpegSrc = size === 'sm' ? variants.sm : size === 'md' ? variants.md : variants.lg;
 
   return (
     <picture>
-      <source type="image/webp" srcSet={variants.webp} />
-      <source type="image/jpeg" srcSet={variants.jpg} />
+      {webpSrc && <source type="image/webp" srcSet={buildUrl(webpSrc) || ''} />}
+      {jpegSrc && <source type="image/jpeg" srcSet={buildUrl(jpegSrc) || ''} />}
       <img
-        src={variants.fallback}
+        src={buildUrl(variants.original || src) || ''}
         alt={alt}
         className={className}
         loading={loading}
@@ -174,28 +179,31 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
 export default ResponsiveImage;
 
 /**
- * EXEMPLES D'UTILISATION
+ * EXEMPLES D'UTILISATION AVEC VARIANTS DE L'API
  * 
- * 1. Image LCP (première image visible - hero/banner):
+ * 1. Image LCP (hero banner):
  * <ResponsiveImage
  *   src={event.banner_path}
+ *   variants={event.banner_variants}
  *   alt={event.name}
  *   className="w-full h-full object-cover"
  *   loading="eager"
  *   fetchPriority="high"
  * />
  * 
- * 2. Images dans carousel (lazy load):
+ * 2. Images carousel:
  * <ResponsiveImage
  *   src={image.image_path}
+ *   variants={image.variants}
  *   alt={`Photo ${index + 1}`}
  *   className="w-full h-full object-cover"
  *   loading="lazy"
  * />
  * 
- * 3. Thumbnails dans cartes:
+ * 3. Thumbnails:
  * <ThumbnailImage
  *   src={event.thumbnail_path}
+ *   variants={event.thumbnail_variants}
  *   alt={event.name}
  *   size="md"
  *   className="w-full aspect-square object-cover"

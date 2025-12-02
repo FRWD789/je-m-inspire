@@ -7,21 +7,14 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Trait OptimizesImages - VERSION AMÉLIORÉE
+ * Trait OptimizesImages - VERSION FINALE CORRIGÉE
  *
  * Génère PLUSIEURS tailles d'images + conversion WebP automatique
- * pour optimiser les performances selon recommandations Google Lighthouse
  */
 trait OptimizesImages
 {
     /**
      * Optimise et sauvegarde une image en plusieurs tailles + WebP
-     *
-     * @param \Illuminate\Http\UploadedFile $file
-     * @param string $directory (ex: 'event_images')
-     * @param int $maxWidth (ignoré, on génère toutes les tailles)
-     * @param int $quality (qualité JPEG/WebP 1-100)
-     * @return string Chemin de l'image originale optimisée
      */
     public function optimizeAndSaveImage($file, $directory, $maxWidth = 1920, $quality = 85)
     {
@@ -51,17 +44,11 @@ trait OptimizesImages
             ini_set('memory_limit', $originalMemoryLimit);
         }
 
-        return $tempPath; // Retourne le chemin original pour compatibilité
+        return $tempPath;
     }
 
     /**
      * Génère toutes les tailles responsive + WebP
-     *
-     * Tailles générées :
-     * - 300px : thumbnail mobile
-     * - 600px : mobile landscape
-     * - 1200px : desktop
-     * - 1920px : full HD
      */
     private function generateResponsiveImages($originalPath, $directory, $basename, $quality)
     {
@@ -72,31 +59,26 @@ trait OptimizesImages
 
         // Définir les tailles à générer
         $sizes = [
-            'sm' => 300,   // Small - Mobile portrait
-            'md' => 600,   // Medium - Mobile landscape
-            'lg' => 1200,  // Large - Desktop
-            'xl' => 1920   // X-Large - Full HD
+            'sm' => 300,
+            'md' => 600,
+            'lg' => 1200,
+            'xl' => 1920
         ];
 
         foreach ($sizes as $sizeKey => $targetWidth) {
-            // Skip si l'original est plus petit que la taille cible
             if ($originalWidth <= $targetWidth) {
                 continue;
             }
 
-            // Calculer les dimensions proportionnelles
             $ratio = $targetWidth / $originalWidth;
             $newWidth = $targetWidth;
             $newHeight = (int)($originalHeight * $ratio);
 
-            // Charger l'image source
             $source = $this->loadImage($originalPath, $type);
             if (!$source) continue;
 
-            // Créer l'image redimensionnée
             $resized = imagecreatetruecolor($newWidth, $newHeight);
 
-            // Préserver la transparence pour PNG/GIF
             if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
                 imagealphablending($resized, false);
                 imagesavealpha($resized, true);
@@ -104,7 +86,6 @@ trait OptimizesImages
                 imagefill($resized, 0, 0, $transparent);
             }
 
-            // Redimensionner
             imagecopyresampled(
                 $resized, $source,
                 0, 0, 0, 0,
@@ -112,15 +93,14 @@ trait OptimizesImages
                 $originalWidth, $originalHeight
             );
 
-            // Sauvegarder en format original
+            // Sauvegarder en JPEG
             $resizedPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
             imagejpeg($resized, $resizedPath, $quality);
 
-            // Sauvegarder en WebP (format moderne, meilleure compression)
+            // Sauvegarder en WebP
             $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
             imagewebp($resized, $webpPath, $quality);
 
-            // Libérer mémoire
             imagedestroy($resized);
             imagedestroy($source);
             gc_collect_cycles();
@@ -147,10 +127,11 @@ trait OptimizesImages
     }
 
     /**
-     * Méthode utilitaire : Obtenir toutes les variantes d'une image
+     * ✅ CORRIGÉ : Retourne des CHEMINS RELATIFS, pas des URLs complètes
+     * ResponsiveImage.tsx construira les URLs
      *
      * @param string $originalPath Chemin original (ex: 'event_images/123_abc.jpg')
-     * @return array URLs de toutes les variantes
+     * @return array Chemins relatifs de toutes les variantes
      */
     public function getImageVariants($originalPath)
     {
@@ -172,18 +153,17 @@ trait OptimizesImages
         $directory = $pathInfo['dirname'];
         $filename = $pathInfo['filename'];
 
-        $baseUrl = config('app.url') . '/storage';
-
+        // ✅ RETOURNE DES CHEMINS RELATIFS UNIQUEMENT
         return [
-            'original' => "{$baseUrl}/{$originalPath}",
-            'sm' => "{$baseUrl}/{$directory}/{$filename}_sm.jpg",
-            'md' => "{$baseUrl}/{$directory}/{$filename}_md.jpg",
-            'lg' => "{$baseUrl}/{$directory}/{$filename}_lg.jpg",
-            'xl' => "{$baseUrl}/{$directory}/{$filename}_xl.jpg",
-            'sm_webp' => "{$baseUrl}/{$directory}/{$filename}_sm.webp",
-            'md_webp' => "{$baseUrl}/{$directory}/{$filename}_md.webp",
-            'lg_webp' => "{$baseUrl}/{$directory}/{$filename}_lg.webp",
-            'xl_webp' => "{$baseUrl}/{$directory}/{$filename}_xl.webp",
+            'original' => $originalPath,
+            'sm' => "{$directory}/{$filename}_sm.jpg",
+            'md' => "{$directory}/{$filename}_md.jpg",
+            'lg' => "{$directory}/{$filename}_lg.jpg",
+            'xl' => "{$directory}/{$filename}_xl.jpg",
+            'sm_webp' => "{$directory}/{$filename}_sm.webp",
+            'md_webp' => "{$directory}/{$filename}_md.webp",
+            'lg_webp' => "{$directory}/{$filename}_lg.webp",
+            'xl_webp' => "{$directory}/{$filename}_xl.webp",
         ];
     }
 }
