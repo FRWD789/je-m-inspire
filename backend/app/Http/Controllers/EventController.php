@@ -470,52 +470,102 @@ class EventController extends Controller
                 return $this->unauthorizedResponse('Vous n\'êtes pas autorisé à modifier cet événement');
             }
 
-               $validated = $request->validate([
-                    'name' => 'sometimes|string|max:255',
-                    'description' => 'sometimes|string|max:2000',
-                    'start_date' => 'sometimes|date|after_or_equal:now',
-                    'end_date' => 'sometimes|date|after:start_date',
-                    'base_price' => 'sometimes|numeric|min:0|max:9999.99',
-                    'max_places' => 'sometimes|integer|min:1|max:10000',
-                    'level' => 'sometimes|string|max:50',
-                    'priority' => 'sometimes|integer|min:1|max:10',
-                    'localisation_id' => 'sometimes|exists:localisations,id',
-                    'categorie_event_id' => 'sometimes|exists:categorie_events,id',
-                    'thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,webp,avif|max:2048',
-                    'banner' => 'nullable|file|mimes:jpeg,png,jpg,webp,avif|max:4096',
-                    'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
-                    'delete_images' => 'nullable|array',
-                    'delete_images.*' => 'integer|exists:event_images,id',
-                    'images_order' => 'nullable|array',
-                    'images_order.*' => 'integer|exists:event_images,id',
-                ]);
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'description' => 'sometimes|string|max:2000',
+                'start_date' => 'sometimes|date|after_or_equal:now',
+                'end_date' => 'sometimes|date|after:start_date',
+                'base_price' => 'sometimes|numeric|min:0|max:9999.99',
+                'max_places' => 'sometimes|integer|min:1|max:10000',
+                'level' => 'sometimes|string|max:50',
+                'priority' => 'sometimes|integer|min:1|max:10',
+                'localisation_id' => 'sometimes|exists:localisations,id',
+                'categorie_event_id' => 'sometimes|exists:categorie_events,id',
+                'thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,webp,avif|max:2048',
+                'banner' => 'nullable|file|mimes:jpeg,png,jpg,webp,avif|max:4096',
+                'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
+                'delete_images' => 'nullable|array',
+                'delete_images.*' => 'integer|exists:event_images,id',
+                'images_order' => 'nullable|array',
+                'images_order.*' => 'integer|exists:event_images,id',
+            ]);
+
             DB::beginTransaction();
 
+            // ✅ UPLOAD RAPIDE : Collection des images à optimiser
+            $imagesToOptimize = [];
 
-                /** ----------------------------
-                 * Thumbnail update handling
-                 * --------------------------- */
-                if ($request->hasFile('thumbnail')) {
-                    $thumbnailPath = $this->optimizeAndSaveImage(
-                        $request->file('thumbnail'),
-                        'event_thumbnails',
-                        800,   // Thumbnail plus petit
-                        85
-                    );
+            // Thumbnail update
+            if ($request->hasFile('thumbnail')) {
+                // Supprimer l'ancien thumbnail
+                if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
+                    Storage::disk('public')->delete($event->thumbnail_path);
+
+                    // Supprimer aussi les variantes de l'ancien thumbnail
+                    $oldPath = pathinfo($event->thumbnail_path);
+                    $oldBasename = $oldPath['filename'];
+                    $oldDir = $oldPath['dirname'];
+
+                    foreach (['_sm', '_md', '_lg', '_xl'] as $suffix) {
+                        foreach (['.jpg', '.webp'] as $ext) {
+                            $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
+                            if (Storage::disk('public')->exists($variantPath)) {
+                                Storage::disk('public')->delete($variantPath);
+                            }
+                        }
+                    }
                 }
 
-                /** ----------------------------
-                 * Banner update handling
-                 * --------------------------- */
-                if ($request->hasFile('banner')) {
-                    $bannerPath = $this->optimizeAndSaveImage(
-                        $request->file('banner'),
-                        'event_banners',
-                        1920,  // Banner full width
-                        90     // Qualité plus élevée pour banner
-                    );
+                $file = $request->file('thumbnail');
+                $filename = time() . '_thumb_' . \Illuminate\Support\Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $thumbnailPath = $file->storeAs('event_thumbnails', $filename, 'public');
+
+                $event->thumbnail_path = $thumbnailPath;
+
+                $imagesToOptimize[] = [
+                    'temp_path' => $thumbnailPath,
+                    'directory' => 'event_thumbnails',
+                    'max_width' => 800,
+                    'quality' => 85,
+                    'field' => 'thumbnail'
+                ];
+            }
+
+            // Banner update
+            if ($request->hasFile('banner')) {
+                // Supprimer l'ancien banner
+                if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
+                    Storage::disk('public')->delete($event->banner_path);
+
+                    // Supprimer aussi les variantes de l'ancien banner
+                    $oldPath = pathinfo($event->banner_path);
+                    $oldBasename = $oldPath['filename'];
+                    $oldDir = $oldPath['dirname'];
+
+                    foreach (['_sm', '_md', '_lg', '_xl'] as $suffix) {
+                        foreach (['.jpg', '.webp'] as $ext) {
+                            $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
+                            if (Storage::disk('public')->exists($variantPath)) {
+                                Storage::disk('public')->delete($variantPath);
+                            }
+                        }
+                    }
                 }
 
+                $file = $request->file('banner');
+                $filename = time() . '_banner_' . \Illuminate\Support\Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $bannerPath = $file->storeAs('event_banners', $filename, 'public');
+
+                $event->banner_path = $bannerPath;
+
+                $imagesToOptimize[] = [
+                    'temp_path' => $bannerPath,
+                    'directory' => 'event_banners',
+                    'max_width' => 1920,
+                    'quality' => 90,
+                    'field' => 'banner'
+                ];
+            }
 
             // Gestion de la suppression d'images
             if (!empty($validated['delete_images'])) {
@@ -524,9 +574,25 @@ class EventController extends Controller
                     ->get();
 
                 foreach ($imagesToDelete as $image) {
+                    // Supprimer le fichier original
                     if (Storage::disk('public')->exists($image->image_path)) {
                         Storage::disk('public')->delete($image->image_path);
                     }
+
+                    // Supprimer les variantes
+                    $pathInfo = pathinfo($image->image_path);
+                    $basename = $pathInfo['filename'];
+                    $directory = $pathInfo['dirname'];
+
+                    foreach (['_sm', '_md', '_lg', '_xl', ''] as $suffix) {
+                        foreach (['.jpg', '.webp'] as $ext) {
+                            $variantPath = "{$directory}/{$basename}{$suffix}{$ext}";
+                            if (Storage::disk('public')->exists($variantPath)) {
+                                Storage::disk('public')->delete($variantPath);
+                            }
+                        }
+                    }
+
                     $image->delete();
 
                     if ($debug) {
@@ -554,43 +620,45 @@ class EventController extends Controller
                 }
             }
 
-            // Ajout de nouvelles images
+            // ✅ Ajout de nouvelles images (upload rapide)
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
-                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+
+                // Vérifier la limite totale (existantes + nouvelles)
+                $existingCount = $event->images()->count();
+                $newCount = count($images);
+
+                if (($existingCount + $newCount) > 5) {
+                    DB::rollBack();
+                    return $this->errorResponse('Maximum 5 images au total (actuellement: ' . $existingCount . ')', 422);
+                }
+
+                $currentMaxOrder = $event->images()->max('display_order') ?? -1;
 
                 foreach ($images as $index => $image) {
-                    // ✅ Validation MIME (conservée)
-                    if (!in_array($image->getMimeType(), $allowedMimes)) {
-                        DB::rollBack();
-                        return $this->validationErrorResponse([
-                            'images' => ['Chaque fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
-                        ]);
-                    }
+                    $filename = time() . '_' . \Illuminate\Support\Str::random(10) . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('event_images', $filename, 'public');
 
-                    // ✅ OPTIMISATION + SAUVEGARDE (remplace les 2 lignes précédentes)
-                    $imagePath = $this->optimizeAndSaveImage(
-                        $image,
-                        'event_images',
-                        1200,  // max width pour carousel
-                        85     // qualité (1-100)
-                    );
-
-                    // Création en base (identique)
-                    EventImage::create([
+                    $eventImage = EventImage::create([
                         'event_id' => $event->id,
                         'image_path' => $imagePath,
-                        'display_order' => $index,
+                        'display_order' => $currentMaxOrder + $index + 1,
                     ]);
 
-                    // ✅ Logging amélioré (conservé)
+                    $imagesToOptimize[] = [
+                        'temp_path' => $imagePath,
+                        'directory' => 'event_images',
+                        'max_width' => 1200,
+                        'quality' => 85,
+                        'image_id' => $eventImage->id
+                    ];
+
                     if ($debug) {
-                        Log::info('[Event] Image uploadée et optimisée', [
+                        Log::info('[Event] Nouvelle image ajoutée', [
                             'event_id' => $event->id,
+                            'image_id' => $eventImage->id,
                             'image_path' => $imagePath,
-                            'display_order' => $index,
-                            'original_size' => round($image->getSize() / 1024, 2) . ' KB',
-                            'mime_type' => $image->getMimeType()
+                            'display_order' => $currentMaxOrder + $index + 1
                         ]);
                     }
                 }
@@ -613,22 +681,34 @@ class EventController extends Controller
 
             DB::commit();
 
+            // ✅ LANCER L'OPTIMISATION EN ARRIÈRE-PLAN
+            if (!empty($imagesToOptimize)) {
+                \App\Jobs\OptimizeEventImages::dispatch($event->id, $imagesToOptimize);
+
+                Log::info('[Event] Job optimisation lancé (update)', [
+                    'event_id' => $event->id,
+                    'images_count' => count($imagesToOptimize)
+                ]);
+            }
+
             if ($debug) {
                 Log::info('[Event] Événement mis à jour', [
                     'event_id' => $event->id,
-                    'updated_by' => $user->id
+                    'updated_by' => $user->id,
+                    'new_images' => count($imagesToOptimize)
                 ]);
             }
-            // --- Build response including is_creator and user_role ---
+
+            // Build response including is_creator and user_role
             $eventResource = new EventResource($event->load(['localisation', 'categorie', 'images']));
-            // Add additional data to the response
             $responseData = $eventResource->toArray($request);
             $responseData['is_creator'] = $isCreator;
             $responseData['user_role'] = $isAdmin ? 'admin' : ($isCreator ? 'creator' : 'user');
-        return $this->successResponse(
-            $responseData,
-            'Événement mis à jour avec succès'
-        );
+
+            return $this->successResponse(
+                $responseData,
+                'Événement mis à jour avec succès'
+            );
 
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
