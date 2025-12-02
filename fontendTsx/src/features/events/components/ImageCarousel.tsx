@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageData {
@@ -19,116 +19,30 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [imageLoadStatus, setImageLoadStatus] = useState<Record<number, 'loading' | 'loaded' | 'error'>>({});
-  const [debugInfo, setDebugInfo] = useState<any>({});
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const validImages = useMemo(() => {
-    const valid = Array.isArray(images) && images.length > 0 
+    return Array.isArray(images) && images.length > 0 
       ? images.filter(img => img.image_path || img.url)
       : [];
-    
-    console.group('🖼️ CAROUSEL DEBUG - Images reçues');
-    console.log('Total images:', images.length);
-    console.log('Images valides:', valid.length);
-    console.groupEnd();
-    
-    return valid;
   }, [images]);
 
-  // ✅ SIMPLE: Toujours utiliser xl_webp (1920px)
-  const getImageUrl = useCallback((image: ImageData, index: number): string => {
+  const getImageUrl = useCallback((image: ImageData): string => {
     const API_BASE = 'https://api.jminspire.com';
     
-    let url = '';
-    let variant = '';
-    
-    // Priorité: xl_webp > xl > original
     if (image.variants?.xl_webp) {
-      url = `${API_BASE}/storage/${image.variants.xl_webp}`;
-      variant = 'xl_webp';
-      console.log(`✅ Image ${index + 1} URL:`, url);
+      return `${API_BASE}/storage/${image.variants.xl_webp}`;
     } else if (image.variants?.xl) {
-      url = `${API_BASE}/storage/${image.variants.xl}`;
-      variant = 'xl';
-      console.log(`⚠️ Image ${index + 1} URL (JPG):`, url);
+      return `${API_BASE}/storage/${image.variants.xl}`;
     } else if (image.url) {
-      url = image.url;
-      variant = 'url complète';
-      console.log(`⚠️ Image ${index + 1} URL (complete):`, url);
+      return image.url;
     } else {
-      url = `${API_BASE}/storage/${image.image_path}`;
-      variant = 'original';
-      console.log(`⚠️ Image ${index + 1} URL (original):`, url);
+      return `${API_BASE}/storage/${image.image_path}`;
     }
-    
-    return url;
   }, []);
 
   const imageUrls = useMemo(() => {
-    console.group('🔗 GÉNÉRATION DES URLs');
-    const urls = validImages.map((img, idx) => getImageUrl(img, idx));
-    console.log('URLs complètes:', urls);
-    console.groupEnd();
-    return urls;
+    return validImages.map(img => getImageUrl(img));
   }, [validImages, getImageUrl]);
-
-  // Debug du conteneur
-  useEffect(() => {
-    const measureContainer = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const computed = window.getComputedStyle(containerRef.current);
-        
-        const info = {
-          width: rect.width,
-          height: rect.height,
-          computedWidth: computed.width,
-          computedHeight: computed.height,
-          display: computed.display,
-          position: computed.position,
-        };
-        
-        console.group('📐 DIMENSIONS CONTENEUR DÉTAILLÉES');
-        console.log('BoundingRect width:', rect.width);
-        console.log('BoundingRect height:', rect.height);
-        console.log('Computed width:', computed.width);
-        console.log('Computed height:', computed.height);
-        console.log('Display:', computed.display);
-        console.log('Position:', computed.position);
-        console.groupEnd();
-        
-        setDebugInfo(info);
-      }
-    };
-
-    measureContainer();
-    window.addEventListener('resize', measureContainer);
-    return () => window.removeEventListener('resize', measureContainer);
-  }, []);
-
-  const handleImageLoad = (index: number, event: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = event.currentTarget;
-    console.group(`✅ IMAGE ${index + 1} CHARGÉE !!!!`);
-    console.log('URL:', img.src);
-    console.log('Dimensions naturelles:', `${img.naturalWidth}x${img.naturalHeight}`);
-    console.log('Dimensions affichées:', `${img.offsetWidth}x${img.offsetHeight}`);
-    console.log('Object-fit:', window.getComputedStyle(img).objectFit);
-    console.log('Width computed:', window.getComputedStyle(img).width);
-    console.log('Height computed:', window.getComputedStyle(img).height);
-    console.groupEnd();
-    
-    setImageLoadStatus(prev => ({ ...prev, [index]: 'loaded' }));
-  };
-
-  const handleImageError = (index: number, event: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = event.currentTarget;
-    console.group(`❌ ERREUR IMAGE ${index + 1}`);
-    console.log('URL qui a échoué:', img.src);
-    console.groupEnd();
-    
-    setImageLoadStatus(prev => ({ ...prev, [index]: 'error' }));
-  };
 
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
@@ -161,7 +75,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   }, [validImages.length, currentIndex]);
 
   if (validImages.length === 0) {
-    console.warn('⚠️ Aucune image valide à afficher');
     return (
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-3">Photos de l'événement</h2>
@@ -178,7 +91,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         Photos de l'événement ({validImages.length})
       </h2>
 
-      {/* 🔍 PANNEAU DE DEBUG AMÉLIORÉ */}
+      {/* 🔍 PANNEAU TEST */}
       <div style={{
         backgroundColor: '#fef3c7',
         border: '2px solid #f59e0b',
@@ -186,93 +99,80 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         padding: '12px',
         marginBottom: '12px',
         fontFamily: 'monospace',
-        fontSize: '11px',
+        fontSize: '12px',
       }}>
-        <div><strong>🎯 Image actuelle:</strong> {currentIndex + 1} / {validImages.length}</div>
+        <div><strong>🔍 TEST:</strong> L'image brute est affichée SANS aucun CSS</div>
         <div><strong>📁 URL:</strong> {imageUrls[currentIndex]}</div>
-        <div><strong>📊 Status:</strong> {imageLoadStatus[currentIndex] || '⏳ loading...'}</div>
-        <div><strong>📐 Conteneur:</strong> {debugInfo.width?.toFixed(1)}px × {debugInfo.height?.toFixed(1)}px</div>
-        <div style={{ marginTop: '8px', fontSize: '10px', color: '#92400e' }}>
-          <strong>💡 Test rapide:</strong> Clique sur une image pour ouvrir l'URL directement
+        <div style={{ color: '#dc2626', marginTop: '8px' }}>
+          <strong>⚠️ Si tu vois du NOIR autour de l'image ci-dessous, c'est que le noir est DANS l'image !</strong>
         </div>
       </div>
       
-      {/* ✅ Conteneur avec bordures pour debug */}
-      <div 
-        ref={containerRef}
-        className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-black group"
-        style={{ border: '4px solid red' }}
-        onClick={() => {
-          console.log('🖱️ Click sur conteneur');
-          window.open(imageUrls[currentIndex], '_blank');
-        }}
-      >
+      {/* ✅ IMAGE BRUTE SANS CSS - Pour voir si le noir est intégré */}
+      <div style={{
+        marginBottom: '24px',
+        border: '3px solid red',
+        padding: '10px',
+        backgroundColor: '#ffffff',
+      }}>
+        <h3 style={{ marginBottom: '10px', fontSize: '14px', fontWeight: 'bold' }}>
+          📷 IMAGE BRUTE (sans CSS, taille originale)
+        </h3>
+        <div style={{ 
+          overflow: 'auto',
+          maxHeight: '400px',
+          backgroundColor: '#ffffff',  // Fond blanc pour voir le noir de l'image
+        }}>
+          <img
+            src={imageUrls[currentIndex]}
+            alt="Image brute"
+            style={{
+              // ❌ AUCUN style - image taille naturelle
+              display: 'block',
+            }}
+          />
+        </div>
+        <p style={{ marginTop: '10px', fontSize: '11px', color: '#666' }}>
+          👆 Si l'image a des bords noirs, c'est que le noir est DANS l'image elle-même, 
+          pas un problème de CSS !
+        </p>
+      </div>
+
+      {/* Carrousel normal */}
+      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-200 group">
         
-        {/* ✅ Images avec logs détaillés */}
-        {validImages.map((image, index) => {
-          console.log(`🎨 Rendering image ${index + 1}:`, imageUrls[index]);
-          
-          return (
-            <div
-              key={image.id}
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
-              style={{ border: '3px solid blue' }}
-            >
-              <img
-                src={imageUrls[index]}
-                alt={`Photo ${index + 1}`}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                className="w-full h-full object-cover"
-                style={{ border: '3px solid green' }}
-                onLoad={(e) => handleImageLoad(index, e)}
-                onError={(e) => handleImageError(index, e)}
-                onLoadStart={() => {
-                  console.log(`🔄 Image ${index + 1} loading START`);
-                  setImageLoadStatus(prev => ({ ...prev, [index]: 'loading' }));
-                }}
-              />
-              
-              {/* Overlay de status */}
-              {imageLoadStatus[index] === 'error' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-500/80 text-white p-4">
-                  <div className="text-xl mb-2">❌ Erreur de chargement</div>
-                  <div className="text-xs break-all max-w-full px-4">{imageUrls[index]}</div>
-                </div>
-              )}
-              
-              {!imageLoadStatus[index] && index === currentIndex && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                  <div className="text-white text-lg">⏳ Chargement...</div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {validImages.map((image, index) => (
+          <div
+            key={image.id}
+            className={`absolute inset-0 transition-opacity duration-300 ${
+              index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
+          >
+            <img
+              src={imageUrls[index]}
+              alt={`Photo ${index + 1}`}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
 
         {/* Boutons navigation */}
         {validImages.length > 1 && (
           <>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrevious();
-              }}
+              onClick={handlePrevious}
               disabled={isTransitioning}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 shadow-lg transition-all opacity-100 group-hover:opacity-100 disabled:opacity-50 z-20"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 shadow-lg transition-all opacity-100 disabled:opacity-50 z-20"
               aria-label="Image précédente"
             >
               <ChevronLeft size={24} />
             </button>
             
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
+              onClick={handleNext}
               disabled={isTransitioning}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 shadow-lg transition-all opacity-100 group-hover:opacity-100 disabled:opacity-50 z-20"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 shadow-lg transition-all opacity-100 disabled:opacity-50 z-20"
               aria-label="Image suivante"
             >
               <ChevronRight size={24} />
@@ -286,8 +186,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
             {validImages.map((_, index) => (
               <button
                 key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   if (!isTransitioning) {
                     setIsTransitioning(true);
                     setCurrentIndex(index);
@@ -306,26 +205,29 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         )}
 
         {/* Compteur */}
-        <div className="absolute top-4 right-4 bg-black/80 text-white px-4 py-2 rounded-full text-sm font-medium z-20">
+        <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm z-20">
           {currentIndex + 1} / {validImages.length}
         </div>
       </div>
 
       {/* Instructions */}
       <div style={{
-        backgroundColor: '#e0e7ff',
-        border: '1px solid #6366f1',
+        backgroundColor: '#dcfce7',
+        border: '2px solid #16a34a',
         borderRadius: '8px',
         padding: '12px',
         marginTop: '12px',
         fontSize: '12px',
       }}>
-        <strong>🔍 Instructions:</strong>
+        <strong>✅ DIAGNOSTIC:</strong>
         <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
-          <li>Clique sur l'image pour ouvrir l'URL dans un nouvel onglet</li>
-          <li>Vérifie si l'image s'ouvre correctement</li>
-          <li>Regarde la console (F12) pour les logs détaillés</li>
+          <li><strong>SI l'image brute (en haut) a des bords noirs:</strong> Le noir est DANS l'image → Problème backend</li>
+          <li><strong>SI l'image brute (en haut) est correcte:</strong> C'est un problème CSS → Problème frontend</li>
         </ul>
+        <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '4px' }}>
+          <strong>💡 Solution si noir intégré:</strong> Il faut corriger le job d'optimisation backend 
+          pour ne PAS ajouter de padding noir lors de la création des variants
+        </div>
       </div>
     </div>
   );
