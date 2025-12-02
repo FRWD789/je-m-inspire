@@ -220,7 +220,7 @@ export default function PaymentSuccess() {
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             {/* Event Image or Placeholder */}
             {event.thumbnail ? (
-              <div> 
+              <div className="w-1/2"> 
                 <ThumbnailImage
                   src={event.thumbnail_path}
                   variants={event.thumbnail_variants}  
