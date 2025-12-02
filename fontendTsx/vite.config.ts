@@ -1,92 +1,155 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import svgr from "vite-plugin-svgr"
-import path from "path"
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(),
-    tailwindcss(),
-    svgr()
+  plugins: [
+    react(),
+    // 📊 Bundle analyzer - générer stats.html après build
+    visualizer({
+      filename: './dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+    })
   ],
-   resolve: {
+
+  resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-  server: {
-    host: true, // permet d'accéder depuis d'autres IP
-    port: 5173,
-    hmr: {
-      protocol: 'ws',
-      host: 'localhost',
-      port: 5173,
+      '@': path.resolve(__dirname, './src'),
     },
   },
 
+  // ⚡ OPTIMISATIONS DE PERFORMANCE
   build: {
+    // Utiliser terser pour meilleure minification
+    minify: 'terser',
+    
+    terserOptions: {
+      compress: {
+        // 🗑️ Supprimer console.log en production
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        
+        // Optimisations supplémentaires
+        passes: 2,
+        unsafe_comps: true,
+        unsafe_math: true,
+      },
+      
+      mangle: {
+        safari10: true,
+      },
+      
+      format: {
+        comments: false, // Supprimer commentaires
+      },
+    },
+
+    // 📦 Configuration Rollup pour code splitting optimal
     rollupOptions: {
       output: {
-        manualChunks: {
-          // =========================================
-          // ✅ OPTIMISATION DES CHUNKS
-          // =========================================
-          // Vendors de base (React, Router)
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        // 🔀 Manual chunks pour optimiser le code splitting
+        manualChunks: (id) => {
+          // React et React-DOM dans un chunk séparé
+          if (id.includes('node_modules/react') || 
+              id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
+          }
+
+          // React Router dans son propre chunk
+          if (id.includes('node_modules/react-router-dom')) {
+            return 'router';
+          }
+
+          // UI libraries (lucide-react, embla-carousel)
+          if (id.includes('node_modules/lucide-react') ||
+              id.includes('node_modules/embla-carousel')) {
+            return 'ui-vendor';
+          }
+
+          // i18next
+          if (id.includes('node_modules/react-i18next') ||
+              id.includes('node_modules/i18next')) {
+            return 'i18n';
+          }
+
+          // Google Maps (si présent)
+          if (id.includes('@googlemaps') || 
+              id.includes('google-maps')) {
+            return 'maps';
+          }
+
+          // Autres node_modules dans vendor
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
+
+        // 🎯 Noms de fichiers avec hash pour cache busting
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          // Organiser les assets par type
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
           
-          // UI Libraries
-          'ui-vendor': ['lucide-react'],
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(ext)) {
+            return 'assets/img/[name]-[hash][extname]';
+          } else if (/woff|woff2|eot|ttf|otf/i.test(ext)) {
+            return 'assets/fonts/[name]-[hash][extname]';
+          }
           
-          // Maps (Google Maps est lourd)
-          'maps-vendor': ['@react-google-maps/api', '@vis.gl/react-google-maps', '@googlemaps/markerclusterer'],
-          
-          // Forms & Validation
-          'forms-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          
-          // Utilitaires
-          'utils-vendor': ['axios', 'date-fns', 'clsx', 'tailwind-merge'],
-          
-          // i18n
-          'i18n-vendor': ['i18next', 'react-i18next'],
-          
-          // Carousel
-          'carousel-vendor': ['embla-carousel-react'],
+          return 'assets/[name]-[hash][extname]';
         },
       },
     },
+
+    // 📏 Augmenter le seuil d'avertissement de taille de chunk
+    chunkSizeWarningLimit: 1000,
+
+    // 🎨 CSS Code Splitting
+    cssCodeSplit: true,
+
+    // 🗜️ Compression
+    reportCompressedSize: true,
+
+    // 🎯 Target moderne browsers (pas de polyfills ES5)
+    target: 'es2015',
+  },
+
+  // ⚙️ Server config (dev)
+  server: {
+    port: 5173,
+    host: true,
     
-    // =========================================
-    // ✅ OPTIMISATIONS BUILD
-    // =========================================
-    chunkSizeWarningLimit: 600,
-    assetsInlineLimit: 4096, // Inline assets < 4KB en base64
-    
-    // Minification
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Supprimer console.log en prod
-        drop_debugger: true,
+    // CORS pour API locale
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
       },
     },
-    
-    // CSS code splitting
-    cssCodeSplit: true,
-    
-    // Source maps pour debugging (désactiver en prod)
-    sourcemap: false,
   },
-  
-  // =========================================
-  // ✅ OPTIMISATIONS DEPS
-  // =========================================
+
+  // 🔧 Optimisation des dépendances
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react-router-dom',
-      'axios',
+      'lucide-react',
     ],
+    
+    // Exclure les gros packages qui ne doivent pas être pré-bundlés
+    exclude: [],
+  },
+
+  // 🎨 CSS
+  css: {
+    devSourcemap: false, // Désactiver sourcemaps CSS en dev pour perf
   },
 });
