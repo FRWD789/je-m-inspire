@@ -348,17 +348,6 @@ export default function EventDetail() {
           {/* Organisateur - Ordre 1 en mobile, colonne gauche en desktop */}
           <div className="order-1 lg:order-none lg:flex-1 lg:flex lg:flex-col lg:gap-6">
             <OrganizerInfo creator={event.creator} />
-            
-            {/* Photos - Desktop seulement (dans la même colonne que Organisateur) */}
-            <div className="hidden lg:block">
-              {event.images && event.images.length > 0 ? (
-                <ImageCarousel images={event.images} />
-              ) : (
-                <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-                  <p className="text-gray-400">Aucune image disponible</p>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Réservation - Ordre 2 en mobile, colonne droite en desktop */}
@@ -407,17 +396,17 @@ export default function EventDetail() {
               </span>
             )}
           </div>
+        </div>
 
-          {/* Photos - Ordre 4 en mobile uniquement */}
-          <div className="order-4 lg:hidden">
-            {event.images && event.images.length > 0 ? (
-              <ImageCarousel images={event.images} />
-            ) : (
-              <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-                <p className="text-gray-400">Aucune image disponible</p>
-              </div>
-            )}
-          </div>
+        {/* ✅ PHOTOS EN PLEINE LARGEUR - Desktop et Mobile */}
+        <div className="mb-8">
+          {event.images && event.images.length > 0 ? (
+            <ImageCarousel images={event.images} />
+          ) : (
+            <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
+              <p className="text-gray-400">Aucune image disponible</p>
+            </div>
+          )}
         </div>
 
         {/* Map en pleine largeur - Cachée en mobile, visible en desktop */}
