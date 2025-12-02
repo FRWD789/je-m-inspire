@@ -19,11 +19,9 @@ const STATIC_ASSETS = [
 // INSTALLATION - Mise en cache initiale
 // ==========================================
 self.addEventListener('install', (event) => {
-  console.log('✅ Service Worker: Installation');
   
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('📦 Service Worker: Mise en cache des assets statiques');
       return cache.addAll(STATIC_ASSETS).catch((error) => {
         console.error('❌ Erreur cache initial:', error);
       });
@@ -38,14 +36,11 @@ self.addEventListener('install', (event) => {
 // ACTIVATION - Nettoyage des anciens caches
 // ==========================================
 self.addEventListener('activate', (event) => {
-  console.log('🔄 Service Worker: Activation');
-  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Service Worker: Suppression ancien cache', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -66,13 +61,11 @@ self.addEventListener('fetch', (event) => {
 
   // ✅ CRITIQUE: Ne JAMAIS cacher les requêtes POST/PUT/DELETE
   if (request.method !== 'GET') {
-    console.log('🚫 Service Worker: Requête non-GET ignorée', request.method, url.pathname);
     return; // Laisser passer sans intervenir
   }
 
   // Ne pas cacher les requêtes API
   if (url.pathname.startsWith('/api/')) {
-    console.log('🌐 Service Worker: Requête API passthrough', url.pathname);
     return; // Laisser passer sans cache
   }
 
@@ -190,4 +183,3 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('🚀 Service Worker chargé et prêt');
