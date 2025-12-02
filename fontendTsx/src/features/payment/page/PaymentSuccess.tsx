@@ -225,7 +225,7 @@ export default function PaymentSuccess() {
                 variants={event.thumbnail_variants}  
                 alt={event.name}
                 size="md"
-                className="w-full sm:w-32 h-32 rounded-lg object-cover shadow-md"
+                className="w-1/2 sm:w-32 h-32 rounded-lg object-cover shadow-md"
                 loading="lazy"
               />
             ) : (
