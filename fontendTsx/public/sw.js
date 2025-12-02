@@ -119,7 +119,7 @@ async function cacheFirstStrategy(request) {
 
     return networkResponse;
   } catch (error) {
-    console.error('❌ Erreur cacheFirstStrategy:', error);
+    
     
     // Fallback vers le cache même si réseau échoue
     const cachedResponse = await caches.match(request);
