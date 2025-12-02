@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 
 /**
- * ResponsiveImage - VERSION CORRIGÉE POUR CAROUSEL
+ * ResponsiveImage - VERSION SIMPLIFIÉE SANS PICTURE
  * 
- * ✅ FIX: picture avec display:contents pour ne pas bloquer le layout
- * ✅ Classes CSS correctement appliquées à l'img interne
+ * ✅ Utilise uniquement <img> avec srcset
+ * ✅ Pas de wrapper qui interfère avec le layout
+ * ✅ Classes CSS directement appliquées
  */
 
 interface ResponsiveImageProps {
@@ -22,6 +23,7 @@ interface ResponsiveImageProps {
   };
   alt: string;
   className?: string;
+  style?: React.CSSProperties;
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   onLoad?: () => void;
@@ -32,6 +34,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   variants,
   alt,
   className = '',
+  style,
   loading = 'lazy',
   fetchPriority = 'auto',
   onLoad,
@@ -45,14 +48,12 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     return `${API_BASE}/storage/${path}`;
   };
 
-  // 🔍 Handler pour détecter quelle image a été chargée
   const handleImageLoad = () => {
     if (imgRef.current) {
       const loadedSrc = imgRef.current.currentSrc || imgRef.current.src;
       const isWebP = loadedSrc.includes('.webp');
       const format = isWebP ? 'WebP' : 'JPG';
       
-      // Détecter la variante
       let variant = 'original';
       if (loadedSrc.includes('_xl')) variant = 'xl (1920px)';
       else if (loadedSrc.includes('_lg')) variant = 'lg (1200px)';
@@ -70,7 +71,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     if (onLoad) onLoad();
   };
 
-  // Si pas de variants, image simple
+  // Si pas de variantes, image simple
   if (!variants) {
     return (
       <img
@@ -78,6 +79,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
         src={buildUrl(src) || ''}
         alt={alt}
         className={className}
+        style={style}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
@@ -86,74 +88,49 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     );
   }
 
-  // Avec variants, utiliser picture avec srcset
-  const lgWebpUrl = buildUrl(variants.lg_webp);
-  const lgJpgUrl = buildUrl(variants.lg);
-  const mdWebpUrl = buildUrl(variants.md_webp);
-  const mdJpgUrl = buildUrl(variants.md);
-  const xlWebpUrl = buildUrl(variants.xl_webp);
-  const xlJpgUrl = buildUrl(variants.xl);
-  const fallbackUrl = buildUrl(variants.original || src);
+  // Construire srcset avec WebP en priorité
+  // Le navigateur choisira WebP s'il le supporte, sinon JPEG
+  const srcsetItems = [];
+  
+  // Ajouter les variantes WebP (prioritaire)
+  if (variants.sm_webp) srcsetItems.push(`${buildUrl(variants.sm_webp)} 300w`);
+  if (variants.md_webp) srcsetItems.push(`${buildUrl(variants.md_webp)} 600w`);
+  if (variants.lg_webp) srcsetItems.push(`${buildUrl(variants.lg_webp)} 1200w`);
+  if (variants.xl_webp) srcsetItems.push(`${buildUrl(variants.xl_webp)} 1920w`);
+  
+  // Fallback JPEG si pas de WebP
+  if (srcsetItems.length === 0) {
+    if (variants.sm) srcsetItems.push(`${buildUrl(variants.sm)} 300w`);
+    if (variants.md) srcsetItems.push(`${buildUrl(variants.md)} 600w`);
+    if (variants.lg) srcsetItems.push(`${buildUrl(variants.lg)} 1200w`);
+    if (variants.xl) srcsetItems.push(`${buildUrl(variants.xl)} 1920w`);
+  }
+
+  const srcset = srcsetItems.join(', ');
+  const fallbackSrc = buildUrl(
+    variants.xl_webp || 
+    variants.lg_webp || 
+    variants.md_webp || 
+    variants.xl || 
+    variants.lg || 
+    variants.original || 
+    src
+  );
 
   return (
-    // ✅ FIX: display:contents fait en sorte que picture ne crée pas de boîte
-    <picture style={{ display: 'contents' }}>
-      {/* WebP sources */}
-      {xlWebpUrl && (
-        <source
-          type="image/webp"
-          srcSet={xlWebpUrl}
-          media="(min-width: 1920px)"
-        />
-      )}
-      {lgWebpUrl && (
-        <source
-          type="image/webp"
-          srcSet={lgWebpUrl}
-          media="(min-width: 1024px)"
-        />
-      )}
-      {mdWebpUrl && (
-        <source
-          type="image/webp"
-          srcSet={mdWebpUrl}
-        />
-      )}
-
-      {/* JPEG fallbacks */}
-      {xlJpgUrl && (
-        <source
-          type="image/jpeg"
-          srcSet={xlJpgUrl}
-          media="(min-width: 1920px)"
-        />
-      )}
-      {lgJpgUrl && (
-        <source
-          type="image/jpeg"
-          srcSet={lgJpgUrl}
-          media="(min-width: 1024px)"
-        />
-      )}
-      {mdJpgUrl && (
-        <source
-          type="image/jpeg"
-          srcSet={mdJpgUrl}
-        />
-      )}
-
-      {/* Image finale avec toutes les classes appliquées */}
-      <img
-        ref={imgRef}
-        src={fallbackUrl || ''}
-        alt={alt}
-        className={className}
-        loading={loading}
-        fetchpriority={fetchPriority}
-        decoding="async"
-        onLoad={handleImageLoad}
-      />
-    </picture>
+    <img
+      ref={imgRef}
+      src={fallbackSrc || ''}
+      srcSet={srcset || undefined}
+      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px"
+      alt={alt}
+      className={className}
+      style={style}
+      loading={loading}
+      fetchpriority={fetchPriority}
+      decoding="async"
+      onLoad={handleImageLoad}
+    />
   );
 };
 
@@ -174,6 +151,7 @@ interface ThumbnailImageProps {
   };
   alt: string;
   className?: string;
+  style?: React.CSSProperties;
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   onLoad?: () => void;
@@ -185,6 +163,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   variants,
   alt,
   className = '',
+  style,
   size = 'md',
   loading = 'lazy',
   fetchPriority = 'auto',
@@ -222,6 +201,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
         src={buildUrl(src) || ''}
         alt={alt}
         className={className}
+        style={style}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
@@ -230,25 +210,23 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     );
   }
 
-  // Choisir la bonne taille selon le prop
+  // Choisir la bonne taille
   const webpSrc = size === 'sm' ? variants.sm_webp : size === 'md' ? variants.md_webp : variants.lg_webp;
   const jpegSrc = size === 'sm' ? variants.sm : size === 'md' ? variants.md : variants.lg;
+  const fallbackSrc = buildUrl(webpSrc || jpegSrc || variants.original || src);
 
   return (
-    <picture style={{ display: 'contents' }}>
-      {webpSrc && <source type="image/webp" srcSet={buildUrl(webpSrc) || ''} />}
-      {jpegSrc && <source type="image/jpeg" srcSet={buildUrl(jpegSrc) || ''} />}
-      <img
-        ref={imgRef}
-        src={buildUrl(variants.original || src) || ''}
-        alt={alt}
-        className={className}
-        loading={loading}
-        fetchpriority={fetchPriority}
-        decoding="async"
-        onLoad={handleImageLoad}
-      />
-    </picture>
+    <img
+      ref={imgRef}
+      src={fallbackSrc || ''}
+      alt={alt}
+      className={className}
+      style={style}
+      loading={loading}
+      fetchpriority={fetchPriority}
+      decoding="async"
+      onLoad={handleImageLoad}
+    />
   );
 };
 

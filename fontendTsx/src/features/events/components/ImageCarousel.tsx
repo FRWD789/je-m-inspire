@@ -68,7 +68,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     }
   }, [validImages.length, currentIndex]);
 
-  // Si pas d'images, ne rien afficher
+  // Si pas d'images
   if (validImages.length === 0) {
     console.warn('[ImageCarousel] No valid images provided');
     return (
@@ -87,34 +87,33 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         Photos de l'événement ({validImages.length})
       </h2>
       
-      {/* ✅ FIX: Hauteur augmentée + object-center pour centrage */}
-      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-100 group">
-        {/* Images Container */}
-        <div className="relative w-full h-full">
-          {validImages.map((image, index) => (
-            <div
-              key={image.id}
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
-              style={{
-                pointerEvents: index === currentIndex ? 'auto' : 'none'
-              }}
-            >
-              {/* ✅ FIX: Ajout de object-center */}
-              <ResponsiveImage
-                src={image.image_path || image.url}
-                variants={image.variants}
-                alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover object-center"
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-              />
-            </div>
-          ))}
-        </div>
+      {/* ✅ Conteneur avec position relative et hauteur fixe */}
+      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-900 group">
+        
+        {/* ✅ Images avec position absolute pour occuper tout l'espace */}
+        {validImages.map((image, index) => (
+          <div
+            key={image.id}
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{
+              opacity: index === currentIndex ? 1 : 0,
+              zIndex: index === currentIndex ? 10 : 0,
+              pointerEvents: index === currentIndex ? 'auto' : 'none',
+            }}
+          >
+            {/* ✅ Image avec width et height à 100% + object-fit */}
+            <ResponsiveImage
+              src={image.image_path || image.url}
+              variants={image.variants}
+              alt={`Photo ${index + 1}`}
+              className="w-full h-full object-cover object-center"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              fetchPriority={index === 0 ? 'high' : 'auto'}
+            />
+          </div>
+        ))}
 
-        {/* Navigation Buttons - Visible au survol */}
+        {/* Boutons de navigation */}
         {validImages.length > 1 && (
           <>
             <button
@@ -150,10 +149,10 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
                     setTimeout(() => setIsTransitioning(false), 300);
                   }
                 }}
-                className={`w-2 h-2 rounded-full transition-all ${
+                className={`h-2 rounded-full transition-all ${
                   index === currentIndex 
                     ? 'bg-white w-8' 
-                    : 'bg-white/50 hover:bg-white/75'
+                    : 'bg-white/50 hover:bg-white/75 w-2'
                 }`}
                 aria-label={`Aller à la photo ${index + 1}`}
               />
@@ -162,7 +161,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         )}
 
         {/* Compteur */}
-        <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium z-20">
+        <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm z-20">
           {currentIndex + 1} / {validImages.length}
         </div>
       </div>
