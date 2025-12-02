@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
+use App\Traits\OptimizesImages;
 
 class Event extends Model
 {
-    use HasFactory;
+    use HasFactory, OptimizesImages;
 
     protected $fillable = [
         'name',

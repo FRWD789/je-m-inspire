@@ -21,24 +21,42 @@ class EventResource extends JsonResource
             'available_places' => $this->available_places,
             'level' => $this->level,
             'priority' => $this->priority,
+
+            // ========================================
+            // ✅ IMAGES ORIGINALES (compatibilité)
+            // ========================================
             'thumbnail' => $this->thumbnail_path ? url('storage/' . $this->thumbnail_path) : null,
             'banner' => $this->banner_path ? url('storage/' . $this->banner_path) : null,
+
+            // ========================================
+            // ✅ NOUVEAUTÉ : VARIANTES RESPONSIVE
+            // ========================================
+            'thumbnail_path' => $this->thumbnail_path, // Chemin brut pour ResponsiveImage
+            'thumbnail_variants' => $this->thumbnail_path
+                ? $this->getImageVariants($this->thumbnail_path)
+                : null,
+
+            'banner_path' => $this->banner_path, // Chemin brut pour ResponsiveImage
+            'banner_variants' => $this->banner_path
+                ? $this->getImageVariants($this->banner_path)
+                : null,
+
             'is_cancelled' => (bool) $this->is_cancelled,
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
 
-            'thumbnail' => $this->thumbnail_path,
-            'thumbnail_variants' => $this->getImageVariants($this->thumbnail_path),
-
-            'banner' => $this->banner_path,
-            'banner_variants' => $this->getImageVariants($this->banner_path),
-
-            'images' => $this->eventImages->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'url' => $image->image_path,
-                    'variants' => $this->getImageVariants($image->image_path),
-                    'display_order' => $image->display_order,
-                ];
+            // ========================================
+            // ✅ IMAGES AVEC VARIANTES
+            // ========================================
+            'images' => $this->whenLoaded('images', function() {
+                return $this->images->map(function($image) {
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->image_url, // URL complète (compatibilité)
+                        'image_path' => $image->image_path, // Chemin brut pour ResponsiveImage
+                        'variants' => $this->getImageVariants($image->image_path), // ✅ Variantes
+                        'display_order' => $image->display_order,
+                    ];
+                });
             }),
 
             'localisation' => $this->whenLoaded('localisation', function() {
@@ -61,6 +79,7 @@ class EventResource extends JsonResource
             'creator' => $this->whenLoaded('creator', function() {
                 return new UserResource($this->creator);
             }),
+
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
