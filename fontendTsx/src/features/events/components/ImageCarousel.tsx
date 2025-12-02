@@ -91,56 +91,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         Photos de l'événement ({validImages.length})
       </h2>
 
-      {/* 🔍 PANNEAU TEST */}
-      <div style={{
-        backgroundColor: '#fef3c7',
-        border: '2px solid #f59e0b',
-        borderRadius: '8px',
-        padding: '12px',
-        marginBottom: '12px',
-        fontFamily: 'monospace',
-        fontSize: '12px',
-      }}>
-        <div><strong>🔍 TEST:</strong> L'image brute est affichée SANS aucun CSS</div>
-        <div><strong>📁 URL:</strong> {imageUrls[currentIndex]}</div>
-        <div style={{ color: '#dc2626', marginTop: '8px' }}>
-          <strong>⚠️ Si tu vois du NOIR autour de l'image ci-dessous, c'est que le noir est DANS l'image !</strong>
-        </div>
-      </div>
-      
-      {/* ✅ IMAGE BRUTE SANS CSS - Pour voir si le noir est intégré */}
-      <div style={{
-        marginBottom: '24px',
-        border: '3px solid red',
-        padding: '10px',
-        backgroundColor: '#ffffff',
-      }}>
-        <h3 style={{ marginBottom: '10px', fontSize: '14px', fontWeight: 'bold' }}>
-          📷 IMAGE BRUTE (sans CSS, taille originale)
-        </h3>
-        <div style={{ 
-          overflow: 'auto',
-          maxHeight: '400px',
-          backgroundColor: '#ffffff',  // Fond blanc pour voir le noir de l'image
-        }}>
-          <img
-            src={imageUrls[currentIndex]}
-            alt="Image brute"
-            style={{
-              // ❌ AUCUN style - image taille naturelle
-              display: 'block',
-            }}
-          />
-        </div>
-        <p style={{ marginTop: '10px', fontSize: '11px', color: '#666' }}>
-          👆 Si l'image a des bords noirs, c'est que le noir est DANS l'image elle-même, 
-          pas un problème de CSS !
-        </p>
-      </div>
-
-      {/* Carrousel normal */}
       <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-200 group">
         
+        {/* Images du carrousel */}
         {validImages.map((image, index) => (
           <div
             key={image.id}
@@ -157,7 +110,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           </div>
         ))}
 
-        {/* Boutons navigation */}
+        {/* Boutons de navigation */}
         {validImages.length > 1 && (
           <>
             <button
@@ -180,7 +133,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           </>
         )}
 
-        {/* Indicateurs pagination */}
+        {/* Indicateurs de pagination */}
         {validImages.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
             {validImages.map((_, index) => (
@@ -204,29 +157,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           </div>
         )}
 
-        {/* Compteur */}
+        {/* Compteur d'images */}
         <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm z-20">
           {currentIndex + 1} / {validImages.length}
-        </div>
-      </div>
-
-      {/* Instructions */}
-      <div style={{
-        backgroundColor: '#dcfce7',
-        border: '2px solid #16a34a',
-        borderRadius: '8px',
-        padding: '12px',
-        marginTop: '12px',
-        fontSize: '12px',
-      }}>
-        <strong>✅ DIAGNOSTIC:</strong>
-        <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
-          <li><strong>SI l'image brute (en haut) a des bords noirs:</strong> Le noir est DANS l'image → Problème backend</li>
-          <li><strong>SI l'image brute (en haut) est correcte:</strong> C'est un problème CSS → Problème frontend</li>
-        </ul>
-        <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '4px' }}>
-          <strong>💡 Solution si noir intégré:</strong> Il faut corriger le job d'optimisation backend 
-          pour ne PAS ajouter de padding noir lors de la création des variants
         </div>
       </div>
     </div>
