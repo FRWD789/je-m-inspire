@@ -20,9 +20,6 @@ class OptimizeEventImages implements ShouldQueue
     public $timeout = 600; // 10 minutes max
     public $tries = 2;
 
-    // ❌ SUPPRIMER CETTE LIGNE - CONFLIT AVEC Queueable
-    // public $queue = 'images';
-
     protected $eventId;
     protected $imagePaths;
 
@@ -52,8 +49,31 @@ class OptimizeEventImages implements ShouldQueue
 
         foreach ($this->imagePaths as $index => $pathInfo) {
             try {
-                Log::info("[OptimizeJob] Traitement image {$index}/{count($this->imagePaths)}", [
-                    'path' => $pathInfo['temp_path'] ?? 'unknown',
+                // ✅ VALIDATION : Vérifier que $pathInfo est bien un tableau
+                if (!is_array($pathInfo)) {
+                    Log::error('[OptimizeJob] pathInfo n\'est pas un tableau', [
+                        'event_id' => $this->eventId,
+                        'index' => $index,
+                        'pathInfo_type' => gettype($pathInfo),
+                        'pathInfo_value' => is_string($pathInfo) ? $pathInfo : json_encode($pathInfo)
+                    ]);
+                    continue;
+                }
+
+                // ✅ VALIDATION : Vérifier que temp_path existe et est une chaîne
+                if (!isset($pathInfo['temp_path']) || !is_string($pathInfo['temp_path'])) {
+                    Log::error('[OptimizeJob] temp_path invalide', [
+                        'event_id' => $this->eventId,
+                        'index' => $index,
+                        'pathInfo' => json_encode($pathInfo),
+                        'temp_path_type' => isset($pathInfo['temp_path']) ? gettype($pathInfo['temp_path']) : 'missing'
+                    ]);
+                    continue;
+                }
+
+                Log::info("[OptimizeJob] Traitement image {$index}/" . count($this->imagePaths), [
+                    'path' => $pathInfo['temp_path'],
+                    'directory' => $pathInfo['directory'] ?? 'unknown',
                     'memory_usage' => round(memory_get_usage(true) / 1024 / 1024) . 'MB'
                 ]);
 
@@ -66,8 +86,9 @@ class OptimizeEventImages implements ShouldQueue
                 Log::error('[OptimizeJob] Erreur sur image', [
                     'event_id' => $this->eventId,
                     'index' => $index,
-                    'path' => $pathInfo['temp_path'] ?? 'unknown',
+                    'path' => is_array($pathInfo) && isset($pathInfo['temp_path']) ? $pathInfo['temp_path'] : json_encode($pathInfo),
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                     'memory' => round(memory_get_usage(true) / 1024 / 1024) . 'MB'
                 ]);
 
@@ -90,7 +111,7 @@ class OptimizeEventImages implements ShouldQueue
         $tempPath = $pathInfo['temp_path'];
         $directory = $pathInfo['directory'];
         $maxWidth = $pathInfo['max_width'] ?? 1200;
-        $quality = 80;
+        $quality = $pathInfo['quality'] ?? 80;
 
         $fullPath = storage_path('app/public/' . $tempPath);
 
@@ -166,7 +187,9 @@ class OptimizeEventImages implements ShouldQueue
         } catch (\Exception $e) {
             Log::error('[OptimizeJob] Erreur optimisation', [
                 'path' => $tempPath,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ]);
             throw $e;
         }
@@ -230,7 +253,8 @@ class OptimizeEventImages implements ShouldQueue
 
             } catch (\Exception $e) {
                 Log::error("[OptimizeJob] Erreur variante {$sizeKey}", [
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'basename' => $basename
                 ]);
             }
         }
@@ -244,6 +268,7 @@ class OptimizeEventImages implements ShouldQueue
         Log::error('[OptimizeJob] Job échoué définitivement', [
             'event_id' => $this->eventId,
             'error' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
             'images_count' => count($this->imagePaths)
         ]);
     }
