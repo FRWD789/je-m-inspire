@@ -88,7 +88,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   return (
     <div className="mb-6">
       <h2 className="text-2xl font-semibold mb-3">
-        Photos de l'événement
+        Photos de l'événement ({validImages.length})
       </h2>
 
       <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-200 group">

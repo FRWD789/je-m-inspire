@@ -4,6 +4,7 @@ import type { Event } from "@/types/events"
 import { useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { privateApi } from "@/api/api"
+import { ThumbnailImage } from "@/components/ui/ResponsiveImage"
 
 type EventCardProps = {
   event: Event
@@ -20,11 +21,6 @@ export default function ProfessionalEventCard({
   onEdit,
   isReservation = false 
 }: EventCardProps) {
-
-  let thumbnail = event.thumbnail || event.thumbnail_path;
-  if (thumbnail && !thumbnail.startsWith("http")) {
-    thumbnail = `http://localhost:8000/storage/${thumbnail}`;
-  }
   
   const startDate = formatEventDate(event.start_date)
   const endDate = formatEventDate(event.end_date)
@@ -126,13 +122,16 @@ export default function ProfessionalEventCard({
     <>
       <div className="group relative flex flex-col overflow-hidden w-full rounded-lg md:rounded-[4px] bg-white shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105">
         
-        {/* Thumbnail */}
+        {/* Thumbnail avec images responsive */}
         <div className="h-32 sm:h-40 md:h-44 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-          {thumbnail ? (
-            <img
-              src={thumbnail}
+          {event.thumbnail_path ? (
+            <ThumbnailImage
+              src={event.thumbnail_path}
+              variants={event.thumbnail_variants}
               alt={event.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              size="md"
+              loading="lazy"
+              className="transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center">

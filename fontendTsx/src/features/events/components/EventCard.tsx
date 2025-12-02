@@ -2,6 +2,7 @@ import { Calendar, Edit3, Eye, Layers, MapPin, Trash2, XCircle, CheckCircle, Clo
 import { formatEventDate } from "../utils/date"
 import type { Event } from "@/types/events"
 import { useNavigate } from "react-router-dom"
+import { ThumbnailImage } from "@/components/ui/ResponsiveImage"
 
 type EventCardProps = {
   event: Event
@@ -21,10 +22,6 @@ export default function EventCard({
   isReservation = false 
 }: EventCardProps) {
 
-  let thumbnail = event.thumbnail || event.thumbnail_path ;
-  if (thumbnail && !thumbnail.startsWith("http")) {
-    thumbnail = `http://localhost:8000/storage/${thumbnail}`;
-  }
   const startDate = formatEventDate(event.start_date)
   const endDate = formatEventDate(event.end_date)
   const navigate = useNavigate()
@@ -66,15 +63,16 @@ export default function EventCard({
         </div>
       )}
 
-      {/* Thumbnail */}
+      {/* Thumbnail avec images responsive */}
       <div className="h-32 sm:h-40 md:h-44 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-        {thumbnail ? (
-          <img
-            src={thumbnail}
+        {event.thumbnail_path ? (
+          <ThumbnailImage
+            src={event.thumbnail_path}
+            variants={event.thumbnail_variants}
             alt={event.name}
-            loading="lazy"          
-            decoding="async" 
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            size="md"
+            loading="lazy"
+            className="transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center">
