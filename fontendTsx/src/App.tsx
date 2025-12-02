@@ -14,32 +14,27 @@ import Home from "./features/home-about/page/home";
 import PublicEvents from "./features/events/page/publicEvents";
 import Login from "./features/auth/page/login";
 
-// =========================================
-// ✅ LAZY LOADING - AUTH & PUBLIC
-// =========================================
-const Register = lazy(() => import("./features/auth/page/register"));
-const RegisterPro = lazy(() => import("./features/auth/page/registerPro"));
-const EventDetail = lazy(() => import("./features/events/page/eventDetail"));
-const GoogleCallback = lazy(() => import("./features/auth/page/GoogleCallback"));
-const ForgotPasswordPage = lazy(() => import("./features/auth/page/ForgotPasswordPage"));
-const ResetPasswordPage = lazy(() => import("./features/auth/page/ResetPasswordPage"));
-const About = lazy(() => import("./features/home-about/page/About"));
-const ProfessionalsPage = lazy(() => import("./features/professional/page/ProfessionalsPage"));
-const ProfessionalPublicProfile = lazy(() => import("./features/professional/page/ProProfile"));
-const DisableNotificationsPage = lazy(() => import("./features/follow/page/DisableNotificationsPage"));
 
-// =========================================
-// ✅ LAZY LOADING - DASHBOARD & USER
-// =========================================
-const Dashboard = lazy(() => import("./layout/dashboard"));
-const UserPage = lazy(() => import("./features/auth/page/user"));
-const DashboardHome = lazy(() => import("./features/home-about/page/DashboardHome"));
-const MyEventPage = lazy(() => import("./features/events/page/MyEventPage"));
-const MyReservationPage = lazy(() => import("./features/reservation/page/MyReservationPage"));
-const CalenderEventPage = lazy(() => import("./features/calender/page/CalenderEventPage"));
-const MyFollowingPage = lazy(() => import('./features/follow/page/MyFollowingPage'));
-const VendorDashboard = lazy(() => import("./features/vendorDashboard/page/VendorDashboard"));
-const RemboursementsPage = lazy(() => import("./features/refunds/page/remboursements"));
+import Register from "./features/auth/page/register";
+import RegisterPro from "./features/auth/page/registerPro";
+import EventDetail from"./features/events/page/eventDetail";
+import GoogleCallback from"./features/auth/page/GoogleCallback";
+import ForgotPasswordPage from"./features/auth/page/ForgotPasswordPage";
+import ResetPasswordPage from"./features/auth/page/ResetPasswordPage";
+import About from"./features/home-about/page/About";
+import ProfessionalsPage from"./features/professional/page/ProfessionalsPage";
+import ProfessionalPublicProfile from"./features/professional/page/ProProfile";
+import DisableNotificationsPage from"./features/follow/page/DisableNotificationsPage";
+
+import Dashboard from "./layout/dashboard";
+import UserPage from "./features/auth/page/user";
+import DashboardHome from "./features/home-about/page/DashboardHome";
+import MyEventPage from "./features/events/page/MyEventPage";
+import MyReservationPage from "./features/reservation/page/MyReservationPage";
+import CalenderEventPage from "./features/calender/page/CalenderEventPage";
+import MyFollowingPage from './features/follow/page/MyFollowingPage';
+import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
+import RemboursementsPage from "./features/refunds/page/remboursements";
 
 // =========================================
 // ✅ LAZY LOADING - PAIEMENTS & ABONNEMENTS
@@ -48,11 +43,8 @@ const PaymentSuccess = lazy(() => import("./features/payment/page/PaymentSuccess
 const AbonnementSuccess = lazy(() => import("./features/abonnement/page/abonnementSuccess"));
 const LinkedAccountSuccess = lazy(() => import("./features/abonnement/page/LinkedAccountSuccess"));
 
-// =========================================
-// ✅ LAZY LOADING - ADMIN
-// =========================================
-const AdminApprovalPage = lazy(() => import("./features/admin/page/userAprrobation"));
-const AdminCommissionPage = lazy(() => import("./features/admin/page/UsersComissons"));
+import AdminApprovalPage from "./features/admin/page/userAprrobation";
+import AdminCommissionPage from "./features/admin/page/UsersComissons";
 
 // =========================================
 // ✅ ERROR PAGES
