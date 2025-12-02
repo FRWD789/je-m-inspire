@@ -1,32 +1,36 @@
-import React, { useState, useCallback, useEffect, memo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ResponsiveImage from '@/components/ui/ResponsiveImage';
 
+interface ImageData {
+  id: number;
+  image_path: string;
+  url?: string;
+  variants?: {
+    original?: string;
+    sm?: string;
+    md?: string;
+    lg?: string;
+    xl?: string;
+    sm_webp?: string;
+    md_webp?: string;
+    lg_webp?: string;
+    xl_webp?: string;
+  };
+}
+
 interface ImageCarouselProps {
-  images: Array<{
-    id: number;
-    url: string;
-    image_path?: string;
-    variants?: {
-      sm?: string;
-      md?: string;
-      lg?: string;
-      xl?: string;
-      sm_webp?: string;
-      md_webp?: string;
-      lg_webp?: string;
-      xl_webp?: string;
-    };
-    display_order?: number;
-  }>;
+  images: ImageData[];
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // 🔧 FIX: Vérification robuste des images
-  const validImages = Array.isArray(images) && images.length > 0 ? images : [];
+  // Filtrer les images valides
+  const validImages = Array.isArray(images) && images.length > 0 
+    ? images.filter(img => img.image_path || img.url)
+    : [];
 
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
@@ -57,14 +61,14 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePrevious, handleNext]);
 
-  // 🔧 FIX: Reset index si images changent
+  // Reset index si images changent
   useEffect(() => {
     if (currentIndex >= validImages.length && validImages.length > 0) {
       setCurrentIndex(0);
     }
   }, [validImages.length, currentIndex]);
 
-  // 🔧 FIX: Si pas d'images, ne rien afficher
+  // Si pas d'images, ne rien afficher
   if (validImages.length === 0) {
     console.warn('[ImageCarousel] No valid images provided');
     return (
@@ -83,7 +87,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         Photos de l'événement ({validImages.length})
       </h2>
       
-      <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-gray-100 group">
+      {/* ✅ FIX: Hauteur augmentée + object-center pour centrage */}
+      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-100 group">
         {/* Images Container */}
         <div className="relative w-full h-full">
           {validImages.map((image, index) => (
@@ -96,55 +101,45 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
                 pointerEvents: index === currentIndex ? 'auto' : 'none'
               }}
             >
+              {/* ✅ FIX: Ajout de object-center */}
               <ResponsiveImage
-                    src={image.image_path || image.url}
-                    variants={image.variants}  // ← AJOUTÉ
-                    alt={`Photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    fetchPriority={index === 0 ? 'high' : 'low'}
-                />
+                src={image.image_path || image.url}
+                variants={image.variants}
+                alt={`Photo ${index + 1}`}
+                className="w-full h-full object-cover object-center"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+              />
             </div>
           ))}
         </div>
 
-        {/* Navigation Buttons - Visible au hover sur desktop */}
+        {/* Navigation Buttons - Visible au survol */}
         {validImages.length > 1 && (
           <>
             <button
               onClick={handlePrevious}
               disabled={isTransitioning}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 
-                bg-white/90 hover:bg-white rounded-full p-3 
-                shadow-lg transition-all duration-200
-                opacity-0 group-hover:opacity-100
-                md:opacity-100
-                disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 shadow-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed z-20"
               aria-label="Image précédente"
             >
-              <ChevronLeft className="w-6 h-6 text-gray-800" />
+              <ChevronLeft size={24} />
             </button>
-
+            
             <button
               onClick={handleNext}
               disabled={isTransitioning}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 
-                bg-white/90 hover:bg-white rounded-full p-3 
-                shadow-lg transition-all duration-200
-                opacity-0 group-hover:opacity-100
-                md:opacity-100
-                disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 shadow-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed z-20"
               aria-label="Image suivante"
             >
-              <ChevronRight className="w-6 h-6 text-gray-800" />
+              <ChevronRight size={24} />
             </button>
           </>
         )}
 
-        {/* Indicators (Dots) */}
+        {/* Indicateurs de pagination */}
         {validImages.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 
-            flex gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
             {validImages.map((_, index) => (
               <button
                 key={index}
@@ -155,21 +150,19 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
                     setTimeout(() => setIsTransitioning(false), 300);
                   }
                 }}
-                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                className={`w-2 h-2 rounded-full transition-all ${
                   index === currentIndex 
-                    ? 'bg-white w-6' 
+                    ? 'bg-white w-8' 
                     : 'bg-white/50 hover:bg-white/75'
                 }`}
-                aria-label={`Aller à l'image ${index + 1}`}
+                aria-label={`Aller à la photo ${index + 1}`}
               />
             ))}
           </div>
         )}
 
-        {/* Image counter */}
-        <div className="absolute top-4 right-4 z-20 
-          bg-black/50 backdrop-blur-sm text-white 
-          px-3 py-1 rounded-full text-sm font-medium">
+        {/* Compteur */}
+        <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium z-20">
           {currentIndex + 1} / {validImages.length}
         </div>
       </div>
@@ -177,13 +170,4 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   );
 };
 
-// 🚀 OPTIMISATION: Memo pour éviter re-renders inutiles
-export default memo(ImageCarousel, (prevProps, nextProps) => {
-  // Ne re-render que si le nombre d'images ou les IDs changent
-  if (prevProps.images.length !== nextProps.images.length) return false;
-  
-  return prevProps.images.every((img, idx) => 
-    img.id === nextProps.images[idx]?.id &&
-    img.url === nextProps.images[idx]?.url
-  );
-});
+export default ImageCarousel;
