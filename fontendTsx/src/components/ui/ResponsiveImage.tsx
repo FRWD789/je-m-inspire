@@ -187,7 +187,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   fetchPriority = 'auto',
   onLoad,
 }) => {
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
+  const API_BASE =  'https://api.jminspire.com';
   const imgRef = useRef<HTMLImageElement>(null);
   
   const buildUrl = (path: string | undefined | null) => {
