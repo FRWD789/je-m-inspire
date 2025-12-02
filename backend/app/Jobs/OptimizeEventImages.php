@@ -180,7 +180,7 @@ class OptimizeEventImages implements ShouldQueue
 
             Log::info('[OptimizeJob] Optimisation réussie', [
                 'path' => $tempPath,
-                'variants_generated' => 4, // md + lg × 2 formats
+                'variants_generated' => 6, // md, lg, xl × 2 formats (jpg + webp)
                 'memory' => round(memory_get_usage(true) / 1024 / 1024) . 'MB'
             ]);
 
@@ -196,7 +196,7 @@ class OptimizeEventImages implements ShouldQueue
     }
 
     /**
-     * Génère les variantes responsive (RÉDUIT à 2 tailles)
+     * Génère les variantes responsive (3 tailles optimales)
      */
     private function generateVariants(
         string $originalJpgPath,
@@ -205,10 +205,11 @@ class OptimizeEventImages implements ShouldQueue
         int $quality,
         ImageManager $manager
     ): void {
-        // ✅ Seulement 2 tailles pour économiser mémoire et espace disque
+        // ✅ 3 tailles pour couvrir tous les cas d'usage
         $sizes = [
             'md' => 600,  // Mobile/Thumbnail
             'lg' => 1200, // Desktop
+            'xl' => 1920, // Grandes images (carrousel, hero)
         ];
 
         foreach ($sizes as $sizeKey => $targetWidth) {

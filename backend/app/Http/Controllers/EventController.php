@@ -506,7 +506,7 @@ class EventController extends Controller
                     $oldBasename = $oldPath['filename'];
                     $oldDir = $oldPath['dirname'];
 
-                    foreach (['_sm', '_md', '_lg', '_xl'] as $suffix) {
+                    foreach (['_md', '_lg', '_xl'] as $suffix) {
                         foreach (['.jpg', '.webp'] as $ext) {
                             $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {
@@ -542,7 +542,7 @@ class EventController extends Controller
                     $oldBasename = $oldPath['filename'];
                     $oldDir = $oldPath['dirname'];
 
-                    foreach (['_sm', '_md', '_lg', '_xl'] as $suffix) {
+                    foreach (['_md', '_lg', '_xl'] as $suffix) {
                         foreach (['.jpg', '.webp'] as $ext) {
                             $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {
@@ -584,7 +584,7 @@ class EventController extends Controller
                     $basename = $pathInfo['filename'];
                     $directory = $pathInfo['dirname'];
 
-                    foreach (['_sm', '_md', '_lg', '_xl', ''] as $suffix) {
+                    foreach (['_md', '_lg', '_xl'] as $suffix) {
                         foreach (['.jpg', '.webp'] as $ext) {
                             $variantPath = "{$directory}/{$basename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {

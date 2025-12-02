@@ -1,22 +1,20 @@
 import React, { useRef } from 'react';
 
 /**
- * ResponsiveImage - VERSION FINALE
+ * ResponsiveImage - VERSION OPTIMISÉE (md, lg, xl uniquement)
  * 
+ * ✅ Génère uniquement 3 variantes : md (600px), lg (1200px), xl (1920px)
+ * ✅ sm (300px) supprimé - md sert de fallback pour les petites tailles
  * ✅ Garantit que les images remplissent TOUJOURS leur conteneur
- * ✅ Utilise uniquement <img> avec srcset (pas de wrapper)
- * ✅ Style inline comme fallback si classes Tailwind échouent
  */
 
 interface ResponsiveImageProps {
   src: string;
   variants?: {
     original?: string;
-    sm?: string;
     md?: string;
     lg?: string;
     xl?: string;
-    sm_webp?: string;
     md_webp?: string;
     lg_webp?: string;
     xl_webp?: string;
@@ -58,7 +56,6 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       if (loadedSrc.includes('_xl')) variant = 'xl (1920px)';
       else if (loadedSrc.includes('_lg')) variant = 'lg (1200px)';
       else if (loadedSrc.includes('_md')) variant = 'md (600px)';
-      else if (loadedSrc.includes('_sm')) variant = 'sm (300px)';
       
       console.log(
         `%c🖼️ ${alt}%c → ${variant} %c${format}`,
@@ -71,16 +68,14 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     if (onLoad) onLoad();
   };
 
-  // ✅ Style combiné : merge le style passé avec les règles de remplissage
   const combinedStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
     objectPosition: 'center',
-    ...style, // Le style personnalisé peut override si besoin
+    ...style,
   };
 
-  // Si pas de variantes, image simple
   if (!variants) {
     return (
       <img
@@ -97,18 +92,15 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     );
   }
 
-  // Construire srcset avec WebP en priorité
+  // Construire srcset avec WebP en priorité (md, lg, xl uniquement)
   const srcsetItems = [];
   
-  // Ajouter les variantes WebP (prioritaire)
-  if (variants.sm_webp) srcsetItems.push(`${buildUrl(variants.sm_webp)} 300w`);
   if (variants.md_webp) srcsetItems.push(`${buildUrl(variants.md_webp)} 600w`);
   if (variants.lg_webp) srcsetItems.push(`${buildUrl(variants.lg_webp)} 1200w`);
   if (variants.xl_webp) srcsetItems.push(`${buildUrl(variants.xl_webp)} 1920w`);
   
   // Fallback JPEG si pas de WebP
   if (srcsetItems.length === 0) {
-    if (variants.sm) srcsetItems.push(`${buildUrl(variants.sm)} 300w`);
     if (variants.md) srcsetItems.push(`${buildUrl(variants.md)} 600w`);
     if (variants.lg) srcsetItems.push(`${buildUrl(variants.lg)} 1200w`);
     if (variants.xl) srcsetItems.push(`${buildUrl(variants.xl)} 1920w`);
@@ -121,6 +113,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     variants.md_webp || 
     variants.xl || 
     variants.lg || 
+    variants.md ||
     variants.original || 
     src
   );
@@ -130,7 +123,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       ref={imgRef}
       src={fallbackSrc || ''}
       srcSet={srcset || undefined}
-      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px"
+      sizes="(max-width: 640px) 600px, (max-width: 1024px) 1200px, 1920px"
       alt={alt}
       className={className}
       style={combinedStyle}
@@ -150,10 +143,8 @@ interface ThumbnailImageProps {
   src: string;
   variants?: {
     original?: string;
-    sm?: string;
     md?: string;
     lg?: string;
-    sm_webp?: string;
     md_webp?: string;
     lg_webp?: string;
   };
@@ -163,7 +154,7 @@ interface ThumbnailImageProps {
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   onLoad?: () => void;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg'; // sm utilise maintenant md comme fallback
 }
 
 export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
@@ -193,7 +184,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
       const format = isWebP ? 'WebP' : 'JPG';
       
       console.log(
-        `%c📸 Thumbnail: ${alt}%c → ${size.toUpperCase()} ${format}`,
+        `%c📸 Thumbnail: ${alt}%c → ${size === 'sm' ? 'SM→MD' : size.toUpperCase()} ${format}`,
         'color: #ec4899; font-weight: bold',
         `color: ${isWebP ? '#8b5cf6' : '#f59e0b'}`
       );
@@ -202,7 +193,6 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     if (onLoad) onLoad();
   };
 
-  // ✅ Style combiné pour thumbnails aussi
   const combinedStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
@@ -227,9 +217,11 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     );
   }
 
-  // Choisir la bonne taille
-  const webpSrc = size === 'sm' ? variants.sm_webp : size === 'md' ? variants.md_webp : variants.lg_webp;
-  const jpegSrc = size === 'sm' ? variants.sm : size === 'md' ? variants.md : variants.lg;
+  // ✅ sm utilise md comme fallback (sm n'existe plus)
+  const effectiveSize = size === 'sm' ? 'md' : size;
+  
+  const webpSrc = effectiveSize === 'md' ? variants.md_webp : variants.lg_webp;
+  const jpegSrc = effectiveSize === 'md' ? variants.md : variants.lg;
   const fallbackSrc = buildUrl(webpSrc || jpegSrc || variants.original || src);
 
   return (
