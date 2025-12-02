@@ -4,14 +4,14 @@ namespace App\Jobs;
 
 use App\Models\Event;
 use App\Models\EventImage;
-use App\Traits\OptimizesImages;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class OptimizeEventImages implements ShouldQueue
 {
@@ -31,7 +31,7 @@ class OptimizeEventImages implements ShouldQueue
 
     public function handle()
     {
-        Log::info('[OptimizeJob] Début optimisation', [
+        Log::info('[OptimizeJob] Début optimisation avec Intervention Image', [
             'event_id' => $this->eventId,
             'images_count' => count($this->imagePaths)
         ]);
@@ -54,6 +54,9 @@ class OptimizeEventImages implements ShouldQueue
         ]);
     }
 
+    /**
+     * Optimise une image avec Intervention Image
+     */
     private function optimizeImage($pathInfo)
     {
         $tempPath = $pathInfo['temp_path'];
@@ -69,94 +72,56 @@ class OptimizeEventImages implements ShouldQueue
         }
 
         try {
-            // Extraire les infos du fichier
             $filePathInfo = pathinfo($tempPath);
             $basename = $filePathInfo['filename'];
             $extension = strtolower($filePathInfo['extension']);
 
-            // Augmenter limite mémoire
-            $originalMemoryLimit = ini_get('memory_limit');
-            ini_set('memory_limit', '1024M');
+            $manager = new ImageManager(new Driver());
 
             // Charger l'image
-            $imageInfo = getimagesize($fullPath);
-            if (!$imageInfo) {
-                throw new \Exception("Impossible de lire l'image");
+            $image = $manager->read($fullPath);
+            $originalWidth = $image->width();
+            $originalHeight = $image->height();
+
+            Log::info('[OptimizeJob] Image chargée', [
+                'path' => $tempPath,
+                'size' => "{$originalWidth}x{$originalHeight}"
+            ]);
+
+            // Redimensionner si nécessaire
+            if ($originalWidth > $maxWidth || $originalHeight > $maxWidth) {
+                $image->scaleDown(width: $maxWidth, height: $maxWidth);
+                Log::info('[OptimizeJob] Image redimensionnée', [
+                    'new_size' => $image->width() . 'x' . $image->height()
+                ]);
             }
 
-            list($originalWidth, $originalHeight, $type) = $imageInfo;
+            // Sauvegarder en JPG et WebP
+            $jpgPath = storage_path("app/public/{$directory}/{$basename}.jpg");
+            $webpPath = storage_path("app/public/{$directory}/{$basename}.webp");
 
-            // Charger l'image source
-            $source = $this->loadImageFromFile($fullPath, $type);
-            if (!$source) {
-                throw new \Exception("Impossible de charger l'image");
-            }
+            $image->toJpeg(quality: $quality)->save($jpgPath);
+            $image->toWebp(quality: $quality)->save($webpPath);
 
-            // Convertir en JPG + WebP si ce n'est pas déjà fait
-            $originalJpgPath = storage_path("app/public/{$directory}/{$basename}.jpg");
-            $originalWebpPath = storage_path("app/public/{$directory}/{$basename}.webp");
-
-            if (!file_exists($originalJpgPath) || $extension !== 'jpg') {
-                // Redimensionner si nécessaire
-                if ($originalWidth > $maxWidth || $originalHeight > $maxWidth) {
-                    $ratio = min($maxWidth / $originalWidth, $maxWidth / $originalHeight);
-                    $newWidth = (int)($originalWidth * $ratio);
-                    $newHeight = (int)($originalHeight * $ratio);
-
-                    $resized = imagecreatetruecolor($newWidth, $newHeight);
-                    $white = imagecolorallocate($resized, 255, 255, 255);
-                    imagefill($resized, 0, 0, $white);
-
-                    imagecopyresampled(
-                        $resized, $source,
-                        0, 0, 0, 0,
-                        $newWidth, $newHeight,
-                        $originalWidth, $originalHeight
-                    );
-
-                    imagejpeg($resized, $originalJpgPath, $quality);
-                    imagewebp($resized, $originalWebpPath, $quality);
-                    imagedestroy($resized);
-
-                    $originalWidth = $newWidth;
-                    $originalHeight = $newHeight;
-                } else {
-                    // Image déjà assez petite
-                    $newImg = imagecreatetruecolor($originalWidth, $originalHeight);
-                    $white = imagecolorallocate($newImg, 255, 255, 255);
-                    imagefill($newImg, 0, 0, $white);
-                    imagecopy($newImg, $source, 0, 0, 0, 0, $originalWidth, $originalHeight);
-
-                    imagejpeg($newImg, $originalJpgPath, $quality);
-                    imagewebp($newImg, $originalWebpPath, $quality);
-                    imagedestroy($newImg);
-                }
-            }
-
-            // Générer les variantes responsive
-            $this->generateVariantsFromExistingFile(
-                $originalJpgPath,
+            // Générer les variantes
+            $this->generateVariants(
+                $jpgPath,
                 $directory,
                 $basename,
-                $originalWidth,
-                $originalHeight,
-                $quality
+                $image->width(),
+                $image->height(),
+                $quality,
+                $manager
             );
 
-            // Supprimer le fichier original si différent de JPG
+            // Supprimer le fichier original si ce n'est pas un JPG
             if ($extension !== 'jpg' && $extension !== 'jpeg' && file_exists($fullPath)) {
                 unlink($fullPath);
             }
 
-            imagedestroy($source);
-            gc_collect_cycles();
-            ini_set('memory_limit', $originalMemoryLimit);
-
-            Log::info('[OptimizeJob] Image optimisée avec succès', [
+            Log::info('[OptimizeJob] Optimisation réussie', [
                 'path' => $tempPath,
-                'directory' => $directory,
-                'basename' => $basename,
-                'original_size' => $originalWidth . 'x' . $originalHeight
+                'variants_generated' => 8  // 4 tailles × 2 formats
             ]);
 
         } catch (\Exception $e) {
@@ -165,44 +130,22 @@ class OptimizeEventImages implements ShouldQueue
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            throw $e;
         }
     }
 
     /**
-     * Charger une image depuis un fichier
+     * Génère les variantes responsive
      */
-    private function loadImageFromFile($filePath, $type)
-    {
-        switch ($type) {
-            case IMAGETYPE_JPEG:
-                return @imagecreatefromjpeg($filePath);
-            case IMAGETYPE_PNG:
-                $img = @imagecreatefrompng($filePath);
-                if ($img) {
-                    $width = imagesx($img);
-                    $height = imagesy($img);
-                    $newImg = imagecreatetruecolor($width, $height);
-                    $white = imagecolorallocate($newImg, 255, 255, 255);
-                    imagefill($newImg, 0, 0, $white);
-                    imagecopy($newImg, $img, 0, 0, 0, 0, $width, $height);
-                    imagedestroy($img);
-                    return $newImg;
-                }
-                return false;
-            case IMAGETYPE_GIF:
-                return @imagecreatefromgif($filePath);
-            case IMAGETYPE_WEBP:
-                return @imagecreatefromwebp($filePath);
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Générer les variantes à partir d'un fichier JPG existant
-     */
-    private function generateVariantsFromExistingFile($originalJpgPath, $directory, $basename, $originalWidth, $originalHeight, $quality)
-    {
+    private function generateVariants(
+        string $originalJpgPath,
+        string $directory,
+        string $basename,
+        int $originalWidth,
+        int $originalHeight,
+        int $quality,
+        ImageManager $manager
+    ): void {
         $sizes = [
             'sm' => 300,
             'md' => 600,
@@ -210,50 +153,36 @@ class OptimizeEventImages implements ShouldQueue
             'xl' => 1920
         ];
 
-        $source = imagecreatefromjpeg($originalJpgPath);
-        if (!$source) return;
-
         foreach ($sizes as $sizeKey => $targetWidth) {
-            // Si l'image est plus petite, dupliquer
-            if ($originalWidth <= $targetWidth && $originalHeight <= $targetWidth) {
+            try {
+                $image = $manager->read($originalJpgPath);
+
+                // Si l'image est déjà plus petite, on la duplique
+                if ($originalWidth <= $targetWidth && $originalHeight <= $targetWidth) {
+                    $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
+                    $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
+
+                    copy($originalJpgPath, $jpgPath);
+                    $image->toWebp(quality: $quality)->save($webpPath);
+
+                    continue;
+                }
+
+                // Redimensionner
+                $image->scaleDown(width: $targetWidth, height: $targetWidth);
+
+                // Sauvegarder
                 $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
                 $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
 
-                copy($originalJpgPath, $jpgPath);
+                $image->toJpeg(quality: $quality)->save($jpgPath);
+                $image->toWebp(quality: $quality)->save($webpPath);
 
-                $tempSource = imagecreatefromjpeg($originalJpgPath);
-                imagewebp($tempSource, $webpPath, $quality);
-                imagedestroy($tempSource);
-
-                continue;
+            } catch (\Exception $e) {
+                Log::error("[OptimizeJob] Erreur variante {$sizeKey}", [
+                    'error' => $e->getMessage()
+                ]);
             }
-
-            // Redimensionner en préservant l'aspect ratio
-            $ratio = min($targetWidth / $originalWidth, $targetWidth / $originalHeight);
-            $newWidth = (int)($originalWidth * $ratio);
-            $newHeight = (int)($originalHeight * $ratio);
-
-            $resized = imagecreatetruecolor($newWidth, $newHeight);
-            $white = imagecolorallocate($resized, 255, 255, 255);
-            imagefill($resized, 0, 0, $white);
-
-            imagecopyresampled(
-                $resized, $source,
-                0, 0, 0, 0,
-                $newWidth, $newHeight,
-                $originalWidth, $originalHeight
-            );
-
-            $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
-            $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
-
-            imagejpeg($resized, $jpgPath, $quality);
-            imagewebp($resized, $webpPath, $quality);
-
-            imagedestroy($resized);
         }
-
-        imagedestroy($source);
-        gc_collect_cycles();
     }
 }
