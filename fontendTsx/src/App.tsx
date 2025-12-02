@@ -1,117 +1,136 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./layout/Layout";
-import Login from "./features/auth/page/login";
-import Register from "./features/auth/page/register";
-import RegisterPro from "./features/auth/page/registerPro";
-import Home from "./features/home-about/page/home";
-import UserPage from "./features/auth/page/user";
-import Dashboard from "./layout/dashboard";
-import PublicEvents from "./features/events/page/publicEvents";
-import EventDetail from "./features/events/page/eventDetail";
-import AdminApprovalPage from "./features/admin/page/userAprrobation";
-import PaymentSuccess from "./features/payment/page/PaymentSuccess";
-import PrivateRoute from "./components/privateRoute";
 import PersistLogin from "./components/persistLogin";
-import DashboardHome from "./features/home-about/page/DashboardHome";
+import PrivateRoute from "./components/privateRoute";
 import OnboardingGuard from "./components/OnboardingGuard";
 import EventProvider from "./context/EventContext";
-import MyEventPage from "./features/events/page/MyEventPage";
-import MyReservationPage from "./features/reservation/page/MyReservationPage";
-import CalenderEventPage from "./features/calender/page/CalenderEventPage";
-import ProfessionalPublicProfile from "./features/professional/page/ProProfile";
-import AdminCommissionPage from "./features/admin/page/UsersComissons";
-import AbonnementSuccess from "./features/abonnement/page/abonnementSuccess";
-import GoogleCallback from "./features/auth/page/GoogleCallback";
-import VendorDashboard from "./features/vendorDashboard/page/VendorDashboard";
-import MyFollowingPage from './features/follow/page/MyFollowingPage';
-import DisableNotificationsPage from "./features/follow/page/DisableNotificationsPage";
-import LinkedAccountSuccess from "./features/abonnement/page/LinkedAccountSuccess";
-import About from "./features/home-about/page/About";
 import CookieBar from "./components/CookieBar";
-import RemboursementsPage from "./features/refunds/page/remboursements";
-import ProfessionalsPage from "./features/professional/page/ProfessionalsPage";
-import ForgotPasswordPage from "./features/auth/page/ForgotPasswordPage";
-import ResetPasswordPage from "./features/auth/page/ResetPasswordPage";
+
+// =========================================
+// ✅ COMPOSANTS CRITIQUES (chargés immédiatement)
+// =========================================
+// Ces pages sont souvent visitées en premier
+import Home from "./features/home-about/page/home";
+import PublicEvents from "./features/events/page/publicEvents";
+import Login from "./features/auth/page/login";
+
+// =========================================
+// ✅ LAZY LOADING - AUTH & PUBLIC
+// =========================================
+const Register = lazy(() => import("./features/auth/page/register"));
+const RegisterPro = lazy(() => import("./features/auth/page/registerPro"));
+const EventDetail = lazy(() => import("./features/events/page/eventDetail"));
+const GoogleCallback = lazy(() => import("./features/auth/page/GoogleCallback"));
+const ForgotPasswordPage = lazy(() => import("./features/auth/page/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./features/auth/page/ResetPasswordPage"));
+const About = lazy(() => import("./features/home-about/page/About"));
+const ProfessionalsPage = lazy(() => import("./features/professional/page/ProfessionalsPage"));
+const ProfessionalPublicProfile = lazy(() => import("./features/professional/page/ProProfile"));
+const DisableNotificationsPage = lazy(() => import("./features/follow/page/DisableNotificationsPage"));
+
+// =========================================
+// ✅ LAZY LOADING - DASHBOARD & USER
+// =========================================
+const Dashboard = lazy(() => import("./layout/dashboard"));
+const UserPage = lazy(() => import("./features/auth/page/user"));
+const DashboardHome = lazy(() => import("./features/home-about/page/DashboardHome"));
+const MyEventPage = lazy(() => import("./features/events/page/MyEventPage"));
+const MyReservationPage = lazy(() => import("./features/reservation/page/MyReservationPage"));
+const CalenderEventPage = lazy(() => import("./features/calender/page/CalenderEventPage"));
+const MyFollowingPage = lazy(() => import('./features/follow/page/MyFollowingPage'));
+const VendorDashboard = lazy(() => import("./features/vendorDashboard/page/VendorDashboard"));
+const RemboursementsPage = lazy(() => import("./features/refunds/page/remboursements"));
+
+// =========================================
+// ✅ LAZY LOADING - PAIEMENTS & ABONNEMENTS
+// =========================================
+const PaymentSuccess = lazy(() => import("./features/payment/page/PaymentSuccess"));
+const AbonnementSuccess = lazy(() => import("./features/abonnement/page/abonnementSuccess"));
+const LinkedAccountSuccess = lazy(() => import("./features/abonnement/page/LinkedAccountSuccess"));
+
+// =========================================
+// ✅ LAZY LOADING - ADMIN
+// =========================================
+const AdminApprovalPage = lazy(() => import("./features/admin/page/userAprrobation"));
+const AdminCommissionPage = lazy(() => import("./features/admin/page/UsersComissons"));
+
+// =========================================
+// ✅ LOADING FALLBACK
+// =========================================
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 export default function App() {
   return (
     <EventProvider>
       <CookieBar/>
-      <Routes>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          <Route element={<PersistLogin />}>
 
-        <Route element={<PersistLogin />}>
+            {/* ========================================
+                PUBLIC ROUTES (accès sans auth)
+            ======================================== */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="login" element={<Login />} />
+              <Route path="register" element={<Register />} />
+              <Route path="register-pro" element={<RegisterPro />} />
+              <Route path="forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="reset-password" element={<ResetPasswordPage />} />
+              
+              {/* Events publics */}
+              <Route path="events" element={<PublicEvents />} />
+              <Route path="events/:id" element={<EventDetail />} />
+              
+              {/* Profils & Professionals */}
+              <Route path="user/:id" element={<ProfessionalPublicProfile />} />
+              <Route path="professionals" element={<ProfessionalsPage />} />
+              
+              {/* OAuth & Notifications */}
+              <Route path="google/callback" element={<GoogleCallback />} />
+              <Route path="notifications/disable" element={<DisableNotificationsPage />} />
+              
+              {/* Pages statiques */}
+              <Route path="about" element={<About />} />
+              
+              {/* Success pages (paiements/abonnements) */}
+              <Route path="abonnement/success" element={<AbonnementSuccess />} />
+              <Route path="payment/success" element={<PaymentSuccess />} />
+            </Route>
 
-          {/* PUBLIC ROUTES */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="reset-password" element={<ResetPasswordPage />} />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-            <Route path="register-pro" element={<RegisterPro />} />
-            <Route path="events" element={<PublicEvents />} />
-            <Route path="events/:id" element={<EventDetail />} />
-            <Route path="google/callback" element={<GoogleCallback />} />
-            <Route path="abonnement/success" element={<AbonnementSuccess />} />
-            <Route path="payment/success" element={<PaymentSuccess />} />
-            <Route path="user/:id" element={<ProfessionalPublicProfile/>}/>
-            <Route path="notifications/disable" element={<DisableNotificationsPage />} />
-            <Route path="about" element={<About />} />
-            <Route path="professionals" element={<ProfessionalsPage />} />
-          </Route>
+            {/* Stripe success (hors Layout) */}
+            <Route path="profile/stripe/success" element={<LinkedAccountSuccess />} />
 
-           <Route
-              path="profile/stripe/success"
-              element={<LinkedAccountSuccess provider="stripe" />}
-            />
-
-            <Route
-              path="profile/paypal/success"
-              element={<LinkedAccountSuccess provider="paypal" />}
-            />
-          {/* PROTECTED ROUTES */}
-          <Route
-            element={
-              <PrivateRoute
-                allowedRoles={["utilisateur", "professionnel", "admin"]}
-              />
-            }
-          >
-            <Route
-              path="/dashboard"
-              element={
-                <OnboardingGuard>
-                  <Dashboard />
-                </OnboardingGuard>
-              }
-            >
-              <Route index element={<DashboardHome />} />
-              {/* CHILD ROUTES (RELATIVES) */}
-              <Route path="profile-settings" element={<UserPage />} />
-              <Route path="my-events" element={<MyEventPage />} />
-              <Route path="my-reservations" element={<MyReservationPage />} />
-              <Route path="event-calender" element={<CalenderEventPage />} />
-              <Route path="my-following" element={<MyFollowingPage />} />
-
-              {/* ADMIN ONLY */}
-              <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-                <Route path="approbation" element={<AdminApprovalPage />} />
-                <Route path="commissions" element={<AdminCommissionPage />} />
-              </Route>
-
-              <Route path="refunds" element={<RemboursementsPage />} />
-
-              {/* Vendor (Admin + Pro) */}
-              <Route
-                element={<PrivateRoute allowedRoles={["admin", "professionnel"]} />}>
-                <Route path="vendor" element={<VendorDashboard />} />
+            {/* ========================================
+                PROTECTED ROUTES (auth requise)
+            ======================================== */}
+            <Route element={<PrivateRoute />}>
+              <Route element={<OnboardingGuard />}>
+                <Route path="/dashboard" element={<Dashboard />}>
+                  <Route index element={<DashboardHome />} />
+                  <Route path="user" element={<UserPage />} />
+                  <Route path="my-events" element={<MyEventPage />} />
+                  <Route path="my-reservations" element={<MyReservationPage />} />
+                  <Route path="calender" element={<CalenderEventPage />} />
+                  <Route path="following" element={<MyFollowingPage />} />
+                  <Route path="vendor-earnings" element={<VendorDashboard />} />
+                  <Route path="refunds" element={<RemboursementsPage />} />
+                  
+                  {/* Routes admin */}
+                  <Route path="approbations" element={<AdminApprovalPage />} />
+                  <Route path="commissions" element={<AdminCommissionPage />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
 
-        </Route>
-      </Routes>
+          </Route>
+        </Routes>
+      </Suspense>
     </EventProvider>
   );
 }

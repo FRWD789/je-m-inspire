@@ -29,14 +29,64 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Séparer les vendors pour meilleur caching
+          // =========================================
+          // ✅ OPTIMISATION DES CHUNKS
+          // =========================================
+          // Vendors de base (React, Router)
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          
+          // UI Libraries
           'ui-vendor': ['lucide-react'],
+          
+          // Maps (Google Maps est lourd)
+          'maps-vendor': ['@react-google-maps/api', '@vis.gl/react-google-maps', '@googlemaps/markerclusterer'],
+          
+          // Forms & Validation
+          'forms-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          
+          // Utilitaires
+          'utils-vendor': ['axios', 'date-fns', 'clsx', 'tailwind-merge'],
+          
+          // i18n
+          'i18n-vendor': ['i18next', 'react-i18next'],
+          
+          // Carousel
+          'carousel-vendor': ['embla-carousel-react'],
         },
       },
     },
+    
+    // =========================================
+    // ✅ OPTIMISATIONS BUILD
+    // =========================================
     chunkSizeWarningLimit: 600,
-    // Optimisation des images statiques
-    assetsInlineLimit: 0, // Ne pas inline les images en base64
+    assetsInlineLimit: 4096, // Inline assets < 4KB en base64
+    
+    // Minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Supprimer console.log en prod
+        drop_debugger: true,
+      },
+    },
+    
+    // CSS code splitting
+    cssCodeSplit: true,
+    
+    // Source maps pour debugging (désactiver en prod)
+    sourcemap: false,
+  },
+  
+  // =========================================
+  // ✅ OPTIMISATIONS DEPS
+  // =========================================
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'axios',
+    ],
   },
 });
