@@ -1,5 +1,7 @@
+// src/features/events/hooks/useEventForm.ts
 import { useEvent } from '@/context/EventContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCompressedFiles } from '@/context/CompressedFilesContext';  // ← AJOUTER
 import type { CreateEventData, UpdateEventData } from '@/types/events';
 
 interface UseEventFormProps {
@@ -11,6 +13,7 @@ interface UseEventFormProps {
 export default function useEventForm({ type, eventId, onSuccess }: UseEventFormProps) {
   const { createEvent, updateEvent } = useEvent();
   const { user } = useAuth();
+  const { thumbnailFile, bannerFile, imagesFiles, clearFiles } = useCompressedFiles();  // ← AJOUTER
 
   const handleSubmit = async (values: any) => {
     try {
@@ -19,12 +22,15 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       console.log('🚀 [useEventForm] ============ DÉBUT SOUMISSION ============');
       console.log('📋 [useEventForm] Type:', type);
       console.log('📋 [useEventForm] EventId:', eventId);
-      console.log('📋 [useEventForm] Values reçues:', values);
       
-      // 🔍 DEBUG FICHIERS - Vérifier le type de données reçues
-      console.log('🔍 [useEventForm] Type de values.thumbnail:', values.thumbnail?.constructor.name);
-      console.log('🔍 [useEventForm] Type de values.banner:', values.banner?.constructor.name);
-      console.log('🔍 [useEventForm] Type de values.images:', values.images?.constructor.name);
+      // 🔥 AFFICHER LES FICHIERS COMPRESSÉS DU CONTEXT
+      console.log('📸 [useEventForm] ======== FICHIERS COMPRESSÉS (Context) ========');
+      console.log('  Thumbnail:', thumbnailFile ? `${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
+      console.log('  Banner:', bannerFile ? `${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
+      console.log('  Images:', imagesFiles.length > 0 ? `${imagesFiles.length} fichier(s)` : 'AUCUN');
+      imagesFiles.forEach((file, i) => {
+        console.log(`    - Image ${i + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+      });
       
       const data = {
         ...values,
@@ -46,61 +52,31 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
         }
       });
       
-      // 🔥 CORRECTION : Gestion des fichiers
-      console.log('📸 [useEventForm] ======== TRAITEMENT DES FICHIERS ========');
+      // 🔥 UTILISER LES FICHIERS COMPRESSÉS DU CONTEXT
+      console.log('📸 [useEventForm] ======== AJOUT FICHIERS COMPRESSÉS ========');
       
-      ['thumbnail', 'banner', 'images'].forEach((key) => {
-        const fileOrFiles = (values as any)[key];
-
-        if (!fileOrFiles) {
-          console.log(`⏭️  [useEventForm] ${key}: AUCUN fichier`);
-          return;
-        }
-
-        console.log(`🔍 [useEventForm] ${key}: Type = ${fileOrFiles.constructor.name}`);
-        console.log(`🔍 [useEventForm] ${key}: Valeur =`, fileOrFiles);
-
-        // Pour les images multiples
-        if (key === 'images') {
-          if (fileOrFiles instanceof FileList) {
-            console.log(`📸 [useEventForm] ${fileOrFiles.length} image(s) de type FileList détectée(s)`);
-            Array.from(fileOrFiles).forEach((file: File, index) => {
-              formData.append('images[]', file);
-              console.log(`  ✅ Image ${index + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB, ${file.type})`);
-            });
-          } else if (Array.isArray(fileOrFiles) && fileOrFiles[0] instanceof File) {
-            console.log(`📸 [useEventForm] ${fileOrFiles.length} image(s) de type Array<File> détectée(s)`);
-            fileOrFiles.forEach((file: File, index) => {
-              formData.append('images[]', file);
-              console.log(`  ✅ Image ${index + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB, ${file.type})`);
-            });
-          } else {
-            console.warn(`⚠️  [useEventForm] images a un type inattendu:`, typeof fileOrFiles);
-          }
-        } 
-        // Pour les fichiers uniques (thumbnail, banner)
-        else if (key === 'thumbnail' || key === 'banner') {
-          let file: File | null = null;
-          
-          if (fileOrFiles instanceof FileList && fileOrFiles.length > 0) {
-            file = fileOrFiles[0];
-            console.log(`✅ [useEventForm] ${key} de type FileList détecté`);
-          } else if (fileOrFiles instanceof File) {
-            file = fileOrFiles;
-            console.log(`✅ [useEventForm] ${key} de type File détecté`);
-          } else if (Array.isArray(fileOrFiles) && fileOrFiles[0] instanceof File) {
-            file = fileOrFiles[0];
-            console.log(`✅ [useEventForm] ${key} de type Array<File> détecté`);
-          }
-          
-          if (file) {
-            formData.append(key, file);
-            console.log(`  ✅ ${key}: ${file.name} (${(file.size / 1024).toFixed(2)} KB, ${file.type})`);
-          } else {
-            console.warn(`⚠️  [useEventForm] ${key} présent mais pas de File valide`);
-          }
-        }
-      });
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+        console.log(`  ✅ Thumbnail ajouté: ${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)`);
+      } else {
+        console.log('  ⏭️  Pas de thumbnail');
+      }
+      
+      if (bannerFile) {
+        formData.append('banner', bannerFile);
+        console.log(`  ✅ Banner ajouté: ${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)`);
+      } else {
+        console.log('  ⏭️  Pas de banner');
+      }
+      
+      if (imagesFiles.length > 0) {
+        imagesFiles.forEach((file, index) => {
+          formData.append('images[]', file);
+          console.log(`  ✅ Image ${index + 1} ajoutée: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+        });
+      } else {
+        console.log('  ⏭️  Pas d\'images galerie');
+      }
 
       // 🔍 DEBUG : Afficher tout le contenu du FormData
       console.log('📦 [useEventForm] ======== CONTENU FORMDATA FINAL ========');
@@ -127,6 +103,11 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       }
 
       console.log('✅ [useEventForm] ============ SOUMISSION RÉUSSIE ============');
+      
+      // 🔥 Nettoyer les fichiers du Context après succès
+      clearFiles();
+      console.log('🗑️  [useEventForm] Fichiers nettoyés du Context');
+      
       onSuccess?.();
     } catch (err: any) {
       console.error('❌ [useEventForm] ============ ERREUR ============');
@@ -134,6 +115,9 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       console.error('❌ [useEventForm] Réponse serveur:', err.response?.data);
       console.error('❌ [useEventForm] Status:', err.response?.status);
       console.error('❌ [useEventForm] Stack:', err.stack);
+      
+      // Ne pas nettoyer les fichiers en cas d'erreur
+      // L'utilisateur peut réessayer sans avoir à les resélectionner
     }
   };
 

@@ -1,6 +1,7 @@
+// src/features/events/components/EventForm.tsx
 import { useState } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { ImageUp, MapPinned, Settings, TextAlignStart, Users } from 'lucide-react'
+import { ImageUp, MapPinned, Settings, TextAlignStart, Users, Loader2 } from 'lucide-react'
 import { createEventSchema, editEventSchema } from '@/schema/eventSchema'
 
 import useEventForm from '../hooks/useEventForm'
@@ -11,6 +12,8 @@ import Input from '@/components/ui/input'
 import Select from '@/components/ui/select'
 import Form from '@/components/form'
 import AutocompleteInputV2 from '@/components/ui/autoCompleteInputV2'
+import { compressImage } from '@/components/utils/image/imageCompression'
+import { useCompressedFiles } from '@/context/CompressedFilesContext'  // ← AJOUTER
 
 interface FormEventsProps {
   type: 'create' | 'edit'
@@ -138,36 +141,86 @@ const EventSettingsSection = () => (
 )
 
 const ImagesSection = () => {
+  // ✅ Récupérer le Context
+  const { setThumbnailFile, setBannerFile, setImagesFiles } = useCompressedFiles()
+  
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [imagesPreview, setImagesPreview] = useState<string[]>([])
   
-  const handleFileChange = (
+  const [isCompressing, setIsCompressing] = useState(false)
+  const [compressionStatus, setCompressionStatus] = useState<string>('')
+  
+  /**
+   * 🔥 CORRECTION : Stocker les fichiers compressés dans le Context
+   */
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setPreview: (v: any) => void,
+    setFile: (file: File | null | File[]) => void,  // ← AJOUTER paramètre
     multiple = false
   ) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
-    // 🔍 LOG: Fichiers sélectionnés
-    console.log(`📸 [ImagesSection] ${multiple ? 'Images' : 'Fichier'} sélectionné(s):`, files.length)
-    
-    if (multiple) {
-      const urls = Array.from(files).map((file) => {
-        console.log(`  ✅ ${file.name} (${(file.size / 1024).toFixed(2)} KB)`)
-        return URL.createObjectURL(file)
-      })
-      setPreview(urls)
-    } else {
-      console.log(`  ✅ ${files[0].name} (${(files[0].size / 1024).toFixed(2)} KB)`)
-      setPreview(URL.createObjectURL(files[0]))
+    setIsCompressing(true)
+    setCompressionStatus(multiple ? 'Compression des images...' : 'Compression...')
+
+    try {
+      if (multiple) {
+        // 🔥 Compression multiple
+        const filesArray = Array.from(files)
+        console.log(`📸 [ImagesSection] Compression de ${filesArray.length} images...`)
+        
+        const compressedFiles: File[] = []
+        const previewUrls: string[] = []
+
+        for (let i = 0; i < filesArray.length; i++) {
+          const file = filesArray[i]
+          setCompressionStatus(`Compression ${i + 1}/${filesArray.length}...`)
+          
+          const compressed = await compressImage(file)
+          compressedFiles.push(compressed)
+          previewUrls.push(URL.createObjectURL(compressed))
+        }
+
+        // ✅ Stocker dans le Context
+        setFile(compressedFiles)
+        setPreview(previewUrls)
+        console.log(`✅ [ImagesSection] ${compressedFiles.length} images compressées et stockées dans Context`)
+        
+      } else {
+        // 🔥 Compression unique
+        const file = files[0]
+        console.log(`📸 [ImagesSection] Compression de ${file.name}...`)
+        
+        const compressed = await compressImage(file)
+        
+        // ✅ Stocker dans le Context
+        setFile(compressed)
+        setPreview(URL.createObjectURL(compressed))
+        console.log(`✅ [ImagesSection] ${file.name} compressé et stocké dans Context`)
+      }
+    } catch (error) {
+      console.error('❌ [ImagesSection] Erreur compression:', error)
+      setCompressionStatus('Erreur lors de la compression')
+    } finally {
+      setIsCompressing(false)
+      setTimeout(() => setCompressionStatus(''), 2000)
     }
   }
 
   return (
     <div className="mb-6">
       <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
+
+      {/* Indicateur de compression */}
+      {isCompressing && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+          <span className="text-sm text-blue-700">{compressionStatus}</span>
+        </div>
+      )}
 
       {/* Thumbnail */}
       <FormFiled htmlFor='thumbnail' label="Thumbnail">
@@ -177,11 +230,12 @@ const ImagesSection = () => {
             type="file"
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             accept="image/*"
+            disabled={isCompressing}
             onChange={(e) => {
               const file = e.target.files?.[0]
               if (file) {
                 console.log('🖼️  [ImagesSection] Thumbnail sélectionné:', file.name)
-                handleFileChange(e, setThumbnailPreview)
+                handleFileChange(e, setThumbnailPreview, setThumbnailFile)  // ← MODIFIER
               }
             }}
           />
@@ -207,11 +261,12 @@ const ImagesSection = () => {
             name="banner"
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             accept="image/*"
+            disabled={isCompressing}
             onChange={(e) => {
               const file = e.target.files?.[0]
               if (file) {
                 console.log('🎨 [ImagesSection] Banner sélectionné:', file.name)
-                handleFileChange(e, setBannerPreview)
+                handleFileChange(e, setBannerPreview, setBannerFile)  // ← MODIFIER
               }
             }}
           />
@@ -238,9 +293,10 @@ const ImagesSection = () => {
             multiple
             accept="image/*"
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            disabled={isCompressing}
             onChange={(e) => {
               console.log('📸 [ImagesSection] Images multiples sélectionnées:', e.target.files?.length || 0)
-              handleFileChange(e, setImagesPreview, true)
+              handleFileChange(e, setImagesPreview, setImagesFiles, true)  // ← MODIFIER
             }}
           />
           {imagesPreview.length > 0 ? (

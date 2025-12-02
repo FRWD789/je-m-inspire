@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@/index.css'
 import App from './App.tsx'
 import { AuthContextProvider } from './context/AuthContext.tsx'
+import { CompressedFilesProvider } from './context/CompressedFilesContext'
 import { BrowserRouter } from 'react-router-dom'
 import './i18n/config'
 import * as Sentry from "@sentry/react";
@@ -89,7 +90,9 @@ createRoot(document.getElementById('root')!).render(
     <Sentry.ErrorBoundary fallback={<ErrorFallback />} showDialog>
       <BrowserRouter>
         <AuthContextProvider>
-          <App />
+          <CompressedFilesProvider>  
+            <App />
+          </CompressedFilesProvider>
         </AuthContextProvider>
       </BrowserRouter>
     </Sentry.ErrorBoundary>

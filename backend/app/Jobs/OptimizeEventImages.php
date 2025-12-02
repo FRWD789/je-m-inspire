@@ -17,52 +17,68 @@ class OptimizeEventImages implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 300; // 5 minutes max
-    public $tries = 3;
+    public $timeout = 600; // 10 minutes max
+    public $tries = 2;
 
-    public $queue = 'images';
+    // ❌ SUPPRIMER CETTE LIGNE - CONFLIT AVEC Queueable
+    // public $queue = 'images';
 
     protected $eventId;
     protected $imagePaths;
 
+    /**
+     * @param int $eventId
+     * @param array $imagePaths
+     */
     public function __construct($eventId, $imagePaths)
     {
         $this->eventId = $eventId;
         $this->imagePaths = $imagePaths;
+
+        // ✅ Définir la queue via la méthode au lieu de la propriété
+        $this->onQueue('images');
     }
 
     public function handle()
     {
-        $availableMemory = $this->getAvailableMemory();
+        // ✅ Augmenter la limite mémoire pour ce job
+        ini_set('memory_limit', '1024M'); // 1GB pour traiter les images
 
-        if ($availableMemory < 256) {
-            Log::warning('[OptimizeJob] RAM insuffisante, job reporté', [
-                'memory_available' => $availableMemory . 'MB'
-            ]);
-            $this->release(60); // Réessayer dans 60 secondes
-            return;
-        }
-
-        Log::info('[OptimizeJob] Début optimisation avec Intervention Image', [
+        Log::info('[OptimizeJob] Début optimisation', [
             'event_id' => $this->eventId,
-            'images_count' => count($this->imagePaths)
+            'images_count' => count($this->imagePaths),
+            'memory_limit' => ini_get('memory_limit')
         ]);
 
-        foreach ($this->imagePaths as $pathInfo) {
+        foreach ($this->imagePaths as $index => $pathInfo) {
             try {
+                Log::info("[OptimizeJob] Traitement image {$index}/{count($this->imagePaths)}", [
+                    'path' => $pathInfo['temp_path'] ?? 'unknown',
+                    'memory_usage' => round(memory_get_usage(true) / 1024 / 1024) . 'MB'
+                ]);
+
                 $this->optimizeImage($pathInfo);
+
+                // ✅ Libérer la mémoire après chaque image
+                gc_collect_cycles();
+
             } catch (\Exception $e) {
                 Log::error('[OptimizeJob] Erreur sur image', [
                     'event_id' => $this->eventId,
+                    'index' => $index,
                     'path' => $pathInfo['temp_path'] ?? 'unknown',
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'memory' => round(memory_get_usage(true) / 1024 / 1024) . 'MB'
                 ]);
+
+                // ⚠️ Ne pas faire échouer tout le job pour une image
+                continue;
             }
         }
 
         Log::info('[OptimizeJob] Optimisation terminée', [
-            'event_id' => $this->eventId
+            'event_id' => $this->eventId,
+            'peak_memory' => round(memory_get_peak_usage(true) / 1024 / 1024) . 'MB'
         ]);
     }
 
@@ -97,7 +113,8 @@ class OptimizeEventImages implements ShouldQueue
 
             Log::info('[OptimizeJob] Image chargée', [
                 'path' => $tempPath,
-                'size' => "{$originalWidth}x{$originalHeight}"
+                'size' => "{$originalWidth}x{$originalHeight}",
+                'file_size' => round(filesize($fullPath) / 1024 / 1024, 2) . 'MB'
             ]);
 
             // Redimensionner si nécessaire
@@ -113,15 +130,24 @@ class OptimizeEventImages implements ShouldQueue
             $webpPath = storage_path("app/public/{$directory}/{$basename}.webp");
 
             $image->toJpeg(quality: $quality)->save($jpgPath);
+
+            // ✅ Libérer mémoire après JPEG
+            unset($image);
+            gc_collect_cycles();
+
+            // ✅ Recharger pour WebP (évite de garder 2 versions en RAM)
+            $image = $manager->read($jpgPath);
             $image->toWebp(quality: $quality)->save($webpPath);
+
+            // ✅ Libérer mémoire
+            unset($image);
+            gc_collect_cycles();
 
             // Générer les variantes
             $this->generateVariants(
                 $jpgPath,
                 $directory,
                 $basename,
-                $image->width(),
-                $image->height(),
                 $quality,
                 $manager
             );
@@ -133,57 +159,74 @@ class OptimizeEventImages implements ShouldQueue
 
             Log::info('[OptimizeJob] Optimisation réussie', [
                 'path' => $tempPath,
-                'variants_generated' => 6,  // Original + 2 tailles × 2 formats
-                'peak_memory' => round(memory_get_peak_usage(true) / 1024 / 1024) . 'MB'
+                'variants_generated' => 4, // md + lg × 2 formats
+                'memory' => round(memory_get_usage(true) / 1024 / 1024) . 'MB'
             ]);
 
         } catch (\Exception $e) {
             Log::error('[OptimizeJob] Erreur optimisation', [
                 'path' => $tempPath,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
             throw $e;
         }
     }
 
     /**
-     * Génère les variantes responsive
+     * Génère les variantes responsive (RÉDUIT à 2 tailles)
      */
-   private function generateVariants(
+    private function generateVariants(
         string $originalJpgPath,
         string $directory,
         string $basename,
-        int $originalWidth,
-        int $originalHeight,
         int $quality,
         ImageManager $manager
     ): void {
-        // ⬇️ RÉDUIRE À 2 TAILLES AU LIEU DE 4
+        // ✅ Seulement 2 tailles pour économiser mémoire et espace disque
         $sizes = [
-            'md' => 400,  // Mobile/Thumbnail
-            'lg' => 800,  // Desktop
+            'md' => 600,  // Mobile/Thumbnail
+            'lg' => 1200, // Desktop
         ];
 
         foreach ($sizes as $sizeKey => $targetWidth) {
             try {
+                // ✅ Charger depuis le JPG original
                 $image = $manager->read($originalJpgPath);
+                $originalWidth = $image->width();
+                $originalHeight = $image->height();
 
+                // Si déjà plus petite, dupliquer
                 if ($originalWidth <= $targetWidth && $originalHeight <= $targetWidth) {
                     $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
                     $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
+
                     copy($originalJpgPath, $jpgPath);
                     $image->toWebp(quality: $quality)->save($webpPath);
+
+                    unset($image);
+                    gc_collect_cycles();
                     continue;
                 }
 
+                // Redimensionner
                 $image->scaleDown(width: $targetWidth, height: $targetWidth);
 
+                // Sauvegarder JPG
                 $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
-                $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
-
                 $image->toJpeg(quality: $quality)->save($jpgPath);
-                $image->toWebp(quality: $quality)->save($webpPath);
+
+                // ✅ Libérer avant WebP
+                unset($image);
+                gc_collect_cycles();
+
+                // Recharger pour WebP
+                $imageWebp = $manager->read($jpgPath);
+                $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
+                $imageWebp->toWebp(quality: $quality)->save($webpPath);
+
+                // ✅ Libérer
+                unset($imageWebp);
+                gc_collect_cycles();
 
             } catch (\Exception $e) {
                 Log::error("[OptimizeJob] Erreur variante {$sizeKey}", [
@@ -193,23 +236,15 @@ class OptimizeEventImages implements ShouldQueue
         }
     }
 
-    private function getAvailableMemory(): int
+    /**
+     * Gérer l'échec du job
+     */
+    public function failed(\Throwable $exception)
     {
-        if (PHP_OS_FAMILY !== 'Linux') {
-            return 1024; // Valeur par défaut hors Linux
-        }
-
-        try {
-            $meminfo = file_get_contents('/proc/meminfo');
-            if (preg_match('/MemAvailable:\s+(\d+)/', $meminfo, $matches)) {
-                return (int)($matches[1] / 1024); // Convertir KB en MB
-            }
-        } catch (\Exception $e) {
-            Log::warning('[OptimizeJob] Impossible de lire meminfo', [
-                'error' => $e->getMessage()
-            ]);
-        }
-
-        return 512; // Valeur par défaut si échec lecture
+        Log::error('[OptimizeJob] Job échoué définitivement', [
+            'event_id' => $this->eventId,
+            'error' => $exception->getMessage(),
+            'images_count' => count($this->imagePaths)
+        ]);
     }
 }
