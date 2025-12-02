@@ -186,38 +186,30 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         
         {/* ✅ Images avec bordure bleue pour debug */}
         {validImages.map((image, index) => (
-          <div
-            key={image.id}
-            className={`absolute inset-0 transition-opacity duration-300 ${
-              index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-            }`}
-            style={{ border: '2px solid blue' }}
-          >
-            <img
-              src={imageUrls[index]}
-              alt={`Photo ${index + 1}`}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              className="w-full h-full object-cover"
-              style={{ border: '2px solid green' }}
-              onLoad={(e) => handleImageLoad(index, e)}
-              onError={(e) => handleImageError(index, e)}
-            />
-            
-            {/* Overlay de status */}
-            {imageLoadStatus[index] === 'error' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
-                <div className="bg-red-500 text-white px-4 py-2 rounded">
-                  ❌ Erreur de chargement
-                </div>
-              </div>
-            )}
-            
-            {imageLoadStatus[index] === 'loading' && index === currentIndex && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <div className="text-white">Chargement...</div>
-              </div>
-            )}
-          </div>
+            <div
+                key={image.id}
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                    index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+                // On force le wrapper à prendre toute la place explicitement
+                style={{ width: '100%', height: '100%' }} 
+                >
+                <img
+                    src={imageUrls[index]}
+                    alt={`Photo ${index + 1}`}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    className="block w-full h-full object-cover"
+                    // 🔥 C'est ici que la magie opère : on force les styles CSS directement
+                    style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0
+                    }}
+                />
+            </div>
         ))}
 
         {/* Boutons navigation */}
