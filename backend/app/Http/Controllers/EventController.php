@@ -258,14 +258,6 @@ class EventController extends Controller
             return $this->unauthorizedResponse('Seuls les professionnels peuvent créer des événements');
         }
 
-        // Log des données reçues pour déboguer
-        Log::info('[Event] Données reçues', [
-            'fields' => array_keys($request->all()),
-            'has_thumbnail' => $request->hasFile('thumbnail'),
-            'has_banner' => $request->hasFile('banner'),
-            'has_images' => $request->hasFile('images')
-        ]);
-
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -286,15 +278,9 @@ class EventController extends Controller
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:2048',
             ]);
         } catch (ValidationException $e) {
-            // Log des erreurs de validation
-            Log::warning('[Event] Erreurs de validation', [
-                'errors' => $e->errors(),
-                'user_id' => $user->id
-            ]);
             return $this->validationErrorResponse($e->errors());
         }
 
-        // Validation des images (max 5)
         if ($request->hasFile('images')) {
             $images = $request->file('images');
             if (count($images) > 5) {
@@ -333,26 +319,35 @@ class EventController extends Controller
                 ]);
             }
 
-            // Upload thumbnail
+            // ✅ UPLOAD RAPIDE : Sauvegarder sans optimiser
             $thumbnailPath = null;
+            $thumbnailOptimize = null;
             if ($request->hasFile('thumbnail')) {
-                $thumbnailPath = $this->optimizeAndSaveImage(
-                    $request->file('thumbnail'),
-                    'event_thumbnails',
-                    800,  // max width
-                    85    // quality
-                );
+                $file = $request->file('thumbnail');
+                $filename = time() . '_thumb_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $thumbnailPath = $file->storeAs('event_thumbnails', $filename, 'public');
+                $thumbnailOptimize = [
+                    'temp_path' => $thumbnailPath,
+                    'directory' => 'event_thumbnails',
+                    'max_width' => 800,
+                    'quality' => 85,
+                    'field' => 'thumbnail'
+                ];
             }
 
-            // Upload banner
             $bannerPath = null;
-             if ($request->hasFile('banner')) {
-                $bannerPath = $this->optimizeAndSaveImage(
-                    $request->file('banner'),
-                    'event_banners',
-                    1920, // max width
-                    90    // quality (plus élevée pour les banners)
-                );
+            $bannerOptimize = null;
+            if ($request->hasFile('banner')) {
+                $file = $request->file('banner');
+                $filename = time() . '_banner_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $bannerPath = $file->storeAs('event_banners', $filename, 'public');
+                $bannerOptimize = [
+                    'temp_path' => $bannerPath,
+                    'directory' => 'event_banners',
+                    'max_width' => 1920,
+                    'quality' => 90,
+                    'field' => 'banner'
+                ];
             }
 
             $event = Event::create([
@@ -370,50 +365,30 @@ class EventController extends Controller
                 'categorie_event_id' => $validated['categorie_event_id'],
                 'thumbnail_path' => $thumbnailPath,
                 'banner_path' => $bannerPath,
-
             ]);
 
-            // Upload thumbnail
-
-            // Upload des images
-           if ($request->hasFile('images')) {
+            // Upload rapide des images
+            $imagesToOptimize = [];
+            if ($request->hasFile('images')) {
                 $images = $request->file('images');
-                $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
 
                 foreach ($images as $index => $image) {
-                    // ✅ Validation MIME (conservée)
-                    if (!in_array($image->getMimeType(), $allowedMimes)) {
-                        DB::rollBack();
-                        return $this->validationErrorResponse([
-                            'images' => ['Chaque fichier doit être une image (JPEG, PNG, GIF, WebP ou AVIF)']
-                        ]);
-                    }
+                    $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                    $imagePath = $image->storeAs('event_images', $filename, 'public');
 
-                    // ✅ OPTIMISATION + SAUVEGARDE (remplace les 2 lignes précédentes)
-                    $imagePath = $this->optimizeAndSaveImage(
-                        $image,
-                        'event_images',
-                        1200,  // max width pour carousel
-                        85     // qualité (1-100)
-                    );
-
-                    // Création en base (identique)
-                    EventImage::create([
+                    $eventImage = EventImage::create([
                         'event_id' => $event->id,
                         'image_path' => $imagePath,
                         'display_order' => $index,
                     ]);
 
-                    // ✅ Logging amélioré (conservé)
-                    if ($debug) {
-                        Log::info('[Event] Image uploadée et optimisée', [
-                            'event_id' => $event->id,
-                            'image_path' => $imagePath,
-                            'display_order' => $index,
-                            'original_size' => round($image->getSize() / 1024, 2) . ' KB',
-                            'mime_type' => $image->getMimeType()
-                        ]);
-                    }
+                    $imagesToOptimize[] = [
+                        'temp_path' => $imagePath,
+                        'directory' => 'event_images',
+                        'max_width' => 1200,
+                        'quality' => 85,
+                        'image_id' => $eventImage->id
+                    ];
                 }
             }
 
@@ -425,22 +400,29 @@ class EventController extends Controller
 
             DB::commit();
 
-            // Notifier les followers (ne bloque pas si erreur)
+            // ✅ LANCER L'OPTIMISATION EN ARRIÈRE-PLAN
+            $allImages = array_filter(array_merge(
+                $thumbnailOptimize ? [$thumbnailOptimize] : [],
+                $bannerOptimize ? [$bannerOptimize] : [],
+                $imagesToOptimize
+            ));
+
+            if (!empty($allImages)) {
+                \App\Jobs\OptimizeEventImages::dispatch($event->id, $allImages);
+
+                Log::info('[Event] Job d\'optimisation lancé', [
+                    'event_id' => $event->id,
+                    'images_count' => count($allImages)
+                ]);
+            }
+
+            // Notifier les followers
             try {
                 $this->notifyFollowers($user, $event);
             } catch (\Exception $e) {
                 Log::warning('[Event] Erreur notification (non-bloquant)', [
                     'event_id' => $event->id,
                     'error' => $e->getMessage()
-                ]);
-            }
-
-            if ($debug) {
-                Log::info('[Event] Événement créé', [
-                    'event_id' => $event->id,
-                    'user_id' => $user->id,
-                    'name' => $event->name,
-                    'images_count' => $event->images()->count()
                 ]);
             }
 
