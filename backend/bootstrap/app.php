@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'professional' => \App\Http\Middleware\EnsureUserIsProfessional::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
+
+         $middleware->web(append: [
+            \App\Http\Middleware\CacheImagesMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

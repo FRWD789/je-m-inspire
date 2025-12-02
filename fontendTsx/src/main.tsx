@@ -7,6 +7,24 @@ import { BrowserRouter } from 'react-router-dom'
 import './i18n/config'
 import * as Sentry from "@sentry/react";
 
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        console.log('✅ Service Worker enregistré:', registration.scope);
+        
+        // Vérifier les mises à jour toutes les heures
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+      })
+      .catch((error) => {
+        console.error('❌ Erreur Service Worker:', error);
+      });
+  });
+}
+
 if (import.meta.env.PROD) {
   Sentry.init({
     dsn: "https://b1d9d8e9d23e1badc7bd505874e4854c@o4510400555384832.ingest.us.sentry.io/4510400624590848",
