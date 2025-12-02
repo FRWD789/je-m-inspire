@@ -4,7 +4,7 @@ import { useEvent } from '@/context/EventContext';
 import { useAuth } from '@/context/AuthContext';
 import usePrivateApi from '@/hooks/usePrivateApi';
 import { PayementService } from '@/features/payment/service/paymentService';
-import { Calendar, MapPin, ArrowLeft, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, ArrowLeft, CreditCard } from 'lucide-react';
 import type { User } from '@/types/user';
 import ImageCarousel from '@/features/events/components/ImageCarousel';
 import ResponsiveImage from '@/components/ui/ResponsiveImage';
@@ -62,7 +62,6 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
 
   return (
     <div className="relative h-[40vh] w-full overflow-hidden rounded-t-[12px]">
-      {/* ✅ Image Hero avec style inline pour garantir le remplissage */}
       <ResponsiveImage
         src={event.banner_path || event.thumbnail_path}
         variants={event.banner_variants || event.thumbnail_variants}
@@ -103,7 +102,6 @@ const OrganizerInfo = ({ creator }: { creator?: User }) => (
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
           {creator?.profile.profile_picture ? (
-            /* ✅ Image organisateur avec style inline pour garantir le remplissage */
             <img 
               src={`${creator?.profile.profile_picture}`} 
               alt={`Photo de ${creator.profile}`}
@@ -151,7 +149,6 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
 
   return (
     <aside className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md flex flex-col gap-4 bg-white relative">
-      {/* Bouton X pour fermer (visible uniquement quand expanded) */}
       {expanded && (
         <button
           onClick={() => setExpanded(false)}
@@ -183,13 +180,11 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
 
       {expanded && user && (
         <div className="space-y-5">
-          {/* Total */}
           <div className="flex items-center justify-between text-xl font-bold text-indigo-600">
             <span>Total</span>
             <span>{total} $</span>
           </div>
 
-          {/* Payment Method */}
           <div className="space-y-2">
             <h4 className="text-gray-700 font-semibold">Méthode de paiement</h4>
             <div className="flex gap-3">
@@ -217,7 +212,6 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
             </div>
           </div>
 
-          {/* Checkout Button */}
           <button
             className="w-full py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-medium flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCheckout}
@@ -281,12 +275,8 @@ export default function EventDetail() {
   
   const paymentService = useMemo(() => PayementService(api), [api]);
 
-  console.log('🔍 EventDetail rendered:', { id, loading, event: event?.id, user: user?.id });
-
   useEffect(() => {
-    console.log('🔄 useEffect triggered, id:', id);
     if (id) {
-      console.log('📞 Calling fetchEventById...');
       fetchEventById(id);
     }
   }, [id]);
@@ -343,13 +333,12 @@ export default function EventDetail() {
       <HeroSection event={event} navigate={navigate} />
       
       <div className="px-[42px] py-[24px]">
-        {/* Container flex avec tous les éléments au même niveau */}
         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-          {/* Organisateur - Ordre 1 en mobile, colonne gauche en desktop */}
-          <div className="order-1 lg:order-none lg:flex-1 lg:flex lg:flex-col lg:gap-6">
+          {/* Colonne gauche - Organisateur + Photos */}
+          <div className="order-1 lg:order-none lg:w-1/2 lg:flex lg:flex-col lg:gap-6">
             <OrganizerInfo creator={event.creator} />
             
-            {/* Photos - Desktop seulement (dans la même colonne que Organisateur) */}
+            {/* Photos - Desktop seulement */}
             <div className="hidden lg:block">
               {event.images && event.images.length > 0 ? (
                 <ImageCarousel images={event.images} />
@@ -361,8 +350,8 @@ export default function EventDetail() {
             </div>
           </div>
 
-          {/* Réservation - Ordre 2 en mobile, colonne droite en desktop */}
-          <div className="order-2 lg:order-none lg:flex-1 lg:flex lg:flex-col lg:gap-6">
+          {/* Colonne droite - Réservation + Description */}
+          <div className="order-2 lg:order-none lg:w-1/2 lg:flex lg:flex-col lg:gap-6">
             <ReservationCard
               event={event}
               user={user}
@@ -375,10 +364,11 @@ export default function EventDetail() {
               navigate={navigate}
             />
             
-            {/* Description - Desktop seulement (dans la même colonne que Réservation) */}
-            <div className="hidden lg:block h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+            {/* Description - Desktop seulement - S'ÉTIRE EN HAUTEUR */}
+            <div className="hidden lg:block rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
               <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
-              <div className="max-h-[300px] overflow-y-auto pr-2 mb-4">
+              {/* ✅ SUPPRESSION de max-h et overflow-y-auto pour permettre l'étirement en hauteur */}
+              <div className="mb-4">
                 <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                   {event.description || "Aucune description disponible."}
                 </p>
@@ -392,10 +382,11 @@ export default function EventDetail() {
             </div>
           </div>
 
-          {/* Description - Ordre 3 en mobile uniquement */}
-          <div className="order-3 lg:hidden h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+          {/* Description - Ordre 3 en mobile uniquement - S'ÉTIRE EN HAUTEUR */}
+          <div className="order-3 lg:hidden rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
             <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
-            <div className="max-h-[300px] overflow-y-auto pr-2 mb-4">
+            {/* ✅ SUPPRESSION de max-h et overflow-y-auto pour permettre l'étirement en hauteur */}
+            <div className="mb-4">
               <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                 {event.description || "Aucune description disponible."}
               </p>
@@ -420,7 +411,7 @@ export default function EventDetail() {
           </div>
         </div>
 
-        {/* Map en pleine largeur - Cachée en mobile, visible en desktop */}
+        {/* Map en pleine largeur */}
         <div className="hidden lg:block rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
           <h2 className="text-2xl font-semibold mb-4">Localisation</h2>
           <MapSection address={event.localisation.address} />
