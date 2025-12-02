@@ -43,7 +43,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     
     if (image.variants.lg_webp) {
       bestVariant = image.variants.lg_webp;
-      console.log('✅ Utilisation lg_webp (1200px):', bestVariant);
     } else if (image.variants.xl_webp) {
       bestVariant = image.variants.xl_webp;
     } else if (image.variants.lg) {
@@ -95,8 +94,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     return (
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-3">Photos de l'événement</h2>
-        <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-          <p className="text-gray-400">Aucune image disponible</p>
+        <div style={{ width: '100%', height: '400px', borderRadius: '12px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e7eb' }}>
+          <p style={{ color: '#9ca3af' }}>Aucune image disponible</p>
         </div>
       </div>
     );
@@ -109,8 +108,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       </h2>
       
       {/* 
-        ✅ CONTENEUR avec inline styles pour la plus haute spécificité
-        Pas de classes Tailwind qui peuvent être overridées
+        ✅ APPROCHE IMG TAG avec CSS inline pur
+        Cette approche utilise <img> au lieu de background-image
       */}
       <div 
         style={{
@@ -125,10 +124,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         onMouseLeave={(e) => e.currentTarget.classList.remove('group-hover')}
       >
         
-        {/* 
-          ✅ IMAGES avec inline styles purs
-          Chaque propriété CSS en inline a la plus haute spécificité
-        */}
+        {/* ✅ IMAGES avec <img> tag + inline styles */}
         {validImages.map((image, index) => (
           <div
             key={image.id}
@@ -142,16 +138,25 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
               zIndex: index === currentIndex ? 10 : 0,
               pointerEvents: index === currentIndex ? 'auto' : 'none',
               transition: 'opacity 300ms',
-              // ✅ Background-image avec propriétés inline
-              backgroundImage: `url("${imageUrls[index]}")`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center',
-              backgroundRepeat: 'no-repeat',
-              // ✅ Forcer la taille du conteneur
-              width: '100%',
-              height: '100%',
             }}
-          />
+          >
+            {/* ✅ IMG TAG avec styles inline purs */}
+            <img
+              src={imageUrls[index]}
+              alt={`Photo ${index + 1}`}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                display: 'block',
+              }}
+            />
+          </div>
         ))}
 
         {/* Boutons navigation */}
