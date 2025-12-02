@@ -38,17 +38,14 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   fetchPriority = 'auto',
   onLoad,
 }) => {
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
+  const API_BASE =  'https://api.jminspire.com';
   const imgRef = useRef<HTMLImageElement>(null);
   const [loadedInfo, setLoadedInfo] = useState<string>('');
   
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-
-    // Construire l'URL sans /api pour les images
-    const baseUrl = API_BASE.replace('api/', ''); // Enlever /api si présent
-    return `${baseUrl}/storage/${path}`;
+    return `${API_BASE}/storage/${path}`;
   };
 
   // 🔍 Handler pour détecter quelle image a été chargée
@@ -196,10 +193,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    
-    // Construire l'URL sans /api pour les images
-    const baseUrl = API_BASE.replace('api/', ''); // Enlever /api si présent
-    return `${baseUrl}/storage/${path}`;
+    return `${API_BASE}/storage/${path}`;
   };
 
   const handleImageLoad = () => {
