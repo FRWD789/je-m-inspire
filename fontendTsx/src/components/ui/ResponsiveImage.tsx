@@ -47,7 +47,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     if (path.startsWith('http')) return path;
 
     // Construire l'URL sans /api pour les images
-    const baseUrl = API_BASE.replace('/api', ''); // Enlever /api si présent
+    const baseUrl = API_BASE.replace('api/', ''); // Enlever /api si présent
     return `${baseUrl}/storage/${path}`;
   };
 
@@ -198,7 +198,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     if (path.startsWith('http')) return path;
     
     // Construire l'URL sans /api pour les images
-    const baseUrl = API_BASE.replace('/api', ''); // Enlever /api si présent
+    const baseUrl = API_BASE.replace('api/', ''); // Enlever /api si présent
     return `${baseUrl}/storage/${path}`;
   };
 
