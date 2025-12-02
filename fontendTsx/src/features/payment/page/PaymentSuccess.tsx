@@ -224,7 +224,7 @@ export default function PaymentSuccess() {
                 src={event.thumbnail_path}
                 variants={event.thumbnail_variants}  
                 alt={event.name}
-                size="sm"
+                size="md"
                 className="w-full sm:w-32 h-32 rounded-lg object-cover shadow-md"
                 loading="lazy"
               />
