@@ -10,7 +10,6 @@ import CookieBar from "./components/CookieBar";
 // =========================================
 // ✅ COMPOSANTS CRITIQUES (chargés immédiatement)
 // =========================================
-// Ces pages sont souvent visitées en premier
 import Home from "./features/home-about/page/home";
 import PublicEvents from "./features/events/page/publicEvents";
 import Login from "./features/auth/page/login";
@@ -56,6 +55,11 @@ const AdminApprovalPage = lazy(() => import("./features/admin/page/userAprrobati
 const AdminCommissionPage = lazy(() => import("./features/admin/page/UsersComissons"));
 
 // =========================================
+// ✅ ERROR PAGES
+// =========================================
+const Forbidden = lazy(() => import("./features/errors/page/Forbidden"));
+
+// =========================================
 // ✅ LOADING FALLBACK
 // =========================================
 const LoadingFallback = () => (
@@ -67,7 +71,7 @@ const LoadingFallback = () => (
 export default function App() {
   return (
     <EventProvider>
-      <CookieBar/>
+      <CookieBar />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route element={<PersistLogin />}>
@@ -103,27 +107,57 @@ export default function App() {
               <Route path="payment/success" element={<PaymentSuccess />} />
             </Route>
 
-            {/* Stripe success (hors Layout) */}
-            <Route path="profile/stripe/success" element={<LinkedAccountSuccess />} />
+            {/* Stripe/PayPal success (hors Layout) */}
+            <Route path="profile/stripe/success" element={<LinkedAccountSuccess provider="stripe" />} />
+            <Route path="profile/paypal/success" element={<LinkedAccountSuccess provider="paypal" />} />
+
+            {/* Error pages */}
+            <Route path="/forbidden" element={<Forbidden />} />
 
             {/* ========================================
                 PROTECTED ROUTES (auth requise)
             ======================================== */}
-            <Route element={<PrivateRoute />}>
-              <Route element={<OnboardingGuard />}>
-                <Route path="/dashboard" element={<Dashboard />}>
-                  <Route index element={<DashboardHome />} />
-                  <Route path="user" element={<UserPage />} />
-                  <Route path="my-events" element={<MyEventPage />} />
-                  <Route path="my-reservations" element={<MyReservationPage />} />
-                  <Route path="calender" element={<CalenderEventPage />} />
-                  <Route path="following" element={<MyFollowingPage />} />
-                  <Route path="vendor-earnings" element={<VendorDashboard />} />
-                  <Route path="refunds" element={<RemboursementsPage />} />
-                  
-                  {/* Routes admin */}
-                  <Route path="approbations" element={<AdminApprovalPage />} />
+            <Route
+              element={
+                <PrivateRoute
+                  allowedRoles={["utilisateur", "professionnel", "admin"]}
+                />
+              }
+            >
+              <Route
+                path="/dashboard"
+                element={
+                  <OnboardingGuard>
+                    <Dashboard />
+                  </OnboardingGuard>
+                }
+              >
+                {/* Routes accessibles par tous les utilisateurs authentifiés */}
+                <Route index element={<DashboardHome />} />
+                <Route path="profile-settings" element={<UserPage />} />
+                <Route path="my-events" element={<MyEventPage />} />
+                <Route path="my-reservations" element={<MyReservationPage />} />
+                <Route path="event-calender" element={<CalenderEventPage />} />
+                <Route path="my-following" element={<MyFollowingPage />} />
+                <Route path="refunds" element={<RemboursementsPage />} />
+
+                {/* ========================================
+                    ADMIN ONLY ROUTES
+                ======================================== */}
+                <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+                  <Route path="approbation" element={<AdminApprovalPage />} />
                   <Route path="commissions" element={<AdminCommissionPage />} />
+                </Route>
+
+                {/* ========================================
+                    VENDOR ROUTES (Admin + Professionnel)
+                ======================================== */}
+                <Route
+                  element={
+                    <PrivateRoute allowedRoles={["admin", "professionnel"]} />
+                  }
+                >
+                  <Route path="vendor" element={<VendorDashboard />} />
                 </Route>
               </Route>
             </Route>
