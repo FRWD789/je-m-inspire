@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { Layers } from 'lucide-react';
 
 /**
- * ResponsiveImage - VERSION OPTIMISÉE (md, lg, xl uniquement)
+ * ResponsiveImage - VERSION OPTIMISÉE avec gestion d'erreurs 404
  * 
  * ✅ Génère uniquement 3 variantes : md (600px), lg (1200px), xl (1920px)
- * ✅ sm (300px) supprimé - md sert de fallback pour les petites tailles
+ * ✅ Fallback automatique vers icône Layers en cas d'erreur 404
  * ✅ Garantit que les images remplissent TOUJOURS leur conteneur
  */
 
@@ -25,6 +26,7 @@ interface ResponsiveImageProps {
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   onLoad?: () => void;
+  showFallback?: boolean; // Si false, ne pas afficher l'icône de fallback
 }
 
 const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
@@ -36,9 +38,11 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   loading = 'lazy',
   fetchPriority = 'auto',
   onLoad,
+  showFallback = true,
 }) => {
   const API_BASE = 'https://api.jminspire.com';
   const imgRef = useRef<HTMLImageElement>(null);
+  const [imageError, setImageError] = useState(false);
   
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
@@ -47,6 +51,8 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   };
 
   const handleImageLoad = () => {
+    setImageError(false); // Reset error state on successful load
+    
     if (imgRef.current) {
       const loadedSrc = imgRef.current.currentSrc || imgRef.current.src;
       const isWebP = loadedSrc.includes('.webp');
@@ -68,6 +74,11 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     if (onLoad) onLoad();
   };
 
+  const handleImageError = () => {
+    console.warn(`❌ Image failed to load: ${alt}`);
+    setImageError(true);
+  };
+
   const combinedStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
@@ -75,6 +86,30 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     objectPosition: 'center',
     ...style,
   };
+
+  // Si erreur de chargement et fallback activé, afficher l'icône
+  if (imageError && showFallback) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Image indisponible</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si pas de src ET fallback activé
+  if (!src && showFallback) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Aucune image</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!variants) {
     return (
@@ -88,6 +123,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
         fetchpriority={fetchPriority}
         decoding="async"
         onLoad={handleImageLoad}
+        onError={handleImageError}
       />
     );
   }
@@ -131,6 +167,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       fetchpriority={fetchPriority}
       decoding="async"
       onLoad={handleImageLoad}
+      onError={handleImageError}
     />
   );
 };
@@ -155,6 +192,7 @@ interface ThumbnailImageProps {
   fetchPriority?: 'high' | 'low' | 'auto';
   onLoad?: () => void;
   size?: 'sm' | 'md' | 'lg'; // sm utilise maintenant md comme fallback
+  showFallback?: boolean;
 }
 
 export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
@@ -167,9 +205,11 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   loading = 'lazy',
   fetchPriority = 'auto',
   onLoad,
+  showFallback = true,
 }) => {
   const API_BASE = 'https://api.jminspire.com';
   const imgRef = useRef<HTMLImageElement>(null);
+  const [imageError, setImageError] = useState(false);
   
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
@@ -178,6 +218,8 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   };
 
   const handleImageLoad = () => {
+    setImageError(false);
+    
     if (imgRef.current) {
       const loadedSrc = imgRef.current.currentSrc || imgRef.current.src;
       const isWebP = loadedSrc.includes('.webp');
@@ -193,6 +235,11 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     if (onLoad) onLoad();
   };
 
+  const handleImageError = () => {
+    console.warn(`❌ Thumbnail failed to load: ${alt}`);
+    setImageError(true);
+  };
+
   const combinedStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
@@ -200,6 +247,30 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     objectPosition: 'center',
     ...style,
   };
+
+  // Si erreur de chargement et fallback activé
+  if (imageError && showFallback) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Image indisponible</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si pas de src ET fallback activé
+  if (!src && showFallback) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Aucune image</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!variants) {
     return (
@@ -213,6 +284,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
         fetchpriority={fetchPriority}
         decoding="async"
         onLoad={handleImageLoad}
+        onError={handleImageError}
       />
     );
   }
@@ -235,6 +307,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
       fetchpriority={fetchPriority}
       decoding="async"
       onLoad={handleImageLoad}
+      onError={handleImageError}
     />
   );
 };

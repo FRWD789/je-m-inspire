@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 
 interface ImageData {
   id: number;
@@ -19,6 +19,7 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
   const validImages = useMemo(() => {
     return Array.isArray(images) && images.length > 0 
@@ -43,6 +44,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const imageUrls = useMemo(() => {
     return validImages.map(img => getImageUrl(img));
   }, [validImages, getImageUrl]);
+
+  const handleImageError = useCallback((index: number) => {
+    console.warn(`❌ Carousel image failed to load at index ${index}`);
+    setFailedImages(prev => new Set(prev).add(index));
+  }, []);
 
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
@@ -79,7 +85,10 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-3">Photos de l'événement</h2>
         <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-          <p className="text-gray-400">Aucune image disponible</p>
+          <div className="text-center text-gray-400">
+            <Layers className="w-16 h-16 mx-auto mb-2 opacity-30" />
+            <p className="text-gray-400">Aucune image disponible</p>
+          </div>
         </div>
       </div>
     );
@@ -101,12 +110,23 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
               index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
-            <img
-              src={imageUrls[index]}
-              alt={`Photo ${index + 1}`}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              className="w-full h-full object-cover"
-            />
+            {failedImages.has(index) ? (
+              // Fallback pour les images en erreur
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                <div className="text-center text-gray-400">
+                  <Layers className="w-16 h-16 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">Image {index + 1} indisponible</p>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={imageUrls[index]}
+                alt={`Photo ${index + 1}`}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                className="w-full h-full object-cover"
+                onError={() => handleImageError(index)}
+              />
+            )}
           </div>
         ))}
 
