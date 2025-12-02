@@ -31,14 +31,14 @@ class EventResource extends JsonResource
             // ========================================
             // ✅ NOUVEAUTÉ : VARIANTES RESPONSIVE
             // ========================================
-            'thumbnail_path' => $this->thumbnail_path, // Chemin brut pour ResponsiveImage
+            'thumbnail_path' => $this->thumbnail_path,
             'thumbnail_variants' => $this->thumbnail_path
-                ? $this->getImageVariants($this->thumbnail_path)
+                ? $this->getVariants($this->thumbnail_path) // ✅ CORRIGÉ: méthode helper
                 : null,
 
-            'banner_path' => $this->banner_path, // Chemin brut pour ResponsiveImage
+            'banner_path' => $this->banner_path,
             'banner_variants' => $this->banner_path
-                ? $this->getImageVariants($this->banner_path)
+                ? $this->getVariants($this->banner_path) // ✅ CORRIGÉ: méthode helper
                 : null,
 
             'is_cancelled' => (bool) $this->is_cancelled,
@@ -51,9 +51,9 @@ class EventResource extends JsonResource
                 return $this->images->map(function($image) {
                     return [
                         'id' => $image->id,
-                        'url' => $image->image_url, // URL complète (compatibilité)
-                        'image_path' => $image->image_path, // Chemin brut pour ResponsiveImage
-                        'variants' => $this->getImageVariants($image->image_path), // ✅ Variantes
+                        'url' => $image->image_url,
+                        'image_path' => $image->image_path,
+                        'variants' => $this->getVariants($image->image_path), // ✅ CORRIGÉ: méthode helper
                         'display_order' => $image->display_order,
                     ];
                 });
@@ -82,6 +82,40 @@ class EventResource extends JsonResource
 
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * ✅ MÉTHODE HELPER pour obtenir les variantes
+     * Appelle la méthode du trait via le modèle
+     */
+    private function getVariants(?string $imagePath): ?array
+    {
+        if (!$imagePath) {
+            return null;
+        }
+
+        // ✅ CORRECTION: Appeler via $this->resource (le modèle Event)
+        // au lieu de $this (la Resource)
+        if (method_exists($this->resource, 'getImageVariants')) {
+            return $this->resource->getImageVariants($imagePath);
+        }
+
+        // ✅ Fallback: générer manuellement si la méthode n'existe pas
+        $pathInfo = pathinfo($imagePath);
+        $directory = $pathInfo['dirname'];
+        $filename = $pathInfo['filename'];
+
+        return [
+            'original' => $imagePath,
+            'sm' => "{$directory}/{$filename}_sm.jpg",
+            'md' => "{$directory}/{$filename}_md.jpg",
+            'lg' => "{$directory}/{$filename}_lg.jpg",
+            'xl' => "{$directory}/{$filename}_xl.jpg",
+            'sm_webp' => "{$directory}/{$filename}_sm.webp",
+            'md_webp' => "{$directory}/{$filename}_md.webp",
+            'lg_webp' => "{$directory}/{$filename}_lg.webp",
+            'xl_webp' => "{$directory}/{$filename}_xl.webp",
         ];
     }
 }
