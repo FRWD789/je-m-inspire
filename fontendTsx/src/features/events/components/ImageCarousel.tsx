@@ -1,11 +1,21 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageData {
   id: number;
   image_path: string;
   url?: string;
-  variants?: any;
+  variants?: {
+    original?: string;
+    sm?: string;
+    md?: string;
+    lg?: string;
+    xl?: string;
+    sm_webp?: string;
+    md_webp?: string;
+    lg_webp?: string;
+    xl_webp?: string;
+  };
 }
 
 interface ImageCarouselProps {
@@ -16,9 +26,50 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const validImages = Array.isArray(images) && images.length > 0 
-    ? images.filter(img => img.image_path || img.url)
-    : [];
+  // ✅ Mémoiser les images valides pour éviter les re-calculs
+  const validImages = useMemo(() => {
+    return Array.isArray(images) && images.length > 0 
+      ? images.filter(img => img.image_path || img.url)
+      : [];
+  }, [images]);
+
+  // ✅ Fonction pour obtenir la MEILLEURE variante (lg_webp > xl_webp > lg > xl > original)
+  const getOptimizedImageUrl = useCallback((image: ImageData): string => {
+    const API_BASE = 'https://api.jminspire.com';
+    
+    // Si pas de variants, utiliser l'URL complète fournie
+    if (!image.variants) {
+      console.log('⚠️ Pas de variants, utilisation URL:', image.url);
+      return image.url || `${API_BASE}/storage/${image.image_path}`;
+    }
+
+    // Priorité aux variants WebP optimisés (lg = 1200px, parfait pour desktop)
+    let bestVariant: string | undefined;
+    
+    if (image.variants.lg_webp) {
+      bestVariant = image.variants.lg_webp;
+      console.log('✅ Utilisation lg_webp (1200px):', bestVariant);
+    } else if (image.variants.xl_webp) {
+      bestVariant = image.variants.xl_webp;
+      console.log('✅ Utilisation xl_webp (1920px):', bestVariant);
+    } else if (image.variants.lg) {
+      bestVariant = image.variants.lg;
+      console.log('✅ Utilisation lg (1200px JPG):', bestVariant);
+    } else if (image.variants.xl) {
+      bestVariant = image.variants.xl;
+      console.log('✅ Utilisation xl (1920px JPG):', bestVariant);
+    } else {
+      bestVariant = image.variants.original || image.image_path;
+      console.log('⚠️ Fallback original:', bestVariant);
+    }
+
+    return `${API_BASE}/storage/${bestVariant}`;
+  }, []);
+
+  // ✅ Pré-calculer toutes les URLs pour éviter les re-calculs
+  const imageUrls = useMemo(() => {
+    return validImages.map(img => getOptimizedImageUrl(img));
+  }, [validImages, getOptimizedImageUrl]);
 
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
@@ -61,53 +112,37 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     );
   }
 
-  // Construction URL - utilise directement `url` si présent
-  const getImageUrl = (image: ImageData): string => {
-    // Priorité 1: url complète fournie par l'API
-    if (image.url) {
-      console.log('✅ Utilisation URL complète:', image.url);
-      return image.url;
-    }
-    
-    // Priorité 2: construction depuis image_path
-    const API_BASE = 'https://api.jminspire.com';
-    const fullUrl = `${API_BASE}/storage/${image.image_path}`;
-    console.log('🔨 URL construite:', fullUrl);
-    return fullUrl;
-  };
-
   return (
     <div className="mb-6">
       <h2 className="text-2xl font-semibold mb-3">
         Photos de l'événement ({validImages.length})
       </h2>
       
-      {/* 
-        🎯 APPROCHE BACKGROUND-IMAGE
-        Utilise background-image au lieu de <img> pour garantir le remplissage 
-      */}
-      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-gray-900 group">
+      {/* Conteneur avec hauteur fixe responsive */}
+      <div 
+        className="relative w-full rounded-xl overflow-hidden bg-gray-900 group"
+        style={{
+          height: '500px',
+        }}
+      >
         
-        {validImages.map((image, index) => {
-          const imageUrl = getImageUrl(image);
-          
-          return (
-            <div
-              key={image.id}
-              className="absolute inset-0 transition-opacity duration-300"
-              style={{
-                opacity: index === currentIndex ? 1 : 0,
-                zIndex: index === currentIndex ? 10 : 0,
-                pointerEvents: index === currentIndex ? 'auto' : 'none',
-                // ✅ background-image remplit TOUJOURS son conteneur
-                backgroundImage: `url(${imageUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-              }}
-            />
-          );
-        })}
+        {/* Images avec background-image optimisé */}
+        {validImages.map((image, index) => (
+          <div
+            key={image.id}
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{
+              opacity: index === currentIndex ? 1 : 0,
+              zIndex: index === currentIndex ? 10 : 0,
+              pointerEvents: index === currentIndex ? 'auto' : 'none',
+              // ✅ Utilise l'URL pré-calculée (variant optimisé)
+              backgroundImage: `url("${imageUrls[index]}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+        ))}
 
         {/* Boutons navigation */}
         {validImages.length > 1 && (
@@ -161,6 +196,18 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           {currentIndex + 1} / {validImages.length}
         </div>
       </div>
+
+      {/* 
+        📱 Version responsive pour desktop 
+        Sur grand écran, on augmente la hauteur 
+      */}
+      <style>{`
+        @media (min-width: 1024px) {
+          .mb-6 > div:first-of-type {
+            height: 600px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
