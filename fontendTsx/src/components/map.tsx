@@ -2,8 +2,9 @@ import { APIProvider, Map, useMap, AdvancedMarker, Pin, InfoWindow } from '@vis.
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { Calendar, MapPin, Users } from 'lucide-react';
+import { ThumbnailImage } from '@/components/ui/ResponsiveImage';
 
-// ✅ CORRECTION: Utiliser la variable d'environnement au lieu d'une clé en dur
+// ✅ Utiliser la variable d'environnement
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 // Event Marker Component
@@ -83,7 +84,7 @@ const ClusteredEventMarkers = ({ events, selectedEventId, onEventSelect }) => {
     onEventSelect(event.id);
   }, [onEventSelect]);
 
-  // 🟢 Center map on selected event
+  // Center map on selected event
   useEffect(() => {
     if (selectedEvent && map) {
       map.panTo({
@@ -110,17 +111,16 @@ const ClusteredEventMarkers = ({ events, selectedEventId, onEventSelect }) => {
           onCloseClick={handleInfoWindowClose}
         >
           <div className="w-[260px] p-3 bg-white rounded-xl shadow-md border border-gray-100">
-            {/* Image */}
-            <div className="w-full h-[120px] rounded-lg overflow-hidden mb-3 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-sm">
-              {selectedEvent.thumbnail ? (
-                <img
-                  src={selectedEvent.thumbnail}
-                  alt={selectedEvent.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                "No Image"
-              )}
+            {/* ✅ Image avec système responsive */}
+            <div className="w-full h-[120px] rounded-lg overflow-hidden mb-3">
+              <ThumbnailImage
+                src={selectedEvent.thumbnail_path}
+                variants={selectedEvent.thumbnail_variants}
+                alt={selectedEvent.name}
+                size="sm"
+                loading="lazy"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             <h3 className="text-base font-semibold text-gray-800 truncate">
