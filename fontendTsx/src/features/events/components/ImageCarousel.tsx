@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageData {
@@ -19,32 +19,94 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [imageLoadStatus, setImageLoadStatus] = useState<Record<number, 'loading' | 'loaded' | 'error'>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const validImages = useMemo(() => {
-    return Array.isArray(images) && images.length > 0 
+    const valid = Array.isArray(images) && images.length > 0 
       ? images.filter(img => img.image_path || img.url)
       : [];
+    
+    console.group('🖼️ CAROUSEL DEBUG - Images reçues');
+    console.log('Total images:', images.length);
+    console.log('Images valides:', valid.length);
+    console.log('Données complètes:', JSON.stringify(valid, null, 2));
+    console.groupEnd();
+    
+    return valid;
   }, [images]);
 
   // ✅ SIMPLE: Toujours utiliser xl_webp (1920px)
   const getImageUrl = useCallback((image: ImageData): string => {
     const API_BASE = 'https://api.jminspire.com';
     
+    let url = '';
+    let variant = '';
+    
     // Priorité: xl_webp > xl > original
     if (image.variants?.xl_webp) {
-      return `${API_BASE}/storage/${image.variants.xl_webp}`;
+      url = `${API_BASE}/storage/${image.variants.xl_webp}`;
+      variant = 'xl_webp (1920px WebP)';
     } else if (image.variants?.xl) {
-      return `${API_BASE}/storage/${image.variants.xl}`;
+      url = `${API_BASE}/storage/${image.variants.xl}`;
+      variant = 'xl (1920px JPG)';
     } else if (image.url) {
-      return image.url;
+      url = image.url;
+      variant = 'url complète';
     } else {
-      return `${API_BASE}/storage/${image.image_path}`;
+      url = `${API_BASE}/storage/${image.image_path}`;
+      variant = 'image_path original';
     }
+    
+    console.log(`📸 Image ${image.id}:`, {
+      variant,
+      url,
+      hasVariants: !!image.variants,
+      variantsKeys: image.variants ? Object.keys(image.variants) : []
+    });
+    
+    return url;
   }, []);
 
   const imageUrls = useMemo(() => {
-    return validImages.map(img => getImageUrl(img));
+    const urls = validImages.map(img => getImageUrl(img));
+    console.log('🔗 URLs générées:', urls);
+    return urls;
   }, [validImages, getImageUrl]);
+
+  // Debug du conteneur
+  useEffect(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      console.group('📐 DIMENSIONS CONTENEUR');
+      console.log('Largeur:', rect.width);
+      console.log('Hauteur:', rect.height);
+      console.log('Position:', { top: rect.top, left: rect.left });
+      console.groupEnd();
+    }
+  }, []);
+
+  const handleImageLoad = (index: number, event: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget;
+    console.group(`✅ IMAGE ${index + 1} CHARGÉE`);
+    console.log('URL:', img.src);
+    console.log('Dimensions naturelles:', `${img.naturalWidth}x${img.naturalHeight}`);
+    console.log('Dimensions affichées:', `${img.width}x${img.height}`);
+    console.log('Object-fit:', window.getComputedStyle(img).objectFit);
+    console.groupEnd();
+    
+    setImageLoadStatus(prev => ({ ...prev, [index]: 'loaded' }));
+  };
+
+  const handleImageError = (index: number, event: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget;
+    console.group(`❌ ERREUR IMAGE ${index + 1}`);
+    console.log('URL qui a échoué:', img.src);
+    console.log('Erreur:', event);
+    console.groupEnd();
+    
+    setImageLoadStatus(prev => ({ ...prev, [index]: 'error' }));
+  };
 
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
@@ -76,7 +138,12 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     }
   }, [validImages.length, currentIndex]);
 
+  useEffect(() => {
+    console.log(`🎯 Index actuel: ${currentIndex + 1}/${validImages.length}`);
+  }, [currentIndex, validImages.length]);
+
   if (validImages.length === 0) {
+    console.warn('⚠️ Aucune image valide à afficher');
     return (
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-3">Photos de l'événement</h2>
@@ -92,25 +159,64 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       <h2 className="text-2xl font-semibold mb-3">
         Photos de l'événement ({validImages.length})
       </h2>
+
+      {/* 🔍 PANNEAU DE DEBUG */}
+      <div style={{
+        backgroundColor: '#fef3c7',
+        border: '2px solid #f59e0b',
+        borderRadius: '8px',
+        padding: '12px',
+        marginBottom: '12px',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+      }}>
+        <div><strong>🎯 Image actuelle:</strong> {currentIndex + 1} / {validImages.length}</div>
+        <div><strong>📁 URL:</strong> {imageUrls[currentIndex]}</div>
+        <div><strong>📊 Status:</strong> {imageLoadStatus[currentIndex] || 'loading...'}</div>
+        <div><strong>🎨 Object-fit:</strong> cover</div>
+        <div><strong>📐 Conteneur:</strong> 100% × 500px (600px sur desktop)</div>
+      </div>
       
-      {/* ✅ Conteneur simple avec fond noir */}
-      <div className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-black group">
+      {/* ✅ Conteneur avec bordure rouge pour debug */}
+      <div 
+        ref={containerRef}
+        className="relative w-full h-[500px] lg:h-[600px] rounded-xl overflow-hidden bg-black group"
+        style={{ border: '3px solid red' }}
+      >
         
-        {/* ✅ Images 1920px - COVER pour remplir tout l'espace */}
+        {/* ✅ Images avec bordure bleue pour debug */}
         {validImages.map((image, index) => (
           <div
             key={image.id}
             className={`absolute inset-0 transition-opacity duration-300 ${
               index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
+            style={{ border: '2px solid blue' }}
           >
-            {/* ✅ object-cover = remplit l'espace (peut cropper) */}
             <img
               src={imageUrls[index]}
               alt={`Photo ${index + 1}`}
               loading={index === 0 ? 'eager' : 'lazy'}
               className="w-full h-full object-cover"
+              style={{ border: '2px solid green' }}
+              onLoad={(e) => handleImageLoad(index, e)}
+              onError={(e) => handleImageError(index, e)}
             />
+            
+            {/* Overlay de status */}
+            {imageLoadStatus[index] === 'error' && (
+              <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
+                <div className="bg-red-500 text-white px-4 py-2 rounded">
+                  ❌ Erreur de chargement
+                </div>
+              </div>
+            )}
+            
+            {imageLoadStatus[index] === 'loading' && index === currentIndex && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <div className="text-white">Chargement...</div>
+              </div>
+            )}
           </div>
         ))}
 
@@ -165,6 +271,24 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
         <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm z-20">
           {currentIndex + 1} / {validImages.length}
         </div>
+      </div>
+
+      {/* Instructions de debug */}
+      <div style={{
+        backgroundColor: '#e0e7ff',
+        border: '1px solid #6366f1',
+        borderRadius: '8px',
+        padding: '12px',
+        marginTop: '12px',
+        fontSize: '12px',
+      }}>
+        <strong>🔍 Debug actif:</strong>
+        <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
+          <li>Bordure ROUGE = conteneur principal</li>
+          <li>Bordure BLEUE = wrapper de l'image</li>
+          <li>Bordure VERTE = balise img</li>
+          <li>Ouvre la console (F12) pour voir les logs détaillés</li>
+        </ul>
       </div>
     </div>
   );
