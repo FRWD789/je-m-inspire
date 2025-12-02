@@ -20,6 +20,8 @@ class OptimizeEventImages implements ShouldQueue
     public $timeout = 300; // 5 minutes max
     public $tries = 3;
 
+    public $queue = 'images';
+
     protected $eventId;
     protected $imagePaths;
 
@@ -31,6 +33,16 @@ class OptimizeEventImages implements ShouldQueue
 
     public function handle()
     {
+        $availableMemory = $this->getAvailableMemory();
+
+        if ($availableMemory < 256) {
+            Log::warning('[OptimizeJob] RAM insuffisante, job reporté', [
+                'memory_available' => $availableMemory . 'MB'
+            ]);
+            $this->release(60); // Réessayer dans 60 secondes
+            return;
+        }
+
         Log::info('[OptimizeJob] Début optimisation avec Intervention Image', [
             'event_id' => $this->eventId,
             'images_count' => count($this->imagePaths)
@@ -62,7 +74,7 @@ class OptimizeEventImages implements ShouldQueue
         $tempPath = $pathInfo['temp_path'];
         $directory = $pathInfo['directory'];
         $maxWidth = $pathInfo['max_width'] ?? 1200;
-        $quality = $pathInfo['quality'] ?? 85;
+        $quality = 80;
 
         $fullPath = storage_path('app/public/' . $tempPath);
 
@@ -121,7 +133,8 @@ class OptimizeEventImages implements ShouldQueue
 
             Log::info('[OptimizeJob] Optimisation réussie', [
                 'path' => $tempPath,
-                'variants_generated' => 8  // 4 tailles × 2 formats
+                'variants_generated' => 6,  // Original + 2 tailles × 2 formats
+                'peak_memory' => round(memory_get_peak_usage(true) / 1024 / 1024) . 'MB'
             ]);
 
         } catch (\Exception $e) {
@@ -137,7 +150,7 @@ class OptimizeEventImages implements ShouldQueue
     /**
      * Génère les variantes responsive
      */
-    private function generateVariants(
+   private function generateVariants(
         string $originalJpgPath,
         string $directory,
         string $basename,
@@ -146,32 +159,26 @@ class OptimizeEventImages implements ShouldQueue
         int $quality,
         ImageManager $manager
     ): void {
+        // ⬇️ RÉDUIRE À 2 TAILLES AU LIEU DE 4
         $sizes = [
-            'sm' => 300,
-            'md' => 600,
-            'lg' => 1200,
-            'xl' => 1920
+            'md' => 400,  // Mobile/Thumbnail
+            'lg' => 800,  // Desktop
         ];
 
         foreach ($sizes as $sizeKey => $targetWidth) {
             try {
                 $image = $manager->read($originalJpgPath);
 
-                // Si l'image est déjà plus petite, on la duplique
                 if ($originalWidth <= $targetWidth && $originalHeight <= $targetWidth) {
                     $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
                     $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
-
                     copy($originalJpgPath, $jpgPath);
                     $image->toWebp(quality: $quality)->save($webpPath);
-
                     continue;
                 }
 
-                // Redimensionner
                 $image->scaleDown(width: $targetWidth, height: $targetWidth);
 
-                // Sauvegarder
                 $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
                 $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
 
@@ -184,5 +191,25 @@ class OptimizeEventImages implements ShouldQueue
                 ]);
             }
         }
+    }
+
+    private function getAvailableMemory(): int
+    {
+        if (PHP_OS_FAMILY !== 'Linux') {
+            return 1024; // Valeur par défaut hors Linux
+        }
+
+        try {
+            $meminfo = file_get_contents('/proc/meminfo');
+            if (preg_match('/MemAvailable:\s+(\d+)/', $meminfo, $matches)) {
+                return (int)($matches[1] / 1024); // Convertir KB en MB
+            }
+        } catch (\Exception $e) {
+            Log::warning('[OptimizeJob] Impossible de lire meminfo', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return 512; // Valeur par défaut si échec lecture
     }
 }
