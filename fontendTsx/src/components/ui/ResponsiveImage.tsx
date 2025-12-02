@@ -1,17 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
- * ResponsiveImage - VERSION CORRIGÉE
+ * ResponsiveImage - VERSION AVEC DEBUG CONSOLE
  * 
- * Utilise les variantes retournées par l'API (chemins relatifs)
- * et construit les URLs complètes
+ * Logs en temps réel :
+ * - Quelle variante est chargée (sm, md, lg, xl, original)
+ * - Format utilisé (WebP ou JPG)
+ * - Taille réelle chargée
  */
 
 interface ResponsiveImageProps {
-  /** Chemin de l'image originale (ex: 'event_images/123_abc.jpg') */
   src: string;
-  
-  /** Variantes déjà calculées par l'API (optionnel) */
   variants?: {
     original?: string;
     sm?: string;
@@ -23,7 +22,6 @@ interface ResponsiveImageProps {
     lg_webp?: string;
     xl_webp?: string;
   };
-  
   alt: string;
   className?: string;
   loading?: 'lazy' | 'eager';
@@ -41,27 +39,81 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   onLoad,
 }) => {
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [loadedInfo, setLoadedInfo] = useState<string>('');
   
-  // Construire les URLs complètes à partir des variantes
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
-    // Si c'est déjà une URL complète, la retourner telle quelle
     if (path.startsWith('http')) return path;
-    // Sinon, construire l'URL
     return `${API_BASE}/storage/${path}`;
   };
 
-  // Si pas de variantes, fallback sur le comportement par défaut
+  // 🔍 Handler pour détecter quelle image a été chargée
+  const handleImageLoad = () => {
+    if (imgRef.current) {
+      const loadedSrc = imgRef.current.currentSrc || imgRef.current.src;
+      const naturalWidth = imgRef.current.naturalWidth;
+      const naturalHeight = imgRef.current.naturalHeight;
+      const displayWidth = imgRef.current.width;
+      const displayHeight = imgRef.current.height;
+      
+      // Détecter le format
+      const isWebP = loadedSrc.includes('.webp');
+      const format = isWebP ? 'WebP' : 'JPG';
+      
+      // Détecter la variante
+      let variant = 'original';
+      if (loadedSrc.includes('_xl')) variant = 'xl (1920px)';
+      else if (loadedSrc.includes('_lg')) variant = 'lg (1200px)';
+      else if (loadedSrc.includes('_md')) variant = 'md (600px)';
+      else if (loadedSrc.includes('_sm')) variant = 'sm (300px)';
+      
+      const info = {
+        alt: alt,
+        variant: variant,
+        format: format,
+        naturalSize: `${naturalWidth}×${naturalHeight}`,
+        displaySize: `${displayWidth}×${displayHeight}`,
+        url: loadedSrc,
+        savings: isWebP ? '~50% vs JPG' : 'N/A'
+      };
+      
+      // 🎨 Log stylisé dans la console
+      console.groupCollapsed(
+        `%c🖼️ ${alt}%c → ${variant} %c${format}`,
+        'color: #3b82f6; font-weight: bold',
+        'color: #10b981; font-weight: bold',
+        `color: ${isWebP ? '#8b5cf6' : '#f59e0b'}; font-weight: bold`
+      );
+      console.table({
+        'Variante': variant,
+        'Format': format,
+        'Taille naturelle': info.naturalSize,
+        'Taille affichée': info.displaySize,
+        'Économie': info.savings,
+      });
+      console.log('URL:', loadedSrc);
+      console.groupEnd();
+      
+      setLoadedInfo(`${variant} (${format})`);
+    }
+    
+    // Appeler le callback original
+    if (onLoad) onLoad();
+  };
+
+  // Si pas de variantes, image simple
   if (!variants) {
     return (
       <img
+        ref={imgRef}
         src={buildUrl(src) || ''}
         alt={alt}
         className={className}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
-        onLoad={onLoad}
+        onLoad={handleImageLoad}
       />
     );
   }
@@ -104,13 +156,15 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       
       {/* Fallback IMG */}
       <img
+        ref={imgRef}
         src={buildUrl(variants.original || src) || ''}
         alt={alt}
         className={className}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
-        onLoad={onLoad}
+        onLoad={handleImageLoad}
+        title={loadedInfo || 'Chargement...'}
       />
     </picture>
   );
@@ -134,6 +188,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   onLoad,
 }) => {
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.jminspire.com';
+  const imgRef = useRef<HTMLImageElement>(null);
   
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
@@ -141,16 +196,33 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     return `${API_BASE}/storage/${path}`;
   };
 
+  const handleImageLoad = () => {
+    if (imgRef.current) {
+      const loadedSrc = imgRef.current.currentSrc || imgRef.current.src;
+      const isWebP = loadedSrc.includes('.webp');
+      const format = isWebP ? 'WebP' : 'JPG';
+      
+      console.log(
+        `%c📸 Thumbnail: ${alt}%c → ${size.toUpperCase()} ${format}`,
+        'color: #ec4899; font-weight: bold',
+        `color: ${isWebP ? '#8b5cf6' : '#f59e0b'}`
+      );
+    }
+    
+    if (onLoad) onLoad();
+  };
+
   if (!variants) {
     return (
       <img
+        ref={imgRef}
         src={buildUrl(src) || ''}
         alt={alt}
         className={className}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
-        onLoad={onLoad}
+        onLoad={handleImageLoad}
       />
     );
   }
@@ -164,48 +236,17 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
       {webpSrc && <source type="image/webp" srcSet={buildUrl(webpSrc) || ''} />}
       {jpegSrc && <source type="image/jpeg" srcSet={buildUrl(jpegSrc) || ''} />}
       <img
+        ref={imgRef}
         src={buildUrl(variants.original || src) || ''}
         alt={alt}
         className={className}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
-        onLoad={onLoad}
+        onLoad={handleImageLoad}
       />
     </picture>
   );
 };
 
 export default ResponsiveImage;
-
-/**
- * EXEMPLES D'UTILISATION AVEC VARIANTS DE L'API
- * 
- * 1. Image LCP (hero banner):
- * <ResponsiveImage
- *   src={event.banner_path}
- *   variants={event.banner_variants}
- *   alt={event.name}
- *   className="w-full h-full object-cover"
- *   loading="eager"
- *   fetchPriority="high"
- * />
- * 
- * 2. Images carousel:
- * <ResponsiveImage
- *   src={image.image_path}
- *   variants={image.variants}
- *   alt={`Photo ${index + 1}`}
- *   className="w-full h-full object-cover"
- *   loading="lazy"
- * />
- * 
- * 3. Thumbnails:
- * <ThumbnailImage
- *   src={event.thumbnail_path}
- *   variants={event.thumbnail_variants}
- *   alt={event.name}
- *   size="md"
- *   className="w-full aspect-square object-cover"
- * />
- */
