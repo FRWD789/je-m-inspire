@@ -62,11 +62,13 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
 
   return (
     <div className="relative h-[40vh] w-full overflow-hidden rounded-t-[12px]">
+      {/* ✅ Image Hero avec style inline pour garantir le remplissage */}
       <ResponsiveImage
         src={event.banner_path || event.thumbnail_path}
-        variants={event.banner_variants || event.thumbnail_variants}  // ← AJOUTÉ
+        variants={event.banner_variants || event.thumbnail_variants}
         alt={event.name}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover object-center"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
         loading="eager"
         fetchPriority="high"
       />
@@ -101,12 +103,14 @@ const OrganizerInfo = ({ creator }: { creator?: User }) => (
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
           {creator?.profile.profile_picture ? (
+            /* ✅ Image organisateur avec style inline pour garantir le remplissage */
             <img 
               src={`${creator?.profile.profile_picture}`} 
               alt={`Photo de ${creator.profile}`}
               loading="lazy"        
               decoding="async"     
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
             />
           ) : (
             <span className="font-semibold text-lg">

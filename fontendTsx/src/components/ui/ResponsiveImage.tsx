@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
 
 /**
- * ResponsiveImage - VERSION SIMPLIFIÉE SANS PICTURE
+ * ResponsiveImage - VERSION FINALE
  * 
- * ✅ Utilise uniquement <img> avec srcset
- * ✅ Pas de wrapper qui interfère avec le layout
- * ✅ Classes CSS directement appliquées
+ * ✅ Garantit que les images remplissent TOUJOURS leur conteneur
+ * ✅ Utilise uniquement <img> avec srcset (pas de wrapper)
+ * ✅ Style inline comme fallback si classes Tailwind échouent
  */
 
 interface ResponsiveImageProps {
@@ -71,6 +71,15 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     if (onLoad) onLoad();
   };
 
+  // ✅ Style combiné : merge le style passé avec les règles de remplissage
+  const combinedStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    ...style, // Le style personnalisé peut override si besoin
+  };
+
   // Si pas de variantes, image simple
   if (!variants) {
     return (
@@ -79,7 +88,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
         src={buildUrl(src) || ''}
         alt={alt}
         className={className}
-        style={style}
+        style={combinedStyle}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
@@ -89,7 +98,6 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   }
 
   // Construire srcset avec WebP en priorité
-  // Le navigateur choisira WebP s'il le supporte, sinon JPEG
   const srcsetItems = [];
   
   // Ajouter les variantes WebP (prioritaire)
@@ -125,7 +133,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px"
       alt={alt}
       className={className}
-      style={style}
+      style={combinedStyle}
       loading={loading}
       fetchpriority={fetchPriority}
       decoding="async"
@@ -194,6 +202,15 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     if (onLoad) onLoad();
   };
 
+  // ✅ Style combiné pour thumbnails aussi
+  const combinedStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    ...style,
+  };
+
   if (!variants) {
     return (
       <img
@@ -201,7 +218,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
         src={buildUrl(src) || ''}
         alt={alt}
         className={className}
-        style={style}
+        style={combinedStyle}
         loading={loading}
         fetchpriority={fetchPriority}
         decoding="async"
@@ -221,7 +238,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
       src={fallbackSrc || ''}
       alt={alt}
       className={className}
-      style={style}
+      style={combinedStyle}
       loading={loading}
       fetchpriority={fetchPriority}
       decoding="async"
