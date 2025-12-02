@@ -55,10 +55,12 @@ export default defineConfig({
             return 'router';
           }
 
-          // UI libraries (lucide-react, embla-carousel)
-          if (id.includes('node_modules/lucide-react') ||
-              id.includes('node_modules/embla-carousel')) {
-            return 'ui-vendor';
+          // 🔧 FIX: Ne PAS splitter lucide-react - garder avec le code principal
+          // lucide-react a trop d'exports nommés et cause des problèmes avec le code splitting
+          
+          // Embla carousel dans son propre chunk
+          if (id.includes('node_modules/embla-carousel')) {
+            return 'carousel';
           }
 
           // i18next
@@ -131,7 +133,7 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-router-dom',
-      'lucide-react',
+      'lucide-react', // 🔧 FIX: Pré-bundler lucide-react
     ],
     
     // Exclure les gros packages qui ne doivent pas être pré-bundlés
