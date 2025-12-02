@@ -18,6 +18,7 @@ class CacheImagesMiddleware
             $response->header('Cache-Control', 'public, max-age=31536000, immutable');
 
             // ETag pour validation conditionnelle
+            $etag = md5($response->getContent());
             $response->setEtag($etag);
 
             // Si le client a déjà cette version → 304 Not Modified
