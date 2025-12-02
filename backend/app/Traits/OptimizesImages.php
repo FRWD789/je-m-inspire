@@ -7,57 +7,126 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Trait OptimizesImages - VERSION FINALE CORRIGÉE
+ * Trait OptimizesImages - VERSION CORRIGÉE
  *
- * Génère PLUSIEURS tailles d'images + conversion WebP automatique
+ * ✅ Convertit TOUJOURS en JPG (même si PNG uploadé)
+ * ✅ Génère TOUTES les variantes (sm, md, lg, xl)
+ * ✅ Crée WebP pour chaque variante
+ * ✅ Supprime le PNG temporaire
  */
 trait OptimizesImages
 {
     /**
      * Optimise et sauvegarde une image en plusieurs tailles + WebP
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @param string $directory (ex: 'event_images', 'event_thumbnails')
+     * @param int $maxWidth (max 1920px)
+     * @param int $quality (1-100, recommandé: 85)
+     * @return string Chemin relatif du JPG original (ex: 'event_images/123_abc.jpg')
      */
     public function optimizeAndSaveImage($file, $directory, $maxWidth = 1920, $quality = 85)
     {
         $baseFilename = time() . '_' . Str::random(10);
-        $extension = $file->getClientOriginalExtension();
+        $originalExtension = strtolower($file->getClientOriginalExtension());
 
-        // Sauvegarder temporairement l'original
-        $tempPath = $file->storeAs($directory, $baseFilename . '.' . $extension, 'public');
-        $fullPath = storage_path('app/public/' . $tempPath);
+        // ✅ ÉTAPE 1 : Sauvegarder temporairement (garder extension originale)
+        $tempFilename = $baseFilename . '.' . $originalExtension;
+        $tempPath = $file->storeAs($directory, $tempFilename, 'public');
+        $tempFullPath = storage_path('app/public/' . $tempPath);
 
-        // Augmenter limite mémoire temporairement
+        // Augmenter limite mémoire
         $originalMemoryLimit = ini_get('memory_limit');
         ini_set('memory_limit', '1024M');
 
         try {
-            // Générer les 4 tailles + WebP pour chacune
-            $this->generateResponsiveImages($fullPath, $directory, $baseFilename, $quality);
+            // ✅ ÉTAPE 2 : Charger l'image
+            $imageInfo = getimagesize($tempFullPath);
+            if (!$imageInfo) {
+                throw new \Exception("Impossible de lire l'image");
+            }
 
-            Log::info('[OptimizeImage] Images responsives générées', [
+            list($originalWidth, $originalHeight, $type) = $imageInfo;
+            $source = $this->loadImage($tempFullPath, $type);
+
+            if (!$source) {
+                throw new \Exception("Impossible de charger l'image");
+            }
+
+            // ✅ ÉTAPE 3 : Sauvegarder l'ORIGINAL en JPG + WebP
+            $originalJpgPath = storage_path("app/public/{$directory}/{$baseFilename}.jpg");
+            $originalWebpPath = storage_path("app/public/{$directory}/{$baseFilename}.webp");
+
+            // Redimensionner si nécessaire
+            if ($originalWidth > $maxWidth) {
+                $ratio = $maxWidth / $originalWidth;
+                $newWidth = $maxWidth;
+                $newHeight = (int)($originalHeight * $ratio);
+
+                $resized = imagecreatetruecolor($newWidth, $newHeight);
+                imagecopyresampled(
+                    $resized, $source,
+                    0, 0, 0, 0,
+                    $newWidth, $newHeight,
+                    $originalWidth, $originalHeight
+                );
+
+                imagejpeg($resized, $originalJpgPath, $quality);
+                imagewebp($resized, $originalWebpPath, $quality);
+                imagedestroy($resized);
+            } else {
+                // Image déjà assez petite, juste convertir
+                imagejpeg($source, $originalJpgPath, $quality);
+                imagewebp($source, $originalWebpPath, $quality);
+            }
+
+            // ✅ ÉTAPE 4 : Générer les variantes responsive
+            $this->generateResponsiveVariants(
+                $originalJpgPath,
+                $directory,
+                $baseFilename,
+                $originalWidth,
+                $originalHeight,
+                $quality
+            );
+
+            // ✅ ÉTAPE 5 : Supprimer le fichier temporaire (PNG)
+            if ($originalExtension !== 'jpg' && $originalExtension !== 'jpeg') {
+                if (file_exists($tempFullPath)) {
+                    unlink($tempFullPath);
+                }
+            }
+
+            imagedestroy($source);
+            gc_collect_cycles();
+
+            Log::info('[OptimizeImage] Images générées avec succès', [
                 'directory' => $directory,
                 'basename' => $baseFilename,
-                'sizes' => ['300px', '600px', '1200px', '1920px'],
-                'formats' => ['original', 'webp']
+                'original_size' => $originalWidth . 'x' . $originalHeight,
+                'variants' => ['sm', 'md', 'lg', 'xl'],
+                'formats' => ['jpg', 'webp']
             ]);
 
+        } catch (\Exception $e) {
+            Log::error('[OptimizeImage] Erreur: ' . $e->getMessage(), [
+                'file' => $tempPath,
+                'directory' => $directory
+            ]);
+            throw $e;
         } finally {
             ini_set('memory_limit', $originalMemoryLimit);
         }
 
-        return $tempPath;
+        // ✅ RETOURNER le chemin du JPG (pas du PNG)
+        return "{$directory}/{$baseFilename}.jpg";
     }
 
     /**
-     * Génère toutes les tailles responsive + WebP
+     * Génère TOUTES les variantes responsive (sm, md, lg, xl)
      */
-    private function generateResponsiveImages($originalPath, $directory, $basename, $quality)
+    private function generateResponsiveVariants($originalJpgPath, $directory, $basename, $originalWidth, $originalHeight, $quality)
     {
-        $imageInfo = getimagesize($originalPath);
-        if (!$imageInfo) return;
-
-        list($originalWidth, $originalHeight, $type) = $imageInfo;
-
-        // Définir les tailles à générer
         $sizes = [
             'sm' => 300,
             'md' => 600,
@@ -65,27 +134,36 @@ trait OptimizesImages
             'xl' => 1920
         ];
 
+        $source = imagecreatefromjpeg($originalJpgPath);
+        if (!$source) return;
+
         foreach ($sizes as $sizeKey => $targetWidth) {
+            // ✅ FIX : Générer MÊME si l'image est plus petite
+            // Dans ce cas, on duplique l'image à sa taille réelle
+
             if ($originalWidth <= $targetWidth) {
+                // Image trop petite : dupliquer sans redimensionner
+                $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
+                $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
+
+                // Copier l'original
+                copy($originalJpgPath, $jpgPath);
+
+                // Créer WebP
+                $tempSource = imagecreatefromjpeg($originalJpgPath);
+                imagewebp($tempSource, $webpPath, $quality);
+                imagedestroy($tempSource);
+
                 continue;
             }
 
+            // Calculer nouvelles dimensions
             $ratio = $targetWidth / $originalWidth;
             $newWidth = $targetWidth;
             $newHeight = (int)($originalHeight * $ratio);
 
-            $source = $this->loadImage($originalPath, $type);
-            if (!$source) continue;
-
+            // Créer image redimensionnée
             $resized = imagecreatetruecolor($newWidth, $newHeight);
-
-            if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
-                imagealphablending($resized, false);
-                imagesavealpha($resized, true);
-                $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
-                imagefill($resized, 0, 0, $transparent);
-            }
-
             imagecopyresampled(
                 $resized, $source,
                 0, 0, 0, 0,
@@ -93,18 +171,19 @@ trait OptimizesImages
                 $originalWidth, $originalHeight
             );
 
-            // Sauvegarder en JPEG
-            $resizedPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
-            imagejpeg($resized, $resizedPath, $quality);
+            // Sauvegarder JPG
+            $jpgPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.jpg");
+            imagejpeg($resized, $jpgPath, $quality);
 
-            // Sauvegarder en WebP
+            // Sauvegarder WebP
             $webpPath = storage_path("app/public/{$directory}/{$basename}_{$sizeKey}.webp");
             imagewebp($resized, $webpPath, $quality);
 
             imagedestroy($resized);
-            imagedestroy($source);
-            gc_collect_cycles();
         }
+
+        imagedestroy($source);
+        gc_collect_cycles();
     }
 
     /**
@@ -116,7 +195,19 @@ trait OptimizesImages
             case IMAGETYPE_JPEG:
                 return @imagecreatefromjpeg($filePath);
             case IMAGETYPE_PNG:
-                return @imagecreatefrompng($filePath);
+                $img = @imagecreatefrompng($filePath);
+                if ($img) {
+                    // Convertir fond transparent en blanc
+                    $width = imagesx($img);
+                    $height = imagesy($img);
+                    $newImg = imagecreatetruecolor($width, $height);
+                    $white = imagecolorallocate($newImg, 255, 255, 255);
+                    imagefill($newImg, 0, 0, $white);
+                    imagecopy($newImg, $img, 0, 0, 0, 0, $width, $height);
+                    imagedestroy($img);
+                    return $newImg;
+                }
+                return false;
             case IMAGETYPE_GIF:
                 return @imagecreatefromgif($filePath);
             case IMAGETYPE_WEBP:
@@ -127,25 +218,18 @@ trait OptimizesImages
     }
 
     /**
-     * ✅ CORRIGÉ : Retourne des CHEMINS RELATIFS, pas des URLs complètes
-     * ResponsiveImage.tsx construira les URLs
+     * Retourne les chemins relatifs de toutes les variantes
      *
-     * @param string $originalPath Chemin original (ex: 'event_images/123_abc.jpg')
-     * @return array Chemins relatifs de toutes les variantes
+     * @param string $originalPath (ex: 'event_images/123_abc.jpg')
+     * @return array Chemins relatifs
      */
     public function getImageVariants($originalPath)
     {
         if (!$originalPath) {
             return [
                 'original' => null,
-                'sm' => null,
-                'md' => null,
-                'lg' => null,
-                'xl' => null,
-                'sm_webp' => null,
-                'md_webp' => null,
-                'lg_webp' => null,
-                'xl_webp' => null,
+                'sm' => null, 'md' => null, 'lg' => null, 'xl' => null,
+                'sm_webp' => null, 'md_webp' => null, 'lg_webp' => null, 'xl_webp' => null,
             ];
         }
 
@@ -153,7 +237,6 @@ trait OptimizesImages
         $directory = $pathInfo['dirname'];
         $filename = $pathInfo['filename'];
 
-        // ✅ RETOURNE DES CHEMINS RELATIFS UNIQUEMENT
         return [
             'original' => $originalPath,
             'sm' => "{$directory}/{$filename}_sm.jpg",
