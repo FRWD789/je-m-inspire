@@ -364,12 +364,13 @@ export default function EventDetail() {
               navigate={navigate}
             />
             
-            {/* Description - Desktop seulement - S'ÉTIRE EN HAUTEUR */}
+            {/* Description - Desktop seulement - S'ÉTIRE EN HAUTEUR + RETOUR À LA LIGNE AUTO */}
             <div className="hidden lg:block rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
               <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
-              {/* ✅ SUPPRESSION de max-h et overflow-y-auto pour permettre l'étirement en hauteur */}
               <div className="mb-4">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {/* ✅ whitespace-pre-wrap permet les retours à la ligne automatiques */}
+                {/* ✅ break-words casse les mots très longs si nécessaire */}
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
                   {event.description || "Aucune description disponible."}
                 </p>
               </div>
@@ -382,12 +383,13 @@ export default function EventDetail() {
             </div>
           </div>
 
-          {/* Description - Ordre 3 en mobile uniquement - S'ÉTIRE EN HAUTEUR */}
+          {/* Description - Ordre 3 en mobile uniquement - RETOUR À LA LIGNE AUTO */}
           <div className="order-3 lg:hidden rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
             <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
-            {/* ✅ SUPPRESSION de max-h et overflow-y-auto pour permettre l'étirement en hauteur */}
             <div className="mb-4">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+              {/* ✅ whitespace-pre-wrap permet les retours à la ligne automatiques */}
+              {/* ✅ break-words casse les mots très longs si nécessaire */}
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
                 {event.description || "Aucune description disponible."}
               </p>
             </div>
