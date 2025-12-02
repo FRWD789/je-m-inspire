@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageData {
@@ -25,6 +25,13 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [dimensions, setDimensions] = useState<{
+    container?: { width: number; height: number };
+    images?: Array<{ natural: { width: number; height: number }; display: { width: number; height: number } }>;
+  }>({});
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
 
   const validImages = useMemo(() => {
     return Array.isArray(images) && images.length > 0 
@@ -39,13 +46,15 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       return image.url || `${API_BASE}/storage/${image.image_path}`;
     }
 
-    // Prioriser xl_webp (1920px) pour meilleure qualité
+    // Essaie xl d'abord pour voir si c'est un problème de taille
     let bestVariant: string | undefined;
     
     if (image.variants.xl_webp) {
       bestVariant = image.variants.xl_webp;
+      console.log('📸 Utilisation xl_webp (1920px):', bestVariant);
     } else if (image.variants.lg_webp) {
       bestVariant = image.variants.lg_webp;
+      console.log('📸 Utilisation lg_webp (1200px):', bestVariant);
     } else if (image.variants.xl) {
       bestVariant = image.variants.xl;
     } else if (image.variants.lg) {
@@ -60,6 +69,46 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const imageUrls = useMemo(() => {
     return validImages.map(img => getOptimizedImageUrl(img));
   }, [validImages, getOptimizedImageUrl]);
+
+  // 🔍 DIAGNOSTIC: Mesurer les dimensions après chargement
+  useEffect(() => {
+    const measureDimensions = () => {
+      if (!containerRef.current) return;
+
+      const containerDims = {
+        width: containerRef.current.offsetWidth,
+        height: containerRef.current.offsetHeight,
+      };
+
+      const imageDims = imageRefs.current.map((img) => {
+        if (!img) return null;
+        return {
+          natural: {
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+          },
+          display: {
+            width: img.offsetWidth,
+            height: img.offsetHeight,
+          },
+        };
+      }).filter(Boolean);
+
+      setDimensions({
+        container: containerDims,
+        images: imageDims as any,
+      });
+
+      console.group('🔍 DIAGNOSTIC DIMENSIONS');
+      console.log('Conteneur:', containerDims);
+      console.log('Images:', imageDims);
+      console.groupEnd();
+    };
+
+    // Mesurer après un court délai pour laisser les images charger
+    const timer = setTimeout(measureDimensions, 1000);
+    return () => clearTimeout(timer);
+  }, [currentIndex]);
 
   const handlePrevious = useCallback(() => {
     if (isTransitioning || validImages.length === 0) return;
@@ -95,16 +144,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     return (
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-3">Photos de l'événement</h2>
-        <div style={{ 
-          width: '100%', 
-          height: '400px', 
-          borderRadius: '12px', 
-          backgroundColor: '#f3f4f6', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          border: '1px solid #e5e7eb' 
-        }}>
+        <div style={{ width: '100%', height: '400px', borderRadius: '12px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e7eb' }}>
           <p style={{ color: '#9ca3af' }}>Aucune image disponible</p>
         </div>
       </div>
@@ -116,8 +156,34 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       <h2 className="text-2xl font-semibold mb-3">
         Photos de l'événement ({validImages.length})
       </h2>
+
+      {/* 🔍 PANNEAU DE DIAGNOSTIC */}
+      {dimensions.container && (
+        <div style={{
+          backgroundColor: '#fef3c7',
+          border: '2px solid #f59e0b',
+          borderRadius: '8px',
+          padding: '12px',
+          marginBottom: '12px',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+        }}>
+          <div><strong>📏 Conteneur:</strong> {dimensions.container.width}px × {dimensions.container.height}px</div>
+          {dimensions.images && dimensions.images[currentIndex] && (
+            <>
+              <div><strong>🖼️ Image naturelle:</strong> {dimensions.images[currentIndex].natural.width}px × {dimensions.images[currentIndex].natural.height}px</div>
+              <div><strong>📺 Image affichée:</strong> {dimensions.images[currentIndex].display.width}px × {dimensions.images[currentIndex].display.height}px</div>
+              <div style={{ color: dimensions.images[currentIndex].display.width < dimensions.container.width ? '#dc2626' : '#16a34a' }}>
+                <strong>Status:</strong> {dimensions.images[currentIndex].display.width < dimensions.container.width ? '❌ Image plus petite que conteneur' : '✅ Image remplit le conteneur'}
+              </div>
+            </>
+          )}
+        </div>
+      )}
       
+      {/* Conteneur du carrousel */}
       <div 
+        ref={containerRef}
         style={{
           position: 'relative',
           width: '100%',
@@ -125,12 +191,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           borderRadius: '12px',
           overflow: 'hidden',
           backgroundColor: '#1a1a1a',
+          border: '3px solid #dc2626', // ← Bordure rouge pour voir le conteneur
         }}
-        onMouseEnter={(e) => e.currentTarget.classList.add('group-hover')}
-        onMouseLeave={(e) => e.currentTarget.classList.remove('group-hover')}
       >
         
-        {/* Images */}
+        {/* Images avec IMG TAG */}
         {validImages.map((image, index) => (
           <div
             key={image.id}
@@ -144,9 +209,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
               zIndex: index === currentIndex ? 10 : 0,
               pointerEvents: index === currentIndex ? 'auto' : 'none',
               transition: 'opacity 300ms',
+              border: '2px solid #10b981', // ← Bordure verte pour voir la div
             }}
           >
             <img
+              ref={(el) => { imageRefs.current[index] = el; }}
               src={imageUrls[index]}
               alt={`Photo ${index + 1}`}
               loading={index === 0 ? 'eager' : 'lazy'}
@@ -159,6 +226,22 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
                 objectFit: 'cover',
                 objectPosition: 'center',
                 display: 'block',
+                border: '2px solid #3b82f6', // ← Bordure bleue pour voir l'img
+              }}
+              onLoad={() => {
+                console.log(`✅ Image ${index + 1} chargée`);
+                if (containerRef.current) {
+                  setTimeout(() => {
+                    const img = imageRefs.current[index];
+                    if (img) {
+                      console.log(`📸 Image ${index + 1}:`, {
+                        natural: `${img.naturalWidth}x${img.naturalHeight}`,
+                        display: `${img.offsetWidth}x${img.offsetHeight}`,
+                        container: `${containerRef.current?.offsetWidth}x${containerRef.current?.offsetHeight}`,
+                      });
+                    }
+                  }, 100);
+                }
               }}
             />
           </div>
@@ -179,14 +262,10 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
                 color: '#1f2937',
                 borderRadius: '50%',
                 padding: '12px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                 border: 'none',
-                cursor: isTransitioning ? 'not-allowed' : 'pointer',
-                opacity: 0,
-                transition: 'all 300ms',
+                cursor: 'pointer',
                 zIndex: 20,
               }}
-              className="group-hover-opacity"
               aria-label="Image précédente"
             >
               <ChevronLeft size={24} />
@@ -204,14 +283,10 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
                 color: '#1f2937',
                 borderRadius: '50%',
                 padding: '12px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                 border: 'none',
-                cursor: isTransitioning ? 'not-allowed' : 'pointer',
-                opacity: 0,
-                transition: 'all 300ms',
+                cursor: 'pointer',
                 zIndex: 20,
               }}
-              className="group-hover-opacity"
               aria-label="Image suivante"
             >
               <ChevronRight size={24} />
@@ -219,68 +294,25 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           </>
         )}
 
-        {/* Indicateurs pagination */}
-        {validImages.length > 1 && (
-          <div style={{
-            position: 'absolute',
-            bottom: '16px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            gap: '8px',
-            zIndex: 20,
-          }}>
-            {validImages.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  if (!isTransitioning) {
-                    setIsTransitioning(true);
-                    setCurrentIndex(index);
-                    setTimeout(() => setIsTransitioning(false), 300);
-                  }
-                }}
-                style={{
-                  height: '8px',
-                  width: index === currentIndex ? '32px' : '8px',
-                  borderRadius: '4px',
-                  backgroundColor: index === currentIndex ? 'white' : 'rgba(255, 255, 255, 0.5)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 300ms',
-                }}
-                aria-label={`Aller à la photo ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
-
         {/* Compteur */}
         <div style={{
           position: 'absolute',
           top: '16px',
           right: '16px',
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
           color: 'white',
-          padding: '6px 12px',
+          padding: '8px 16px',
           borderRadius: '20px',
           fontSize: '14px',
-          fontWeight: 500,
-          backdropFilter: 'blur(8px)',
           zIndex: 20,
         }}>
           {currentIndex + 1} / {validImages.length}
         </div>
       </div>
 
-      {/* CSS pour le hover des boutons et responsive */}
       <style>{`
-        .mb-6 > div:hover .group-hover-opacity {
-          opacity: 1 !important;
-        }
-        
         @media (min-width: 1024px) {
-          .mb-6 > div:first-of-type {
+          .mb-6 > div:nth-of-type(2) {
             height: 600px !important;
           }
         }
