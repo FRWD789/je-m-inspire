@@ -39,6 +39,31 @@ use App\Notifications\EventReminderNotification;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Log;
+
+// ✅ Route storage dans API (priorité sur web)
+Route::get('/storage/{path}', function ($path) {
+    Log::info('[API Storage Route] Path reçu:', ['path' => $path]);
+
+    if (!Storage::disk('public')->exists($path)) {
+        Log::error('[API Storage Route] Fichier non trouvé:', [
+            'path' => $path,
+            'full_path' => Storage::disk('public')->path($path)
+        ]);
+        abort(404, 'File not found');
+    }
+
+    Log::info('[API Storage Route] Fichier trouvé, envoi...');
+
+    return Response::file(
+        Storage::disk('public')->path($path),
+        [
+            'Content-Type' => Storage::disk('public')->mimeType($path),
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+        ]
+    );
+})->where('path', '.*');
 
 
 
@@ -78,7 +103,7 @@ Route::post('/email/resend', function (Request $request) {
 
 Route::post('/forgot-password', function (Request $request) {
     $request->validate(['email' => 'required|email']);
-    
+
 
     // Find user by email
     $user = User::where('email', $request->email)->first();
