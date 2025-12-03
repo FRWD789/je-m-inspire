@@ -740,6 +740,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
+                    e.stopPropagation() // Empêche la propagation vers le formulaire
                     setThumbnailPreview(null)
                     setThumbnailFile(null)
                   }}
@@ -796,6 +797,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
+                    e.stopPropagation() // Empêche la propagation vers le formulaire
                     setBannerPreview(null)
                     setBannerFile(null)
                   }}
@@ -885,7 +887,10 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                 <div className="image-preview-overlay">
                   <button
                     type="button"
-                    onClick={() => removeImage(index)}
+                    onClick={(e) => {
+                      e.stopPropagation() // Empêche la propagation vers le formulaire
+                      removeImage(index)
+                    }}
                     className="delete-image-btn"
                     title="Supprimer"
                   >

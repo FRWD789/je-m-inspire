@@ -149,6 +149,7 @@ export default function AutocompleteInputV2({
             type="button" 
             onMouseDown={(e) => {
               e.preventDefault(); // Empêche le blur de l'input
+              e.stopPropagation(); // Empêche la propagation vers le formulaire
               handleClear();
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-accent transition-colors p-1"
@@ -168,6 +169,7 @@ export default function AutocompleteInputV2({
               className="p-3 hover:bg-accent/10 cursor-pointer border-b last:border-b-0 text-sm text-primary transition-colors"
               onMouseDown={(e) => {
                 e.preventDefault(); // Empêche le blur de l'input
+                e.stopPropagation(); // Empêche la propagation vers le formulaire
                 handleSelect(s);
               }}
             >
