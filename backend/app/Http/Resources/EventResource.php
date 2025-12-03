@@ -25,20 +25,21 @@ class EventResource extends JsonResource
             // ========================================
             // ✅ IMAGES ORIGINALES (compatibilité)
             // ========================================
-            'thumbnail' => $this->thumbnail_path ? url('api/storage/' . $this->thumbnail_path) : null,
-            'banner' => $this->banner_path ? url('api/storage/' . $this->banner_path) : null,
+            // ✅ CORRIGÉ: Enlevé /api/ des URLs
+            'thumbnail' => $this->thumbnail_path ? url('storage/' . $this->thumbnail_path) : null,
+            'banner' => $this->banner_path ? url('storage/' . $this->banner_path) : null,
 
             // ========================================
             // ✅ NOUVEAUTÉ : VARIANTES RESPONSIVE
             // ========================================
             'thumbnail_path' => $this->thumbnail_path,
             'thumbnail_variants' => $this->thumbnail_path
-                ? $this->getVariants($this->thumbnail_path) // ✅ CORRIGÉ: méthode helper
+                ? $this->getVariants($this->thumbnail_path)
                 : null,
 
             'banner_path' => $this->banner_path,
             'banner_variants' => $this->banner_path
-                ? $this->getVariants($this->banner_path) // ✅ CORRIGÉ: méthode helper
+                ? $this->getVariants($this->banner_path)
                 : null,
 
             'is_cancelled' => (bool) $this->is_cancelled,
@@ -53,7 +54,7 @@ class EventResource extends JsonResource
                         'id' => $image->id,
                         'url' => $image->image_url,
                         'image_path' => $image->image_path,
-                        'variants' => $this->getVariants($image->image_path), // ✅ CORRIGÉ: méthode helper
+                        'variants' => $this->getVariants($image->image_path),
                         'display_order' => $image->display_order,
                     ];
                 });
@@ -96,7 +97,6 @@ class EventResource extends JsonResource
         }
 
         // ✅ CORRECTION: Appeler via $this->resource (le modèle Event)
-        // au lieu de $this (la Resource)
         if (method_exists($this->resource, 'getImageVariants')) {
             return $this->resource->getImageVariants($imagePath);
         }
@@ -107,15 +107,13 @@ class EventResource extends JsonResource
         $filename = $pathInfo['filename'];
 
         return [
-            'original' => $imagePath,
-            'sm' => "{$directory}/{$filename}_sm.jpg",
-            'md' => "{$directory}/{$filename}_md.jpg",
-            'lg' => "{$directory}/{$filename}_lg.jpg",
-            'xl' => "{$directory}/{$filename}_xl.jpg",
-            'sm_webp' => "{$directory}/{$filename}_sm.webp",
-            'md_webp' => "{$directory}/{$filename}_md.webp",
-            'lg_webp' => "{$directory}/{$filename}_lg.webp",
-            'xl_webp' => "{$directory}/{$filename}_xl.webp",
+            'original' => url('storage/' . $imagePath),
+            'md' => url("storage/{$directory}/{$filename}_md.jpg"),
+            'lg' => url("storage/{$directory}/{$filename}_lg.jpg"),
+            'xl' => url("storage/{$directory}/{$filename}_xl.jpg"),
+            'md_webp' => url("storage/{$directory}/{$filename}_md.webp"),
+            'lg_webp' => url("storage/{$directory}/{$filename}_lg.webp"),
+            'xl_webp' => url("storage/{$directory}/{$filename}_xl.webp"),
         ];
     }
 }
