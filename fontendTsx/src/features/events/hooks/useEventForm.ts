@@ -80,7 +80,14 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       }
       
       if (imagesFiles.length > 0) {
-        imagesFiles.forEach((file, index) => {
+        // 🛡️ SÉCURITÉ : Filtrer les undefined/null avant d'envoyer
+        const validFiles = imagesFiles.filter(file => file && file instanceof File);
+        
+        if (validFiles.length !== imagesFiles.length) {
+          console.warn(`⚠️  [useEventForm] ${imagesFiles.length - validFiles.length} fichier(s) invalide(s) détecté(s) et ignoré(s)`);
+        }
+        
+        validFiles.forEach((file, index) => {
           formData.append('images[]', file);
           console.log(`  ✅ Image ${index + 1} ajoutée: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
         });

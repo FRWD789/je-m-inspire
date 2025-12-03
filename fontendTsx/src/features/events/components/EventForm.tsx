@@ -336,7 +336,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   // 🆕 CHARGEMENT DES IMAGES EXISTANTES EN MODE EDIT
   useEffect(() => {
     if (type === 'edit' && defaultValues) {
-      // 🧹 Nettoyer le contexte avant de charger les images existantes
+      // 🧹 IMPORTANT : Nettoyer le contexte AVANT de charger les images existantes
       clearFiles()
       loadExistingImages()
     }
@@ -344,91 +344,92 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
 
   // ✅ CORRIGÉ : Utiliser directement les URLs backend au lieu de Blob URLs
   const loadExistingImages = async () => {
-  setIsLoadingExisting(true)
-  setCompressionStatus('Chargement des images existantes...')
-  
-  try {
-    // 1. Charger thumbnail - Utiliser directement l'URL du backend
-    if (defaultValues.thumbnail) {
-      console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
-      console.log('  URL backend:', defaultValues.thumbnail)
-      
-      // ✅ Utiliser directement l'URL du backend (déjà optimisée)
-      // Si des variantes existent, utiliser _md pour le preview, sinon l'original
-      const thumbnailUrl = defaultValues.thumbnail_variants?.md 
-        || defaultValues.thumbnail_variants?.md_webp
-        || defaultValues.thumbnail
-      
-      setThumbnailPreview(thumbnailUrl)
-      console.log('  ✅ URL preview:', thumbnailUrl)
-      
-      // ❌ NE PAS charger le fichier dans le contexte
-      // setThumbnailFile() n'est PAS appelé en mode edit si l'image n'est pas modifiée
-    }
+    setIsLoadingExisting(true)
+    setCompressionStatus('Chargement des images existantes...')
     
-    // 2. Charger banner - Utiliser directement l'URL du backend
-    if (defaultValues.banner) {
-      console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
-      console.log('  URL backend:', defaultValues.banner)
-      
-      const bannerUrl = defaultValues.banner_variants?.md
-        || defaultValues.banner_variants?.md_webp
-        || defaultValues.banner
-      
-      setBannerPreview(bannerUrl)
-      console.log('  ✅ URL preview:', bannerUrl)
-      
-      // ❌ NE PAS charger le fichier dans le contexte
-      // setBannerFile() n'est PAS appelé en mode edit si l'image n'est pas modifiée
-    }
-    
-    // 3. Charger galerie d'images
-    if (defaultValues.images && Array.isArray(defaultValues.images) && defaultValues.images.length > 0) {
-      console.log('🖼️ [ImagesSection] === CHARGEMENT GALERIE ===')
-      console.log(`  Total: ${defaultValues.images.length} images`)
-      
-      const loadedPreviews: { id: string; url: string; isExisting: boolean }[] = []
-      
-      for (let i = 0; i < defaultValues.images.length; i++) {
-        const image = defaultValues.images[i]
-        const imageUrl = image.variants?.md
-          || image.variants?.md_webp
-          || image.url 
-          || image.path 
-          || image
+    try {
+      // 1. Charger thumbnail - Utiliser directement l'URL du backend
+      if (defaultValues.thumbnail) {
+        console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
+        console.log('  URL backend:', defaultValues.thumbnail)
         
-        const imageId = image.id
+        // ✅ Utiliser directement l'URL du backend (déjà optimisée)
+        // Si des variantes existent, utiliser _md pour le preview, sinon l'original
+        const thumbnailUrl = defaultValues.thumbnail_variants?.md 
+          || defaultValues.thumbnail_variants?.md_webp
+          || defaultValues.thumbnail
         
-        console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
-        console.log(`    ✅ URL preview:`, imageUrl)
-        
-        loadedPreviews.push({
-          id: `existing-${imageId || Date.now()}`,
-          url: imageUrl,
-          isExisting: true
-        })
+        setThumbnailPreview(thumbnailUrl)
+        console.log('  ✅ URL preview:', thumbnailUrl)
+        // ❌ NE PAS charger le fichier dans le contexte
+        // Le contexte reste vide si l'utilisateur ne modifie pas l'image
       }
       
-      setImagesPreview(loadedPreviews)
+      // 2. Charger banner - Utiliser directement l'URL du backend
+      if (defaultValues.banner) {
+        console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
+        console.log('  URL backend:', defaultValues.banner)
+        
+        // ✅ Utiliser directement l'URL du backend (déjà optimisée)
+        const bannerUrl = defaultValues.banner_variants?.md
+          || defaultValues.banner_variants?.md_webp
+          || defaultValues.banner
+        
+        setBannerPreview(bannerUrl)
+        console.log('  ✅ URL preview:', bannerUrl)
+        // ❌ NE PAS charger le fichier dans le contexte
+      }
       
-      console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
-      console.log(`  Total images: ${loadedPreviews.length}`)
-      console.log(`  Type: URLs backend directes (pas de Blob URL)`)
-      console.log(`  ✅ Images existantes chargées!`)
+      // 3. Charger galerie d'images - Utiliser directement les URLs du backend
+      if (defaultValues.images && Array.isArray(defaultValues.images) && defaultValues.images.length > 0) {
+        console.log('🖼️ [ImagesSection] === CHARGEMENT GALERIE ===')
+        console.log(`  Total: ${defaultValues.images.length} images`)
+        
+        const loadedPreviews: { id: string; url: string; isExisting: boolean }[] = []
+        
+        for (let i = 0; i < defaultValues.images.length; i++) {
+          const image = defaultValues.images[i]
+          try {
+            // ✅ Utiliser directement les variantes du backend
+            const imageUrl = image.variants?.md
+              || image.variants?.md_webp
+              || image.url 
+              || image.path 
+              || image
+            
+            const imageId = image.id
+            
+            console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
+            console.log(`    ✅ URL preview:`, imageUrl)
+            
+            loadedPreviews.push({
+              id: `existing-${imageId || Date.now()}`,
+              url: imageUrl,
+              isExisting: true
+            })
+          } catch (error) {
+            console.error(`    ❌ Erreur chargement image ${i + 1}:`, error)
+          }
+        }
+        
+        setImagesPreview(loadedPreviews)
+        
+        console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
+        console.log(`  Total images: ${loadedPreviews.length}`)
+        console.log(`  Type: URLs backend directes (pas de Blob URL)`)
+        console.log(`  ✅ Images existantes chargées!`)
+        // ❌ NE PAS charger les fichiers dans le contexte
+      }
       
-      // ❌ NE PAS charger les fichiers dans le contexte
-      // setImagesFiles() n'est PAS appelé en mode edit si les images ne sont pas modifiées
+      setCompressionStatus('Images existantes chargées !')
+      setTimeout(() => setCompressionStatus(''), 2000)
+    } catch (error) {
+      console.error('❌ [ImagesSection] Erreur chargement images existantes:', error)
+      setCompressionStatus('Erreur chargement images')
+    } finally {
+      setIsLoadingExisting(false)
     }
-    
-    setCompressionStatus('Images existantes chargées !')
-    setTimeout(() => setCompressionStatus(''), 2000)
-  } catch (error) {
-    console.error('❌ [ImagesSection] Erreur chargement images existantes:', error)
-    setCompressionStatus('Erreur chargement images')
-  } finally {
-    setIsLoadingExisting(false)
   }
-}
 
   // ✅ Compression unique (thumbnail/banner) avec TYPE SPÉCIFIQUE
   const handleSingleImageChange = async (
@@ -507,7 +508,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     }
   }
 
-  // ✅ Supprimer une image de la galerie et tracker les suppressions
+  // ✅ CORRIGÉ : Supprimer une image de la galerie et tracker les suppressions
   const removeImage = (index: number) => {
     const imageToRemove = imagesPreview[index]
     
@@ -524,15 +525,28 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       console.log(`🗑️ [ImagesSection] Image ${imageId} marquée pour suppression`)
     }
     
+    // 🔥 CORRECTION : Calculer TOUT ce qu'on a besoin AVANT de modifier les états
+    // pour éviter les bugs de closure avec des valeurs stales
+    const isExisting = imageToRemove.isExisting
+    let fileIndexToRemove = -1
+    
+    if (!isExisting) {
+      // Calculer l'index réel dans les fichiers (en soustrayant les images existantes avant cet index)
+      const existingBeforeThisIndex = imagesPreview.slice(0, index).filter(img => img.isExisting).length
+      fileIndexToRemove = index - existingBeforeThisIndex
+      console.log(`📍 [ImagesSection] Suppression nouvelle image - Preview index: ${index}, File index: ${fileIndexToRemove}`)
+    }
+    
+    // Maintenant on peut modifier les états en toute sécurité
     setImagesPreview(prev => prev.filter((_, i) => i !== index))
     
     // Ne retirer des fichiers QUE si c'est une nouvelle image
-    if (!imageToRemove.isExisting) {
+    if (!isExisting && fileIndexToRemove >= 0) {
       setImagesFiles((prev: File[]) => {
-        // Calculer l'index réel dans les fichiers (en soustrayant les images existantes avant cet index)
-        const existingBeforeThisIndex = imagesPreview.slice(0, index).filter(img => img.isExisting).length
-        const fileIndex = index - existingBeforeThisIndex
-        return prev.filter((_, i) => i !== fileIndex)
+        console.log(`  📤 Avant suppression : ${prev.length} fichiers`)
+        const newFiles = prev.filter((_, i) => i !== fileIndexToRemove)
+        console.log(`  📥 Après suppression : ${newFiles.length} fichiers`)
+        return newFiles
       })
     }
   }
@@ -592,12 +606,19 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       return newPreviews
     })
     
-    // Réorganiser les fichiers aussi
+    // Réorganiser les fichiers aussi (seulement les nouveaux fichiers)
     setImagesFiles((prevFiles: File[]) => {
+      // Calculer les indices réels dans prevFiles
+      const existingBeforeDragged = imagesPreview.slice(0, draggedIdx).filter(img => img.isExisting).length
+      const existingBeforeDrop = imagesPreview.slice(0, dropIndex).filter(img => img.isExisting).length
+      
+      const draggedFileIdx = draggedIdx - existingBeforeDragged
+      const dropFileIdx = dropIndex - existingBeforeDrop
+      
       const newFiles = [...prevFiles]
-      const draggedFile = newFiles[draggedIdx]
-      newFiles.splice(draggedIdx, 1)
-      newFiles.splice(dropIndex, 0, draggedFile)
+      const draggedFile = newFiles[draggedFileIdx]
+      newFiles.splice(draggedFileIdx, 1)
+      newFiles.splice(dropFileIdx, 0, draggedFile)
       return newFiles
     })
 
@@ -680,7 +701,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
-                    e.stopPropagation() // Empêche la propagation vers le formulaire
+                    e.stopPropagation()
                     setThumbnailPreview(null)
                     setThumbnailFile(null)
                   }}
@@ -737,7 +758,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
-                    e.stopPropagation() // Empêche la propagation vers le formulaire
+                    e.stopPropagation()
                     setBannerPreview(null)
                     setBannerFile(null)
                   }}
@@ -828,7 +849,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                   <button
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation() // Empêche la propagation vers le formulaire
+                      e.stopPropagation()
                       removeImage(index)
                     }}
                     className="delete-image-btn"
