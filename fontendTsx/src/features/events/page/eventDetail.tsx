@@ -95,35 +95,45 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
   );
 };
 
-const OrganizerInfo = ({ creator }: { creator?: User }) => (
-  <div className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
-    <h3 className="text-xl font-semibold mb-4">Organisateur</h3>
-    <Link to={`/user/${creator?.id}`} className="block hover:opacity-80 transition">
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-          {creator?.profile.profile_picture? (
-            <img 
-              src={`${creator?.profile.profile_picture}`} 
-              alt={`Photo de ${creator.profile}`}
-              loading="lazy"        
-              decoding="async"     
-              className="w-full h-full object-cover object-center"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-            />
-          ) : (
-            <span className="font-semibold text-lg">
-              {creator?.profile.name?.[0]?.toUpperCase() || 'T'}
-            </span>
-          )}
+const OrganizerInfo = ({ creator }: { creator?: User }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  // ✅ Vérification : non vide + pas d'erreur de chargement
+  const hasValidProfilePicture = creator?.profile.profile_picture && 
+                                  creator.profile.profile_picture.trim() !== '' &&
+                                  !imageError;
+
+  return (
+    <div className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
+      <h3 className="text-xl font-semibold mb-4">Organisateur</h3>
+      <Link to={`/user/${creator?.id}`} className="block hover:opacity-80 transition">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
+            {hasValidProfilePicture ? (
+              <img 
+                src={creator.profile.profile_picture} 
+                alt={`Photo de ${creator.profile.name}`}
+                loading="lazy"        
+                decoding="async"     
+                className="w-full h-full object-cover object-center"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+                onError={() => setImageError(true)}  // ✅ Fallback automatique
+              />
+            ) : (
+              <span className="font-semibold text-lg">
+                {creator?.profile.name?.[0]?.toUpperCase() || 'T'}
+              </span>
+            )}
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Organisé par</p>
+            <p className="font-semibold text-gray-800 text-lg">{creator?.profile.name || "Organisateur anonyme"}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-gray-600">Organisé par</p>
-          <p className="font-semibold text-gray-800 text-lg">{creator?.profile.name || "Organisateur anonyme"}</p>
-        </div>
-      </div>
-    </Link>
-  </div>
-);
+      </Link>
+    </div>
+  );
+};
 
 const ReservationCard: React.FC<ReservationCardProps> = ({
   event,

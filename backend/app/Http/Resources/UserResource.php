@@ -149,16 +149,19 @@ class UserResource extends JsonResource
 
     private function getProfilePictureUrl(): ?string
     {
-       if (!$this->profile_picture) {
-        return null;
-    }
+        if (!$this->profile_picture) {
+            return null;
+        }
 
-        // If it already looks like a full URL (starts with http), return as-is
+        // ✅ Vérifier si le fichier existe réellement
+        if (!Storage::disk('public')->exists($this->profile_picture)) {
+            return null;
+        }
+
         if (Str::startsWith($this->profile_picture, ['http://', 'https://'])) {
             return $this->profile_picture;
         }
 
-        // Otherwise, assume it's a local file path and generate full URL
         return Storage::disk('public')->url($this->profile_picture);
     }
 
