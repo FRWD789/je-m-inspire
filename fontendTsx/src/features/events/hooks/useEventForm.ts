@@ -28,7 +28,7 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       console.log('  Thumbnail:', thumbnailFile ? `${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
       console.log('  Banner:', bannerFile ? `${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
       console.log('  Images:', imagesFiles.length > 0 ? `${imagesFiles.length} fichier(s)` : 'AUCUN');
-      imagesFiles.forEach((file, i) => {
+      imagesFiles.filter(file => file && file instanceof File).forEach((file, i) => {
         console.log(`    - Image ${i + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
       });
       
