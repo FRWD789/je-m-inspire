@@ -84,7 +84,7 @@ async function createLightPreview(file: File): Promise<string> {
             resolve(blobUrl)
           },
           'image/jpeg',
-          0.5 // 50% qualité
+          1 // 50% qualité
         )
       }
       
@@ -157,7 +157,7 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
           resolve(blobUrl)
         },
         'image/jpeg',
-        0.7 // 50% qualité pour preview ultra-léger
+        1 // 50% qualité pour preview ultra-léger
       )
     }
     
