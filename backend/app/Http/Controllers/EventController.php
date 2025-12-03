@@ -431,7 +431,7 @@ class EventController extends Controller
             }
 
             return $this->resourceResponse(
-                new EventResource($event->load(['localisation', 'categorie'])),
+                new EventResource($event->load(['localisation', 'categorie', 'images', 'creator'])),
                 'Événement créé avec succès',
                 201
             );
@@ -707,7 +707,7 @@ class EventController extends Controller
             }
 
             // Build response including is_creator and user_role
-            $eventResource = new EventResource($event->load(['localisation', 'categorie', 'images']));
+            $eventResource = new EventResource($event->load(['localisation', 'categorie', 'images', 'creator']));
             $responseData = $eventResource->toArray($request);
             $responseData['is_creator'] = $isCreator;
             $responseData['user_role'] = $isAdmin ? 'admin' : ($isCreator ? 'creator' : 'user');
