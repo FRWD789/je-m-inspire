@@ -42,6 +42,12 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
         localisation_lng: Number(values.localisation_lng || 2.3522),
       };
 
+      // 🔥 FILTRER les champs file vides des inputs HTML (ils sont soumis automatiquement par le form)
+      // Ces champs sont gérés manuellement via le contexte CompressedFilesContext
+      delete data.thumbnail;
+      delete data.banner;
+      delete data.images;
+
       const formData = new FormData();
       
       // Ajouter les champs scalaires
