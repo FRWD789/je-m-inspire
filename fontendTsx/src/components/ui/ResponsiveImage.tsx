@@ -47,10 +47,10 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
-    // ✅ Si l'URL est déjà complète, l'utiliser telle quelle
+    // Si l'URL est déjà complète, l'utiliser telle quelle
     if (path.startsWith('http')) return path;
-    // ✅ CORRIGÉ: Utiliser /storage/ au lieu de /api/storage/
-    return `${API_BASE}/storage/${path}`;
+    // Utiliser /api/storage/ car c'est la route Laravel configurée
+    return `${API_BASE}/api/storage/${path}`;
   };
 
   const handleImageLoad = () => {
@@ -190,8 +190,8 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    // ✅ CORRIGÉ: Utiliser /storage/ au lieu de /api/storage/
-    return `${API_BASE}/storage/${path}`;
+    // Utiliser /api/storage/ car c'est la route Laravel configurée
+    return `${API_BASE}/api/storage/${path}`;
   };
 
   const handleImageLoad = () => {

@@ -29,10 +29,9 @@ class EventImage extends Model
 
     /**
      * Obtenir l'URL complète de l'image
-     * ✅ CORRIGÉ: Enlevé /api/ de l'URL
      */
     public function getImageUrlAttribute()
     {
-        return asset('storage/' . $this->image_path);
+        return asset('api/storage/' . $this->image_path);
     }
 }

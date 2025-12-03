@@ -25,9 +25,8 @@ class EventResource extends JsonResource
             // ========================================
             // ✅ IMAGES ORIGINALES (compatibilité)
             // ========================================
-            // ✅ CORRIGÉ: Enlevé /api/ des URLs
-            'thumbnail' => $this->thumbnail_path ? url('storage/' . $this->thumbnail_path) : null,
-            'banner' => $this->banner_path ? url('storage/' . $this->banner_path) : null,
+            'thumbnail' => $this->thumbnail_path ? url('api/storage/' . $this->thumbnail_path) : null,
+            'banner' => $this->banner_path ? url('api/storage/' . $this->banner_path) : null,
 
             // ========================================
             // ✅ NOUVEAUTÉ : VARIANTES RESPONSIVE
@@ -107,13 +106,13 @@ class EventResource extends JsonResource
         $filename = $pathInfo['filename'];
 
         return [
-            'original' => url('storage/' . $imagePath),
-            'md' => url("storage/{$directory}/{$filename}_md.jpg"),
-            'lg' => url("storage/{$directory}/{$filename}_lg.jpg"),
-            'xl' => url("storage/{$directory}/{$filename}_xl.jpg"),
-            'md_webp' => url("storage/{$directory}/{$filename}_md.webp"),
-            'lg_webp' => url("storage/{$directory}/{$filename}_lg.webp"),
-            'xl_webp' => url("storage/{$directory}/{$filename}_xl.webp"),
+            'original' => url('api/storage/' . $imagePath),
+            'md' => url("api/storage/{$directory}/{$filename}_md.jpg"),
+            'lg' => url("api/storage/{$directory}/{$filename}_lg.jpg"),
+            'xl' => url("api/storage/{$directory}/{$filename}_xl.jpg"),
+            'md_webp' => url("api/storage/{$directory}/{$filename}_md.webp"),
+            'lg_webp' => url("api/storage/{$directory}/{$filename}_lg.webp"),
+            'xl_webp' => url("api/storage/{$directory}/{$filename}_xl.webp"),
         ];
     }
 }
