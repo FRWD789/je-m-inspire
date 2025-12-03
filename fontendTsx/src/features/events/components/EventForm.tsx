@@ -1,5 +1,5 @@
 // src/features/events/components/EventForm.tsx
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { 
   ImageUp, 
@@ -26,6 +26,7 @@ import { compressImage } from '@/components/utils/image/imageCompression'
 import { useCompressedFiles } from '@/context/CompressedFilesContext'
 
 // 🚀 OPTIMISATION : Créer des previews ultra-légers pour affichage uniquement
+// 🚀 V2 : Utilise Blob URL au lieu de data URL (beaucoup plus léger en mémoire)
 async function createLightPreview(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -42,8 +43,8 @@ async function createLightPreview(file: File): Promise<string> {
           return
         }
         
-        // 🎯 200px max pour preview (au lieu de taille réelle)
-        const MAX_PREVIEW_SIZE = 200
+        // 🎯 150px max pour preview (optimisé)
+        const MAX_PREVIEW_SIZE = 150
         
         let width = img.width
         let height = img.height
@@ -62,11 +63,29 @@ async function createLightPreview(file: File): Promise<string> {
         
         canvas.width = width
         canvas.height = height
+        
+        // 🎨 Meilleur rendu
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
         ctx.drawImage(img, 0, 0, width, height)
         
-        // 60% qualité pour preview ultra-léger (10-30KB au lieu de 500KB+)
-        const previewDataUrl = canvas.toDataURL('image/jpeg', 0.6)
-        resolve(previewDataUrl)
+        // 🚀 ULTRA-COMPRESSION : 50% qualité + Blob URL
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to create blob'))
+              return
+            }
+            
+            const blobUrl = URL.createObjectURL(blob)
+            
+            console.log(`  🔍 Preview stats: ${width}x${height}, ${(blob.size / 1024).toFixed(2)}KB`)
+            
+            resolve(blobUrl)
+          },
+          'image/jpeg',
+          0.5 // 50% qualité
+        )
       }
       
       img.onerror = () => reject(new Error('Failed to load image'))
@@ -75,6 +94,79 @@ async function createLightPreview(file: File): Promise<string> {
     
     reader.onerror = () => reject(new Error('Failed to read file'))
     reader.readAsDataURL(file)
+  })
+}
+
+// 🆕 NOUVEAU : Créer un preview léger depuis une URL (pour mode edit)
+// 🚀 OPTIMISATION V2 : Utilise Blob URL au lieu de data URL (plus léger en mémoire)
+async function createLightPreviewFromUrl(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous' // Pour éviter les erreurs CORS
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available'))
+        return
+      }
+      
+      // 🎯 150px max pour preview (encore plus petit pour meilleures perfs)
+      const MAX_PREVIEW_SIZE = 150
+      
+      let width = img.width
+      let height = img.height
+      
+      if (width > height) {
+        if (width > MAX_PREVIEW_SIZE) {
+          height = (height * MAX_PREVIEW_SIZE) / width
+          width = MAX_PREVIEW_SIZE
+        }
+      } else {
+        if (height > MAX_PREVIEW_SIZE) {
+          width = (width * MAX_PREVIEW_SIZE) / height
+          height = MAX_PREVIEW_SIZE
+        }
+      }
+      
+      canvas.width = width
+      canvas.height = height
+      
+      // 🎨 Utiliser imageSmoothingQuality pour meilleur rendu
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(img, 0, 0, width, height)
+      
+      // 🚀 ULTRA-COMPRESSION : 50% qualité au lieu de 60%
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create blob'))
+            return
+          }
+          
+          // ✅ Blob URL est BEAUCOUP plus léger en mémoire qu'un data URL
+          const blobUrl = URL.createObjectURL(blob)
+          
+          console.log(`  🔍 Compression stats:`)
+          console.log(`    Dimensions: ${width}x${height}`)
+          console.log(`    Blob size: ${(blob.size / 1024).toFixed(2)}KB`)
+          
+          resolve(blobUrl)
+        },
+        'image/jpeg',
+        0.5 // 50% qualité pour preview ultra-léger
+      )
+    }
+    
+    img.onerror = () => {
+      console.warn(`⚠️ Impossible de charger l'image depuis ${url}, utilisation de l'URL originale`)
+      resolve(url) // Fallback : utiliser l'URL originale si CORS bloque
+    }
+    
+    img.src = url
   })
 }
 
@@ -132,7 +224,7 @@ export default function EventForm({ type, eventId, defaultValues, onSuccess }: F
         <SectionDivider />
         <EventSettingsSection />
         <SectionDivider />
-        <ImagesSection />
+        <ImagesSection type={type} defaultValues={defaultValues} />
         
         <div className="mt-8 flex gap-4">
           <Button 
@@ -263,15 +355,16 @@ const EventSettingsSection = () => (
 )
 
 // 🚀 ULTRA-OPTIMISÉ : Gestionnaire d'images avec drag & drop ultra-fluide
-const ImagesSection = () => {
+const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defaultValues?: any }) => {
   const { setThumbnailFile, setBannerFile, setImagesFiles } = useCompressedFiles()
   
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
-  const [imagesPreview, setImagesPreview] = useState<{ id: string; url: string }[]>([])
+  const [imagesPreview, setImagesPreview] = useState<{ id: string; url: string; isExisting?: boolean }[]>([])
   
   const [isCompressing, setIsCompressing] = useState(false)
   const [compressionStatus, setCompressionStatus] = useState<string>('')
+  const [isLoadingExisting, setIsLoadingExisting] = useState(false)
   
   // 🚀 ULTRA-OPTIMISATION : useRef pour éviter TOUT re-render pendant le drag
   const draggedIndexRef = useRef<number | null>(null)
@@ -279,6 +372,120 @@ const ImagesSection = () => {
   
   // État minimal uniquement pour le style de l'élément draggé (mis à jour 1 seule fois)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  
+  // IDs des images existantes à conserver (pour le backend)
+  const [existingImageIds, setExistingImageIds] = useState<number[]>([])
+  
+  // 🧹 CLEANUP : Révoquer les Blob URLs pour éviter fuites mémoire
+  useEffect(() => {
+    return () => {
+      // Nettoyer thumbnail
+      if (thumbnailPreview && thumbnailPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(thumbnailPreview)
+      }
+      
+      // Nettoyer banner
+      if (bannerPreview && bannerPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(bannerPreview)
+      }
+      
+      // Nettoyer galerie
+      imagesPreview.forEach(img => {
+        if (img.url.startsWith('blob:')) {
+          URL.revokeObjectURL(img.url)
+        }
+      })
+      
+      console.log('🧹 [ImagesSection] Blob URLs nettoyés')
+    }
+  }, [])
+
+  // 🆕 CHARGEMENT DES IMAGES EXISTANTES EN MODE EDIT
+  useEffect(() => {
+    if (type === 'edit' && defaultValues) {
+      loadExistingImages()
+    }
+  }, [type, defaultValues])
+
+  const loadExistingImages = async () => {
+    setIsLoadingExisting(true)
+    setCompressionStatus('Chargement des images existantes...')
+    
+    try {
+      // 1. Charger thumbnail
+      if (defaultValues.thumbnail) {
+        console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
+        console.log('  URL originale:', defaultValues.thumbnail)
+        const thumbnailUrl = defaultValues.thumbnail
+        const lightPreview = await createLightPreviewFromUrl(thumbnailUrl)
+        console.log(`  ✅ Preview créé (Blob URL)`)
+        setThumbnailPreview(lightPreview)
+      }
+      
+      // 2. Charger banner
+      if (defaultValues.banner) {
+        console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
+        console.log('  URL originale:', defaultValues.banner)
+        const bannerUrl = defaultValues.banner
+        const lightPreview = await createLightPreviewFromUrl(bannerUrl)
+        console.log(`  ✅ Preview créé (Blob URL)`)
+        setBannerPreview(lightPreview)
+      }
+      
+      // 3. Charger galerie d'images
+      if (defaultValues.images && Array.isArray(defaultValues.images) && defaultValues.images.length > 0) {
+        console.log('🖼️ [ImagesSection] === CHARGEMENT GALERIE ===')
+        console.log(`  Total: ${defaultValues.images.length} images`)
+        
+        const loadedPreviews: { id: string; url: string; isExisting: boolean }[] = []
+        const imageIds: number[] = []
+        
+        for (let i = 0; i < defaultValues.images.length; i++) {
+          const image = defaultValues.images[i]
+          try {
+            const imageUrl = image.url || image.path || image
+            const imageId = image.id
+            
+            console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
+            
+            const lightPreview = await createLightPreviewFromUrl(imageUrl)
+            
+            console.log(`    ✅ Preview créé (Blob URL)`)
+            
+            loadedPreviews.push({
+              id: `existing-${imageId || Date.now()}`,
+              url: lightPreview,
+              isExisting: true
+            })
+            
+            if (imageId) {
+              imageIds.push(imageId)
+            }
+          } catch (error) {
+            console.error(`    ❌ Erreur chargement image ${i + 1}:`, error)
+          }
+        }
+        
+        setImagesPreview(loadedPreviews)
+        setExistingImageIds(imageIds)
+        
+        console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
+        console.log(`  Total images: ${loadedPreviews.length}`)
+        console.log(`  Type: Blob URLs (optimisé mémoire)`)
+        console.log(`  Dimensions: 150x150 max`)
+        console.log(`  Qualité: 50%`)
+        console.log(`  ✅ Previews ultra-légers créés!`)
+      }
+      
+      setCompressionStatus('Images existantes chargées !')
+      setTimeout(() => setCompressionStatus(''), 2000)
+    } catch (error) {
+      console.error('❌ [ImagesSection] Erreur chargement images existantes:', error)
+      setCompressionStatus('Erreur chargement images')
+    } finally {
+      setIsLoadingExisting(false)
+    }
+  }
 
   // Compression unique (thumbnail/banner)
   const handleSingleImageChange = async (
@@ -327,7 +534,7 @@ const ImagesSection = () => {
 
     try {
       const compressedFiles: File[] = []
-      const newPreviews: { id: string; url: string }[] = []
+      const newPreviews: { id: string; url: string; isExisting?: boolean }[] = []
 
       for (let i = 0; i < filesArray.length; i++) {
         setCompressionStatus(`Compression ${i + 1}/${filesArray.length}...`)
@@ -339,15 +546,17 @@ const ImagesSection = () => {
         // 2. Créer preview ultra-léger pour affichage (60% qualité, 200px max)
         const lightPreview = await createLightPreview(filesArray[i])
         newPreviews.push({
-          id: `${Date.now()}-${i}`,
-          url: lightPreview, // Preview léger au lieu de l'original
+          id: `new-${Date.now()}-${i}`,
+          url: lightPreview,
+          isExisting: false // Marquer comme nouvelle image
         })
       }
 
+      // 🎯 AJOUTER aux images existantes (ne pas écraser)
       setImagesPreview(prev => [...prev, ...newPreviews])
       setImagesFiles(prev => [...(Array.isArray(prev) ? prev : []), ...compressedFiles])
       
-      console.log(`✅ [ImagesSection] ${compressedFiles.length} images ajoutées (previews ultra-légers)`)
+      console.log(`✅ [ImagesSection] ${compressedFiles.length} nouvelles images ajoutées (${imagesPreview.length} existantes conservées)`)
     } catch (error) {
       console.error('❌ [ImagesSection] Erreur compression:', error)
     } finally {
@@ -358,8 +567,32 @@ const ImagesSection = () => {
 
   // Supprimer une image de la galerie
   const removeImage = (index: number) => {
+    const imageToRemove = imagesPreview[index]
+    
+    // 🧹 Nettoyer le Blob URL pour éviter fuite mémoire
+    if (imageToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(imageToRemove.url)
+      console.log(`🧹 [ImagesSection] Blob URL révoqué pour image ${index}`)
+    }
+    
+    // Si c'est une image existante, retirer son ID de la liste
+    if (imageToRemove.isExisting && imageToRemove.id.startsWith('existing-')) {
+      const imageId = parseInt(imageToRemove.id.replace('existing-', ''))
+      setExistingImageIds(prev => prev.filter(id => id !== imageId))
+      console.log(`🗑️ [ImagesSection] Image existante ${imageId} marquée pour suppression`)
+    }
+    
     setImagesPreview(prev => prev.filter((_, i) => i !== index))
-    setImagesFiles((prev: File[]) => prev.filter((_, i) => i !== index))
+    
+    // Ne retirer des fichiers QUE si c'est une nouvelle image
+    if (!imageToRemove.isExisting) {
+      setImagesFiles((prev: File[]) => {
+        // Calculer l'index réel dans les fichiers (en soustrayant les images existantes avant cet index)
+        const existingBeforeThisIndex = imagesPreview.slice(0, index).filter(img => img.isExisting).length
+        const fileIndex = index - existingBeforeThisIndex
+        return prev.filter((_, i) => i !== fileIndex)
+      })
+    }
   }
 
   // 🚀 ULTRA-OPTIMISÉ : Drag start - mise à jour UNE FOIS
@@ -447,9 +680,23 @@ const ImagesSection = () => {
   return (
     <div className="space-y-6">
       <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
+      
+      {/* 🔐 Inputs cachés pour les images existantes à conserver (mode edit) */}
+      {type === 'edit' && existingImageIds.length > 0 && (
+        <>
+          {existingImageIds.map((id, index) => (
+            <input 
+              key={`existing-image-${id}`}
+              type="hidden" 
+              name={`existing_images[${index}]`}
+              value={id}
+            />
+          ))}
+        </>
+      )}
 
       {/* Status de compression */}
-      {isCompressing && (
+      {(isCompressing || isLoadingExisting) && (
         <div className="p-4 bg-accent/10 border border-accent/30 rounded-lg flex items-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-accent" />
           <span className="text-sm font-medium text-accent">{compressionStatus}</span>
