@@ -24,19 +24,7 @@ export default function AutocompleteInputV2({
   const [showSuggestions, setShowSuggestions] = useState(false); // ✅ Contrôle explicite de l'affichage
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null); // ✅ Pour détecter les clics en dehors
-
-  // ✅ Fermer les suggestions si on clique en dehors
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Wait for google.maps.places to exist
   useEffect(() => {
@@ -128,9 +116,9 @@ export default function AutocompleteInputV2({
   const { onChange, ...registerProps } = register(name);
 
   return (
-    <div ref={wrapperRef} className="relative flex flex-col">
-      {/* ✅ Wrapper sans border bleu, utilise les classes du projet */}
-      <div className="relative flex items-center border border-gray-300 rounded-lg px-3 py-2.5 transition-colors duration-200 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20 bg-white">
+    <div ref={wrapperRef} className="relative w-full">
+      {/* ✅ Input sans wrapper (comme Input et Select enhanced) */}
+      <div className="relative flex items-center">
         <input
           {...registerProps}
           {...rest}
@@ -138,7 +126,7 @@ export default function AutocompleteInputV2({
           value={inputValue || ""}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full outline-none bg-transparent text-primary placeholder:text-secondary"
+          className="w-full px-4 py-3 pr-20 border-2 border-secondary/30 rounded-lg bg-white text-primary placeholder:text-secondary/50 transition-all duration-200 hover:border-secondary/50 focus:border-accent focus:ring-4 focus:ring-accent/10 focus:outline-0"
           onChange={(e) => {
             onChange(e);
             setValue(name, e.target.value);
@@ -149,29 +137,39 @@ export default function AutocompleteInputV2({
               setShowSuggestions(true);
             }
           }}
+          onBlur={() => {
+            // ✅ Fermer avec un délai pour permettre au clic de se produire
+            setTimeout(() => setShowSuggestions(false), 200);
+          }}
         />
         {loading ? (
-          <Loader2 className="animate-spin text-accent ml-2" size={18} />
+          <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 animate-spin text-accent" size={18} />
         ) : inputValue ? (
           <button 
             type="button" 
-            onClick={handleClear} 
-            className="ml-2 text-secondary hover:text-primary transition-colors"
+            onMouseDown={(e) => {
+              e.preventDefault(); // Empêche le blur de l'input
+              handleClear();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-accent transition-colors p-1"
             aria-label="Effacer"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         ) : null}
       </div>
 
-      {/* ✅ Suggestions avec contrôle explicite de l'affichage */}
+      {/* ✅ Suggestions avec onMouseDown pour éviter les problèmes de timing */}
       {showSuggestions && suggestions.length > 0 && (
         <ul className="absolute z-[9999] bg-white border border-gray-200 w-full mt-1 top-full rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {suggestions.map((s, i) => (
+          {suggestions.map((s) => (
             <li
               key={s.placeId}
               className="p-3 hover:bg-accent/10 cursor-pointer border-b last:border-b-0 text-sm text-primary transition-colors"
-              onClick={() => handleSelect(s)}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Empêche le blur de l'input
+                handleSelect(s);
+              }}
             >
               <div className="flex items-start gap-2">
                 <span className="text-accent mt-0.5">📍</span>

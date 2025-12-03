@@ -272,12 +272,17 @@ const GeneralInfoSection = () => (
 const LocationSection = ({ type, defaultValues }: any) => (
   <div className="space-y-6">
     <SectionHeader icon={<MapPinned />} title="Localisation" />
-    <APIProvider apiKey="AIzaSyCLD-sPCtHIZVGtpp8K-ok97RR26UStQqM" libraries={['places']}>
-      <AutocompleteInputV2 name={'localisation_address'} value={defaultValues?.localisation_address} />
-      {type === "edit" && (
-        <Input type="hidden" name="localisation_id" value={defaultValues?.localisation?.id || ''} />
-      )}
-    </APIProvider>
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-primary">
+        Adresse de l'événement *
+      </label>
+      <APIProvider apiKey="AIzaSyCLD-sPCtHIZVGtpp8K-ok97RR26UStQqM" libraries={['places']}>
+        <AutocompleteInputV2 name={'localisation_address'} value={defaultValues?.localisation_address} />
+        {type === "edit" && (
+          <Input type="hidden" name="localisation_id" value={defaultValues?.localisation?.id || ''} />
+        )}
+      </APIProvider>
+    </div>
   </div>
 )
 
