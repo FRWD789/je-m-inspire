@@ -98,78 +98,6 @@ async function createLightPreview(
   })
 }
 
-// 🆕 NOUVEAU : Créer un preview léger depuis une URL (pour mode edit)
-// 🚀 OPTIMISATION V2 : Utilise Blob URL au lieu de data URL (plus léger en mémoire)
-// 🎯 Paramètres configurables selon le type d'image
-async function createLightPreviewFromUrl(
-  url: string, 
-  maxSize: number = 150, 
-  quality: number = 0.6
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous' // Pour éviter les erreurs CORS
-    
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      
-      if (!ctx) {
-        reject(new Error('Canvas context not available'))
-        return
-      }
-      
-      let width = img.width
-      let height = img.height
-      
-      if (width > height) {
-        if (width > maxSize) {
-          height = (height * maxSize) / width
-          width = maxSize
-        }
-      } else {
-        if (height > maxSize) {
-          width = (width * maxSize) / height
-          height = maxSize
-        }
-      }
-      
-      canvas.width = width
-      canvas.height = height
-      
-      // 🎨 Utiliser imageSmoothingQuality pour meilleur rendu
-      ctx.imageSmoothingEnabled = true
-      ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(img, 0, 0, width, height)
-      
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('Failed to create blob'))
-            return
-          }
-          
-          // ✅ Blob URL est BEAUCOUP plus léger en mémoire qu'un data URL
-          const blobUrl = URL.createObjectURL(blob)
-          
-          console.log(`  🔍 Preview: ${width}x${height}, ${(blob.size / 1024).toFixed(2)}KB @ ${quality * 100}%`)
-          
-          resolve(blobUrl)
-        },
-        'image/jpeg',
-        quality
-      )
-    }
-    
-    img.onerror = () => {
-      console.warn(`⚠️ Impossible de charger l'image depuis ${url}, utilisation de l'URL originale`)
-      resolve(url) // Fallback : utiliser l'URL originale si CORS bloque
-    }
-    
-    img.src = url
-  })
-}
-
 interface FormEventsProps {
   type: 'create' | 'edit'
   eventId?: number
@@ -384,17 +312,17 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   // 🧹 CLEANUP : Révoquer les Blob URLs pour éviter fuites mémoire
   useEffect(() => {
     return () => {
-      // Nettoyer thumbnail
+      // Nettoyer thumbnail (seulement si c'est un Blob URL)
       if (thumbnailPreview && thumbnailPreview.startsWith('blob:')) {
         URL.revokeObjectURL(thumbnailPreview)
       }
       
-      // Nettoyer banner
+      // Nettoyer banner (seulement si c'est un Blob URL)
       if (bannerPreview && bannerPreview.startsWith('blob:')) {
         URL.revokeObjectURL(bannerPreview)
       }
       
-      // Nettoyer galerie
+      // Nettoyer galerie (seulement si ce sont des Blob URLs)
       imagesPreview.forEach(img => {
         if (img.url.startsWith('blob:')) {
           URL.revokeObjectURL(img.url)
@@ -412,34 +340,42 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     }
   }, [type, defaultValues])
 
+  // ✅ CORRIGÉ : Utiliser directement les URLs backend au lieu de Blob URLs
   const loadExistingImages = async () => {
     setIsLoadingExisting(true)
     setCompressionStatus('Chargement des images existantes...')
     
     try {
-      // 1. Charger thumbnail
+      // 1. Charger thumbnail - Utiliser directement l'URL du backend
       if (defaultValues.thumbnail) {
         console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
-        console.log('  URL originale:', defaultValues.thumbnail)
-        const thumbnailUrl = defaultValues.thumbnail
-        // 🎯 Preview de meilleure qualité pour thumbnail (200px @ 70%)
-        const lightPreview = await createLightPreviewFromUrl(thumbnailUrl, 200, 0.7)
-        console.log(`  ✅ Preview créé (Blob URL)`)
-        setThumbnailPreview(lightPreview)
+        console.log('  URL backend:', defaultValues.thumbnail)
+        
+        // ✅ Utiliser directement l'URL du backend (déjà optimisée)
+        // Si des variantes existent, utiliser _md pour le preview, sinon l'original
+        const thumbnailUrl = defaultValues.thumbnail_variants?.md 
+          || defaultValues.thumbnail_variants?.md_webp
+          || defaultValues.thumbnail
+        
+        setThumbnailPreview(thumbnailUrl)
+        console.log('  ✅ URL preview:', thumbnailUrl)
       }
       
-      // 2. Charger banner
+      // 2. Charger banner - Utiliser directement l'URL du backend
       if (defaultValues.banner) {
         console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
-        console.log('  URL originale:', defaultValues.banner)
-        const bannerUrl = defaultValues.banner
-        // 🎯 Preview de meilleure qualité pour banner (300px @ 70%)
-        const lightPreview = await createLightPreviewFromUrl(bannerUrl, 300, 0.7)
-        console.log(`  ✅ Preview créé (Blob URL)`)
-        setBannerPreview(lightPreview)
+        console.log('  URL backend:', defaultValues.banner)
+        
+        // ✅ Utiliser directement l'URL du backend (déjà optimisée)
+        const bannerUrl = defaultValues.banner_variants?.md
+          || defaultValues.banner_variants?.md_webp
+          || defaultValues.banner
+        
+        setBannerPreview(bannerUrl)
+        console.log('  ✅ URL preview:', bannerUrl)
       }
       
-      // 3. Charger galerie d'images
+      // 3. Charger galerie d'images - Utiliser directement les URLs du backend
       if (defaultValues.images && Array.isArray(defaultValues.images) && defaultValues.images.length > 0) {
         console.log('🖼️ [ImagesSection] === CHARGEMENT GALERIE ===')
         console.log(`  Total: ${defaultValues.images.length} images`)
@@ -449,19 +385,21 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         for (let i = 0; i < defaultValues.images.length; i++) {
           const image = defaultValues.images[i]
           try {
-            const imageUrl = image.url || image.path || image
+            // ✅ Utiliser directement les variantes du backend
+            const imageUrl = image.variants?.md
+              || image.variants?.md_webp
+              || image.url 
+              || image.path 
+              || image
+            
             const imageId = image.id
             
             console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
-            
-            // 🎯 Preview légèrement meilleure qualité pour galerie (150px @ 60%)
-            const lightPreview = await createLightPreviewFromUrl(imageUrl, 150, 0.6)
-            
-            console.log(`    ✅ Preview créé (Blob URL)`)
+            console.log(`    ✅ URL preview:`, imageUrl)
             
             loadedPreviews.push({
               id: `existing-${imageId || Date.now()}`,
-              url: lightPreview,
+              url: imageUrl,
               isExisting: true
             })
           } catch (error) {
@@ -473,11 +411,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         
         console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
         console.log(`  Total images: ${loadedPreviews.length}`)
-        console.log(`  Type: Blob URLs (optimisé mémoire)`)
-        console.log(`  Thumbnail: 200x200 max @ 70%`)
-        console.log(`  Banner: 300px max @ 70%`)
-        console.log(`  Galerie: 150x150 max @ 60%`)
-        console.log(`  ✅ Previews optimisés créés!`)
+        console.log(`  Type: URLs backend directes (pas de Blob URL)`)
+        console.log(`  ✅ Images existantes chargées!`)
       }
       
       setCompressionStatus('Images existantes chargées !')
@@ -571,7 +506,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   const removeImage = (index: number) => {
     const imageToRemove = imagesPreview[index]
     
-    // 🧹 Nettoyer le Blob URL pour éviter fuite mémoire
+    // 🧹 Nettoyer le Blob URL pour éviter fuite mémoire (seulement si c'est un Blob URL)
     if (imageToRemove.url.startsWith('blob:')) {
       URL.revokeObjectURL(imageToRemove.url)
       console.log(`🧹 [ImagesSection] Blob URL révoqué pour image ${index}`)
