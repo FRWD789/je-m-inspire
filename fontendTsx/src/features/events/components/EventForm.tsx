@@ -44,7 +44,7 @@ async function createLightPreview(file: File): Promise<string> {
         }
         
         // 🎯 150px max pour preview (optimisé)
-        const MAX_PREVIEW_SIZE = 150
+        const MAX_PREVIEW_SIZE = 300
         
         let width = img.width
         let height = img.height
@@ -84,7 +84,7 @@ async function createLightPreview(file: File): Promise<string> {
             resolve(blobUrl)
           },
           'image/jpeg',
-          1 // 50% qualité
+          0.5 // 50% qualité
         )
       }
       
@@ -114,7 +114,7 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
       }
       
       // 🎯 150px max pour preview (encore plus petit pour meilleures perfs)
-      const MAX_PREVIEW_SIZE = 150
+      const MAX_PREVIEW_SIZE = 300
       
       let width = img.width
       let height = img.height
@@ -157,7 +157,7 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
           resolve(blobUrl)
         },
         'image/jpeg',
-        1 // 50% qualité pour preview ultra-léger
+        0.5 // 50% qualité pour preview ultra-léger
       )
     }
     
