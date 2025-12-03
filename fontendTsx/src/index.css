@@ -238,4 +238,259 @@
     max-height: 100dvh;
     max-height: var(--vh-dynamic-full);
   }
+
+ /* ===========================
+   ENHANCED INPUT STYLES
+   =========================== */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="tel"],
+input[type="url"] {
+  /* Ces styles s'appliquent automatiquement aux inputs avec variant="enhanced" */
+}
+
+/* ===========================
+   ENHANCED TEXTAREA STYLES
+   =========================== */
+
+textarea {
+  /* Ces styles s'appliquent automatiquement aux textareas avec variant="enhanced" */
+}
+
+/* ===========================
+   ENHANCED SELECT STYLES
+   =========================== */
+
+select {
+  /* Ces styles s'appliquent automatiquement aux selects avec variant="enhanced" */
+}
+
+/* ===========================
+   FILE INPUT CUSTOM STYLES
+   =========================== */
+
+.file-upload-zone {
+  position: relative;
+  border: 2px dashed rgb(146 158 131 / 0.4); /* secondary/40 */
+  border-radius: 0.75rem;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 300ms;
+}
+
+.file-upload-zone:hover {
+  border-color: rgb(96 153 62); /* accent */
+  background-color: rgb(96 153 62 / 0.05); /* accent/5 */
+}
+
+.file-upload-zone.has-file {
+  border-color: rgb(96 153 62); /* accent */
+  background-color: rgb(96 153 62 / 0.05); /* accent/5 */
+}
+
+.file-upload-zone.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgb(146 158 131 / 0.2); /* secondary/20 */
+}
+
+.file-upload-zone.disabled:hover {
+  border-color: rgb(146 158 131 / 0.2);
+  background-color: transparent;
+}
+
+/* ===========================
+   IMAGE PREVIEW GRID
+   =========================== */
+
+.image-preview-item {
+  position: relative;
+  border: 2px solid rgb(146 158 131 / 0.3); /* secondary/30 */
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: move;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  /* 🚀 ACCÉLÉRATION GPU pour fluidité */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.image-preview-item img {
+  /* 🎯 Optimisation rendu des images */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.image-preview-item:hover {
+  border-color: rgb(96 153 62); /* accent */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.image-preview-item.dragging {
+  border-color: rgb(96 153 62);
+  transform: scale(1.05) translateZ(0); /* translateZ active le GPU */
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  z-index: 10;
+  transition: none; /* Désactiver les transitions pendant le drag pour plus de fluidité */
+  will-change: transform; /* 🚀 GPU acceleration */
+}
+
+/* 🚀 OPTIMISATION : Indicateur visuel pendant le survol lors du drag */
+.image-preview-item.drag-over {
+  border-color: rgb(96 153 62); /* accent */
+  background-color: rgb(96 153 62 / 0.1); /* accent/10 */
+}
+
+/* Overlay pour les contrôles (apparaît au hover) */
+.image-preview-item .image-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgb(0 0 0 / 0.5);
+  opacity: 0;
+  transition: opacity 200ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.image-preview-item:hover .image-preview-overlay {
+  opacity: 1;
+}
+
+/* ===========================
+   COMPRESSION STATUS BANNER
+   =========================== */
+
+.compression-status {
+  padding: 1rem;
+  background-color: rgb(96 153 62 / 0.1); /* accent/10 */
+  border: 2px solid rgb(96 153 62 / 0.3); /* accent/30 */
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===========================
+   RESPONSIVE ADJUSTMENTS
+   =========================== */
+
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 0.875rem; /* 14px */
+  }
+
+  .file-upload-zone {
+    padding: 1.5rem;
+  }
+}
+
+/* ===========================
+   ANIMATIONS
+   =========================== */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+/* ===========================
+   FOCUS VISIBLE (Accessibilité)
+   =========================== */
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgb(96 153 62); /* accent */
+  outline-offset: 2px;
+}
+
+/* ===========================
+   UTILITY CLASSES
+   =========================== */
+
+/* Section divider avec dégradé */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgb(146 158 131 / 0.3), transparent);
+}
+
+/* Badge numéroté pour ordre des images */
+.order-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background-color: rgb(96 153 62); /* accent */
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bouton de suppression d'image */
+.delete-image-btn {
+  padding: 0.5rem;
+  background-color: rgb(239 68 68); /* red-500 */
+  color: white;
+  border-radius: 9999px;
+  transition: background-color 200ms;
+}
+
+.delete-image-btn:hover {
+  background-color: rgb(220 38 38); /* red-600 */
+}
+
+/* Poignée de drag */
+.drag-handle {
+  padding: 0.5rem;
+  background-color: rgb(255 255 255 / 0.2);
+  border-radius: 9999px;
+  cursor: move;
+}
+
+/* ===========================
+   SECTION HEADERS
+   =========================== */
+
+.section-header-icon {
+  padding: 0.5rem;
+  background-color: rgb(96 153 62 / 0.1); /* accent/10 */
+  border-radius: 0.5rem;
+  color: rgb(96 153 62); /* accent */
+}
 }
