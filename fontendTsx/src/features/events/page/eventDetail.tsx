@@ -112,7 +112,7 @@ const OrganizerInfo = ({ creator }: { creator?: User }) => (
             />
           ) : (
             <span className="font-semibold text-lg">
-              {creator?.name??.[0]?.toUpperCase() || 'T'}
+              {creator?.name?.[0]?.toUpperCase() || 'T'}
             </span>
           )}
         </div>
