@@ -25,9 +25,14 @@ import AutocompleteInputV2 from '@/components/ui/autoCompleteInputV2'
 import { compressImage } from '@/components/utils/image/imageCompression'
 import { useCompressedFiles } from '@/context/CompressedFilesContext'
 
-// 🚀 OPTIMISATION : Créer des previews ultra-légers pour affichage uniquement
+// 🚀 OPTIMISATION : Créer des previews optimisés pour affichage uniquement
 // 🚀 V2 : Utilise Blob URL au lieu de data URL (beaucoup plus léger en mémoire)
-async function createLightPreview(file: File): Promise<string> {
+// 🎯 Paramètres configurables selon le type d'image
+async function createLightPreview(
+  file: File, 
+  maxSize: number = 150, 
+  quality: number = 0.6
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     
@@ -43,21 +48,18 @@ async function createLightPreview(file: File): Promise<string> {
           return
         }
         
-        // 🎯 150px max pour preview (optimisé)
-        const MAX_PREVIEW_SIZE = 150
-        
         let width = img.width
         let height = img.height
         
         if (width > height) {
-          if (width > MAX_PREVIEW_SIZE) {
-            height = (height * MAX_PREVIEW_SIZE) / width
-            width = MAX_PREVIEW_SIZE
+          if (width > maxSize) {
+            height = (height * maxSize) / width
+            width = maxSize
           }
         } else {
-          if (height > MAX_PREVIEW_SIZE) {
-            width = (width * MAX_PREVIEW_SIZE) / height
-            height = MAX_PREVIEW_SIZE
+          if (height > maxSize) {
+            width = (width * maxSize) / height
+            height = maxSize
           }
         }
         
@@ -69,7 +71,6 @@ async function createLightPreview(file: File): Promise<string> {
         ctx.imageSmoothingQuality = 'high'
         ctx.drawImage(img, 0, 0, width, height)
         
-        // 🚀 ULTRA-COMPRESSION : 50% qualité + Blob URL
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -79,12 +80,12 @@ async function createLightPreview(file: File): Promise<string> {
             
             const blobUrl = URL.createObjectURL(blob)
             
-            console.log(`  🔍 Preview stats: ${width}x${height}, ${(blob.size / 1024).toFixed(2)}KB`)
+            console.log(`  🔍 Preview: ${width}x${height}, ${(blob.size / 1024).toFixed(2)}KB @ ${quality * 100}%`)
             
             resolve(blobUrl)
           },
           'image/jpeg',
-          0.5 // 50% qualité
+          quality
         )
       }
       
@@ -99,7 +100,12 @@ async function createLightPreview(file: File): Promise<string> {
 
 // 🆕 NOUVEAU : Créer un preview léger depuis une URL (pour mode edit)
 // 🚀 OPTIMISATION V2 : Utilise Blob URL au lieu de data URL (plus léger en mémoire)
-async function createLightPreviewFromUrl(url: string): Promise<string> {
+// 🎯 Paramètres configurables selon le type d'image
+async function createLightPreviewFromUrl(
+  url: string, 
+  maxSize: number = 150, 
+  quality: number = 0.6
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = 'anonymous' // Pour éviter les erreurs CORS
@@ -113,21 +119,18 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
         return
       }
       
-      // 🎯 150px max pour preview (encore plus petit pour meilleures perfs)
-      const MAX_PREVIEW_SIZE = 150
-      
       let width = img.width
       let height = img.height
       
       if (width > height) {
-        if (width > MAX_PREVIEW_SIZE) {
-          height = (height * MAX_PREVIEW_SIZE) / width
-          width = MAX_PREVIEW_SIZE
+        if (width > maxSize) {
+          height = (height * maxSize) / width
+          width = maxSize
         }
       } else {
-        if (height > MAX_PREVIEW_SIZE) {
-          width = (width * MAX_PREVIEW_SIZE) / height
-          height = MAX_PREVIEW_SIZE
+        if (height > maxSize) {
+          width = (width * maxSize) / height
+          height = maxSize
         }
       }
       
@@ -139,7 +142,6 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
       ctx.imageSmoothingQuality = 'high'
       ctx.drawImage(img, 0, 0, width, height)
       
-      // 🚀 ULTRA-COMPRESSION : 50% qualité au lieu de 60%
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -150,14 +152,12 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
           // ✅ Blob URL est BEAUCOUP plus léger en mémoire qu'un data URL
           const blobUrl = URL.createObjectURL(blob)
           
-          console.log(`  🔍 Compression stats:`)
-          console.log(`    Dimensions: ${width}x${height}`)
-          console.log(`    Blob size: ${(blob.size / 1024).toFixed(2)}KB`)
+          console.log(`  🔍 Preview: ${width}x${height}, ${(blob.size / 1024).toFixed(2)}KB @ ${quality * 100}%`)
           
           resolve(blobUrl)
         },
         'image/jpeg',
-        0.5 // 50% qualité pour preview ultra-léger
+        quality
       )
     }
     
@@ -417,7 +417,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
         console.log('  URL originale:', defaultValues.thumbnail)
         const thumbnailUrl = defaultValues.thumbnail
-        const lightPreview = await createLightPreviewFromUrl(thumbnailUrl)
+        // 🎯 Preview de meilleure qualité pour thumbnail (200px @ 70%)
+        const lightPreview = await createLightPreviewFromUrl(thumbnailUrl, 200, 0.7)
         console.log(`  ✅ Preview créé (Blob URL)`)
         setThumbnailPreview(lightPreview)
       }
@@ -427,7 +428,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
         console.log('  URL originale:', defaultValues.banner)
         const bannerUrl = defaultValues.banner
-        const lightPreview = await createLightPreviewFromUrl(bannerUrl)
+        // 🎯 Preview de meilleure qualité pour banner (300px @ 70%)
+        const lightPreview = await createLightPreviewFromUrl(bannerUrl, 300, 0.7)
         console.log(`  ✅ Preview créé (Blob URL)`)
         setBannerPreview(lightPreview)
       }
@@ -447,7 +449,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
             
             console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
             
-            const lightPreview = await createLightPreviewFromUrl(imageUrl)
+            // 🎯 Preview légèrement meilleure qualité pour galerie (150px @ 60%)
+            const lightPreview = await createLightPreviewFromUrl(imageUrl, 150, 0.6)
             
             console.log(`    ✅ Preview créé (Blob URL)`)
             
@@ -466,9 +469,10 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
         console.log(`  Total images: ${loadedPreviews.length}`)
         console.log(`  Type: Blob URLs (optimisé mémoire)`)
-        console.log(`  Dimensions: 150x150 max`)
-        console.log(`  Qualité: 50%`)
-        console.log(`  ✅ Previews ultra-légers créés!`)
+        console.log(`  Thumbnail: 200x200 max @ 70%`)
+        console.log(`  Banner: 300px max @ 70%`)
+        console.log(`  Galerie: 150x150 max @ 60%`)
+        console.log(`  ✅ Previews optimisés créés!`)
       }
       
       setCompressionStatus('Images existantes chargées !')
@@ -499,8 +503,10 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       const compressed = await compressImage(file, imageType)
       setFile(compressed)
       
-      // Preview ultra-léger pour l'affichage (150px, 50% qualité)
-      const lightPreview = await createLightPreview(file)
+      // 🎯 Preview de meilleure qualité selon le type
+      const previewSize = imageType === 'thumbnail' ? 200 : 300
+      const previewQuality = 0.7
+      const lightPreview = await createLightPreview(file, previewSize, previewQuality)
       setPreview(lightPreview)
       
       console.log(`✅ [ImagesSection] ${imageType} compressé et prêt`)
@@ -534,8 +540,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         const compressed = await compressImage(filesArray[i], 'gallery')
         compressedFiles.push(compressed)
         
-        // Preview ultra-léger pour affichage (150px, 50% qualité)
-        const lightPreview = await createLightPreview(filesArray[i])
+        // 🎯 Preview légèrement meilleure qualité pour galerie (150px @ 60%)
+        const lightPreview = await createLightPreview(filesArray[i], 150, 0.6)
         newPreviews.push({
           id: `new-${Date.now()}-${i}`,
           url: lightPreview,
