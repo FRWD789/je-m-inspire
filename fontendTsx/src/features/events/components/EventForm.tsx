@@ -289,7 +289,7 @@ const EventSettingsSection = () => (
 
 // 🚀 ULTRA-OPTIMISÉ : Gestionnaire d'images avec drag & drop ultra-fluide
 const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defaultValues?: any }) => {
-  const { setThumbnailFile, setBannerFile, setImagesFiles } = useCompressedFiles()
+  const { setThumbnailFile, setBannerFile, setImagesFiles, clearFiles } = useCompressedFiles()
   
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
@@ -336,6 +336,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   // 🆕 CHARGEMENT DES IMAGES EXISTANTES EN MODE EDIT
   useEffect(() => {
     if (type === 'edit' && defaultValues) {
+      // 🧹 Nettoyer le contexte avant de charger les images existantes
+      clearFiles()
       loadExistingImages()
     }
   }, [type, defaultValues])

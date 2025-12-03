@@ -1,7 +1,7 @@
 // src/features/events/hooks/useEventForm.ts
 import { useEvent } from '@/context/EventContext';
 import { useAuth } from '@/context/AuthContext';
-import { useCompressedFiles } from '@/context/CompressedFilesContext';  // ← AJOUTER
+import { useCompressedFiles } from '@/context/CompressedFilesContext';
 import type { CreateEventData, UpdateEventData } from '@/types/events';
 
 interface UseEventFormProps {
@@ -13,7 +13,7 @@ interface UseEventFormProps {
 export default function useEventForm({ type, eventId, onSuccess }: UseEventFormProps) {
   const { createEvent, updateEvent } = useEvent();
   const { user } = useAuth();
-  const { thumbnailFile, bannerFile, imagesFiles, clearFiles } = useCompressedFiles();  // ← AJOUTER
+  const { thumbnailFile, bannerFile, imagesFiles, clearFiles } = useCompressedFiles();
 
   const handleSubmit = async (values: any) => {
     try {
@@ -28,7 +28,13 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       console.log('  Thumbnail:', thumbnailFile ? `${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
       console.log('  Banner:', bannerFile ? `${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
       console.log('  Images:', imagesFiles.length > 0 ? `${imagesFiles.length} fichier(s)` : 'AUCUN');
-      imagesFiles.forEach((file, i) => {
+      
+      // ✅ FILTRER les fichiers valides uniquement
+      const validImagesFiles = Array.isArray(imagesFiles) 
+        ? imagesFiles.filter(file => file && file instanceof File && file.name)
+        : [];
+      
+      validImagesFiles.forEach((file, i) => {
         console.log(`    - Image ${i + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
       });
       
@@ -55,27 +61,36 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       // 🔥 UTILISER LES FICHIERS COMPRESSÉS DU CONTEXT
       console.log('📸 [useEventForm] ======== AJOUT FICHIERS COMPRESSÉS ========');
       
-      if (thumbnailFile) {
+      // ✅ En mode Edit, ne pas exiger thumbnail/banner s'ils ne sont pas fournis
+      if (thumbnailFile && thumbnailFile instanceof File) {
         formData.append('thumbnail', thumbnailFile);
         console.log(`  ✅ Thumbnail ajouté: ${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)`);
       } else {
-        console.log('  ⏭️  Pas de thumbnail');
+        if (type === 'create') {
+          console.log('  ⚠️  Pas de thumbnail (REQUIS en création)');
+        } else {
+          console.log('  ⏭️  Pas de nouveau thumbnail (conserve l\'existant)');
+        }
       }
       
-      if (bannerFile) {
+      if (bannerFile && bannerFile instanceof File) {
         formData.append('banner', bannerFile);
         console.log(`  ✅ Banner ajouté: ${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)`);
       } else {
-        console.log('  ⏭️  Pas de banner');
+        if (type === 'create') {
+          console.log('  ⚠️  Pas de banner (REQUIS en création)');
+        } else {
+          console.log('  ⏭️  Pas de nouveau banner (conserve l\'existant)');
+        }
       }
       
-      if (imagesFiles.length > 0) {
-        imagesFiles.forEach((file, index) => {
+      if (validImagesFiles.length > 0) {
+        validImagesFiles.forEach((file, index) => {
           formData.append('images[]', file);
           console.log(`  ✅ Image ${index + 1} ajoutée: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
         });
       } else {
-        console.log('  ⏭️  Pas d\'images galerie');
+        console.log('  ⏭️  Pas de nouvelles images galerie');
       }
 
       // 🔍 DEBUG : Afficher tout le contenu du FormData
