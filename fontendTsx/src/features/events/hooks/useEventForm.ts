@@ -28,13 +28,7 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       console.log('  Thumbnail:', thumbnailFile ? `${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
       console.log('  Banner:', bannerFile ? `${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)` : 'AUCUN');
       console.log('  Images:', imagesFiles.length > 0 ? `${imagesFiles.length} fichier(s)` : 'AUCUN');
-      
-      // ✅ FILTRER les fichiers valides uniquement
-      const validImagesFiles = Array.isArray(imagesFiles) 
-        ? imagesFiles.filter(file => file && file instanceof File && file.name)
-        : [];
-      
-      validImagesFiles.forEach((file, i) => {
+      imagesFiles.forEach((file, i) => {
         console.log(`    - Image ${i + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
       });
       
@@ -61,36 +55,37 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       // 🔥 UTILISER LES FICHIERS COMPRESSÉS DU CONTEXT
       console.log('📸 [useEventForm] ======== AJOUT FICHIERS COMPRESSÉS ========');
       
-      // ✅ En mode Edit, ne pas exiger thumbnail/banner s'ils ne sont pas fournis
-      if (thumbnailFile && thumbnailFile instanceof File) {
+      // ✅ En mode CREATE : thumbnail et banner sont OBLIGATOIRES
+      // ✅ En mode EDIT : seulement si modifiées (sinon backend garde les existantes)
+      if (thumbnailFile) {
         formData.append('thumbnail', thumbnailFile);
         console.log(`  ✅ Thumbnail ajouté: ${thumbnailFile.name} (${(thumbnailFile.size / 1024).toFixed(2)} KB)`);
       } else {
         if (type === 'create') {
-          console.log('  ⚠️  Pas de thumbnail (REQUIS en création)');
+          console.log('  ⚠️  [CREATE] Pas de thumbnail (requis!)');
         } else {
-          console.log('  ⏭️  Pas de nouveau thumbnail (conserve l\'existant)');
+          console.log('  ⏭️  [EDIT] Pas de nouveau thumbnail (garde existant)');
         }
       }
       
-      if (bannerFile && bannerFile instanceof File) {
+      if (bannerFile) {
         formData.append('banner', bannerFile);
         console.log(`  ✅ Banner ajouté: ${bannerFile.name} (${(bannerFile.size / 1024).toFixed(2)} KB)`);
       } else {
         if (type === 'create') {
-          console.log('  ⚠️  Pas de banner (REQUIS en création)');
+          console.log('  ⚠️  [CREATE] Pas de banner (requis!)');
         } else {
-          console.log('  ⏭️  Pas de nouveau banner (conserve l\'existant)');
+          console.log('  ⏭️  [EDIT] Pas de nouveau banner (garde existant)');
         }
       }
       
-      if (validImagesFiles.length > 0) {
-        validImagesFiles.forEach((file, index) => {
+      if (imagesFiles.length > 0) {
+        imagesFiles.forEach((file, index) => {
           formData.append('images[]', file);
           console.log(`  ✅ Image ${index + 1} ajoutée: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
         });
       } else {
-        console.log('  ⏭️  Pas de nouvelles images galerie');
+        console.log('  ⏭️  Pas d\'images galerie');
       }
 
       // 🔍 DEBUG : Afficher tout le contenu du FormData

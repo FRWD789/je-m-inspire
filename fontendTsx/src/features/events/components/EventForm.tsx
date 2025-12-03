@@ -344,88 +344,91 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
 
   // ✅ CORRIGÉ : Utiliser directement les URLs backend au lieu de Blob URLs
   const loadExistingImages = async () => {
-    setIsLoadingExisting(true)
-    setCompressionStatus('Chargement des images existantes...')
-    
-    try {
-      // 1. Charger thumbnail - Utiliser directement l'URL du backend
-      if (defaultValues.thumbnail) {
-        console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
-        console.log('  URL backend:', defaultValues.thumbnail)
-        
-        // ✅ Utiliser directement l'URL du backend (déjà optimisée)
-        // Si des variantes existent, utiliser _md pour le preview, sinon l'original
-        const thumbnailUrl = defaultValues.thumbnail_variants?.md 
-          || defaultValues.thumbnail_variants?.md_webp
-          || defaultValues.thumbnail
-        
-        setThumbnailPreview(thumbnailUrl)
-        console.log('  ✅ URL preview:', thumbnailUrl)
-      }
+  setIsLoadingExisting(true)
+  setCompressionStatus('Chargement des images existantes...')
+  
+  try {
+    // 1. Charger thumbnail - Utiliser directement l'URL du backend
+    if (defaultValues.thumbnail) {
+      console.log('📸 [ImagesSection] === CHARGEMENT THUMBNAIL ===')
+      console.log('  URL backend:', defaultValues.thumbnail)
       
-      // 2. Charger banner - Utiliser directement l'URL du backend
-      if (defaultValues.banner) {
-        console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
-        console.log('  URL backend:', defaultValues.banner)
-        
-        // ✅ Utiliser directement l'URL du backend (déjà optimisée)
-        const bannerUrl = defaultValues.banner_variants?.md
-          || defaultValues.banner_variants?.md_webp
-          || defaultValues.banner
-        
-        setBannerPreview(bannerUrl)
-        console.log('  ✅ URL preview:', bannerUrl)
-      }
+      // ✅ Utiliser directement l'URL du backend (déjà optimisée)
+      // Si des variantes existent, utiliser _md pour le preview, sinon l'original
+      const thumbnailUrl = defaultValues.thumbnail_variants?.md 
+        || defaultValues.thumbnail_variants?.md_webp
+        || defaultValues.thumbnail
       
-      // 3. Charger galerie d'images - Utiliser directement les URLs du backend
-      if (defaultValues.images && Array.isArray(defaultValues.images) && defaultValues.images.length > 0) {
-        console.log('🖼️ [ImagesSection] === CHARGEMENT GALERIE ===')
-        console.log(`  Total: ${defaultValues.images.length} images`)
-        
-        const loadedPreviews: { id: string; url: string; isExisting: boolean }[] = []
-        
-        for (let i = 0; i < defaultValues.images.length; i++) {
-          const image = defaultValues.images[i]
-          try {
-            // ✅ Utiliser directement les variantes du backend
-            const imageUrl = image.variants?.md
-              || image.variants?.md_webp
-              || image.url 
-              || image.path 
-              || image
-            
-            const imageId = image.id
-            
-            console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
-            console.log(`    ✅ URL preview:`, imageUrl)
-            
-            loadedPreviews.push({
-              id: `existing-${imageId || Date.now()}`,
-              url: imageUrl,
-              isExisting: true
-            })
-          } catch (error) {
-            console.error(`    ❌ Erreur chargement image ${i + 1}:`, error)
-          }
-        }
-        
-        setImagesPreview(loadedPreviews)
-        
-        console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
-        console.log(`  Total images: ${loadedPreviews.length}`)
-        console.log(`  Type: URLs backend directes (pas de Blob URL)`)
-        console.log(`  ✅ Images existantes chargées!`)
-      }
+      setThumbnailPreview(thumbnailUrl)
+      console.log('  ✅ URL preview:', thumbnailUrl)
       
-      setCompressionStatus('Images existantes chargées !')
-      setTimeout(() => setCompressionStatus(''), 2000)
-    } catch (error) {
-      console.error('❌ [ImagesSection] Erreur chargement images existantes:', error)
-      setCompressionStatus('Erreur chargement images')
-    } finally {
-      setIsLoadingExisting(false)
+      // ❌ NE PAS charger le fichier dans le contexte
+      // setThumbnailFile() n'est PAS appelé en mode edit si l'image n'est pas modifiée
     }
+    
+    // 2. Charger banner - Utiliser directement l'URL du backend
+    if (defaultValues.banner) {
+      console.log('🎨 [ImagesSection] === CHARGEMENT BANNER ===')
+      console.log('  URL backend:', defaultValues.banner)
+      
+      const bannerUrl = defaultValues.banner_variants?.md
+        || defaultValues.banner_variants?.md_webp
+        || defaultValues.banner
+      
+      setBannerPreview(bannerUrl)
+      console.log('  ✅ URL preview:', bannerUrl)
+      
+      // ❌ NE PAS charger le fichier dans le contexte
+      // setBannerFile() n'est PAS appelé en mode edit si l'image n'est pas modifiée
+    }
+    
+    // 3. Charger galerie d'images
+    if (defaultValues.images && Array.isArray(defaultValues.images) && defaultValues.images.length > 0) {
+      console.log('🖼️ [ImagesSection] === CHARGEMENT GALERIE ===')
+      console.log(`  Total: ${defaultValues.images.length} images`)
+      
+      const loadedPreviews: { id: string; url: string; isExisting: boolean }[] = []
+      
+      for (let i = 0; i < defaultValues.images.length; i++) {
+        const image = defaultValues.images[i]
+        const imageUrl = image.variants?.md
+          || image.variants?.md_webp
+          || image.url 
+          || image.path 
+          || image
+        
+        const imageId = image.id
+        
+        console.log(`  📥 Image ${i + 1}/${defaultValues.images.length}: ${imageId}`)
+        console.log(`    ✅ URL preview:`, imageUrl)
+        
+        loadedPreviews.push({
+          id: `existing-${imageId || Date.now()}`,
+          url: imageUrl,
+          isExisting: true
+        })
+      }
+      
+      setImagesPreview(loadedPreviews)
+      
+      console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
+      console.log(`  Total images: ${loadedPreviews.length}`)
+      console.log(`  Type: URLs backend directes (pas de Blob URL)`)
+      console.log(`  ✅ Images existantes chargées!`)
+      
+      // ❌ NE PAS charger les fichiers dans le contexte
+      // setImagesFiles() n'est PAS appelé en mode edit si les images ne sont pas modifiées
+    }
+    
+    setCompressionStatus('Images existantes chargées !')
+    setTimeout(() => setCompressionStatus(''), 2000)
+  } catch (error) {
+    console.error('❌ [ImagesSection] Erreur chargement images existantes:', error)
+    setCompressionStatus('Erreur chargement images')
+  } finally {
+    setIsLoadingExisting(false)
   }
+}
 
   // ✅ Compression unique (thumbnail/banner) avec TYPE SPÉCIFIQUE
   const handleSingleImageChange = async (
