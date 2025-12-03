@@ -25,6 +25,7 @@ export default function AutocompleteInputV2({
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const justSelectedRef = useRef<boolean>(false); // ✅ Flag pour éviter le fetch après sélection
 
   // Wait for google.maps.places to exist
   useEffect(() => {
@@ -71,6 +72,12 @@ export default function AutocompleteInputV2({
   }, [fetchSuggestions]);
 
   useEffect(() => {
+    // ✅ Si on vient de sélectionner une suggestion, ne pas fetcher
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
+
     if (inputValue) {
       fetchSuggestionsDebounced(inputValue);
     } else {
@@ -92,6 +99,9 @@ export default function AutocompleteInputV2({
       { placeId: prediction.placeId, fields: ["formatted_address", "geometry"] },
       (place, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          // ✅ Activer le flag pour éviter le fetch après setValue
+          justSelectedRef.current = true;
+          
           setValue(name, place.formatted_address || "", { shouldValidate: true });
           if (place.geometry?.location) {
             setValue("localisation_lat", place.geometry.location.lat(), { shouldValidate: true });
@@ -106,6 +116,9 @@ export default function AutocompleteInputV2({
 
   // ✅ Clear input
   const handleClear = () => {
+    // ✅ Activer le flag pour éviter le fetch après clear
+    justSelectedRef.current = true;
+    
     setValue(name, "", { shouldValidate: true });
     setValue("localisation_lat", "", { shouldValidate: true });
     setValue("localisation_lng", "", { shouldValidate: true });
