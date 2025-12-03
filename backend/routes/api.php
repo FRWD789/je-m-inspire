@@ -44,17 +44,9 @@ use Illuminate\Support\Facades\Log;
 
 // ✅ Route storage dans API (priorité sur web)
 Route::get('/storage/{path}', function ($path) {
-    Log::info('[API Storage Route] Path reçu:', ['path' => $path]);
-
     if (!Storage::disk('public')->exists($path)) {
-        Log::error('[API Storage Route] Fichier non trouvé:', [
-            'path' => $path,
-            'full_path' => Storage::disk('public')->path($path)
-        ]);
-        abort(404, 'File not found');
+        abort(404);
     }
-
-    Log::info('[API Storage Route] Fichier trouvé, envoi...');
 
     return Response::file(
         Storage::disk('public')->path($path),

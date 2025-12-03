@@ -32,6 +32,6 @@ class EventImage extends Model
      */
     public function getImageUrlAttribute()
     {
-        return asset('storage/' . $this->image_path);
+        return asset('api/storage/' . $this->image_path);
     }
 }

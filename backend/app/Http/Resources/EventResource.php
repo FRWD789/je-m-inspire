@@ -25,8 +25,8 @@ class EventResource extends JsonResource
             // ========================================
             // ✅ IMAGES ORIGINALES (compatibilité)
             // ========================================
-            'thumbnail' => $this->thumbnail_path ? url('storage/' . $this->thumbnail_path) : null,
-            'banner' => $this->banner_path ? url('storage/' . $this->banner_path) : null,
+            'thumbnail' => $this->thumbnail_path ? url('api/storage/' . $this->thumbnail_path) : null,
+            'banner' => $this->banner_path ? url('api/storage/' . $this->banner_path) : null,
 
             // ========================================
             // ✅ NOUVEAUTÉ : VARIANTES RESPONSIVE
