@@ -101,10 +101,10 @@ const OrganizerInfo = ({ creator }: { creator?: User }) => (
     <Link to={`/user/${creator?.id}`} className="block hover:opacity-80 transition">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
-          {creator?.profile.profile_picture ? (
+          {creator?.profile_picture ? (
             <img 
-              src={`${creator?.profile.profile_picture}`} 
-              alt={`Photo de ${creator.profile}`}
+              src={`${creator?.profile_picture}`} 
+              alt={`Photo de ${creator?.name}`}
               loading="lazy"        
               decoding="async"     
               className="w-full h-full object-cover object-center"
@@ -112,13 +112,13 @@ const OrganizerInfo = ({ creator }: { creator?: User }) => (
             />
           ) : (
             <span className="font-semibold text-lg">
-              {creator?.profile.name?.[0]?.toUpperCase() || 'T'}
+              {creator?.name??.[0]?.toUpperCase() || 'T'}
             </span>
           )}
         </div>
         <div>
           <p className="text-sm text-gray-600">Organisé par</p>
-          <p className="font-semibold text-gray-800 text-lg">{creator?.profile.name || "Organisateur anonyme"}</p>
+          <p className="font-semibold text-gray-800 text-lg">{creator?.name || "Organisateur anonyme"}</p>
         </div>
       </div>
     </Link>
