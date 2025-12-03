@@ -78,7 +78,7 @@ export default function UserPage() {
     try {
       const res = await updateProfileImg(formData)
       const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
-      setAvatarUrl(`${baseUrl}/storage/${res.profile_picture}`);
+      setAvatarUrl(`${baseUrl}/api/storage/${res.profile_picture}`);
       setPreview(null);
       console.log(user)
       setMessage(t('profile.updateSuccess'))

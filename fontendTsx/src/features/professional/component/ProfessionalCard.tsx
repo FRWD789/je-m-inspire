@@ -25,7 +25,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   const getProfileImageUrl = (path: string | null) => {
     if (!path) return null;
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://api.jminspire.com";
-    return `${baseUrl}/storage/${path}`;
+    return `${baseUrl}/api/storage/${path}`;
   };
 
   return (

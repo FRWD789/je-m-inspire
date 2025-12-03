@@ -47,7 +47,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    return `${API_BASE}/storage/${path}`;
+    return `${API_BASE}/api/storage/${path}`;
   };
 
   const handleImageLoad = () => {
@@ -214,7 +214,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    return `${API_BASE}/storage/${path}`;
+    return `${API_BASE}/api/storage/${path}`;
   };
 
   const handleImageLoad = () => {

@@ -31,13 +31,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
     const API_BASE = 'https://api.jminspire.com';
     
     if (image.variants?.xl_webp) {
-      return `${API_BASE}/storage/${image.variants.xl_webp}`;
+      return `${API_BASE}/api/storage/${image.variants.xl_webp}`;
     } else if (image.variants?.xl) {
-      return `${API_BASE}/storage/${image.variants.xl}`;
+      return `${API_BASE}/api/storage/${image.variants.xl}`;
     } else if (image.url) {
       return image.url;
     } else {
-      return `${API_BASE}/storage/${image.image_path}`;
+      return `${API_BASE}/api/storage/${image.image_path}`;
     }
   }, []);
 
