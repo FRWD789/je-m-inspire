@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * ResponsiveImage - VERSION OPTIMISÉE avec gestion d'erreurs 404
@@ -7,7 +8,6 @@ import { Layers } from 'lucide-react';
  * ✅ Génère uniquement 3 variantes : md (600px), lg (1200px), xl (1920px)
  * ✅ Fallback automatique vers icône Layers en cas d'erreur 404
  * ✅ Garantit que les images remplissent TOUJOURS leur conteneur
- * ✅ CORRIGÉ: Utilise /storage/ au lieu de /api/storage/
  */
 
 interface ResponsiveImageProps {
@@ -47,9 +47,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
-    // Si l'URL est déjà complète, l'utiliser telle quelle
     if (path.startsWith('http')) return path;
-    // Utiliser /api/storage/ car c'est la route Laravel configurée
     return `${API_BASE}/api/storage/${path}`;
   };
 
@@ -70,7 +68,7 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
         `%c🖼️ ${alt}%c → ${variant} %c${format}`,
         'color: #3b82f6; font-weight: bold',
         'color: #10b981; font-weight: bold',
-        `color: ${isWebP ? '#10b981' : '#f59e0b'}`
+        `color: ${isWebP ? '#8b5cf6' : '#f59e0b'}`
       );
     }
     
@@ -82,37 +80,70 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     setImageError(true);
   };
 
-  // Si erreur 404 et fallback activé, afficher l'icône
+  const combinedStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    ...style,
+  };
+
+  // Si erreur de chargement et fallback activé
   if (imageError && showFallback) {
     return (
       <div 
-        className={`flex items-center justify-center bg-secondary/10 ${className}`}
+        className={cn("h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200", className)}
         style={style}
       >
-        <Layers className="w-16 h-16 text-secondary/30" strokeWidth={1.5} />
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Image indisponible</p>
+        </div>
       </div>
     );
   }
 
-  const combinedStyle: React.CSSProperties = {
-    objectFit: 'cover',
-    width: '100%',
-    height: '100%',
-    ...style,
-  };
-
-  // ✅ Générer srcset uniquement avec les variantes disponibles
-  const srcsetItems: string[] = [];
-  
-  // WebP srcset (priorité)
-  if (variants) {
-    if (variants.md_webp) srcsetItems.push(`${buildUrl(variants.md_webp)} 600w`);
-    if (variants.lg_webp) srcsetItems.push(`${buildUrl(variants.lg_webp)} 1200w`);
-    if (variants.xl_webp) srcsetItems.push(`${buildUrl(variants.xl_webp)} 1920w`);
+  // Si pas de src ET fallback activé
+  if (!src && showFallback) {
+    return (
+      <div 
+        className={cn("h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200", className)}
+        style={style}
+      >
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Aucune image</p>
+        </div>
+      </div>
+    );
   }
 
-  // Fallback JPEG srcset
-  if (variants && srcsetItems.length === 0) {
+  if (!variants) {
+    return (
+      <img
+        ref={imgRef}
+        src={buildUrl(src) || ''}
+        alt={alt}
+        className={className}
+        style={combinedStyle}
+        loading={loading}
+        fetchpriority={fetchPriority}
+        decoding="async"
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+      />
+    );
+  }
+
+  const srcsetItems: string[] = [];
+  
+  // Priorité WebP
+  if (variants.md_webp) srcsetItems.push(`${buildUrl(variants.md_webp)} 600w`);
+  if (variants.lg_webp) srcsetItems.push(`${buildUrl(variants.lg_webp)} 1200w`);
+  if (variants.xl_webp) srcsetItems.push(`${buildUrl(variants.xl_webp)} 1920w`);
+  
+  // Fallback JPEG
+  if (srcsetItems.length === 0) {
     if (variants.md) srcsetItems.push(`${buildUrl(variants.md)} 600w`);
     if (variants.lg) srcsetItems.push(`${buildUrl(variants.lg)} 1200w`);
     if (variants.xl) srcsetItems.push(`${buildUrl(variants.xl)} 1920w`);
@@ -120,13 +151,13 @@ const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
 
   const srcset = srcsetItems.join(', ');
   const fallbackSrc = buildUrl(
-    variants?.xl_webp || 
-    variants?.lg_webp || 
-    variants?.md_webp || 
-    variants?.xl || 
-    variants?.lg || 
-    variants?.md ||
-    variants?.original || 
+    variants.xl_webp || 
+    variants.lg_webp || 
+    variants.md_webp || 
+    variants.xl || 
+    variants.lg || 
+    variants.md ||
+    variants.original || 
     src
   );
 
@@ -190,7 +221,6 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
   const buildUrl = (path: string | undefined | null) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    // Utiliser /api/storage/ car c'est la route Laravel configurée
     return `${API_BASE}/api/storage/${path}`;
   };
 
@@ -205,7 +235,7 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
       console.log(
         `%c📸 Thumbnail: ${alt}%c → ${size === 'sm' ? 'SM→MD' : size.toUpperCase()} ${format}`,
         'color: #ec4899; font-weight: bold',
-        `color: ${isWebP ? '#10b981' : '#f59e0b'}`
+        `color: ${isWebP ? '#8b5cf6' : '#f59e0b'}`
       );
     }
     
@@ -217,38 +247,72 @@ export const ThumbnailImage: React.FC<ThumbnailImageProps> = ({
     setImageError(true);
   };
 
+  const combinedStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    ...style,
+  };
+
+  // ✅ CORRIGÉ: Fallback hérite maintenant du className et style
   if (imageError && showFallback) {
     return (
       <div 
-        className={`flex items-center justify-center bg-secondary/10 ${className}`}
+        className={cn("h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200", className)}
         style={style}
       >
-        <Layers className="w-12 h-12 text-secondary/30" strokeWidth={1.5} />
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Image indisponible</p>
+        </div>
       </div>
     );
   }
 
-  const combinedStyle: React.CSSProperties = {
-    objectFit: 'cover',
-    width: '100%',
-    height: '100%',
-    ...style,
-  };
-
-  let targetSrc: string | null = null;
-
-  if (size === 'sm') {
-    targetSrc = buildUrl(variants?.md_webp || variants?.md || src);
-  } else if (size === 'md') {
-    targetSrc = buildUrl(variants?.lg_webp || variants?.lg || variants?.md_webp || variants?.md || src);
-  } else {
-    targetSrc = buildUrl(variants?.lg_webp || variants?.lg || src);
+  // ✅ CORRIGÉ: Fallback hérite maintenant du className et style
+  if (!src && showFallback) {
+    return (
+      <div 
+        className={cn("h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200", className)}
+        style={style}
+      >
+        <div className="text-center text-gray-400">
+          <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm font-medium">Aucune image</p>
+        </div>
+      </div>
+    );
   }
+
+  if (!variants) {
+    return (
+      <img
+        ref={imgRef}
+        src={buildUrl(src) || ''}
+        alt={alt}
+        className={className}
+        style={combinedStyle}
+        loading={loading}
+        fetchpriority={fetchPriority}
+        decoding="async"
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+      />
+    );
+  }
+
+  // sm utilise md comme fallback (sm n'existe plus)
+  const effectiveSize = size === 'sm' ? 'md' : size;
+  
+  const webpSrc = effectiveSize === 'md' ? variants.md_webp : variants.lg_webp;
+  const jpegSrc = effectiveSize === 'md' ? variants.md : variants.lg;
+  const fallbackSrc = buildUrl(webpSrc || jpegSrc || variants.original || src);
 
   return (
     <img
       ref={imgRef}
-      src={targetSrc || ''}
+      src={fallbackSrc || ''}
       alt={alt}
       className={className}
       style={combinedStyle}
