@@ -30,13 +30,20 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const getImageUrl = useCallback((image: ImageData): string => {
     const API_BASE = 'https://api.jminspire.com';
     
+    // ✅ CORRIGÉ: Les variantes contiennent DÉJÀ des URLs complètes depuis EventResource
+    // Ne PAS rajouter /api/storage/ devant, ça créerait une URL double
     if (image.variants?.xl_webp) {
-      return `${API_BASE}/api/storage/${image.variants.xl_webp}`;
+      return image.variants.xl_webp;
     } else if (image.variants?.xl) {
-      return `${API_BASE}/api/storage/${image.variants.xl}`;
-    } else if (image.url) {
+      return image.variants.xl;
+    } else if (image.url && image.url.startsWith('http')) {
+      // URL complète fournie
       return image.url;
+    } else if (image.url) {
+      // Chemin relatif dans url
+      return `${API_BASE}/api/storage/${image.url}`;
     } else {
+      // Fallback sur image_path
       return `${API_BASE}/api/storage/${image.image_path}`;
     }
   }, []);
