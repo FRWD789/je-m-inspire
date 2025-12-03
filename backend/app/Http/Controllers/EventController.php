@@ -18,6 +18,7 @@ use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Notifications\NewEventNotification;
 use App\Traits\OptimizesImages;
+use App\Helpers\FileHelper;
 
 class EventController extends Controller
 {
@@ -324,7 +325,8 @@ class EventController extends Controller
             $thumbnailOptimize = null;
             if ($request->hasFile('thumbnail')) {
                 $file = $request->file('thumbnail');
-                $filename = time() . '_thumb_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $extension = FileHelper::getExtensionFromMimeType($file);
+                $filename = time() . '_thumb_' . Str::random(10) . '.' . $extension;
                 $thumbnailPath = $file->storeAs('event_thumbnails', $filename, 'public');
                 $thumbnailOptimize = [
                     'temp_path' => $thumbnailPath,
@@ -339,7 +341,8 @@ class EventController extends Controller
             $bannerOptimize = null;
             if ($request->hasFile('banner')) {
                 $file = $request->file('banner');
-                $filename = time() . '_banner_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $extension = FileHelper::getExtensionFromMimeType($file);
+                $filename = time() . '_banner_' . Str::random(10) . '.' . $extension;
                 $bannerPath = $file->storeAs('event_banners', $filename, 'public');
                 $bannerOptimize = [
                     'temp_path' => $bannerPath,
@@ -373,7 +376,8 @@ class EventController extends Controller
                 $images = $request->file('images');
 
                 foreach ($images as $index => $image) {
-                    $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                    $extension = FileHelper::getExtensionFromMimeType($file);
+                    $filename = time() . '_' . Str::random(10) . '.' . $extension;
                     $imagePath = $image->storeAs('event_images', $filename, 'public');
 
                     $eventImage = EventImage::create([
@@ -517,7 +521,8 @@ class EventController extends Controller
                 }
 
                 $file = $request->file('thumbnail');
-                $filename = time() . '_thumb_' . \Illuminate\Support\Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $extension = FileHelper::getExtensionFromMimeType($file);
+                $filename = time() . '_thumb_' . Str::random(10) . '.' . $extension;
                 $thumbnailPath = $file->storeAs('event_thumbnails', $filename, 'public');
 
                 $event->thumbnail_path = $thumbnailPath;
@@ -553,7 +558,8 @@ class EventController extends Controller
                 }
 
                 $file = $request->file('banner');
-                $filename = time() . '_banner_' . \Illuminate\Support\Str::random(10) . '.' . $file->getClientOriginalExtension();
+                $extension = FileHelper::getExtensionFromMimeType($file);
+                $filename = time() . '_banner_' . Str::random(10) . '.' . $extension;
                 $bannerPath = $file->storeAs('event_banners', $filename, 'public');
 
                 $event->banner_path = $bannerPath;
@@ -636,7 +642,8 @@ class EventController extends Controller
                 $currentMaxOrder = $event->images()->max('display_order') ?? -1;
 
                 foreach ($images as $index => $image) {
-                    $filename = time() . '_' . \Illuminate\Support\Str::random(10) . '.' . $image->getClientOriginalExtension();
+                    $extension = FileHelper::getExtensionFromMimeType($file);
+                    $filename = time() . '_' . Str::random(10) . '.' . $extension;
                     $imagePath = $image->storeAs('event_images', $filename, 'public');
 
                     $eventImage = EventImage::create([

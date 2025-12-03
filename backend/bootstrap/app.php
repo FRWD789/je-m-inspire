@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
             Cors::class,
         ]);
 
+        $middleware->web(prepend: [Cors::class]);
+
         // Alias
 
         $middleware->alias([
