@@ -373,8 +373,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   // État minimal uniquement pour le style de l'élément draggé (mis à jour 1 seule fois)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   
-  // IDs des images existantes à conserver (pour le backend)
-  const [existingImageIds, setExistingImageIds] = useState<number[]>([])
+  // ✅ IDs des images à SUPPRIMER (pour le backend)
+  const [deletedImageIds, setDeletedImageIds] = useState<number[]>([])
   
   // 🧹 CLEANUP : Révoquer les Blob URLs pour éviter fuites mémoire
   useEffect(() => {
@@ -438,7 +438,6 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         console.log(`  Total: ${defaultValues.images.length} images`)
         
         const loadedPreviews: { id: string; url: string; isExisting: boolean }[] = []
-        const imageIds: number[] = []
         
         for (let i = 0; i < defaultValues.images.length; i++) {
           const image = defaultValues.images[i]
@@ -457,17 +456,12 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
               url: lightPreview,
               isExisting: true
             })
-            
-            if (imageId) {
-              imageIds.push(imageId)
-            }
           } catch (error) {
             console.error(`    ❌ Erreur chargement image ${i + 1}:`, error)
           }
         }
         
         setImagesPreview(loadedPreviews)
-        setExistingImageIds(imageIds)
         
         console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
         console.log(`  Total images: ${loadedPreviews.length}`)
@@ -487,11 +481,12 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     }
   }
 
-  // Compression unique (thumbnail/banner)
+  // ✅ Compression unique (thumbnail/banner) avec TYPE SPÉCIFIQUE
   const handleSingleImageChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setPreview: (v: string | null) => void,
-    setFile: (file: File | null) => void
+    setFile: (file: File | null) => void,
+    imageType: 'thumbnail' | 'banner'
   ) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -500,19 +495,15 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     setCompressionStatus('Compression en cours...')
 
     try {
-      // 1. Comprimer le fichier pour l'upload (qualité optimale)
-      const compressed = await compressImage(file)
+      // ✅ Compression avec dimensions spécifiques selon le type
+      const compressed = await compressImage(file, imageType)
       setFile(compressed)
       
-      // 2. Créer un preview ultra-léger pour l'affichage (60% qualité, 200px max)
+      // Preview ultra-léger pour l'affichage (150px, 50% qualité)
       const lightPreview = await createLightPreview(file)
       setPreview(lightPreview)
       
-      console.log(`✅ [ImagesSection] ${file.name} compressé:`, {
-        original: `${(file.size / 1024).toFixed(0)}KB`,
-        compressed: `${(compressed.size / 1024).toFixed(0)}KB`,
-        preview: `${(lightPreview.length / 1024).toFixed(0)}KB (data URL)`
-      })
+      console.log(`✅ [ImagesSection] ${imageType} compressé et prêt`)
     } catch (error) {
       console.error('❌ [ImagesSection] Erreur compression:', error)
       setCompressionStatus('Erreur lors de la compression')
@@ -522,7 +513,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     }
   }
 
-  // Compression multiple avec gestion d'ordre
+  // ✅ Compression multiple avec TYPE GALLERY
   const handleMultipleImagesChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -539,16 +530,16 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       for (let i = 0; i < filesArray.length; i++) {
         setCompressionStatus(`Compression ${i + 1}/${filesArray.length}...`)
         
-        // 1. Comprimer pour l'upload
-        const compressed = await compressImage(filesArray[i])
+        // ✅ Compression galerie (1200px, 85%)
+        const compressed = await compressImage(filesArray[i], 'gallery')
         compressedFiles.push(compressed)
         
-        // 2. Créer preview ultra-léger pour affichage (60% qualité, 200px max)
+        // Preview ultra-léger pour affichage (150px, 50% qualité)
         const lightPreview = await createLightPreview(filesArray[i])
         newPreviews.push({
           id: `new-${Date.now()}-${i}`,
           url: lightPreview,
-          isExisting: false // Marquer comme nouvelle image
+          isExisting: false
         })
       }
 
@@ -556,7 +547,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       setImagesPreview(prev => [...prev, ...newPreviews])
       setImagesFiles(prev => [...(Array.isArray(prev) ? prev : []), ...compressedFiles])
       
-      console.log(`✅ [ImagesSection] ${compressedFiles.length} nouvelles images ajoutées (${imagesPreview.length} existantes conservées)`)
+      console.log(`✅ [ImagesSection] ${compressedFiles.length} images galerie ajoutées`)
     } catch (error) {
       console.error('❌ [ImagesSection] Erreur compression:', error)
     } finally {
@@ -565,7 +556,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     }
   }
 
-  // Supprimer une image de la galerie
+  // ✅ Supprimer une image de la galerie et tracker les suppressions
   const removeImage = (index: number) => {
     const imageToRemove = imagesPreview[index]
     
@@ -575,11 +566,11 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       console.log(`🧹 [ImagesSection] Blob URL révoqué pour image ${index}`)
     }
     
-    // Si c'est une image existante, retirer son ID de la liste
+    // ✅ Si c'est une image existante, l'ajouter à la liste des suppressions
     if (imageToRemove.isExisting && imageToRemove.id.startsWith('existing-')) {
       const imageId = parseInt(imageToRemove.id.replace('existing-', ''))
-      setExistingImageIds(prev => prev.filter(id => id !== imageId))
-      console.log(`🗑️ [ImagesSection] Image existante ${imageId} marquée pour suppression`)
+      setDeletedImageIds(prev => [...prev, imageId])
+      console.log(`🗑️ [ImagesSection] Image ${imageId} marquée pour suppression`)
     }
     
     setImagesPreview(prev => prev.filter((_, i) => i !== index))
@@ -681,14 +672,14 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     <div className="space-y-6">
       <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
       
-      {/* 🔐 Inputs cachés pour les images existantes à conserver (mode edit) */}
-      {type === 'edit' && existingImageIds.length > 0 && (
+      {/* ✅ Inputs cachés pour les images à SUPPRIMER (mode edit) */}
+      {type === 'edit' && deletedImageIds.length > 0 && (
         <>
-          {existingImageIds.map((id, index) => (
+          {deletedImageIds.map((id, index) => (
             <input 
-              key={`existing-image-${id}`}
+              key={`delete-image-${id}`}
               type="hidden" 
-              name={`existing_images[${index}]`}
+              name={`delete_images[${index}]`}
               value={id}
             />
           ))}
@@ -714,7 +705,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
             name="thumbnail"
             accept="image/*"
             disabled={isCompressing}
-            onChange={(e) => handleSingleImageChange(e, setThumbnailPreview, setThumbnailFile)}
+            onChange={(e) => handleSingleImageChange(e, setThumbnailPreview, setThumbnailFile, 'thumbnail')}
             className="hidden"
             id="thumbnail-input"
           />
@@ -770,7 +761,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
             name="banner"
             accept="image/*"
             disabled={isCompressing}
-            onChange={(e) => handleSingleImageChange(e, setBannerPreview, setBannerFile)}
+            onChange={(e) => handleSingleImageChange(e, setBannerPreview, setBannerFile, 'banner')}
             className="hidden"
             id="banner-input"
           />

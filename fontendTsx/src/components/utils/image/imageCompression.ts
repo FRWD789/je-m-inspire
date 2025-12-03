@@ -1,94 +1,104 @@
 // src/components/utils/image/imageCompression.ts
-import imageCompression from 'browser-image-compression';
 
 /**
- * Options de compression optimales pour Je m'inspire
+ * 🎯 Configuration optimale par type d'image (alignée avec backend)
+ * 
+ * Backend génère ensuite les variantes :
+ * - md: 600px (mobile/thumbnail)
+ * - lg: 1200px (desktop)
+ * - xl: 1920px (hero/carousel)
+ * + versions WebP
  */
-export const compressionOptions = {
-  maxSizeMB: 3,           // Max 3MB par image
-  maxWidthOrHeight: 1920, // Max 1920px (4K pas nécessaire)
-  useWebWorker: true,     // Ne pas bloquer UI
-  fileType: 'image/jpeg', // Convertir tout en JPEG
-  initialQuality: 0.85,   // Quality initiale
-};
+export const IMAGE_CONFIGS = {
+  thumbnail: { maxDimension: 800, quality: 0.85 },
+  banner: { maxDimension: 1920, quality: 0.90 },
+  gallery: { maxDimension: 1200, quality: 0.85 }
+} as const
+
+export type ImageType = keyof typeof IMAGE_CONFIGS
 
 /**
- * Compresse une image avant upload
+ * Compresse une image aux dimensions et qualité optimales selon son type
+ * 
+ * @param file - Fichier image à compresser
+ * @param imageType - Type d'image (thumbnail, banner, gallery)
+ * @returns Fichier compressé optimisé
+ * 
+ * @example
+ * const thumb = await compressImage(file, 'thumbnail')  // 800px max, 85%
+ * const banner = await compressImage(file, 'banner')     // 1920px max, 90%
+ * const image = await compressImage(file, 'gallery')     // 1200px max, 85%
  */
-export async function compressImage(file: File): Promise<File> {
-  try {
-    // Vérifier taille originale
-    const originalSizeMB = file.size / 1024 / 1024;
-    
-    console.log('[ImageCompression] Début compression', {
-      name: file.name,
-      size: originalSizeMB.toFixed(2) + 'MB',
-      type: file.type
-    });
-
-    // Si déjà petite, ne pas comprimer
-    if (originalSizeMB < 1) {
-      console.log('[ImageCompression] Image déjà optimisée, skip');
-      return file;
-    }
-
-    // Compression
-    const compressedFile = await imageCompression(file, compressionOptions);
-    
-    const compressedSizeMB = compressedFile.size / 1024 / 1024;
-    const reduction = ((originalSizeMB - compressedSizeMB) / originalSizeMB * 100).toFixed(1);
-
-    console.log('[ImageCompression] Compression réussie', {
-      original: originalSizeMB.toFixed(2) + 'MB',
-      compressed: compressedSizeMB.toFixed(2) + 'MB',
-      reduction: reduction + '%'
-    });
-
-    return compressedFile;
-    
-  } catch (error) {
-    console.error('[ImageCompression] Erreur:', error);
-    // En cas d'erreur, retourner fichier original
-    return file;
-  }
-}
-
-/**
- * Compresse un tableau d'images en parallèle
- */
-export async function compressImages(files: File[]): Promise<File[]> {
-  console.log('[ImageCompression] Compression batch de', files.length, 'images');
+export async function compressImage(
+  file: File,
+  imageType: ImageType = 'gallery'
+): Promise<File> {
+  const config = IMAGE_CONFIGS[imageType]
   
-  const compressionPromises = files.map(file => compressImage(file));
-  const compressedFiles = await Promise.all(compressionPromises);
-  
-  return compressedFiles;
-}
-
-/**
- * Hook React pour compression avec état de progression
- */
-import { useState } from 'react';
-
-export function useImageCompression() {
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  const compress = async (files: File[]) => {
-    setIsCompressing(true);
-    setProgress(0);
-
-    const compressed: File[] = [];
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
     
-    for (let i = 0; i < files.length; i++) {
-      const compressedFile = await compressImage(files[i]);
-      compressed.push(compressedFile);
-      setProgress(((i + 1) / files.length) * 100);
+    reader.onload = (e) => {
+      const img = new Image()
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('Canvas context not available'))
+          return
+        }
+        
+        let width = img.width
+        let height = img.height
+        
+        // Redimensionner selon maxDimension
+        if (width > height) {
+          if (width > config.maxDimension) {
+            height = (height * config.maxDimension) / width
+            width = config.maxDimension
+          }
+        } else {
+          if (height > config.maxDimension) {
+            width = (width * config.maxDimension) / height
+            height = config.maxDimension
+          }
+        }
+        
+        canvas.width = width
+        canvas.height = height
+        
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(img, 0, 0, width, height)
+        
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to compress image'))
+              return
+            }
+            
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            })
+            
+            console.log(`📦 [${imageType}] ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB (${width}x${height} @ ${config.quality * 100}%)`)
+            
+            resolve(compressedFile)
+          },
+          'image/jpeg',
+          config.quality
+        )
+      }
+      
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = e.target?.result as string
     }
-
-    setIsCompressing(false);
-    return compressed;
-  };
-
-  return { compress, isCompressing, progress };
+    
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
 }
