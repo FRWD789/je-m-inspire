@@ -4,22 +4,13 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class Cors
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
-     */
     public function handle(Request $request, Closure $next)
     {
-        // Origines autorisées (peut contenir plusieurs URLs séparées par des virgules)
         $allowedOrigins = array_map('trim', explode(',', env('FRONTEND_URL', 'http://localhost:5173')));
-
-        // Vérifier si l'origine de la requête est autorisée
         $origin = $request->headers->get('Origin');
         $allowedOrigin = in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[0];
 
@@ -30,16 +21,25 @@ class Cors
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
                 ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept')
                 ->header('Access-Control-Allow-Credentials', 'true')
-                ->header('Access-Control-Max-Age', '86400'); // Cache 24h
+                ->header('Access-Control-Max-Age', '86400');
         }
 
         $response = $next($request);
 
-        // Ajouter les headers CORS à toutes les réponses
-        return $response
-            ->header('Access-Control-Allow-Origin', $allowedOrigin)
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept')
-            ->header('Access-Control-Allow-Credentials', 'true');
+        // ✅ FIX : Gérer aussi les BinaryFileResponse
+        if ($response instanceof BinaryFileResponse) {
+            $response->headers->set('Access-Control-Allow-Origin', $allowedOrigin);
+            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+            $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        } else {
+            $response
+                ->header('Access-Control-Allow-Origin', $allowedOrigin)
+                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept')
+                ->header('Access-Control-Allow-Credentials', 'true');
+        }
+
+        return $response;
     }
 }
