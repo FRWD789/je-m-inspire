@@ -44,7 +44,7 @@ async function createLightPreview(file: File): Promise<string> {
         }
         
         // 🎯 150px max pour preview (optimisé)
-        const MAX_PREVIEW_SIZE = 300
+        const MAX_PREVIEW_SIZE = 150
         
         let width = img.width
         let height = img.height
@@ -114,7 +114,7 @@ async function createLightPreviewFromUrl(url: string): Promise<string> {
       }
       
       // 🎯 150px max pour preview (encore plus petit pour meilleures perfs)
-      const MAX_PREVIEW_SIZE = 300
+      const MAX_PREVIEW_SIZE = 150
       
       let width = img.width
       let height = img.height
