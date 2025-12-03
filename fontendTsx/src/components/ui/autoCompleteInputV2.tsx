@@ -21,8 +21,22 @@ export default function AutocompleteInputV2({
   const inputValue = watch(name);
   const [suggestions, setSuggestions] = useState<AutocompletePrediction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false); // ✅ Contrôle explicite de l'affichage
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null); // ✅ Pour détecter les clics en dehors
+
+  // ✅ Fermer les suggestions si on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Wait for google.maps.places to exist
   useEffect(() => {
@@ -41,6 +55,7 @@ export default function AutocompleteInputV2({
     if (!window.google || !window.google.maps?.places || !sessionTokenRef.current) return;
     if (!input || input.length < 3) {
       setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
@@ -51,8 +66,10 @@ export default function AutocompleteInputV2({
       (predictions, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
           setSuggestions(predictions.map(p => ({ description: p.description, placeId: p.place_id })));
+          setShowSuggestions(true); // ✅ Afficher les suggestions
         } else {
           setSuggestions([]);
+          setShowSuggestions(false);
         }
         setLoading(false);
       }
@@ -66,13 +83,21 @@ export default function AutocompleteInputV2({
   }, [fetchSuggestions]);
 
   useEffect(() => {
-    if (inputValue) fetchSuggestionsDebounced(inputValue);
-    else setSuggestions([]);
+    if (inputValue) {
+      fetchSuggestionsDebounced(inputValue);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   }, [inputValue, fetchSuggestionsDebounced]);
 
-  // Handle suggestion selection
+  // ✅ Handle suggestion selection avec fermeture immédiate
   const handleSelect = (prediction: AutocompletePrediction) => {
     if (!window.google || !window.google.maps?.places) return;
+
+    // ✅ Fermer immédiatement les suggestions
+    setShowSuggestions(false);
+    setSuggestions([]);
 
     const service = new window.google.maps.places.PlacesService(document.createElement("div"));
     service.getDetails(
@@ -84,26 +109,28 @@ export default function AutocompleteInputV2({
             setValue("localisation_lat", place.geometry.location.lat(), { shouldValidate: true });
             setValue("localisation_lng", place.geometry.location.lng(), { shouldValidate: true });
           }
-          setSuggestions([]);
+          // ✅ Nouveau token pour la prochaine recherche
           sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
         }
       }
     );
   };
 
-  // Clear input
+  // ✅ Clear input
   const handleClear = () => {
     setValue(name, "", { shouldValidate: true });
     setValue("localisation_lat", "", { shouldValidate: true });
     setValue("localisation_lng", "", { shouldValidate: true });
     setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   const { onChange, ...registerProps } = register(name);
 
   return (
-    <div className="relative flex flex-col">
-      <div className="relative flex items-center border rounded px-2 py-1 focus-within:ring-2 focus-within:ring-blue-400">
+    <div ref={wrapperRef} className="relative flex flex-col">
+      {/* ✅ Wrapper sans border bleu, utilise les classes du projet */}
+      <div className="relative flex items-center border border-gray-300 rounded-lg px-3 py-2.5 transition-colors duration-200 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20 bg-white">
         <input
           {...registerProps}
           {...rest}
@@ -111,30 +138,45 @@ export default function AutocompleteInputV2({
           value={inputValue || ""}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full outline-none"
+          className="w-full outline-none bg-transparent text-primary placeholder:text-secondary"
           onChange={(e) => {
             onChange(e);
             setValue(name, e.target.value);
           }}
+          onFocus={() => {
+            // ✅ Réafficher les suggestions au focus si elles existent
+            if (suggestions.length > 0) {
+              setShowSuggestions(true);
+            }
+          }}
         />
         {loading ? (
-          <Loader2 className="animate-spin text-gray-400 ml-2" size={18} />
+          <Loader2 className="animate-spin text-accent ml-2" size={18} />
         ) : inputValue ? (
-          <button type="button" onClick={handleClear} className="ml-2 text-gray-400 hover:text-gray-600">
+          <button 
+            type="button" 
+            onClick={handleClear} 
+            className="ml-2 text-secondary hover:text-primary transition-colors"
+            aria-label="Effacer"
+          >
             <X size={16} />
           </button>
         ) : null}
       </div>
 
-      {suggestions.length > 0 && (
-        <ul className="absolute z-[9999] bg-white border w-full mt-1 top-full rounded shadow-lg max-h-60 overflow-y-auto">
+      {/* ✅ Suggestions avec contrôle explicite de l'affichage */}
+      {showSuggestions && suggestions.length > 0 && (
+        <ul className="absolute z-[9999] bg-white border border-gray-200 w-full mt-1 top-full rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((s, i) => (
             <li
-              key={i}
-              className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+              key={s.placeId}
+              className="p-3 hover:bg-accent/10 cursor-pointer border-b last:border-b-0 text-sm text-primary transition-colors"
               onClick={() => handleSelect(s)}
             >
-              {s.description}
+              <div className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">📍</span>
+                <span>{s.description}</span>
+              </div>
             </li>
           ))}
         </ul>
