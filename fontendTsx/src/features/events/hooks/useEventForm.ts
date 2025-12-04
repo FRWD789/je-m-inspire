@@ -18,7 +18,9 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
     bannerFile, 
     imagesFiles, 
     deletedImageIds, 
-    imagesOrder, 
+    imagesOrder,
+    deleteThumbnail,
+    deleteBanner,
     clearFiles 
   } = useCompressedFiles();
 
@@ -86,6 +88,18 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
           formData.append(`images_order[${index}]`, String(id));
           console.log(`  ✅ images_order[${index}] = ${id}`);
         });
+      }
+      
+      // ✅ NOUVEAU : Ajouter flags de suppression thumbnail/banner (mode EDIT uniquement)
+      if (type === 'edit') {
+        if (deleteThumbnail) {
+          formData.append('delete_thumbnail', '1');
+          console.log('🗑️  [useEventForm] ✅ delete_thumbnail = 1');
+        }
+        if (deleteBanner) {
+          formData.append('delete_banner', '1');
+          console.log('🗑️  [useEventForm] ✅ delete_banner = 1');
+        }
       }
       
       // 🔥 UTILISER LES FICHIERS COMPRESSÉS DU CONTEXT

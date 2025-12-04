@@ -289,13 +289,15 @@ const EventSettingsSection = () => (
 
 // 🚀 ULTRA-OPTIMISÉ : Gestionnaire d'images avec drag & drop ultra-fluide
 const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defaultValues?: any }) => {
-  // ✅ MODIFICATION A : Utiliser les setters du contexte
+  // ✅ Utiliser les setters du contexte (avec deleteThumbnail et deleteBanner)
   const { 
     setThumbnailFile, 
     setBannerFile, 
     setImagesFiles, 
-    setDeletedImageIds,    // ✅ NOUVEAU : depuis le contexte
-    setImagesOrder,        // ✅ NOUVEAU : depuis le contexte
+    setDeletedImageIds,
+    setImagesOrder,
+    setDeleteThumbnail,    // ✅ Flag suppression thumbnail
+    setDeleteBanner,       // ✅ Flag suppression banner
     clearFiles 
   } = useCompressedFiles()
   
@@ -419,7 +421,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         
         setImagesPreview(loadedPreviews)
         
-        // ✅ MODIFICATION C : Initialiser l'ordre des images
+        // ✅ Initialiser l'ordre des images
         const initialOrder = loadedPreviews.map(img => parseInt(img.id.replace('existing-', '')))
         setImagesOrder(initialOrder)
         console.log('🔢 [ImagesSection] Ordre initial:', initialOrder)
@@ -607,14 +609,14 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       return
     }
 
-    // ✅ MODIFICATION B : Réorganiser et mettre à jour imagesOrder
+    // ✅ Réorganiser et mettre à jour imagesOrder
     setImagesPreview(prev => {
       const newPreviews = [...prev]
       const draggedItem = newPreviews[draggedIdx]
       newPreviews.splice(draggedIdx, 1)
       newPreviews.splice(dropIndex, 0, draggedItem)
       
-      // ✅ NOUVEAU : Mettre à jour l'ordre dans le contexte
+      // ✅ Mettre à jour l'ordre dans le contexte
       const existingImages = newPreviews.filter(img => img.isExisting)
       const imageIds = existingImages.map(img => parseInt(img.id.replace('existing-', '')))
       setImagesOrder(imageIds)
@@ -660,8 +662,6 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   return (
     <div className="space-y-6">
       <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
-      
-      {/* ✅ MODIFICATION D : Inputs cachés SUPPRIMÉS (gérés par le contexte) */}
 
       {/* Status de compression */}
       {(isCompressing || isLoadingExisting) && (
@@ -709,6 +709,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                     e.stopPropagation()
                     setThumbnailPreview(null)
                     setThumbnailFile(null)
+                    setDeleteThumbnail(true)  // ✅ MODIFICATION 1 : Flag pour supprimer
+                    console.log('🗑️ [ImagesSection] Thumbnail marqué pour suppression')
                   }}
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
@@ -766,6 +768,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                     e.stopPropagation()
                     setBannerPreview(null)
                     setBannerFile(null)
+                    setDeleteBanner(true)  // ✅ MODIFICATION 2 : Flag pour supprimer
+                    console.log('🗑️ [ImagesSection] Banner marqué pour suppression')
                   }}
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >

@@ -5,15 +5,19 @@ interface CompressedFilesContextType {
   thumbnailFile: File | null
   bannerFile: File | null
   imagesFiles: File[]
-  // ✅ NOUVEAU : États pour la suppression et l'ordre
+  // ✅ États pour la suppression et l'ordre
   deletedImageIds: number[]
   imagesOrder: number[]
+  deleteThumbnail: boolean      // ✅ Flag pour supprimer thumbnail
+  deleteBanner: boolean          // ✅ Flag pour supprimer banner
   setThumbnailFile: (file: File | null) => void
   setBannerFile: (file: File | null) => void
   setImagesFiles: (files: File[] | ((prev: File[]) => File[])) => void
-  // ✅ NOUVEAU : Setters pour suppression et ordre
+  // ✅ Setters pour suppression et ordre
   setDeletedImageIds: (ids: number[] | ((prev: number[]) => number[])) => void
   setImagesOrder: (order: number[]) => void
+  setDeleteThumbnail: (value: boolean) => void  // ✅ Setter pour flag thumbnail
+  setDeleteBanner: (value: boolean) => void      // ✅ Setter pour flag banner
   clearFiles: () => void
 }
 
@@ -24,9 +28,11 @@ export function CompressedFilesProvider({ children }: { children: ReactNode }) {
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [imagesFiles, setImagesFilesState] = useState<File[]>([])
   
-  // ✅ NOUVEAU : États pour la suppression et l'ordre
+  // ✅ États pour la suppression et l'ordre
   const [deletedImageIds, setDeletedImageIdsState] = useState<number[]>([])
   const [imagesOrder, setImagesOrderState] = useState<number[]>([])
+  const [deleteThumbnail, setDeleteThumbnail] = useState<boolean>(false)
+  const [deleteBanner, setDeleteBanner] = useState<boolean>(false)
 
   // Wrapper pour setImagesFiles qui accepte fonction ou valeur
   const setImagesFiles = (filesOrUpdater: File[] | ((prev: File[]) => File[])) => {
@@ -57,6 +63,8 @@ export function CompressedFilesProvider({ children }: { children: ReactNode }) {
     setImagesFilesState([])
     setDeletedImageIdsState([])
     setImagesOrderState([])
+    setDeleteThumbnail(false)
+    setDeleteBanner(false)
   }
 
   return (
@@ -67,11 +75,15 @@ export function CompressedFilesProvider({ children }: { children: ReactNode }) {
         imagesFiles,
         deletedImageIds,
         imagesOrder,
+        deleteThumbnail,
+        deleteBanner,
         setThumbnailFile,
         setBannerFile,
         setImagesFiles,
         setDeletedImageIds,
         setImagesOrder,
+        setDeleteThumbnail,
+        setDeleteBanner,
         clearFiles,
       }}
     >
