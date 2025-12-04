@@ -92,12 +92,6 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       
       // ✅ NOUVEAU : Ajouter flags de suppression thumbnail/banner (mode EDIT uniquement)
       if (type === 'edit') {
-         console.log('🔍 [useEventForm] État du contexte avant envoi:', {
-          deleteThumbnail,
-          deleteBanner,
-          thumbnailFile: thumbnailFile?.name,
-          bannerFile: bannerFile?.name
-        });
         if (deleteThumbnail) {
           formData.append('delete_thumbnail', '1');
           console.log('🗑️  [useEventForm] ✅ delete_thumbnail = 1');

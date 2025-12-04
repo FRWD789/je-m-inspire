@@ -246,7 +246,7 @@ class EventController extends Controller
             }
 
             return $this->resourceResponse(
-                new EventResource($event->load(['localisation', 'categorie', 'images', 'creator'])),
+                new EventResource($event->load(['localisation', 'categorie'])),
                 'Événement créé avec succès',
                 201
             );
@@ -264,15 +264,15 @@ class EventController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // ✅ LOG FORCÉ - PREMIÈRE LIGNE
+        // ========== LOG DEBUG - DÉBUT ==========
         Log::error('========== [EVENT] DÉBUT UPDATE ==========', [
             $request->all(),
             'event_id' => $id,
-            'user_id' => auth()->id() ?? 'non authentifié',
+            'user_id' => auth()->id(),
             'has_delete_thumbnail' => $request->input('delete_thumbnail'),
             'has_delete_banner' => $request->input('delete_banner'),
             'has_thumbnail_file' => $request->hasFile('thumbnail'),
-            'has_banner_file' => $request->hasFile('banner'),
+            'has_banner_file' => $request->hasFile('banner')
         ]);
 
         $debug = config('app.debug');
@@ -322,74 +322,50 @@ class EventController extends Controller
                 'delete_banner' => 'nullable|in:0,1',
             ]);
 
-            Log::info('[Event] Validation passée', [
-                'event_id' => $id,
-                'validated_keys' => array_keys($validated)
-            ]);
-
             DB::beginTransaction();
-
-            Log::info('[Event] Transaction démarrée', ['event_id' => $id]);
 
             // ✅ UPLOAD RAPIDE : Collection des images à optimiser
             $imagesToOptimize = [];
 
             // ========================================
-            // THUMBNAIL DELETION
+            // THUMBNAIL DELETION - CODE COMPLET
             // ========================================
             if ($request->input('delete_thumbnail') == 1) {
-                Log::info('[Event] 🗑️ Demande suppression thumbnail', [
-                    'event_id' => $id,
-                    'current_thumbnail_path' => $event->thumbnail_path
-                ]);
+                Log::error('🗑️ SUPPRESSION THUMBNAIL DEMANDÉE', ['thumbnail_path' => $event->thumbnail_path]);
 
                 if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
                     $oldPath = $event->thumbnail_path;
 
+                    // Supprimer le fichier original
                     Storage::disk('public')->delete($event->thumbnail_path);
+                    Log::error('  ✅ Fichier original supprimé', ['path' => $oldPath]);
 
-                    // ✅ Vérification suppression physique
-                    if (!Storage::disk('public')->exists($oldPath)) {
-                        Log::info('[Event] ✅ Fichier thumbnail PHYSIQUEMENT supprimé', [
-                            'event_id' => $id,
-                            'path' => $oldPath
-                        ]);
-                    } else {
-                        Log::error('[Event] ❌ ÉCHEC suppression thumbnail', [
-                            'event_id' => $id,
-                            'path' => $oldPath
-                        ]);
-                    }
-
-                    // Supprimer les variantes
+                    // Supprimer TOUTES les variantes
                     $pathInfo = pathinfo($oldPath);
                     $oldBasename = $pathInfo['filename'];
                     $oldDir = $pathInfo['dirname'];
 
+                    $variantesSuppr = 0;
                     foreach (['_md', '_lg', '_xl'] as $suffix) {
                         foreach (['.jpg', '.webp'] as $ext) {
                             $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {
                                 Storage::disk('public')->delete($variantPath);
-                                Log::info('[Event] Variante thumbnail supprimée', [
-                                    'variant_path' => $variantPath
-                                ]);
+                                $variantesSuppr++;
+                                Log::error('  ✅ Variante supprimée', ['path' => $variantPath]);
                             }
                         }
                     }
 
-                    // ✅ CORRECTION CRITIQUE
+                    // ✅ CORRECTION CRITIQUE : Ajouter dans $validated pour persister en DB
                     $validated['thumbnail_path'] = null;
 
-                    Log::info('[Event] ✅ thumbnail_path ajouté dans $validated', [
-                        'event_id' => $id,
-                        'value' => 'NULL'
+                    Log::error('✅ THUMBNAIL SUPPRIMÉ COMPLÈTEMENT', [
+                        'fichiers_supprimes' => $variantesSuppr + 1,
+                        'validated_thumbnail_path' => 'NULL'
                     ]);
                 } else {
-                    Log::warning('[Event] Thumbnail inexistant ou déjà supprimé', [
-                        'event_id' => $id,
-                        'thumbnail_path' => $event->thumbnail_path
-                    ]);
+                    Log::error('⚠️ Thumbnail inexistant', ['path' => $event->thumbnail_path]);
                 }
             }
 
@@ -397,8 +373,6 @@ class EventController extends Controller
             // THUMBNAIL UPDATE
             // ========================================
             if ($request->hasFile('thumbnail')) {
-                Log::info('[Event] 🖼️ Nouveau thumbnail uploadé', ['event_id' => $id]);
-
                 // Supprimer l'ancien thumbnail
                 if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
                     Storage::disk('public')->delete($event->thumbnail_path);
@@ -423,6 +397,7 @@ class EventController extends Controller
                 $filename = time() . '_thumb_' . Str::random(10) . '.' . $extension;
                 $thumbnailPath = $file->storeAs('event_thumbnails', $filename, 'public');
 
+                // ✅ CORRECTION : Utiliser $validated au lieu de $event->thumbnail_path
                 $validated['thumbnail_path'] = $thumbnailPath;
 
                 $imagesToOptimize[] = [
@@ -435,61 +410,44 @@ class EventController extends Controller
             }
 
             // ========================================
-            // BANNER DELETION
+            // BANNER DELETION - CODE COMPLET
             // ========================================
             if ($request->input('delete_banner') == 1) {
-                Log::info('[Event] 🗑️ Demande suppression banner', [
-                    'event_id' => $id,
-                    'current_banner_path' => $event->banner_path
-                ]);
+                Log::error('🗑️ SUPPRESSION BANNER DEMANDÉE', ['banner_path' => $event->banner_path]);
 
                 if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
                     $oldPath = $event->banner_path;
 
+                    // Supprimer le fichier original
                     Storage::disk('public')->delete($event->banner_path);
+                    Log::error('  ✅ Fichier original supprimé', ['path' => $oldPath]);
 
-                    // ✅ Vérification suppression physique
-                    if (!Storage::disk('public')->exists($oldPath)) {
-                        Log::info('[Event] ✅ Fichier banner PHYSIQUEMENT supprimé', [
-                            'event_id' => $id,
-                            'path' => $oldPath
-                        ]);
-                    } else {
-                        Log::error('[Event] ❌ ÉCHEC suppression banner', [
-                            'event_id' => $id,
-                            'path' => $oldPath
-                        ]);
-                    }
-
-                    // Supprimer les variantes
+                    // Supprimer TOUTES les variantes
                     $pathInfo = pathinfo($oldPath);
                     $oldBasename = $pathInfo['filename'];
                     $oldDir = $pathInfo['dirname'];
 
+                    $variantesSuppr = 0;
                     foreach (['_md', '_lg', '_xl'] as $suffix) {
                         foreach (['.jpg', '.webp'] as $ext) {
                             $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {
                                 Storage::disk('public')->delete($variantPath);
-                                Log::info('[Event] Variante banner supprimée', [
-                                    'variant_path' => $variantPath
-                                ]);
+                                $variantesSuppr++;
+                                Log::error('  ✅ Variante supprimée', ['path' => $variantPath]);
                             }
                         }
                     }
 
-                    // ✅ CORRECTION CRITIQUE
+                    // ✅ CORRECTION CRITIQUE : Ajouter dans $validated pour persister en DB
                     $validated['banner_path'] = null;
 
-                    Log::info('[Event] ✅ banner_path ajouté dans $validated', [
-                        'event_id' => $id,
-                        'value' => 'NULL'
+                    Log::error('✅ BANNER SUPPRIMÉ COMPLÈTEMENT', [
+                        'fichiers_supprimes' => $variantesSuppr + 1,
+                        'validated_banner_path' => 'NULL'
                     ]);
                 } else {
-                    Log::warning('[Event] Banner inexistant ou déjà supprimé', [
-                        'event_id' => $id,
-                        'banner_path' => $event->banner_path
-                    ]);
+                    Log::error('⚠️ Banner inexistant', ['path' => $event->banner_path]);
                 }
             }
 
@@ -497,8 +455,6 @@ class EventController extends Controller
             // BANNER UPDATE
             // ========================================
             if ($request->hasFile('banner')) {
-                Log::info('[Event] 🖼️ Nouveau banner uploadé', ['event_id' => $id]);
-
                 // Supprimer l'ancien banner
                 if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
                     Storage::disk('public')->delete($event->banner_path);
@@ -523,6 +479,7 @@ class EventController extends Controller
                 $filename = time() . '_banner_' . Str::random(10) . '.' . $extension;
                 $bannerPath = $file->storeAs('event_banners', $filename, 'public');
 
+                // ✅ CORRECTION : Utiliser $validated au lieu de $event->banner_path
                 $validated['banner_path'] = $bannerPath;
 
                 $imagesToOptimize[] = [
@@ -534,9 +491,7 @@ class EventController extends Controller
                 ];
             }
 
-            // ========================================
-            // GALLERY IMAGES DELETION
-            // ========================================
+            // Gestion de la suppression d'images
             if (!empty($validated['delete_images'])) {
                 $imagesToDelete = EventImage::where('event_id', $id)
                     ->whereIn('id', $validated['delete_images'])
@@ -564,16 +519,16 @@ class EventController extends Controller
 
                     $image->delete();
 
-                    Log::info('[Event] Image galerie supprimée', [
-                        'event_id' => $id,
-                        'image_id' => $image->id
-                    ]);
+                    if ($debug) {
+                        Log::info('[Event] Image supprimée', [
+                            'event_id' => $id,
+                            'image_id' => $image->id
+                        ]);
+                    }
                 }
             }
 
-            // ========================================
-            // GALLERY IMAGES REORDERING
-            // ========================================
+            // Gestion de l'ordre des images existantes
             if (!empty($validated['images_order'])) {
                 foreach ($validated['images_order'] as $newOrder => $imageId) {
                     EventImage::where('id', $imageId)
@@ -581,15 +536,15 @@ class EventController extends Controller
                         ->update(['display_order' => $newOrder]);
                 }
 
-                Log::info('[Event] Ordre des images mis à jour', [
-                    'event_id' => $id,
-                    'new_order' => $validated['images_order']
-                ]);
+                if ($debug) {
+                    Log::info('[Event] Ordre des images mis à jour', [
+                        'event_id' => $id,
+                        'new_order' => $validated['images_order']
+                    ]);
+                }
             }
 
-            // ========================================
-            // ADD NEW GALLERY IMAGES
-            // ========================================
+            // ✅ Ajout de nouvelles images (upload rapide)
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
 
@@ -623,18 +578,18 @@ class EventController extends Controller
                         'image_id' => $eventImage->id
                     ];
 
-                    Log::info('[Event] Nouvelle image ajoutée', [
-                        'event_id' => $event->id,
-                        'image_id' => $eventImage->id,
-                        'image_path' => $imagePath,
-                        'display_order' => $currentMaxOrder + $index + 1
-                    ]);
+                    if ($debug) {
+                        Log::info('[Event] Nouvelle image ajoutée', [
+                            'event_id' => $event->id,
+                            'image_id' => $eventImage->id,
+                            'image_path' => $imagePath,
+                            'display_order' => $currentMaxOrder + $index + 1
+                        ]);
+                    }
                 }
             }
 
-            // ========================================
-            // UPDATE EVENT FIELDS
-            // ========================================
+            // Mise à jour des champs de l'événement
             if (isset($validated['max_places'])) {
                 $reservedPlaces = $event->max_places - $event->available_places;
                 if ($validated['max_places'] < $reservedPlaces) {
@@ -647,30 +602,24 @@ class EventController extends Controller
                 $validated['available_places'] = $validated['max_places'] - $reservedPlaces;
             }
 
-            // ✅ LOG AVANT UPDATE
-            Log::info('[Event] AVANT update() - Contenu de $validated', [
-                'event_id' => $event->id,
+            // ========== LOG DEBUG - AVANT UPDATE ==========
+            Log::error('AVANT update() - $validated', [
                 'has_thumbnail_path' => array_key_exists('thumbnail_path', $validated),
                 'thumbnail_path_value' => $validated['thumbnail_path'] ?? 'NON PRÉSENT',
                 'has_banner_path' => array_key_exists('banner_path', $validated),
                 'banner_path_value' => $validated['banner_path'] ?? 'NON PRÉSENT',
-                'all_validated_keys' => array_keys($validated)
             ]);
 
-            // ✅ MISE À JOUR EN BASE DE DONNÉES
             $event->update($validated);
 
-            // ✅ LOG APRÈS UPDATE
-            $freshEvent = $event->fresh(); // Recharger depuis la DB
-            Log::info('[Event] APRÈS update() - Événement mis à jour en DB', [
-                'event_id' => $event->id,
+            // ========== LOG DEBUG - APRÈS UPDATE ==========
+            $freshEvent = $event->fresh();
+            Log::error('APRÈS update() - DB', [
                 'thumbnail_path' => $freshEvent->thumbnail_path,
                 'banner_path' => $freshEvent->banner_path,
             ]);
 
             DB::commit();
-
-            Log::info('[Event] Transaction commitée', ['event_id' => $id]);
 
             // ✅ LANCER L'OPTIMISATION EN ARRIÈRE-PLAN
             if (!empty($imagesToOptimize)) {
@@ -682,10 +631,13 @@ class EventController extends Controller
                 ]);
             }
 
-            Log::info('[Event] ✅ UPDATE TERMINÉ AVEC SUCCÈS', [
-                'event_id' => $event->id,
-                'updated_by' => $user->id
-            ]);
+            if ($debug) {
+                Log::info('[Event] Événement mis à jour', [
+                    'event_id' => $event->id,
+                    'updated_by' => $user->id,
+                    'new_images' => count($imagesToOptimize)
+                ]);
+            }
 
             // Build response including is_creator and user_role
             $eventResource = new EventResource($event->load(['localisation', 'categorie', 'images', 'creator']));
@@ -699,17 +651,10 @@ class EventController extends Controller
             );
 
         } catch (ValidationException $e) {
-            Log::error('[Event] ❌ Erreur validation', [
-                'event_id' => $id,
-                'errors' => $e->errors()
-            ]);
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[Event] ❌ Erreur mise à jour: ' . $e->getMessage(), [
-                'event_id' => $id,
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('[Event] Erreur mise à jour: ' . $e->getMessage());
             return $this->errorResponse('Erreur lors de la mise à jour de l\'événement', 500);
         }
     }
