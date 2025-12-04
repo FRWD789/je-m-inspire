@@ -289,7 +289,15 @@ const EventSettingsSection = () => (
 
 // 🚀 ULTRA-OPTIMISÉ : Gestionnaire d'images avec drag & drop ultra-fluide
 const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defaultValues?: any }) => {
-  const { setThumbnailFile, setBannerFile, setImagesFiles, clearFiles } = useCompressedFiles()
+  // ✅ MODIFICATION A : Utiliser les setters du contexte
+  const { 
+    setThumbnailFile, 
+    setBannerFile, 
+    setImagesFiles, 
+    setDeletedImageIds,    // ✅ NOUVEAU : depuis le contexte
+    setImagesOrder,        // ✅ NOUVEAU : depuis le contexte
+    clearFiles 
+  } = useCompressedFiles()
   
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
@@ -305,9 +313,6 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   
   // État minimal uniquement pour le style de l'élément draggé (mis à jour 1 seule fois)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  
-  // ✅ IDs des images à SUPPRIMER (pour le backend)
-  const [deletedImageIds, setDeletedImageIds] = useState<number[]>([])
   
   // 🧹 CLEANUP : Révoquer les Blob URLs pour éviter fuites mémoire
   useEffect(() => {
@@ -413,6 +418,11 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         }
         
         setImagesPreview(loadedPreviews)
+        
+        // ✅ MODIFICATION C : Initialiser l'ordre des images
+        const initialOrder = loadedPreviews.map(img => parseInt(img.id.replace('existing-', '')))
+        setImagesOrder(initialOrder)
+        console.log('🔢 [ImagesSection] Ordre initial:', initialOrder)
         
         console.log(`\n📊 [ImagesSection] RÉSUMÉ:`)
         console.log(`  Total images: ${loadedPreviews.length}`)
@@ -597,12 +607,19 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       return
     }
 
-    // Réorganiser en une seule fois
+    // ✅ MODIFICATION B : Réorganiser et mettre à jour imagesOrder
     setImagesPreview(prev => {
       const newPreviews = [...prev]
       const draggedItem = newPreviews[draggedIdx]
       newPreviews.splice(draggedIdx, 1)
       newPreviews.splice(dropIndex, 0, draggedItem)
+      
+      // ✅ NOUVEAU : Mettre à jour l'ordre dans le contexte
+      const existingImages = newPreviews.filter(img => img.isExisting)
+      const imageIds = existingImages.map(img => parseInt(img.id.replace('existing-', '')))
+      setImagesOrder(imageIds)
+      console.log('🔢 [ImagesSection] Ordre mis à jour:', imageIds)
+      
       return newPreviews
     })
     
@@ -644,38 +661,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     <div className="space-y-6">
       <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
       
-      {/* ✅ Inputs cachés pour les images à SUPPRIMER (mode edit) */}
-      {type === 'edit' && deletedImageIds.length > 0 && (
-        <>
-          {deletedImageIds.map((id, index) => (
-            <input 
-              key={`delete-image-${id}`}
-              type="hidden" 
-              name={`delete_images[${index}]`}
-              value={id}
-            />
-          ))}
-        </>
-      )}
-
-      {/* ✅ NOUVEAU : Inputs cachés pour l'ORDRE des images existantes (mode edit) */}
-      {type === 'edit' && imagesPreview.filter(img => img.isExisting).length > 0 && (
-        <>
-          {imagesPreview
-            .filter(img => img.isExisting)
-            .map((img, index) => {
-              const imageId = parseInt(img.id.replace('existing-', ''))
-              return (
-                <input 
-                  key={`order-image-${imageId}`}
-                  type="hidden" 
-                  name={`images_order[${index}]`}
-                  value={imageId}
-                />
-              )
-            })}
-        </>
-      )}
+      {/* ✅ MODIFICATION D : Inputs cachés SUPPRIMÉS (gérés par le contexte) */}
 
       {/* Status de compression */}
       {(isCompressing || isLoadingExisting) && (

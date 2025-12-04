@@ -13,7 +13,14 @@ interface UseEventFormProps {
 export default function useEventForm({ type, eventId, onSuccess }: UseEventFormProps) {
   const { createEvent, updateEvent } = useEvent();
   const { user } = useAuth();
-  const { thumbnailFile, bannerFile, imagesFiles, clearFiles } = useCompressedFiles();
+  const { 
+    thumbnailFile, 
+    bannerFile, 
+    imagesFiles, 
+    deletedImageIds, 
+    imagesOrder, 
+    clearFiles 
+  } = useCompressedFiles();
 
   const handleSubmit = async (values: any) => {
     try {
@@ -32,6 +39,10 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
         console.log(`    - Image ${i + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
       });
       
+      // ✅ NOUVEAU : Afficher deletedImageIds et imagesOrder
+      console.log('🗑️  [useEventForm] Images à supprimer:', deletedImageIds.length > 0 ? deletedImageIds : 'AUCUNE');
+      console.log('🔢 [useEventForm] Ordre des images:', imagesOrder.length > 0 ? imagesOrder : 'AUCUN');
+      
       const data = {
         ...values,
         base_price: Number(values.base_price),
@@ -42,11 +53,12 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
         localisation_lng: Number(values.localisation_lng || 2.3522),
       };
 
-      // 🔥 FILTRER les champs file vides des inputs HTML (ils sont soumis automatiquement par le form)
-      // Ces champs sont gérés manuellement via le contexte CompressedFilesContext
+      // 🔥 FILTRER les champs file et arrays gérés manuellement
       delete data.thumbnail;
       delete data.banner;
       delete data.images;
+      delete data.delete_images; // ✅ Géré manuellement depuis le contexte
+      delete data.images_order;  // ✅ Géré manuellement depuis le contexte
 
       const formData = new FormData();
       
@@ -57,6 +69,24 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
           formData.append(key, String(value));
         }
       });
+      
+      // ✅ NOUVEAU : Ajouter delete_images depuis le contexte (mode EDIT uniquement)
+      if (type === 'edit' && deletedImageIds.length > 0) {
+        console.log('🗑️  [useEventForm] ======== AJOUT DELETE_IMAGES ========');
+        deletedImageIds.forEach((id, index) => {
+          formData.append(`delete_images[${index}]`, String(id));
+          console.log(`  ✅ delete_images[${index}] = ${id}`);
+        });
+      }
+      
+      // ✅ NOUVEAU : Ajouter images_order depuis le contexte (mode EDIT uniquement)
+      if (type === 'edit' && imagesOrder.length > 0) {
+        console.log('🔢 [useEventForm] ======== AJOUT IMAGES_ORDER ========');
+        imagesOrder.forEach((id, index) => {
+          formData.append(`images_order[${index}]`, String(id));
+          console.log(`  ✅ images_order[${index}] = ${id}`);
+        });
+      }
       
       // 🔥 UTILISER LES FICHIERS COMPRESSÉS DU CONTEXT
       console.log('📸 [useEventForm] ======== AJOUT FICHIERS COMPRESSÉS ========');
@@ -105,16 +135,20 @@ export default function useEventForm({ type, eventId, onSuccess }: UseEventFormP
       console.log('📦 [useEventForm] ======== CONTENU FORMDATA FINAL ========');
       let fileCount = 0;
       let scalarCount = 0;
+      let arrayCount = 0;
       for (let pair of formData.entries()) {
         if (pair[1] instanceof File) {
           fileCount++;
           console.log(`  📎 ${pair[0]}: File(${pair[1].name}, ${(pair[1].size / 1024).toFixed(2)} KB, ${pair[1].type})`);
+        } else if (pair[0].includes('[') && pair[0].includes(']')) {
+          arrayCount++;
+          console.log(`  📋 ${pair[0]}: ${pair[1]}`);
         } else {
           scalarCount++;
           console.log(`  📝 ${pair[0]}: ${pair[1]}`);
         }
       }
-      console.log(`📊 [useEventForm] Total: ${scalarCount} champs scalaires + ${fileCount} fichiers`);
+      console.log(`📊 [useEventForm] Total: ${scalarCount} champs scalaires + ${arrayCount} éléments array + ${fileCount} fichiers`);
 
       // Exécuter l'action
       if (type === 'create') {
