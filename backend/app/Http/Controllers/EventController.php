@@ -492,12 +492,44 @@ class EventController extends Controller
                 'delete_images.*' => 'integer|exists:event_images,id',
                 'images_order' => 'nullable|array',
                 'images_order.*' => 'integer|exists:event_images,id',
+                'delete_thumbnail' => 'nullable|in:0,1',
+                'delete_banner' => 'nullable|in:0,1',
             ]);
 
             DB::beginTransaction();
 
             // ✅ UPLOAD RAPIDE : Collection des images à optimiser
             $imagesToOptimize = [];
+
+            // Thumbnail deletion
+            if ($request->input('delete_thumbnail') == 1) {
+                if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
+                    Storage::disk('public')->delete($event->thumbnail_path);
+
+                    // Supprimer aussi les variantes
+                    $oldPath = pathinfo($event->thumbnail_path);
+                    $oldBasename = $oldPath['filename'];
+                    $oldDir = $oldPath['dirname'];
+
+                    foreach (['_md', '_lg', '_xl'] as $suffix) {
+                        foreach (['.jpg', '.webp'] as $ext) {
+                            $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
+                            if (Storage::disk('public')->exists($variantPath)) {
+                                Storage::disk('public')->delete($variantPath);
+                            }
+                        }
+                    }
+
+                    $event->thumbnail_path = null;
+
+                    if ($debug) {
+                        Log::info('[Event] Thumbnail supprimé', [
+                            'event_id' => $id,
+                            'user_id' => $user->id
+                        ]);
+                    }
+                }
+            }
 
             // Thumbnail update
             if ($request->hasFile('thumbnail')) {
@@ -536,6 +568,35 @@ class EventController extends Controller
                 ];
             }
 
+
+            if ($request->input('delete_banner') == 1) {
+                if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
+                    Storage::disk('public')->delete($event->banner_path);
+
+                    // Supprimer aussi les variantes
+                    $oldPath = pathinfo($event->banner_path);
+                    $oldBasename = $oldPath['filename'];
+                    $oldDir = $oldPath['dirname'];
+
+                    foreach (['_md', '_lg', '_xl'] as $suffix) {
+                        foreach (['.jpg', '.webp'] as $ext) {
+                            $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
+                            if (Storage::disk('public')->exists($variantPath)) {
+                                Storage::disk('public')->delete($variantPath);
+                            }
+                        }
+                    }
+
+                    $event->banner_path = null;
+
+                    if ($debug) {
+                        Log::info('[Event] Banner supprimé', [
+                            'event_id' => $id,
+                            'user_id' => $user->id
+                        ]);
+                    }
+                }
+            }
             // Banner update
             if ($request->hasFile('banner')) {
                 // Supprimer l'ancien banner
