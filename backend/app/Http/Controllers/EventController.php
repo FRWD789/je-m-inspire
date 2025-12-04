@@ -266,6 +266,7 @@ class EventController extends Controller
     {
         // ✅ LOG FORCÉ - PREMIÈRE LIGNE
         Log::error('========== [EVENT] DÉBUT UPDATE ==========', [
+            $request->all(),
             'event_id' => $id,
             'user_id' => auth()->id() ?? 'non authentifié',
             'has_delete_thumbnail' => $request->input('delete_thumbnail'),
