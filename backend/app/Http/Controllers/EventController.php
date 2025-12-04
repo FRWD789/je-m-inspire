@@ -331,8 +331,6 @@ class EventController extends Controller
             // THUMBNAIL DELETION - CODE COMPLET
             // ========================================
             if ($request->input('delete_thumbnail') == 1) {
-                Log::error('🗑️ SUPPRESSION THUMBNAIL DEMANDÉE', ['thumbnail_path' => $event->thumbnail_path]);
-
                 if ($event->thumbnail_path) {
                     $pathInfo = pathinfo($event->thumbnail_path);
                     $oldBasename = $pathInfo['filename'];
@@ -346,18 +344,12 @@ class EventController extends Controller
                             if (Storage::disk('public')->exists($variantPath)) {
                                 Storage::disk('public')->delete($variantPath);
                                 $variantesSuppr++;
-                                Log::error('  ✅ Variante supprimée', ['path' => $variantPath]);
                             }
                         }
                     }
 
                     // ✅ TOUJOURS nettoyer la DB
                     $validated['thumbnail_path'] = null;
-
-                    Log::error('✅ THUMBNAIL SUPPRIMÉ COMPLÈTEMENT', [
-                        'fichiers_supprimes' => $variantesSuppr,
-                        'validated_thumbnail_path' => 'NULL'
-                    ]);
                 }
             }
 
@@ -405,8 +397,6 @@ class EventController extends Controller
             // BANNER DELETION - CODE COMPLET
             // ========================================
             if ($request->input('delete_banner') == 1) {
-                Log::error('🗑️ SUPPRESSION BANNER DEMANDÉE', ['banner_path' => $event->banner_path]);
-
                 if ($event->banner_path) {
                     $pathInfo = pathinfo($event->banner_path);
                     $oldBasename = $pathInfo['filename'];
@@ -420,18 +410,12 @@ class EventController extends Controller
                             if (Storage::disk('public')->exists($variantPath)) {
                                 Storage::disk('public')->delete($variantPath);
                                 $variantesSuppr++;
-                                Log::error('  ✅ Variante supprimée', ['path' => $variantPath]);
                             }
                         }
                     }
 
                     // ✅ TOUJOURS nettoyer la DB
                     $validated['banner_path'] = null;
-
-                    Log::error('✅ BANNER SUPPRIMÉ COMPLÈTEMENT', [
-                        'fichiers_supprimes' => $variantesSuppr,
-                        'validated_banner_path' => 'NULL'
-                    ]);
                 }
             }
 
@@ -586,22 +570,7 @@ class EventController extends Controller
                 $validated['available_places'] = $validated['max_places'] - $reservedPlaces;
             }
 
-            // ========== LOG DEBUG - AVANT UPDATE ==========
-            Log::error('AVANT update() - $validated', [
-                'has_thumbnail_path' => array_key_exists('thumbnail_path', $validated),
-                'thumbnail_path_value' => $validated['thumbnail_path'] ?? 'NON PRÉSENT',
-                'has_banner_path' => array_key_exists('banner_path', $validated),
-                'banner_path_value' => $validated['banner_path'] ?? 'NON PRÉSENT',
-            ]);
-
             $event->update($validated);
-
-            // ========== LOG DEBUG - APRÈS UPDATE ==========
-            $freshEvent = $event->fresh();
-            Log::error('APRÈS update() - DB', [
-                'thumbnail_path' => $freshEvent->thumbnail_path,
-                'banner_path' => $freshEvent->banner_path,
-            ]);
 
             DB::commit();
 
