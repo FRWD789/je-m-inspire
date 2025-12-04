@@ -264,6 +264,16 @@ class EventController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // ✅ LOG FORCÉ - PREMIÈRE LIGNE
+        Log::info('========== [EVENT] DÉBUT UPDATE ==========', [
+            'event_id' => $id,
+            'user_id' => auth()->id() ?? 'non authentifié',
+            'has_delete_thumbnail' => $request->input('delete_thumbnail'),
+            'has_delete_banner' => $request->input('delete_banner'),
+            'has_thumbnail_file' => $request->hasFile('thumbnail'),
+            'has_banner_file' => $request->hasFile('banner'),
+        ]);
+
         $debug = config('app.debug');
         $user = JWTAuth::user();
 
@@ -311,23 +321,35 @@ class EventController extends Controller
                 'delete_banner' => 'nullable|in:0,1',
             ]);
 
+            Log::info('[Event] Validation passée', [
+                'event_id' => $id,
+                'validated_keys' => array_keys($validated)
+            ]);
+
             DB::beginTransaction();
+
+            Log::info('[Event] Transaction démarrée', ['event_id' => $id]);
 
             // ✅ UPLOAD RAPIDE : Collection des images à optimiser
             $imagesToOptimize = [];
 
             // ========================================
-            // THUMBNAIL DELETION - ✅ CORRECT
+            // THUMBNAIL DELETION
             // ========================================
             if ($request->input('delete_thumbnail') == 1) {
+                Log::info('[Event] 🗑️ Demande suppression thumbnail', [
+                    'event_id' => $id,
+                    'current_thumbnail_path' => $event->thumbnail_path
+                ]);
+
                 if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
                     $oldPath = $event->thumbnail_path;
 
                     Storage::disk('public')->delete($event->thumbnail_path);
 
-                    // ✅ Log pour confirmer la suppression physique
+                    // ✅ Vérification suppression physique
                     if (!Storage::disk('public')->exists($oldPath)) {
-                        Log::error('[Event] ✅ Fichier thumbnail PHYSIQUEMENT supprimé', [
+                        Log::info('[Event] ✅ Fichier thumbnail PHYSIQUEMENT supprimé', [
                             'event_id' => $id,
                             'path' => $oldPath
                         ]);
@@ -338,7 +360,7 @@ class EventController extends Controller
                         ]);
                     }
 
-                    // Supprimer aussi les variantes
+                    // Supprimer les variantes
                     $pathInfo = pathinfo($oldPath);
                     $oldBasename = $pathInfo['filename'];
                     $oldDir = $pathInfo['dirname'];
@@ -355,15 +377,18 @@ class EventController extends Controller
                         }
                     }
 
-                    // ✅ CORRECTION CRITIQUE : Ajouter dans $validated pour persister
+                    // ✅ CORRECTION CRITIQUE
                     $validated['thumbnail_path'] = null;
 
-                    if ($debug) {
-                        Log::info('[Event] Thumbnail marqué pour suppression en DB', [
-                            'event_id' => $id,
-                            'user_id' => $user->id
-                        ]);
-                    }
+                    Log::info('[Event] ✅ thumbnail_path ajouté dans $validated', [
+                        'event_id' => $id,
+                        'value' => 'NULL'
+                    ]);
+                } else {
+                    Log::warning('[Event] Thumbnail inexistant ou déjà supprimé', [
+                        'event_id' => $id,
+                        'thumbnail_path' => $event->thumbnail_path
+                    ]);
                 }
             }
 
@@ -371,6 +396,8 @@ class EventController extends Controller
             // THUMBNAIL UPDATE
             // ========================================
             if ($request->hasFile('thumbnail')) {
+                Log::info('[Event] 🖼️ Nouveau thumbnail uploadé', ['event_id' => $id]);
+
                 // Supprimer l'ancien thumbnail
                 if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
                     Storage::disk('public')->delete($event->thumbnail_path);
@@ -407,17 +434,22 @@ class EventController extends Controller
             }
 
             // ========================================
-            // BANNER DELETION - ✅ CORRECTION CRITIQUE
+            // BANNER DELETION
             // ========================================
             if ($request->input('delete_banner') == 1) {
+                Log::info('[Event] 🗑️ Demande suppression banner', [
+                    'event_id' => $id,
+                    'current_banner_path' => $event->banner_path
+                ]);
+
                 if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
                     $oldPath = $event->banner_path;
 
                     Storage::disk('public')->delete($event->banner_path);
 
-                    // ✅ Log pour confirmer la suppression physique
+                    // ✅ Vérification suppression physique
                     if (!Storage::disk('public')->exists($oldPath)) {
-                        Log::error('[Event] ✅ Fichier banner PHYSIQUEMENT supprimé', [
+                        Log::info('[Event] ✅ Fichier banner PHYSIQUEMENT supprimé', [
                             'event_id' => $id,
                             'path' => $oldPath
                         ]);
@@ -428,7 +460,7 @@ class EventController extends Controller
                         ]);
                     }
 
-                    // Supprimer aussi les variantes
+                    // Supprimer les variantes
                     $pathInfo = pathinfo($oldPath);
                     $oldBasename = $pathInfo['filename'];
                     $oldDir = $pathInfo['dirname'];
@@ -445,15 +477,18 @@ class EventController extends Controller
                         }
                     }
 
-                    // ✅ CORRECTION CRITIQUE : Ajouter dans $validated pour persister
+                    // ✅ CORRECTION CRITIQUE
                     $validated['banner_path'] = null;
 
-                    if ($debug) {
-                        Log::info('[Event] Banner marqué pour suppression en DB', [
-                            'event_id' => $id,
-                            'user_id' => $user->id
-                        ]);
-                    }
+                    Log::info('[Event] ✅ banner_path ajouté dans $validated', [
+                        'event_id' => $id,
+                        'value' => 'NULL'
+                    ]);
+                } else {
+                    Log::warning('[Event] Banner inexistant ou déjà supprimé', [
+                        'event_id' => $id,
+                        'banner_path' => $event->banner_path
+                    ]);
                 }
             }
 
@@ -461,6 +496,8 @@ class EventController extends Controller
             // BANNER UPDATE
             // ========================================
             if ($request->hasFile('banner')) {
+                Log::info('[Event] 🖼️ Nouveau banner uploadé', ['event_id' => $id]);
+
                 // Supprimer l'ancien banner
                 if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
                     Storage::disk('public')->delete($event->banner_path);
@@ -526,12 +563,10 @@ class EventController extends Controller
 
                     $image->delete();
 
-                    if ($debug) {
-                        Log::info('[Event] Image supprimée', [
-                            'event_id' => $id,
-                            'image_id' => $image->id
-                        ]);
-                    }
+                    Log::info('[Event] Image galerie supprimée', [
+                        'event_id' => $id,
+                        'image_id' => $image->id
+                    ]);
                 }
             }
 
@@ -545,12 +580,10 @@ class EventController extends Controller
                         ->update(['display_order' => $newOrder]);
                 }
 
-                if ($debug) {
-                    Log::info('[Event] Ordre des images mis à jour', [
-                        'event_id' => $id,
-                        'new_order' => $validated['images_order']
-                    ]);
-                }
+                Log::info('[Event] Ordre des images mis à jour', [
+                    'event_id' => $id,
+                    'new_order' => $validated['images_order']
+                ]);
             }
 
             // ========================================
@@ -589,14 +622,12 @@ class EventController extends Controller
                         'image_id' => $eventImage->id
                     ];
 
-                    if ($debug) {
-                        Log::info('[Event] Nouvelle image ajoutée', [
-                            'event_id' => $event->id,
-                            'image_id' => $eventImage->id,
-                            'image_path' => $imagePath,
-                            'display_order' => $currentMaxOrder + $index + 1
-                        ]);
-                    }
+                    Log::info('[Event] Nouvelle image ajoutée', [
+                        'event_id' => $event->id,
+                        'image_id' => $eventImage->id,
+                        'image_path' => $imagePath,
+                        'display_order' => $currentMaxOrder + $index + 1
+                    ]);
                 }
             }
 
@@ -615,31 +646,30 @@ class EventController extends Controller
                 $validated['available_places'] = $validated['max_places'] - $reservedPlaces;
             }
 
-            // ✅ Log AVANT update pour voir ce qui sera sauvegardé
-            if ($debug) {
-                Log::info('[Event] AVANT update() - Contenu de $validated', [
-                    'event_id' => $event->id,
-                    'has_thumbnail_path' => array_key_exists('thumbnail_path', $validated),
-                    'thumbnail_path_value' => $validated['thumbnail_path'] ?? 'NON PRÉSENT',
-                    'has_banner_path' => array_key_exists('banner_path', $validated),
-                    'banner_path_value' => $validated['banner_path'] ?? 'NON PRÉSENT',
-                ]);
-            }
+            // ✅ LOG AVANT UPDATE
+            Log::info('[Event] AVANT update() - Contenu de $validated', [
+                'event_id' => $event->id,
+                'has_thumbnail_path' => array_key_exists('thumbnail_path', $validated),
+                'thumbnail_path_value' => $validated['thumbnail_path'] ?? 'NON PRÉSENT',
+                'has_banner_path' => array_key_exists('banner_path', $validated),
+                'banner_path_value' => $validated['banner_path'] ?? 'NON PRÉSENT',
+                'all_validated_keys' => array_keys($validated)
+            ]);
 
             // ✅ MISE À JOUR EN BASE DE DONNÉES
             $event->update($validated);
 
-            // ✅ Log APRÈS update pour confirmer la persistance
-            if ($debug) {
-                $freshEvent = $event->fresh(); // Recharger depuis la DB
-                Log::info('[Event] APRÈS update() - Événement mis à jour en DB', [
-                    'event_id' => $event->id,
-                    'thumbnail_path' => $freshEvent->thumbnail_path,
-                    'banner_path' => $freshEvent->banner_path,
-                ]);
-            }
+            // ✅ LOG APRÈS UPDATE
+            $freshEvent = $event->fresh(); // Recharger depuis la DB
+            Log::info('[Event] APRÈS update() - Événement mis à jour en DB', [
+                'event_id' => $event->id,
+                'thumbnail_path' => $freshEvent->thumbnail_path,
+                'banner_path' => $freshEvent->banner_path,
+            ]);
 
             DB::commit();
+
+            Log::info('[Event] Transaction commitée', ['event_id' => $id]);
 
             // ✅ LANCER L'OPTIMISATION EN ARRIÈRE-PLAN
             if (!empty($imagesToOptimize)) {
@@ -651,13 +681,10 @@ class EventController extends Controller
                 ]);
             }
 
-            if ($debug) {
-                Log::info('[Event] Événement mis à jour', [
-                    'event_id' => $event->id,
-                    'updated_by' => $user->id,
-                    'new_images' => count($imagesToOptimize)
-                ]);
-            }
+            Log::info('[Event] ✅ UPDATE TERMINÉ AVEC SUCCÈS', [
+                'event_id' => $event->id,
+                'updated_by' => $user->id
+            ]);
 
             // Build response including is_creator and user_role
             $eventResource = new EventResource($event->load(['localisation', 'categorie', 'images', 'creator']));
@@ -671,10 +698,17 @@ class EventController extends Controller
             );
 
         } catch (ValidationException $e) {
+            Log::error('[Event] ❌ Erreur validation', [
+                'event_id' => $id,
+                'errors' => $e->errors()
+            ]);
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[Event] Erreur mise à jour: ' . $e->getMessage());
+            Log::error('[Event] ❌ Erreur mise à jour: ' . $e->getMessage(), [
+                'event_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return $this->errorResponse('Erreur lors de la mise à jour de l\'événement', 500);
         }
     }
