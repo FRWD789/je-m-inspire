@@ -658,6 +658,25 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         </>
       )}
 
+      {/* ✅ NOUVEAU : Inputs cachés pour l'ORDRE des images existantes (mode edit) */}
+      {type === 'edit' && imagesPreview.filter(img => img.isExisting).length > 0 && (
+        <>
+          {imagesPreview
+            .filter(img => img.isExisting)
+            .map((img, index) => {
+              const imageId = parseInt(img.id.replace('existing-', ''))
+              return (
+                <input 
+                  key={`order-image-${imageId}`}
+                  type="hidden" 
+                  name={`images_order[${index}]`}
+                  value={imageId}
+                />
+              )
+            })}
+        </>
+      )}
+
       {/* Status de compression */}
       {(isCompressing || isLoadingExisting) && (
         <div className="p-4 bg-accent/10 border border-accent/30 rounded-lg flex items-center gap-3">
