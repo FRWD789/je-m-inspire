@@ -265,7 +265,7 @@ class EventController extends Controller
     public function update(Request $request, $id)
     {
         // ✅ LOG FORCÉ - PREMIÈRE LIGNE
-        Log::info('========== [EVENT] DÉBUT UPDATE ==========', [
+        Log::error('========== [EVENT] DÉBUT UPDATE ==========', [
             'event_id' => $id,
             'user_id' => auth()->id() ?? 'non authentifié',
             'has_delete_thumbnail' => $request->input('delete_thumbnail'),
