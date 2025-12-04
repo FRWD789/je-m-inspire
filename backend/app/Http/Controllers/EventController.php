@@ -333,21 +333,15 @@ class EventController extends Controller
             if ($request->input('delete_thumbnail') == 1) {
                 Log::error('🗑️ SUPPRESSION THUMBNAIL DEMANDÉE', ['thumbnail_path' => $event->thumbnail_path]);
 
-                if ($event->thumbnail_path && Storage::disk('public')->exists($event->thumbnail_path)) {
-                    $oldPath = $event->thumbnail_path;
-
-                    // Supprimer le fichier original
-                    Storage::disk('public')->delete($event->thumbnail_path);
-                    Log::error('  ✅ Fichier original supprimé', ['path' => $oldPath]);
-
-                    // Supprimer TOUTES les variantes
-                    $pathInfo = pathinfo($oldPath);
+                if ($event->thumbnail_path) {
+                    $pathInfo = pathinfo($event->thumbnail_path);
                     $oldBasename = $pathInfo['filename'];
                     $oldDir = $pathInfo['dirname'];
 
+                    // Supprimer TOUTES les variantes possibles (l'original n'existe plus après optimisation)
                     $variantesSuppr = 0;
-                    foreach (['_md', '_lg', '_xl'] as $suffix) {
-                        foreach (['.jpg', '.webp'] as $ext) {
+                    foreach (['', '_md', '_lg', '_xl'] as $suffix) {  // ✅ '' pour l'original au cas où
+                        foreach (['.jpg', '.webp', '.png', '.jpeg'] as $ext) {
                             $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {
                                 Storage::disk('public')->delete($variantPath);
@@ -357,15 +351,13 @@ class EventController extends Controller
                         }
                     }
 
-                    // ✅ CORRECTION CRITIQUE : Ajouter dans $validated pour persister en DB
+                    // ✅ TOUJOURS nettoyer la DB
                     $validated['thumbnail_path'] = null;
 
                     Log::error('✅ THUMBNAIL SUPPRIMÉ COMPLÈTEMENT', [
-                        'fichiers_supprimes' => $variantesSuppr + 1,
+                        'fichiers_supprimes' => $variantesSuppr,
                         'validated_thumbnail_path' => 'NULL'
                     ]);
-                } else {
-                    Log::error('⚠️ Thumbnail inexistant', ['path' => $event->thumbnail_path]);
                 }
             }
 
@@ -415,21 +407,15 @@ class EventController extends Controller
             if ($request->input('delete_banner') == 1) {
                 Log::error('🗑️ SUPPRESSION BANNER DEMANDÉE', ['banner_path' => $event->banner_path]);
 
-                if ($event->banner_path && Storage::disk('public')->exists($event->banner_path)) {
-                    $oldPath = $event->banner_path;
-
-                    // Supprimer le fichier original
-                    Storage::disk('public')->delete($event->banner_path);
-                    Log::error('  ✅ Fichier original supprimé', ['path' => $oldPath]);
-
-                    // Supprimer TOUTES les variantes
-                    $pathInfo = pathinfo($oldPath);
+                if ($event->banner_path) {
+                    $pathInfo = pathinfo($event->banner_path);
                     $oldBasename = $pathInfo['filename'];
                     $oldDir = $pathInfo['dirname'];
 
+                    // Supprimer TOUTES les variantes possibles (l'original n'existe plus après optimisation)
                     $variantesSuppr = 0;
-                    foreach (['_md', '_lg', '_xl'] as $suffix) {
-                        foreach (['.jpg', '.webp'] as $ext) {
+                    foreach (['', '_md', '_lg', '_xl'] as $suffix) {  // ✅ '' pour l'original au cas où
+                        foreach (['.jpg', '.webp', '.png', '.jpeg'] as $ext) {
                             $variantPath = "{$oldDir}/{$oldBasename}{$suffix}{$ext}";
                             if (Storage::disk('public')->exists($variantPath)) {
                                 Storage::disk('public')->delete($variantPath);
@@ -439,15 +425,13 @@ class EventController extends Controller
                         }
                     }
 
-                    // ✅ CORRECTION CRITIQUE : Ajouter dans $validated pour persister en DB
+                    // ✅ TOUJOURS nettoyer la DB
                     $validated['banner_path'] = null;
 
                     Log::error('✅ BANNER SUPPRIMÉ COMPLÈTEMENT', [
-                        'fichiers_supprimes' => $variantesSuppr + 1,
+                        'fichiers_supprimes' => $variantesSuppr,
                         'validated_banner_path' => 'NULL'
                     ]);
-                } else {
-                    Log::error('⚠️ Banner inexistant', ['path' => $event->banner_path]);
                 }
             }
 
