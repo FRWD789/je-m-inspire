@@ -327,7 +327,7 @@ class EventController extends Controller
 
                     // ✅ Log pour confirmer la suppression physique
                     if (!Storage::disk('public')->exists($oldPath)) {
-                        Log::info('[Event] ✅ Fichier thumbnail PHYSIQUEMENT supprimé', [
+                        Log::error('[Event] ✅ Fichier thumbnail PHYSIQUEMENT supprimé', [
                             'event_id' => $id,
                             'path' => $oldPath
                         ]);
@@ -417,7 +417,7 @@ class EventController extends Controller
 
                     // ✅ Log pour confirmer la suppression physique
                     if (!Storage::disk('public')->exists($oldPath)) {
-                        Log::info('[Event] ✅ Fichier banner PHYSIQUEMENT supprimé', [
+                        Log::error('[Event] ✅ Fichier banner PHYSIQUEMENT supprimé', [
                             'event_id' => $id,
                             'path' => $oldPath
                         ]);
