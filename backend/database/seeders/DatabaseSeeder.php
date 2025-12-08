@@ -19,13 +19,9 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TypeOperationSeeder::class,
             TypePaiementSeeder::class,
-            PaiementSeeder::class,
             CategorieEventSeeder::class,
-            LocalisationSeeder::class,
             PlanAbonnementSeeder::class,
             UserSeeder::class,
-            EventSeeder::class,
-            OperationSeeder::class,
         ]);
     }
 }
