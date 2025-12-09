@@ -512,7 +512,6 @@ const resources = {
         title: 'Abonnement Pro Plus',
         currentPlan: 'Abonnement actuel',
         planName: 'Pro Plus',
-        planPrice: '14,99 $ CAD / mois',
         features: 'Fonctionnalités',
         feature1: 'Paiements directs avec commission réduite',
         feature2: 'Tableau de bord des revenus',
@@ -523,13 +522,116 @@ const resources = {
         manageSubscription: "Gérer l'abonnement",
         active: 'Actif',
         inactive: 'Inactif',
+        titleMyPro: 'Mon Abonnement Pro+',
+        mySubscription: 'Mon Abonnement',
+        loading: 'Chargement...',
+        loadingInfo: 'Chargement des informations...',
+        maximizeYourEarnings: 'Maximisez vos ventes avec Pro+',
+        limitedFunctions: 'Fonctionnalités limitées avec le compte gratuit',
+        advancedTools: 'Outils avancés',
         
         // Messages
         subscribeSuccess: 'Abonnement activé avec succès !',
         subscribeError: "Erreur lors de l'activation",
         unsubscribeSuccess: 'Abonnement annulé',
         unsubscribeError: "Erreur lors de l'annulation",
-        unsubscribeConfirm: 'Êtes-vous sûr de vouloir annuler votre abonnement ?'
+        unsubscribeConfirm: 'Êtes-vous sûr de vouloir annuler votre abonnement ?',
+        subscriptionDataUnavailable: 'Données d\'abonnement non disponibles',
+        cannotLoadInfo: 'Impossible de charger vos informations d\'abonnement.',
+        paymentLinkNotFound: 'Lien de paiement introuvable',
+        subscriptionCreationError: 'Erreur lors de la création de l\'abonnement. Veuillez réessayer.',
+        cancelConfirmation: 'Voulez-vous vraiment annuler votre abonnement ? Cette action est irréversible.',
+        subscriptionWillCancel: 'Votre abonnement sera annulé à la fin de la période en cours.',
+        cancellationError: 'Erreur lors de l\'annulation de l\'abonnement. Veuillez réessayer.',
+        subscriptionActivated: 'Abonnement Activé avec Succès !',
+        subscriptionActivatedDesc: 'Merci de votre confiance. Vous pouvez maintenant profiter de toutes les fonctionnalités professionnelles.',
+        cancelScheduled: 'Annulation programmée',
+        cancelScheduledDesc: 'Votre abonnement Pro Plus sera annulé à la fin de la période en cours.',
+
+        // Abonnement actif
+        activeTitle: 'Abonnement Pro+ Actif',
+        activeSubtitle: 'Vous profitez de tous les avantages premium',
+        subscriptionType: 'Type d\'abonnement',
+        renewalDate: 'Renouvellement le',
+        
+        // Avantages
+        benefitsTitle: 'Vos avantages Pro+',
+        directPayments: 'Paiements directs',
+        directPaymentsDesc1: 'Recevez vos revenus ',
+        directPayementsDesc2: 'immédiatement ',
+        directPayementsDesc3: 'sur vos comptes liés',
+        reducedCommission: 'Commission réduite',
+        reducedCommissionDesc1: 'Taux préférentiel pour ',
+        reducedCommissionDesc2: 'maximiser vos revenus',
+        advancedToolsDesc: 'Accédez à des outils marketing et analytiques avancés pour développer votre activité',
+        whyPro: 'Pourquoi choisir Pro+ ?',
+        whyProDesc1Title: 'Revenus instantanés',
+        whyProDesc1: 'Plus besoin d\'attendre les transferts. Recevez vos paiements directement sur vos comptes liés dès qu\'une réservation est effectuée.',
+        whyProDesc2Title: 'Plus de profits',
+        whyProDesc2: 'Bénéficiez d\'un taux de commission réduit et gardez une plus grande partie de vos revenus.',
+        whyProDesc3Title: 'Croissance accélérée',
+        whyProDesc3: 'Accédez à des outils d\'analyse avancés pour optimiser vos événements et augmenter vos revenus.',
+
+        // Bannière promo
+        proOfferBadge: 'OFFRE PRO+',
+        proOfferText1: 'Recevez vos paiements ',
+        proOfferText2: 'directement ',
+        proOfferText3: 'et payez ',
+        proOfferText4: 'moins de commission',
+        
+        // Compte gratuit
+        freeAccountTitle: 'Compte Gratuit',
+        indirectPayments: 'Paiements indirects',
+        indirectPaymentsDesc: 'Vous devez attendre que nous vous transférions vos revenus',
+        standardCommission: 'Commission standard',
+        standardCommissionDesc: 'Taux de commission plus élevé sur chaque transaction',
+        restrictedAccess: 'Accès restreint aux outils premium',
+        
+        // Actions
+        cancelSubscription: 'Annuler l\'abonnement',
+        cancelling: 'Annulation...',
+        cancel: 'Annuler',
+        continue: 'Continuer',
+
+        // Étapes de préparation
+        initializingSubscription: 'Initialisation de votre abonnement...',
+        preparingFeatures: 'Préparation des fonctionnalités premium...',
+        configuringAccount: 'Configuration de votre compte...',
+        almostDone: 'Presque terminé...',
+        redirectingToPayment: 'Redirection vers le paiement...',
+        autoRedirect: 'Redirection automatique...',
+        finalizingInProgress: 'Finalisation en cours...',
+        
+        // Comptes liés
+        linkedAccounts: 'Comptes liés',
+        loadingLinkedAccounts: 'Chargement des comptes liés...',
+        featureReserved: 'Fonctionnalité réservée',
+        featureReservedDesc: 'Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l\'abonnement',
+        noLinkedAccount: 'Aucun compte lié',
+        accountLinked: 'Compte lié',
+        linkingError: 'Erreur lors de la liaison du compte.',
+        linkingErrorGeneric: 'Erreur de liaison',
+        unlinkingError: 'Erreur lors de la déliaison du compte.',
+        unlinkAccount: 'Délier',
+        linkStripe: 'Lier Stripe',
+        linkPaypal: 'Lier PayPal',
+        cancelWarning: 'Vous perdrez l\'accès aux fonctionnalités suivantes :\nVos comptes liés seront automatiquement dissociés.',
+        subscriptionCancelled: 'Abonnement annulé avec succès.',
+        goToProfile: 'Aller au profil maintenant',
+        backToProfile: 'Retour au profil',
+        retry: 'Réessayer',
+        
+        // Providers
+        stripe: 'Stripe',
+        paypal: 'PayPal',
+        accountId: 'ID',
+
+        // Misc
+        month: 'mois',
+        forSeriousPros: 'Pour les professionnels sérieux',
+        cancelAnytime: 'Annulez à tout moment',
+        subStripe: 'Abonnement via Stripe',
+        subPaypal: 'Abonnement via PayPal',
       },
 
       // ==========================================
@@ -893,96 +995,6 @@ const resources = {
       map: {
         apiKeyMissing: 'Ajoutez VITE_GOOGLE_MAPS_API_KEY dans votre fichier .env',
         noCoordinates: 'Les événements sans coordonnées GPS ne peuvent pas être affichés',
-      },
-
-      // ==========================================
-      // SUBSCRIPTIONS (ABONNEMENTS)
-      // ==========================================
-      subscriptions: {
-        // Titres
-        title: 'Mon Abonnement Pro+',
-        mySubscription: 'Mon Abonnement',
-        loading: 'Chargement...',
-        loadingInfo: 'Chargement des informations...',
-        
-        // Abonnement actif
-        activeTitle: 'Abonnement Pro+ Actif',
-        activeSubtitle: 'Vous profitez de tous les avantages premium',
-        subscriptionType: 'Type d\'abonnement',
-        renewalDate: 'Renouvellement le',
-        
-        // Avantages
-        benefitsTitle: 'Vos avantages Pro+',
-        directPayments: 'Paiements directs',
-        directPaymentsDesc: 'Recevez vos revenus immédiatement',
-        reducedCommission: 'Commission réduite',
-        reducedCommissionDesc: 'Gardez plus de vos revenus',
-        
-        // Bannière promo
-        proOfferBadge: 'OFFRE PRO+',
-        proOfferText: 'Recevez vos paiements directement et payez moins de commission',
-        directText: 'directement',
-        lessCommissionText: 'moins de commission',
-        
-        // Compte gratuit
-        freeAccountTitle: 'Compte Gratuit',
-        currentPlan: 'Votre plan actuel',
-        indirectPayments: 'Paiements indirects',
-        indirectPaymentsDesc: 'Vous devez attendre que nous vous transférions vos revenus',
-        standardCommission: 'Commission standard',
-        standardCommissionDesc: 'Taux de commission plus élevé sur chaque transaction',
-        
-        // Actions
-        cancelSubscription: 'Annuler l\'abonnement',
-        cancelling: 'Annulation...',
-        cancel: 'Annuler',
-        continue: 'Continuer',
-        
-        // Messages
-        subscriptionDataUnavailable: 'Données d\'abonnement non disponibles',
-        cannotLoadInfo: 'Impossible de charger vos informations d\'abonnement.',
-        paymentLinkNotFound: 'Lien de paiement introuvable',
-        subscriptionCreationError: 'Erreur lors de la création de l\'abonnement. Veuillez réessayer.',
-        cancelConfirmation: 'Voulez-vous vraiment annuler votre abonnement ? Cette action est irréversible.',
-        subscriptionWillCancel: 'Votre abonnement sera annulé à la fin de la période en cours.',
-        cancellationError: 'Erreur lors de l\'annulation de l\'abonnement. Veuillez réessayer.',
-        subscriptionActivated: 'Abonnement Activé avec Succès !',
-        subscriptionActivatedDesc: 'Merci de votre confiance. Vous pouvez maintenant profiter de toutes les fonctionnalités professionnelles.',
-        cancelScheduled: 'Annulation programmée',
-        cancelScheduledDesc: 'Votre abonnement Pro Plus sera annulé à la fin de la période en cours.',
-        
-        // Étapes de préparation
-        initializingSubscription: 'Initialisation de votre abonnement...',
-        preparingFeatures: 'Préparation des fonctionnalités premium...',
-        configuringAccount: 'Configuration de votre compte...',
-        almostDone: 'Presque terminé...',
-        redirectingToPayment: 'Redirection vers le paiement...',
-        autoRedirect: 'Redirection automatique...',
-        finalizingInProgress: 'Finalisation en cours...',
-        
-        // Comptes liés
-        linkedAccounts: 'Comptes liés',
-        loadingLinkedAccounts: 'Chargement des comptes liés...',
-        featureReserved: 'Fonctionnalité réservée',
-        featureReservedDesc: 'Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l\'abonnement',
-        noLinkedAccount: 'Aucun compte lié',
-        accountLinked: 'Compte lié',
-        linkingError: 'Erreur lors de la liaison du compte.',
-        linkingErrorGeneric: 'Erreur de liaison',
-        unlinkingError: 'Erreur lors de la déliaison du compte.',
-        unlinkAccount: 'Délier',
-        linkStripe: 'Lier Stripe',
-        linkPaypal: 'Lier PayPal',
-        cancelWarning: 'Vous perdrez l\'accès aux fonctionnalités suivantes :\nVos comptes liés seront automatiquement dissociés.',
-        subscriptionCancelled: 'Abonnement annulé avec succès.',
-        goToProfile: 'Aller au profil maintenant',
-        backToProfile: 'Retour au profil',
-        retry: 'Réessayer',
-        
-        // Providers
-        stripe: 'Stripe',
-        paypal: 'PayPal',
-        accountId: 'ID',
       },
 
       // ==========================================
@@ -1691,7 +1703,6 @@ const resources = {
         title: 'Pro Plus Subscription',
         currentPlan: 'Current Subscription',
         planName: 'Pro Plus',
-        planPrice: '$14.99 CAD / month',
         features: 'Features',
         feature1: 'Direct payments with reduced commission',
         feature2: 'Earnings dashboard',
@@ -1702,13 +1713,121 @@ const resources = {
         manageSubscription: 'Manage Subscription',
         active: 'Active',
         inactive: 'Inactive',
+        titleMyPro: 'My Pro+ Subscription',
+        mySubscription: 'My Subscription',
+        loading: 'Loading...',
+        loadingInfo: 'Loading information...',
+        maximizeYourEarnings: 'Maximize your earnings with Pro+',
+        limitedFunctions: 'Your free ccount has limited functions',
+        advancedTools: 'Advanced tools',
         
         // Messages
+
+        
+        // Active subscription
+        activeTitle: 'Pro+ Subscription Active',
+        activeSubtitle: 'You enjoy all premium benefits',
+        subscriptionType: 'Subscription type',
+        renewalDate: 'Renewal on',
+        
+        // Benefits
+        benefitsTitle: 'Your Pro+ Benefits',
+        directPayments: 'Direct Payments',
+        directPaymentsDesc1: 'Receive your earnings ',
+        directPayementsDesc2: 'right away ',
+        directPayementsDesc3: 'on your linked accounts',
+        reducedCommission: 'Reduced Commission',
+        reducedCommissionDesc1: 'Better rates to ',
+        reducedCommissionDesc2: 'maximize your earnings',
+        advancedToolsDesc: 'Access advanced marketing and management tools to grow your business',
+        whyPro: 'Why choose Pro+?',
+        whyProDesc1Title: 'Instant payments',
+        whyProDesc1Text: 'No more waiting for transfers. Get paid directly when participants book your events.',
+        whyProDesc2Title: 'More earnings',
+        whyProDesc2: 'Get better commission rates and keep more of your revenue.',
+        whyProDesc3Title: 'Faster growth',
+        whyProDesc3: 'Access tools designed to help you attract more participants and grow your business faster.',
+
+        // Promo banner
+        proOfferBadge: 'PRO+ OFFER',
+        proOfferText1: 'Receive payments',
+        proOfferText2: 'directly',
+        proOfferText3: 'and pay',
+        proOfferText4: 'less commission',
+        
+        // Free account
+        freeAccountTitle: 'Free Account',
+        indirectPayments: 'Indirect Payments',
+        indirectPaymentsDesc: 'You must wait for us to transfer your revenue',
+        standardCommission: 'Standard Commission',
+        standardCommissionDesc: 'Higher commission rate on each transaction',
+        restrictedAccess: 'Restricted Access to premium features',
+        
+        // Actions
+        cancelSubscription: 'Cancel Subscription',
+        cancelling: 'Cancelling...',
+        cancel: 'Cancel',
+        continue: 'Continue',
+        
+        // Messages
+        subscriptionDataUnavailable: 'Subscription data unavailable',
+        cannotLoadInfo: 'Unable to load your subscription information.',
+        paymentLinkNotFound: 'Payment link not found',
+        subscriptionCreationError: 'Error creating subscription. Please try again.',
+        cancelConfirmation: 'Do you really want to cancel your subscription? This action is irreversible.',
+        subscriptionWillCancel: 'Your subscription will be cancelled at the end of the current period.',
+        cancellationError: 'Error cancelling subscription. Please try again.',
+        subscriptionActivated: 'Subscription Activated Successfully!',
+        subscriptionActivatedDesc: 'Thank you for your trust. You can now enjoy all professional features.',
+        cancelScheduled: 'Cancellation scheduled',
+        cancelScheduledDesc: 'Your Pro Plus subscription will be cancelled at the end of the current period.',
         subscribeSuccess: 'Subscription activated successfully!',
         subscribeError: 'Activation error',
         unsubscribeSuccess: 'Subscription cancelled',
         unsubscribeError: 'Cancellation error',
-        unsubscribeConfirm: 'Are you sure you want to cancel your subscription?'
+        unsubscribeConfirm: 'Are you sure you want to cancel your subscription?',
+
+
+        // Preparation steps
+        initializingSubscription: 'Initializing your subscription...',
+        preparingFeatures: 'Preparing premium features...',
+        configuringAccount: 'Configuring your account...',
+        almostDone: 'Almost done...',
+        redirectingToPayment: 'Redirecting to payment...',
+        autoRedirect: 'Automatic redirect...',
+        finalizingInProgress: 'Finalization in progress...',
+        
+        // Linked accounts
+        linkedAccounts: 'Linked Accounts',
+        loadingLinkedAccounts: 'Loading linked accounts...',
+        featureReserved: 'Reserved Feature',
+        featureReservedDesc: 'Linking to Stripe and PayPal is reserved for users with',
+        noLinkedAccount: 'No linked account',
+        accountLinked: 'Account linked',
+        linkingError: 'Error linking account.',
+        linkingErrorGeneric: 'Linking error',
+        unlinkingError: 'Error unlinking account.',
+        unlinkAccount: 'Unlink',
+        linkStripe: 'Link Stripe',
+        linkPaypal: 'Link PayPal',
+        cancelWarning: 'You will lose access to the following features:\nYour linked accounts will be automatically disconnected.',
+        subscriptionCancelled: 'Subscription cancelled successfully.',
+        goToProfile: 'Go to profile now',
+        backToProfile: 'Back to profile',
+        retry: 'Retry',
+        
+        // Providers
+        stripe: 'Stripe',
+        paypal: 'PayPal',
+        accountId: 'ID',
+
+        // Misc
+        month: 'month',
+        forSeriousPros: 'For serious professionals',
+        cancelAnytime: 'Cancel anytime',
+        subStripe: 'Subscribe with Stripe',
+        subPaypal: 'Subscribe with PayPal',
+
       },
 
       // ==========================================
@@ -2070,96 +2189,6 @@ const resources = {
       map: {
         apiKeyMissing: 'Add VITE_GOOGLE_MAPS_API_KEY to your .env file',
         noCoordinates: 'Events without GPS coordinates cannot be displayed',
-      },
-
-      // ==========================================
-      // SUBSCRIPTIONS
-      // ==========================================
-      subscriptions: {
-        // Titles
-        title: 'My Pro+ Subscription',
-        mySubscription: 'My Subscription',
-        loading: 'Loading...',
-        loadingInfo: 'Loading information...',
-        
-        // Active subscription
-        activeTitle: 'Pro+ Subscription Active',
-        activeSubtitle: 'You enjoy all premium benefits',
-        subscriptionType: 'Subscription type',
-        renewalDate: 'Renewal on',
-        
-        // Benefits
-        benefitsTitle: 'Your Pro+ Benefits',
-        directPayments: 'Direct Payments',
-        directPaymentsDesc: 'Receive your revenue immediately',
-        reducedCommission: 'Reduced Commission',
-        reducedCommissionDesc: 'Keep more of your earnings',
-        
-        // Promo banner
-        proOfferBadge: 'PRO+ OFFER',
-        proOfferText: 'Receive your payments directly and pay less commission',
-        directText: 'directly',
-        lessCommissionText: 'less commission',
-        
-        // Free account
-        freeAccountTitle: 'Free Account',
-        currentPlan: 'Your current plan',
-        indirectPayments: 'Indirect Payments',
-        indirectPaymentsDesc: 'You must wait for us to transfer your revenue',
-        standardCommission: 'Standard Commission',
-        standardCommissionDesc: 'Higher commission rate on each transaction',
-        
-        // Actions
-        cancelSubscription: 'Cancel Subscription',
-        cancelling: 'Cancelling...',
-        cancel: 'Cancel',
-        continue: 'Continue',
-        
-        // Messages
-        subscriptionDataUnavailable: 'Subscription data unavailable',
-        cannotLoadInfo: 'Unable to load your subscription information.',
-        paymentLinkNotFound: 'Payment link not found',
-        subscriptionCreationError: 'Error creating subscription. Please try again.',
-        cancelConfirmation: 'Do you really want to cancel your subscription? This action is irreversible.',
-        subscriptionWillCancel: 'Your subscription will be cancelled at the end of the current period.',
-        cancellationError: 'Error cancelling subscription. Please try again.',
-        subscriptionActivated: 'Subscription Activated Successfully!',
-        subscriptionActivatedDesc: 'Thank you for your trust. You can now enjoy all professional features.',
-        cancelScheduled: 'Cancellation scheduled',
-        cancelScheduledDesc: 'Your Pro Plus subscription will be cancelled at the end of the current period.',
-        
-        // Preparation steps
-        initializingSubscription: 'Initializing your subscription...',
-        preparingFeatures: 'Preparing premium features...',
-        configuringAccount: 'Configuring your account...',
-        almostDone: 'Almost done...',
-        redirectingToPayment: 'Redirecting to payment...',
-        autoRedirect: 'Automatic redirect...',
-        finalizingInProgress: 'Finalization in progress...',
-        
-        // Linked accounts
-        linkedAccounts: 'Linked Accounts',
-        loadingLinkedAccounts: 'Loading linked accounts...',
-        featureReserved: 'Reserved Feature',
-        featureReservedDesc: 'Linking to Stripe and PayPal is reserved for users with',
-        noLinkedAccount: 'No linked account',
-        accountLinked: 'Account linked',
-        linkingError: 'Error linking account.',
-        linkingErrorGeneric: 'Linking error',
-        unlinkingError: 'Error unlinking account.',
-        unlinkAccount: 'Unlink',
-        linkStripe: 'Link Stripe',
-        linkPaypal: 'Link PayPal',
-        cancelWarning: 'You will lose access to the following features:\nYour linked accounts will be automatically disconnected.',
-        subscriptionCancelled: 'Subscription cancelled successfully.',
-        goToProfile: 'Go to profile now',
-        backToProfile: 'Back to profile',
-        retry: 'Retry',
-        
-        // Providers
-        stripe: 'Stripe',
-        paypal: 'PayPal',
-        accountId: 'ID',
       },
 
       // ==========================================

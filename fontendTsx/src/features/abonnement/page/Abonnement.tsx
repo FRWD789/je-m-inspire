@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from "react";
 import { 
   Loader2, 
@@ -32,6 +33,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showPreparation, setShowPreparation] = useState(false);
   const [preparationStep, setPreparationStep] = useState(0);
+  const { t } = useTranslation();
 
   const fetchSubscriptionInfo = async () => {
     try {
@@ -41,13 +43,13 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       if (data.data) {
         setSubInfo(data.data);
       } else {
-        throw new Error("Données d'abonnement non disponibles");
+        throw new Error(t('subscription.subscriptionDataUnavailable'));
       }
     } catch (err) {
       console.error("Erreur abonnement:", err);
       setMessage({
         type: "error",
-        text: "Impossible de charger vos informations d'abonnement."
+        text: t('subscription.cannotLoadInfo')
       });
     } finally {
       setLoading(false);
@@ -63,10 +65,10 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
     setPreparationStep(0);
     
     const steps = [
-      "Initialisation de votre abonnement...",
-      "Préparation des fonctionnalités premium...",
-      "Configuration de votre compte...",
-      "Presque terminé..."
+      t('subscription.initializingSubscription'),
+      t('subscription.preparingFeatures'),
+      t('subscription.configuringAccount'),
+      t('subscription.almostDone')
     ];
 
     steps.forEach((_, index) => {
@@ -95,7 +97,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
         } else if (provider === "paypal" && data.data?.approval_url) {
           window.location.href = data.data.approval_url;
         } else {
-          throw new Error("Lien de paiement introuvable");
+          throw new Error(t('subscription.paymentLinkNotFound'));
         }
       }, 3500);
 
@@ -104,14 +106,14 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       setShowPreparation(false);
       setMessage({
         type: "error",
-        text: "Erreur lors de la création de l'abonnement. Veuillez réessayer."
+        text: t('subscription.subscriptionCreationError')
       });
       setActionLoading(null);
     }
   };
 
   const handleCancel = async () => {
-    if (!confirm("Voulez-vous vraiment annuler votre abonnement ? Cette action est irréversible.")) {
+    if (!confirm(t('subscription.cancelConfirmation'))) {
       return;
     }
     
@@ -122,14 +124,14 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       await privateApi.post("/abonnement/cancel");
       setMessage({
         type: "success",
-        text: "Votre abonnement sera annulé à la fin de la période en cours."
+        text: t('subscription.subscriptionWillCancel')
       });
       await fetchSubscriptionInfo();
     } catch (err) {
       console.error(err);
       setMessage({
         type: "error",
-        text: "Erreur lors de l'annulation de l'abonnement. Veuillez réessayer."
+        text: t('subscription.cancellationError')
       });
     } finally {
       setActionLoading(null);
@@ -145,7 +147,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-center p-12">
           <Loader2 className="animate-spin mr-2" size={32} />
-          <span className="text-lg">Chargement...</span>
+          <span className="text-lg">{t('subscription.loading')}</span>
         </div>
       </div>
     );
@@ -154,11 +156,11 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
   // Preparation Animation Overlay
   if (showPreparation) {
     const steps = [
-      "Initialisation de votre abonnement...",
-      "Préparation des fonctionnalités premium...",
-      "Configuration de votre compte...",
-      "Presque terminé...",
-      "Redirection vers le paiement..."
+      t('subscription.initializingSubscription'),
+      t('subscription.preparingFeatures'),
+      t('subscription.configuringAccount'),
+      t('subscription.almostDone'),
+      t('subscription.redirectingToPayment')
     ];
 
     return (
@@ -173,7 +175,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
           </div>
           
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Préparation de votre abonnement Pro+
+            {t('subscription.preparingFeatures')}
           </h3>
           
           <div className="space-y-3 mb-6">
@@ -211,7 +213,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
     return (
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Mon Abonnement Pro+</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('subscription.titleMyPro')}</h1>
           {handelClose && (
             <button onClick={handelClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X size={24} className="text-gray-600" />
@@ -247,21 +249,21 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
                 <Star className="text-white" size={32} fill="white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Abonnement Pro+ Actif</h2>
-                <p className="text-gray-600">Vous profitez de tous les avantages premium</p>
+              <h2 className="text-2xl font-bold text-gray-900">{t('subscription.activeTitle')}</h2>
+              <p className="text-gray-600">{t('subscription.activeSubtitle')}</p>
               </div>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <div className="bg-white rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Type d'abonnement</p>
+            <p className="text-sm text-gray-600 mb-1">{t('subscription.subscriptionType')}</p>
               <p className="text-lg font-semibold text-gray-900">{subInfo.subscription_type || "Pro Plus"}</p>
             </div>
             
             {subInfo.end_date && (
               <div className="bg-white rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Renouvellement le</p>
+                <p className="text-sm text-gray-600 mb-1">{t('subscription.renewalDate')}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {new Date(subInfo.end_date).toLocaleDateString("fr-FR", {
                     year: "numeric",
@@ -280,28 +282,27 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
               className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors font-medium"
             >
               {actionLoading === "cancel" && <Loader2 className="animate-spin" size={16} />}
-              Annuler mon abonnement
+              {t('subscription.cancelSubscription')}
             </button>
           </div>
         </div>
 
         {/* Avantages actuels */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Vos avantages Pro+</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4">{t('subscription.benefitsTitle')}</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
               <CheckCircle className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900">Paiements directs</h4>
-                <p className="text-sm text-gray-600">Recevez vos revenus immédiatement</p>
-              </div>
+              <h4 className="font-semibold text-gray-900">{t('subscription.directPayments')}</h4>
+              <p className="text-sm text-gray-600">{t('subscription.directPaymentsDesc')}</p>              </div>
             </div>
             
             <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
               <CheckCircle className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900">Commission réduite</h4>
-                <p className="text-sm text-gray-600">Gardez plus de vos revenus</p>
+              <h4 className="font-semibold text-gray-900">{t('subscription.reducedCommission')}</h4>
+              <p className="text-sm text-gray-600">{t('subscription.reducedCommissionDesc')}</p>
               </div>
             </div>
           </div>
@@ -326,15 +327,15 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
         
         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4">
           <Star size={16} fill="white" />
-          <span>OFFRE PRO+</span>
+          <span>{t('subscription.proOfferBadge')}</span>
         </div>
         
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-          Maximisez vos revenus avec Pro+
+          {t('subscription.maximizeYourEarnings')}
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Recevez vos paiements <span className="font-bold text-blue-600">directement</span> et 
-          payez <span className="font-bold text-blue-600">moins de commission</span>
+          {t('subscription.proOfferText1')} <span className="font-bold text-blue-600">{t('subscription.proOfferText2')}</span> {t('subscription.proOfferText3')}
+           <span className="font-bold text-blue-600">{t('subscription.proOfferText4')}</span>
         </p>
       </div>
 
@@ -365,39 +366,39 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
         {/* Plan Gratuit */}
         <div className="bg-white rounded-2xl border-2 border-gray-200 p-8">
           <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Compte Gratuit</h3>
-            <p className="text-gray-600">Votre plan actuel</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('subscription.freeAccountTitle')}</h3>
+            <p className="text-gray-600">{t('subscription.currentPlan')}</p>
           </div>
 
           <div className="space-y-4 mb-8">
             <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
               <Clock className="text-red-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Paiements indirects</h4>
-                <p className="text-sm text-gray-600">Vous devez attendre que nous vous transférions vos revenus</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.indirectPayments')}</h4>
+                <p className="text-sm text-gray-600">{t('subscription.indirectPaymentsDesc')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
               <TrendingUp className="text-red-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Commission standard</h4>
-                <p className="text-sm text-gray-600">Taux de commission plus élevé sur chaque transaction</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.standardCommission')}</h4>
+                <p className="text-sm text-gray-600">{t('subscription.standardCommissionDesc')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <Ban className="text-gray-400 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Fonctionnalités limitées</h4>
-                <p className="text-sm text-gray-600">Accès restreint aux outils avancés</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.limitedFunctions')}</h4>
+                <p className="text-sm text-gray-600">{t('subscription.restrictedAccess')}</p>
               </div>
             </div>
           </div>
 
           <div className="text-center pt-6 border-t">
             <div className="text-3xl font-bold text-gray-900 mb-1">0$</div>
-            <p className="text-gray-600">/mois</p>
+            <p className="text-gray-600">/{t('subscription.month')}</p>
           </div>
         </div>
 
@@ -409,39 +410,39 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
 
           <div className="text-center mb-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Pro+</h3>
-            <p className="text-gray-600">Pour les professionnels sérieux</p>
+            <p className="text-gray-600">{t('subscription.forSeriousPros')}</p>
           </div>
 
           <div className="space-y-4 mb-8">
             <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-green-200 shadow-sm">
               <Zap className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Paiements directs ⚡</h4>
-                <p className="text-sm text-gray-600">Recevez vos revenus <span className="font-bold">instantanément</span> sur votre compte</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.directPayements')} ⚡</h4>
+                <p className="text-sm text-gray-600">{t('directPayementsDesc1')}<span className="font-bold">{t('directPayementsDesc2')}</span>{t('directPayementsDesc3')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-green-200 shadow-sm">
               <DollarSign className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Commission réduite 💰</h4>
-                <p className="text-sm text-gray-600">Taux préférentiel pour <span className="font-bold">maximiser vos revenus</span></p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.reducedCommission')} 💰</h4>
+                <p className="text-sm text-gray-600">{t('subscription.reducedCommissionDesc1')}<span className="font-bold">{t('subscription.reducedCommissionDesc2')}</span></p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm">
               <CheckCircle className="text-blue-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Outils avancés</h4>
-                <p className="text-sm text-gray-600">Analyses détaillées et fonctionnalités premium</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('subcription.advancedTools')}</h4>
+                <p className="text-sm text-gray-600">{t('subscription.advancedToolsDesc')}</p>
               </div>
             </div>
           </div>
 
           <div className="text-center pt-6 border-t border-blue-200 mb-6">
             <div className="text-4xl font-bold text-gray-900 mb-1">14,99$</div>
-            <p className="text-gray-600 mb-1">CAD /mois</p>
-            <p className="text-sm text-gray-500">Annulation à tout moment</p>
+            <p className="text-gray-600 mb-1">CAD /{t('subscription.month')}</p>
+            <p className="text-sm text-gray-500">{t('subcription.cancelAnytime')}</p>
           </div>
 
           {/* Boutons d'abonnement */}
@@ -456,7 +457,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
               ) : (
                 <CreditCard size={20} />
               )}
-              S'abonner avec Stripe
+              {t('subscription.subStripe')}
             </button>
             
             <button
@@ -469,7 +470,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
               ) : (
                 <CreditCard size={20} />
               )}
-              S'abonner avec PayPal
+              {t('subscription.subPaypal')}
             </button>
           </div>
         </div>
@@ -478,7 +479,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       {/* Points clés avec icônes */}
       <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          Pourquoi passer à Pro+ ?
+          {t('subscription.whyPro')}
         </h2>
         
         <div className="grid md:grid-cols-3 gap-8">
@@ -486,9 +487,9 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl mb-4">
               <Zap className="text-white" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Revenus instantanés</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('subscription.whyProDesc1Title')}</h3>
             <p className="text-gray-600">
-              Plus d'attente ! Vos revenus sont transférés directement sur votre compte Stripe ou PayPal dès la vente.
+            {t('subscription.whyProDesc1')}
             </p>
           </div>
 
@@ -496,9 +497,9 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl mb-4">
               <DollarSign className="text-white" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Plus de profits</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('subscription.whyProDesc2Title')}</h3>
             <p className="text-gray-600">
-              Bénéficiez d'un taux de commission réduit et gardez une plus grande partie de vos revenus.
+            {t('subscription.whyProDesc2')}
             </p>
           </div>
 
@@ -506,9 +507,9 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl mb-4">
               <TrendingUp className="text-white" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Croissance accélérée</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('subscription.whyProDesc3Title')}</h3>
             <p className="text-gray-600">
-              Accédez à des outils d'analyse avancés pour optimiser vos événements et augmenter vos revenus.
+            {t('subscription.whyProDesc3')}
             </p>
           </div>
         </div>
