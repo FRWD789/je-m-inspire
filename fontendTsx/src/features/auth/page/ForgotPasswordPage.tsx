@@ -29,13 +29,13 @@ export default function ForgotPasswordPage() {
 
     try {
       await authService.senResetLink(data)
-      setSuccessMessage('Password reset link sent to your email');
+      setSuccessMessage(t('forgotPassword.resetLinkSent'));
       // Redirect after 2 seconds
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (error :any) {
-      setErrorMessage('An error occurred. Please try again.');
+      setErrorMessage(t('forgotPassword.resetLinkError'));
       console.error('Forgot password error:', error.message);
     } finally {
       setIsLoading(false);

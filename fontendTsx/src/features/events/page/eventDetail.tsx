@@ -8,6 +8,7 @@ import { Calendar, MapPin, ArrowLeft, CreditCard } from 'lucide-react';
 import type { User } from '@/types/user';
 import ImageCarousel from '@/features/events/components/ImageCarousel';
 import ResponsiveImage from '@/components/ui/ResponsiveImage';
+import { useTranslation } from 'react-i18next';
 
 // --- Types ---
 interface Event {
@@ -52,12 +53,14 @@ interface ReservationCardProps {
 
 // --- Subcomponents ---
 const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
+  const { t, i18n } = useTranslation();
+  
   const eventDate = useMemo(() => 
-    new Date(event.start_date).toLocaleDateString("fr-FR", {
+    new Date(event.start_date).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', {
       weekday: "long",
       day: "numeric",
       month: "long",
-    }), [event.start_date]
+    }), [event.start_date, i18n.language]
   );
 
   return (
@@ -75,7 +78,7 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
         <button
           onClick={() => navigate(-1)}
           className="absolute top-4 left-4 bg-white/20 hover:bg-white/30 rounded-full p-2 transition backdrop-blur-sm"
-          aria-label="Retour aux événements"
+          aria-label={t('eventDetail.backToEvents')}
         >
           <ArrowLeft size={20} />
         </button>
@@ -87,7 +90,7 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
           </div>
           <div className="flex items-center gap-1">
             <MapPin size={16} /> 
-            {event.localisation.address || "Adresse à venir"}
+            {event.localisation.address || t('eventDetail.addressToCome')}
           </div>
         </div>
       </div>
@@ -96,28 +99,28 @@ const HeroSection = ({ event, navigate }: { event: Event; navigate: any }) => {
 };
 
 const OrganizerInfo = ({ creator }: { creator?: User }) => {
+  const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
   
-  // ✅ Vérification : non vide + pas d'erreur de chargement
   const hasValidProfilePicture = creator?.profile.profile_picture && 
                                   creator.profile.profile_picture.trim() !== '' &&
                                   !imageError;
 
   return (
     <div className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
-      <h3 className="text-xl font-semibold mb-4">Organisateur</h3>
+      <h3 className="text-xl font-semibold mb-4">{t('eventDetail.organizer')}</h3>
       <Link to={`/user/${creator?.id}`} className="block hover:opacity-80 transition">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-primary text-white border-gray-300 overflow-hidden">
             {hasValidProfilePicture ? (
               <img 
                 src={creator.profile.profile_picture} 
-                alt={`Photo de ${creator.profile.name}`}
+                alt={t('eventDetail.photoOf', { name: creator.profile.name })}
                 loading="lazy"        
                 decoding="async"     
                 className="w-full h-full object-cover object-center"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-                onError={() => setImageError(true)}  // ✅ Fallback automatique
+                onError={() => setImageError(true)}
               />
             ) : (
               <span className="font-semibold text-lg">
@@ -126,8 +129,8 @@ const OrganizerInfo = ({ creator }: { creator?: User }) => {
             )}
           </div>
           <div>
-            <p className="text-sm text-gray-600">Organisé par</p>
-            <p className="font-semibold text-gray-800 text-lg">{creator?.profile.name || "Organisateur anonyme"}</p>
+            <p className="text-sm text-gray-600">{t('eventDetail.organizedBy')}</p>
+            <p className="font-semibold text-gray-800 text-lg">{creator?.profile.name || t('eventDetail.anonymousOrganizer')}</p>
           </div>
         </div>
       </Link>
@@ -146,16 +149,17 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
   location,
   navigate
 }) => {
+  const { t } = useTranslation();
   const total = event.base_price;
 
   const handleReserveClick = useCallback(() => {
     if (!user) {
-      alert("Vous devez être connecté pour réserver un événement.");
+      alert(t('eventDetail.mustBeLoggedIn'));
       navigate("/login", { state: { from: location }, replace: true });
       return;
     }
     setExpanded(true);
-  }, [user, navigate, location, setExpanded]);
+  }, [user, navigate, location, setExpanded, t]);
 
   return (
     <aside className="h-fit rounded-2xl p-6 border border-gray-100 shadow-md flex flex-col gap-4 bg-white relative">
@@ -163,7 +167,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
         <button
           onClick={() => setExpanded(false)}
           className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full transition"
-          aria-label="Fermer"
+          aria-label={t('common.close')}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -172,7 +176,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
         </button>
       )}
 
-      <h3 className="text-xl font-semibold">Réserver votre place</h3>
+      <h3 className="text-xl font-semibold">{t('eventDetail.reserveYourSpot')}</h3>
 
       {!expanded && (
         <>
@@ -183,7 +187,7 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
             className="w-full py-3 bg-accent text-white rounded-[8px] hover:bg-primary transition font-medium"
             onClick={handleReserveClick}
           >
-            Réserver maintenant
+            {t('eventDetail.reserveNow')}
           </button>
         </>
       )}
@@ -191,12 +195,12 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
       {expanded && user && (
         <div className="space-y-5">
           <div className="flex items-center justify-between text-xl font-bold text-indigo-600">
-            <span>Total</span>
+            <span>{t('eventDetail.total')}</span>
             <span>{total} $</span>
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-gray-700 font-semibold">Méthode de paiement</h4>
+            <h4 className="text-gray-700 font-semibold">{t('eventDetail.paymentMethod')}</h4>
             <div className="flex gap-3">
               {["stripe", "paypal"].map((m) => (
                 <label
@@ -228,14 +232,14 @@ const ReservationCard: React.FC<ReservationCardProps> = ({
             disabled={!method}
           >
             <CreditCard className="w-5 h-5" />
-            Procéder au paiement
+            {t('eventDetail.proceedToPayment')}
           </button>
         </div>
       )}
 
       {!user && expanded && (
         <p className="text-red-600 mt-2 text-sm text-center">
-          Vous devez être connecté pour réserver cet événement.
+          {t('eventDetail.mustBeLoggedInToReserve')}
         </p>
       )}
     </aside>
@@ -247,19 +251,21 @@ interface MapSectionProps {
 }
 
 const MapSection: React.FC<MapSectionProps> = ({ address }) => {
+  const { t } = useTranslation();
+  
   const mapSrc = useMemo(() => 
     address ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed` : '',
     [address]
   );
 
   if (!address) {
-    return <p className="text-gray-500 italic">Adresse non disponible</p>;
+    return <p className="text-gray-500 italic">{t('eventDetail.addressNotAvailable')}</p>;
   }
 
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden border border-gray-200 shadow-sm">
       <iframe
-        title="Event Location"
+        title={t('eventDetail.eventLocation')}
         src={mapSrc}
         width="100%"
         height="100%"
@@ -274,6 +280,7 @@ const MapSection: React.FC<MapSectionProps> = ({ address }) => {
 
 // --- Main Component ---
 export default function EventDetail() {
+  const { t } = useTranslation();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -311,15 +318,15 @@ export default function EventDetail() {
       }
     } catch (error) {
       console.error('Erreur lors du paiement:', error);
-      alert(error.response?.data?.error || 'Une erreur est survenue lors du paiement. Veuillez réessayer.');
+      alert(error.response?.data?.error || t('eventDetail.paymentError'));
     }
-  }, [user, event?.id, method, paymentService, navigate, location]);
+  }, [user, event?.id, method, paymentService, navigate, location, t]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-accent">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-        <span className="ml-3">Chargement de l'événement...</span>
+        <span className="ml-3">{t('eventDetail.loadingEvent')}</span>
       </div>
     );
   }
@@ -327,12 +334,12 @@ export default function EventDetail() {
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-accent">
-        <h1 className="text-2xl font-semibold mb-4">Événement introuvable</h1>
+        <h1 className="text-2xl font-semibold mb-4">{t('eventDetail.eventNotFound')}</h1>
         <button 
           onClick={() => navigate("/events")} 
           className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-primary transition"
         >
-          Retour à la liste
+          {t('eventDetail.backToList')}
         </button>
       </div>
     );
@@ -354,7 +361,7 @@ export default function EventDetail() {
                 <ImageCarousel images={event.images} />
               ) : (
                 <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-                  <p className="text-gray-400">Aucune image disponible</p>
+                  <p className="text-gray-400">{t('eventDetail.noImagesAvailable')}</p>
                 </div>
               )}
             </div>
@@ -374,39 +381,35 @@ export default function EventDetail() {
               navigate={navigate}
             />
             
-            {/* Description - Desktop seulement - S'ÉTIRE EN HAUTEUR + RETOUR À LA LIGNE AUTO */}
+            {/* Description - Desktop seulement */}
             <div className="hidden lg:block rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
-              <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
+              <h2 className="text-2xl font-semibold mb-4">{t('eventDetail.aboutEvent')}</h2>
               <div className="mb-4">
-                {/* ✅ whitespace-pre-wrap permet les retours à la ligne automatiques */}
-                {/* ✅ break-words casse les mots très longs si nécessaire */}
                 <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
-                  {event.description || "Aucune description disponible."}
+                  {event.description || t('eventDetail.noDescriptionAvailable')}
                 </p>
               </div>
 
               {event.categorie && (
                 <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
-                  Catégorie #{event.categorie.name}
+                  {t('eventDetail.category')} #{event.categorie.name}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Description - Ordre 3 en mobile uniquement - RETOUR À LA LIGNE AUTO */}
+          {/* Description - Ordre 3 en mobile uniquement */}
           <div className="order-3 lg:hidden rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
-            <h2 className="text-2xl font-semibold mb-4">À propos de l'événement</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('eventDetail.aboutEvent')}</h2>
             <div className="mb-4">
-              {/* ✅ whitespace-pre-wrap permet les retours à la ligne automatiques */}
-              {/* ✅ break-words casse les mots très longs si nécessaire */}
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
-                {event.description || "Aucune description disponible."}
+                {event.description || t('eventDetail.noDescriptionAvailable')}
               </p>
             </div>
 
             {event.categorie && (
               <span className="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium">
-                Catégorie #{event.categorie.name}
+                {t('eventDetail.category')} #{event.categorie.name}
               </span>
             )}
           </div>
@@ -417,7 +420,7 @@ export default function EventDetail() {
               <ImageCarousel images={event.images} />
             ) : (
               <div className="w-full h-[400px] rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-                <p className="text-gray-400">Aucune image disponible</p>
+                <p className="text-gray-400">{t('eventDetail.noImagesAvailable')}</p>
               </div>
             )}
           </div>
@@ -425,7 +428,7 @@ export default function EventDetail() {
 
         {/* Map en pleine largeur */}
         <div className="hidden lg:block rounded-2xl p-6 border border-gray-100 shadow-md bg-white">
-          <h2 className="text-2xl font-semibold mb-4">Localisation</h2>
+          <h2 className="text-2xl font-semibold mb-4">{t('eventDetail.location')}</h2>
           <MapSection address={event.localisation.address} />
         </div>
       </div>

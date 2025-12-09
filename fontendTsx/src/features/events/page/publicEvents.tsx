@@ -5,8 +5,10 @@ import { useEvent } from '@/context/EventContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useHeaderHeight } from '@/layout/Layout';
 import { ThumbnailImage } from '@/components/ui/ResponsiveImage';
+import { useTranslation } from 'react-i18next';
 
 export default function PublicEvents() {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const { events, loading } = useEvent();
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,8 +23,7 @@ export default function PublicEvents() {
   const [selectedCity, setSelectedCity] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
-  // États pour le redimensionnement
-  const [mapWidth, setMapWidth] = useState(40); // Pourcentage (40% par défaut)
+  const [mapWidth, setMapWidth] = useState(40);
   const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
@@ -89,7 +90,6 @@ export default function PublicEvents() {
     setSelectedCity(city);
   }, [location.search]);
 
-  // Gestion du redimensionnement
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -98,13 +98,9 @@ export default function PublicEvents() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
-      
-      const windowWidth = window.innerWidth;
-      const newMapWidth = ((windowWidth - e.clientX) / windowWidth) * 100;
-      
-      // Limiter entre 20% et 60%
-      if (newMapWidth >= 20 && newMapWidth <= 60) {
-        setMapWidth(newMapWidth);
+      const newWidth = (e.clientX / window.innerWidth) * 100;
+      if (newWidth > 20 && newWidth < 70) {
+        setMapWidth(100 - newWidth);
       }
     };
 
@@ -130,12 +126,10 @@ export default function PublicEvents() {
   return (
     <div className="w-full h-screen bg-gray-50" 
     style={{ 
-      
       height: `calc(100svh - ${headerHeight}px)`
-    
      }}>
       <div className="flex h-screen overflow-hidden" style={{ height: `calc(100svh - ${headerHeight}px)` }}>
-        {/* Section Événements - Largeur dynamique */}
+        {/* Section Événements */}
         <div 
           className="w-full lg:w-auto overflow-y-auto"
           style={{ width: isMobile ? '100%' : `${100 - mapWidth}%` }}
@@ -148,7 +142,7 @@ export default function PublicEvents() {
                   <Search className="text-gray-400 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Rechercher un événement..."
+                    placeholder={t('publicEvents.searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="flex-1 bg-transparent focus:outline-none text-sm"
@@ -159,10 +153,10 @@ export default function PublicEvents() {
                   className={`p-2 rounded-lg hover:bg-gray-100 transition flex items-center gap-2 ${
                     showFilters ? 'bg-blue-100 text-blue-600' : 'text-gray-600'
                   }`}
-                  title="Filtres"
+                  title={t('publicEvents.filters')}
                 >
                   <Filter className="w-5 h-5" />
-                  <span className="hidden md:inline text-sm font-medium">Filtres</span>
+                  <span className="hidden md:inline text-sm font-medium">{t('publicEvents.filters')}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                 </button>
               </div>
@@ -173,13 +167,13 @@ export default function PublicEvents() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Catégorie */}
                     <div>
-                      <label className="block text-sm font-medium mb-1.5 text-gray-700">Catégorie</label>
+                      <label className="block text-sm font-medium mb-1.5 text-gray-700">{t('publicEvents.category')}</label>
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
                         className="w-full border border-gray-300 px-3 py-2 rounded-md text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
                       >
-                        <option value="">Toutes les catégories</option>
+                        <option value="">{t('publicEvents.allCategories')}</option>
                         {categories.map((cat) => (
                           <option key={cat} value={cat}>
                             {cat}
@@ -190,13 +184,13 @@ export default function PublicEvents() {
 
                     {/* Ville */}
                     <div>
-                      <label className="block text-sm font-medium mb-1.5 text-gray-700">Ville</label>
+                      <label className="block text-sm font-medium mb-1.5 text-gray-700">{t('publicEvents.city')}</label>
                       <select
                         value={selectedCity}
                         onChange={(e) => setSelectedCity(e.target.value)}
                         className="w-full border border-gray-300 px-3 py-2 rounded-md text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
                       >
-                        <option value="">Toutes les villes</option>
+                        <option value="">{t('publicEvents.allCities')}</option>
                         {cities.map((city) => (
                           <option key={city} value={city}>
                             {city}
@@ -207,15 +201,15 @@ export default function PublicEvents() {
 
                     {/* Tri par prix */}
                     <div>
-                      <label className="block text-sm font-medium mb-1.5 text-gray-700">Tri par prix</label>
+                      <label className="block text-sm font-medium mb-1.5 text-gray-700">{t('publicEvents.sortByPrice')}</label>
                       <select
                         value={priceSort}
                         onChange={(e) => setPriceSort(e.target.value)}
                         className="w-full border border-gray-300 px-3 py-2 rounded-md text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
                       >
-                        <option value="">Par défaut</option>
-                        <option value="asc">Prix croissant</option>
-                        <option value="desc">Prix décroissant</option>
+                        <option value="">{t('publicEvents.defaultSort')}</option>
+                        <option value="asc">{t('publicEvents.priceAscending')}</option>
+                        <option value="desc">{t('publicEvents.priceDescending')}</option>
                       </select>
                     </div>
                   </div>
@@ -224,7 +218,7 @@ export default function PublicEvents() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Date Filter */}
                     <div>
-                      <label className="block text-sm font-medium mb-1.5 text-gray-700">Date</label>
+                      <label className="block text-sm font-medium mb-1.5 text-gray-700">{t('publicEvents.date')}</label>
                       <div className="flex flex-wrap gap-3">
                         {['all', 'today', 'week', 'month'].map((date) => (
                           <label key={date} className="flex items-center gap-1.5 cursor-pointer">
@@ -237,13 +231,7 @@ export default function PublicEvents() {
                               className="cursor-pointer"
                             />
                             <span className="text-sm">
-                              {date === 'all'
-                                ? 'Tous'
-                                : date === 'today'
-                                ? "Aujourd'hui"
-                                : date === 'week'
-                                ? 'Cette semaine'
-                                : 'Ce mois'}
+                              {t(`publicEvents.date${date.charAt(0).toUpperCase() + date.slice(1)}`)}
                             </span>
                           </label>
                         ))}
@@ -253,7 +241,7 @@ export default function PublicEvents() {
                     {/* Prix max */}
                     <div>
                       <label className="block text-sm font-medium mb-1.5 text-gray-700">
-                        Prix max: {maxPrice} $
+                        {t('publicEvents.maxPrice', { price: maxPrice })}
                       </label>
                       <input
                         type="range"
@@ -281,7 +269,7 @@ export default function PublicEvents() {
                     }}
                     className="w-full md:w-auto px-6 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition font-medium"
                   >
-                    Réinitialiser les filtres
+                    {t('publicEvents.resetFilters')}
                   </button>
                 </div>
               )}
@@ -291,19 +279,17 @@ export default function PublicEvents() {
             <div className="mb-4">
               <p className="text-gray-600 text-sm font-medium">
                 {loading
-                  ? 'Chargement...'
-                  : `${filteredEvents.length} événement${filteredEvents.length !== 1 ? 's' : ''} trouvé${
-                      filteredEvents.length !== 1 ? 's' : ''
-                    }`}
+                  ? t('publicEvents.loading')
+                  : t('publicEvents.eventsFound', { count: filteredEvents.length })}
               </p>
             </div>
 
-            {/* Grille d'événements - 2 colonnes */}
+            {/* Grille d'événements */}
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-gray-500">Chargement des événements...</p>
+                  <p className="text-gray-500">{t('publicEvents.loadingEvents')}</p>
                 </div>
               </div>
             ) : filteredEvents.length === 0 ? (
@@ -311,8 +297,8 @@ export default function PublicEvents() {
                 <div className="text-gray-400 mb-4">
                   <Search className="w-16 h-16 mx-auto mb-2" />
                 </div>
-                <p className="text-gray-500 text-lg mb-2">Aucun événement trouvé</p>
-                <p className="text-gray-400 text-sm">Essayez de modifier vos filtres de recherche</p>
+                <p className="text-gray-500 text-lg mb-2">{t('publicEvents.noEventsFound')}</p>
+                <p className="text-gray-400 text-sm">{t('publicEvents.tryModifyingFilters')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -327,7 +313,7 @@ export default function PublicEvents() {
                       {event.thumbnail ? (
                        <ThumbnailImage
                           src={event.thumbnail_path}
-                          variants={event.thumbnail_variants}  // ← AJOUTÉ
+                          variants={event.thumbnail_variants}
                           alt={event.name}
                           size="md"
                           className="w-full aspect-square object-cover"
@@ -342,9 +328,9 @@ export default function PublicEvents() {
                       {/* Badge places disponibles */}
                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold">
                         {event.available_places > 0 ? (
-                          <span className="text-green-600">{event.available_places} places</span>
+                          <span className="text-green-600">{t('publicEvents.availablePlaces', { count: event.available_places })}</span>
                         ) : (
-                          <span className="text-red-600">Complet</span>
+                          <span className="text-red-600">{t('publicEvents.full')}</span>
                         )}
                       </div>
 
@@ -412,7 +398,7 @@ export default function PublicEvents() {
                             />
                           </svg>
                           <span className="truncate">
-                            {new Date(event.start_date).toLocaleDateString('fr-FR', {
+                            {new Date(event.start_date).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', {
                               day: 'numeric',
                               month: 'short',
                               year: 'numeric'
@@ -425,12 +411,12 @@ export default function PublicEvents() {
                       <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                         <div>
                           <span className="text-2xl font-bold text-primary">
-                            {event.base_price > 0 ? `${event.base_price.toFixed(2)} $` : 'Gratuit'}
+                            {event.base_price > 0 ? `${event.base_price.toFixed(2)} $` : t('publicEvents.free')}
                           </span>
                         </div>
                         {event.level && (
                           <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
-                            Niveau {event.level}
+                            {t('publicEvents.level')} {event.level}
                           </span>
                         )}
                       </div>
@@ -442,7 +428,7 @@ export default function PublicEvents() {
           </div>
         </div>
 
-        {/* Section Carte - Largeur dynamique (Desktop uniquement) */}
+        {/* Section Carte (Desktop uniquement) */}
         {!isMobile && (
           <>
             {/* Handle de redimensionnement */}
@@ -451,10 +437,9 @@ export default function PublicEvents() {
               className="hidden lg:block w-1 bg-gray-300 hover:bg-primary hover:w-1.5 cursor-col-resize transition-all relative group"
               style={{ flexShrink: 0 }}
             >
-              {/* Indicateur visuel */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="bg-primary text-white px-2 py-1 rounded text-xs whitespace-nowrap shadow-lg">
-                  ← Glisser pour redimensionner →
+                  {t('publicEvents.dragToResize')}
                 </div>
               </div>
             </div>
@@ -481,14 +466,14 @@ export default function PublicEvents() {
                       d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                     />
                   </svg>
-                  Carte des événements
+                  {t('publicEvents.eventsMap')}
                 </h3>
                 <p className="text-xs text-gray-600 mt-1">
-                  {filteredEvents.length} événement{filteredEvents.length !== 1 ? 's' : ''} sur la carte
+                  {t('publicEvents.eventsOnMap', { count: filteredEvents.length })}
                 </p>
               </div>
 
-              {/* Contenu de la carte - HAUTEUR FIXE */}
+              {/* Contenu de la carte */}
               <div className="flex-1 relative" style={{ minHeight: '400px' }}>
                 {filteredEvents.length === 0 ? (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-400">
@@ -506,8 +491,8 @@ export default function PublicEvents() {
                           d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                         />
                       </svg>
-                      <p className="text-sm font-medium">Aucun événement à afficher</p>
-                      <p className="text-xs mt-1">Les événements apparaîtront ici</p>
+                      <p className="text-sm font-medium">{t('publicEvents.noEventsToDisplay')}</p>
+                      <p className="text-xs mt-1">{t('publicEvents.eventsWillAppearHere')}</p>
                     </div>
                   </div>
                 ) : (

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { privateApi } from "@/api/api"
 import { ThumbnailImage } from "@/components/ui/ResponsiveImage"
+import { useTranslation } from "react-i18next"
 
 type EventCardProps = {
   event: Event
@@ -22,16 +23,15 @@ export default function ProfessionalEventCard({
   isReservation = false 
 }: EventCardProps) {
   
+  const { t } = useTranslation()
   const startDate = formatEventDate(event.start_date)
   const endDate = formatEventDate(event.end_date)
   const navigate = useNavigate()
   
-  // États pour le popup de gestion
   const [showManagePopup, setShowManagePopup] = useState(false)
   const [loading, setLoading] = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
 
-  // Télécharger la liste des participants en PDF
   const handleDownloadParticipants = async () => {
     try {
       setLoading(true)
@@ -47,17 +47,16 @@ export default function ProfessionalEventCard({
       link.click()
       link.remove()
       
-      alert('Liste des participants téléchargée avec succès !')
+      alert(t('professionalEventCard.downloadSuccess'))
       setShowManagePopup(false)
     } catch (error: any) {
       console.error('Erreur téléchargement participants:', error)
-      alert(error.response?.data?.message || 'Erreur lors du téléchargement de la liste')
+      alert(error.response?.data?.message || t('professionalEventCard.downloadError'))
     } finally {
       setLoading(false)
     }
   }
 
-  // Imprimer la liste des participants
   const handlePrintParticipants = async () => {
     try {
       setLoading(true)
@@ -65,10 +64,8 @@ export default function ProfessionalEventCard({
         responseType: 'blob'
       })
       
-      // Créer un URL pour le blob
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
       
-      // Ouvrir dans une nouvelle fenêtre et déclencher l'impression
       const printWindow = window.open(url)
       if (printWindow) {
         printWindow.addEventListener('load', () => {
@@ -79,20 +76,14 @@ export default function ProfessionalEventCard({
       setShowManagePopup(false)
     } catch (error: any) {
       console.error('Erreur impression participants:', error)
-      alert(error.response?.data?.message || 'Erreur lors de l\'impression de la liste')
+      alert(error.response?.data?.message || t('professionalEventCard.printError'))
     } finally {
       setLoading(false)
     }
   }
 
-  // Annuler l'événement
   const handleCancelEvent = async () => {
-    const confirmMessage = 
-      "⚠️ ATTENTION : Cette action va :\n\n" +
-      "1. Masquer l'événement pour les nouveaux utilisateurs\n" +
-      "2. Créer des demandes de remboursement pour tous les participants\n" +
-      "3. Vous devrez rembourser manuellement chaque participant\n\n" +
-      "Êtes-vous sûr de vouloir annuler cet événement ?"
+    const confirmMessage = t('professionalEventCard.cancelConfirmation')
     
     if (!confirm(confirmMessage)) {
       return
@@ -102,17 +93,15 @@ export default function ProfessionalEventCard({
       setCancelLoading(true)
       const response = await privateApi.post(`/events/${event.id}/cancel`)
       
-      alert(
-        `✅ Événement annulé avec succès !\n\n` +
-        `${response.data.participants_count} demande(s) de remboursement créée(s).\n` +
-        `Vous recevrez un email avec la liste des participants à rembourser.`
-      )
+      alert(t('professionalEventCard.cancelSuccess', { 
+        count: response.data.participants_count 
+      }))
       
       setShowManagePopup(false)
       window.location.reload()
     } catch (error: any) {
       console.error('Erreur annulation événement:', error)
-      alert(error.response?.data?.message || error.response?.data?.error || 'Erreur lors de l\'annulation de l\'événement')
+      alert(error.response?.data?.message || error.response?.data?.error || t('professionalEventCard.cancelError'))
     } finally {
       setCancelLoading(false)
     }
@@ -122,7 +111,7 @@ export default function ProfessionalEventCard({
     <>
       <div className="group relative flex flex-col overflow-hidden w-full rounded-lg md:rounded-[4px] bg-white shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105">
         
-        {/* Thumbnail avec images responsive */}
+        {/* Thumbnail */}
         <div className="h-32 sm:h-40 md:h-44 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
           {event.thumbnail_path ? (
             <ThumbnailImage
@@ -137,7 +126,7 @@ export default function ProfessionalEventCard({
             <div className="h-full w-full flex items-center justify-center">
               <div className="text-center text-gray-400">
                 <Layers className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-2 opacity-30" />
-                <p className="text-xs sm:text-sm font-medium">Aucune image</p>
+                <p className="text-xs sm:text-sm font-medium">{t('professionalEventCard.noImage')}</p>
               </div>
             </div>
           )}
@@ -153,7 +142,7 @@ export default function ProfessionalEventCard({
           {/* Category & Level */}
           <div className="flex items-center text-xs sm:text-sm text-gray-600 gap-1">
             <Layers className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-            <span className="truncate">{event.categorie?.name} · Niveau {event.level}</span>
+            <span className="truncate">{event.categorie?.name} · {t('professionalEventCard.level')} {event.level}</span>
           </div>
 
           {/* Location */}
@@ -165,7 +154,7 @@ export default function ProfessionalEventCard({
           {/* Date */}
           <div className="flex items-center text-xs sm:text-sm text-gray-500 gap-1">
             <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-            <span className="truncate">Du {startDate} au {endDate}</span>
+            <span className="truncate">{t('professionalEventCard.dateRange', { start: startDate, end: endDate })}</span>
           </div>
 
           {/* Price */}
@@ -173,7 +162,7 @@ export default function ProfessionalEventCard({
             <span className="text-lg sm:text-xl font-bold text-primary">
               {Number(event.base_price || 0) > 0 
                 ? `${Number(event.base_price || 0).toFixed(2)} $` 
-                : 'Gratuit'}
+                : t('professionalEventCard.free')}
             </span>
           </div>
 
@@ -181,7 +170,7 @@ export default function ProfessionalEventCard({
           {event.is_cancelled ? (
             <div className="mt-1.5">
               <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
-                Événement annulé
+                {t('professionalEventCard.eventCancelled')}
               </span>
             </div>
           ) : (
@@ -192,7 +181,7 @@ export default function ProfessionalEventCard({
                 className="w-full flex items-center justify-center gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
               >
                 <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span>Voir détails</span>
+                <span>{t('professionalEventCard.viewDetails')}</span>
               </button>
 
               {/* Professional Controls */}
@@ -203,16 +192,15 @@ export default function ProfessionalEventCard({
                     className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-accent px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-primary transition-colors active:scale-95"
                   >
                     <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">Modifier</span>
-                    <span className="sm:hidden">Éditer</span>
+                    <span className="hidden sm:inline">{t('professionalEventCard.edit')}</span>
+                    <span className="sm:hidden">{t('professionalEventCard.editShort')}</span>
                   </button>
                   <button
                     onClick={() => setShowManagePopup(true)}
                     className="flex-1 flex items-center justify-center gap-1 sm:gap-2 rounded-md md:rounded-[4px] bg-blue-600 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors active:scale-95"
                   >
                     <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline">Gérer</span>
-                    <span className="sm:hidden">Gérer</span>
+                    <span>{t('professionalEventCard.manage')}</span>
                   </button>
                 </div>
               )}
@@ -227,7 +215,7 @@ export default function ProfessionalEventCard({
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Gérer l'événement</h3>
+              <h3 className="text-lg font-semibold text-gray-800">{t('professionalEventCard.manageEvent')}</h3>
               <button
                 onClick={() => setShowManagePopup(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -251,8 +239,8 @@ export default function ProfessionalEventCard({
               >
                 <Download className="w-5 h-5 text-primary flex-shrink-0" />
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-gray-800">Télécharger la liste</p>
-                  <p className="text-xs text-gray-500">PDF des participants</p>
+                  <p className="font-medium text-gray-800">{t('professionalEventCard.downloadList')}</p>
+                  <p className="text-xs text-gray-500">{t('professionalEventCard.participantsPdf')}</p>
                 </div>
               </button>
 
@@ -264,8 +252,8 @@ export default function ProfessionalEventCard({
               >
                 <Printer className="w-5 h-5 text-blue-600 flex-shrink-0" />
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-gray-800">Imprimer la liste</p>
-                  <p className="text-xs text-gray-500">Impression directe</p>
+                  <p className="font-medium text-gray-800">{t('professionalEventCard.printList')}</p>
+                  <p className="text-xs text-gray-500">{t('professionalEventCard.directPrint')}</p>
                 </div>
               </button>
 
@@ -277,8 +265,8 @@ export default function ProfessionalEventCard({
               >
                 <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-gray-800">Annuler l'événement</p>
-                  <p className="text-xs text-gray-500">Masquer et rembourser participants</p>
+                  <p className="font-medium text-gray-800">{t('professionalEventCard.cancelEvent')}</p>
+                  <p className="text-xs text-gray-500">{t('professionalEventCard.hideAndRefund')}</p>
                 </div>
               </button>
             </div>
@@ -288,7 +276,7 @@ export default function ProfessionalEventCard({
               <div className="px-4 pb-4">
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-primary"></div>
-                  <span>{cancelLoading ? 'Annulation en cours...' : 'Traitement...'}</span>
+                  <span>{cancelLoading ? t('professionalEventCard.cancelling') : t('professionalEventCard.processing')}</span>
                 </div>
               </div>
             )}

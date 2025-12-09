@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Search, Users, Loader2 } from "lucide-react";
 import ProfessionalCard from "@/features/professional/component/ProfessionalCard";
 import { ProfessionalService } from "@/features/professional/service/professionalService";
+import { useTranslation } from "react-i18next";
 
 interface Professional {
   id: number;
@@ -13,6 +14,7 @@ interface Professional {
 }
 
 export default function ProfessionalsPage() {
+  const { t } = useTranslation();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [filteredPros, setFilteredPros] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,6 @@ export default function ProfessionalsPage() {
   }, []);
 
   useEffect(() => {
-    // Filtrer les professionnels par nom/ville
     if (searchTerm.trim() === "") {
       setFilteredPros(professionals);
     } else {
@@ -44,13 +45,12 @@ export default function ProfessionalsPage() {
       setLoading(true);
       const response = await ProfessionalService.getAll();
       
-      // L'API retourne { data: [...] } ou directement un array
       const prosData = response.data || response;
       setProfessionals(prosData);
       setFilteredPros(prosData);
     } catch (err: any) {
       console.error("Erreur chargement professionnels:", err);
-      setError("Impossible de charger les professionnels");
+      setError(t('professionalsPage.loadError'));
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,7 @@ export default function ProfessionalsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 size={48} className="animate-spin text-primary mx-auto mb-4" />
-          <p className="text-gray-600">Chargement des professionnels...</p>
+          <p className="text-gray-600">{t('professionalsPage.loadingProfessionals')}</p>
         </div>
       </div>
     );
@@ -77,7 +77,7 @@ export default function ProfessionalsPage() {
             onClick={fetchProfessionals}
             className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
           >
-            Réessayer
+            {t('professionalsPage.retry')}
           </button>
         </div>
       </div>
@@ -93,10 +93,10 @@ export default function ProfessionalsPage() {
             <Users size={32} className="text-primary" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Nos Professionnels
+            {t('professionalsPage.title')}
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Découvrez les professionnels qualifiés de notre plateforme
+            {t('professionalsPage.subtitle')}
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export default function ProfessionalsPage() {
             />
             <input
               type="text"
-              placeholder="Rechercher par nom ou ville..."
+              placeholder={t('professionalsPage.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors text-gray-900 placeholder-gray-400 bg-white shadow-sm"
@@ -122,13 +122,13 @@ export default function ProfessionalsPage() {
           <p className="text-gray-600">
             {filteredPros.length === professionals.length ? (
               <span>
-                <strong className="text-primary">{professionals.length}</strong> professionnel
-                {professionals.length > 1 ? "s" : ""} disponible{professionals.length > 1 ? "s" : ""}
+                <strong className="text-primary">{professionals.length}</strong>{' '}
+                {t('professionalsPage.professionalsAvailable', { count: professionals.length })}
               </span>
             ) : (
               <span>
-                <strong className="text-primary">{filteredPros.length}</strong> résultat
-                {filteredPros.length > 1 ? "s" : ""} sur {professionals.length}
+                <strong className="text-primary">{filteredPros.length}</strong>{' '}
+                {t('professionalsPage.resultsOutOf', { count: filteredPros.length, total: professionals.length })}
               </span>
             )}
           </p>
@@ -139,12 +139,12 @@ export default function ProfessionalsPage() {
           <div className="text-center py-20">
             <Users size={64} className="text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Aucun professionnel trouvé
+              {t('professionalsPage.noProfessionalsFound')}
             </h3>
             <p className="text-gray-500">
               {searchTerm
-                ? "Essayez avec d'autres mots-clés"
-                : "Aucun professionnel n'est disponible pour le moment"}
+                ? t('professionalsPage.tryOtherKeywords')
+                : t('professionalsPage.noProfessionalsAvailable')}
             </p>
           </div>
         ) : (

@@ -988,6 +988,199 @@ const resources = {
       },
 
       // ==========================================
+      // PROFESSIONAL EVENT CARD
+      // ==========================================
+      professionalEventCard: {
+        // Image
+        noImage: 'Aucune image',
+        
+        // Event info
+        level: 'Niveau',
+        dateRange: 'Du {{start}} au {{end}}',
+        free: 'Gratuit',
+        
+        // Status
+        eventCancelled: 'Événement annulé',
+        
+        // Buttons
+        viewDetails: 'Voir détails',
+        edit: 'Modifier',
+        editShort: 'Éditer',
+        manage: 'Gérer',
+        
+        // Manage popup
+        manageEvent: 'Gérer l\'événement',
+        downloadList: 'Télécharger la liste',
+        participantsPdf: 'PDF des participants',
+        printList: 'Imprimer la liste',
+        directPrint: 'Impression directe',
+        cancelEvent: 'Annuler l\'événement',
+        hideAndRefund: 'Masquer et rembourser participants',
+        
+        // Messages
+        downloadSuccess: 'Liste des participants téléchargée avec succès !',
+        downloadError: 'Erreur lors du téléchargement de la liste',
+        printError: 'Erreur lors de l\'impression de la liste',
+        
+        // Cancel confirmation
+        cancelConfirmation: '⚠️ ATTENTION : Cette action va :\n\n1. Masquer l\'événement pour les nouveaux utilisateurs\n2. Créer des demandes de remboursement pour tous les participants\n3. Vous devrez rembourser manuellement chaque participant\n\nÊtes-vous sûr de vouloir annuler cet événement ?',
+        cancelSuccess: '✅ Événement annulé avec succès !\n\n{{count}} demande(s) de remboursement créée(s).\nVous recevrez un email avec la liste des participants à rembourser.',
+        cancelError: 'Erreur lors de l\'annulation de l\'événement',
+        
+        // Loading
+        cancelling: 'Annulation en cours...',
+        processing: 'Traitement...',
+      },
+
+      // ==========================================
+      // EVENT DETAIL
+      // ==========================================
+      eventDetail: {
+        // Hero section
+        backToEvents: 'Retour aux événements',
+        addressToCome: 'Adresse à venir',
+        
+        // Organizer
+        organizer: 'Organisateur',
+        photoOf: 'Photo de {{name}}',
+        organizedBy: 'Organisé par',
+        anonymousOrganizer: 'Organisateur anonyme',
+        
+        // Reservation
+        reserveYourSpot: 'Réserver votre place',
+        reserveNow: 'Réserver maintenant',
+        total: 'Total',
+        paymentMethod: 'Méthode de paiement',
+        proceedToPayment: 'Procéder au paiement',
+        mustBeLoggedIn: 'Vous devez être connecté pour réserver un événement.',
+        mustBeLoggedInToReserve: 'Vous devez être connecté pour réserver cet événement.',
+        
+        // Event info
+        aboutEvent: 'À propos de l\'événement',
+        noDescriptionAvailable: 'Aucune description disponible.',
+        category: 'Catégorie',
+        noImagesAvailable: 'Aucune image disponible',
+        
+        // Location
+        location: 'Localisation',
+        eventLocation: 'Localisation de l\'événement',
+        addressNotAvailable: 'Adresse non disponible',
+        
+        // Loading & Errors
+        loadingEvent: 'Chargement de l\'événement...',
+        eventNotFound: 'Événement introuvable',
+        backToList: 'Retour à la liste',
+        paymentError: 'Une erreur est survenue lors du paiement. Veuillez réessayer.',
+      },
+
+      // ==========================================
+      // PUBLIC EVENTS
+      // ==========================================
+      publicEvents: {
+        // Search & Filters
+        searchPlaceholder: 'Rechercher un événement...',
+        filters: 'Filtres',
+        category: 'Catégorie',
+        allCategories: 'Toutes les catégories',
+        city: 'Ville',
+        allCities: 'Toutes les villes',
+        sortByPrice: 'Tri par prix',
+        defaultSort: 'Par défaut',
+        priceAscending: 'Prix croissant',
+        priceDescending: 'Prix décroissant',
+        date: 'Date',
+        dateAll: 'Tous',
+        dateToday: 'Aujourd\'hui',
+        dateWeek: 'Cette semaine',
+        dateMonth: 'Ce mois',
+        maxPrice: 'Prix max: {{price}} $',
+        resetFilters: 'Réinitialiser les filtres',
+        
+        // Results
+        loading: 'Chargement...',
+        eventsFound: '{{count}} événement trouvé',
+        eventsFound_other: '{{count}} événements trouvés',
+        loadingEvents: 'Chargement des événements...',
+        noEventsFound: 'Aucun événement trouvé',
+        tryModifyingFilters: 'Essayez de modifier vos filtres de recherche',
+        
+        // Event card
+        availablePlaces: '{{count}} place',
+        availablePlaces_other: '{{count}} places',
+        full: 'Complet',
+        free: 'Gratuit',
+        level: 'Niveau',
+        
+        // Map
+        dragToResize: '← Glisser pour redimensionner →',
+        eventsMap: 'Carte des événements',
+        eventsOnMap: '{{count}} événement sur la carte',
+        eventsOnMap_other: '{{count}} événements sur la carte',
+        noEventsToDisplay: 'Aucun événement à afficher',
+        eventsWillAppearHere: 'Les événements apparaîtront ici',
+      },
+
+      // ==========================================
+      // PRO PROFILE
+      // ==========================================
+      proProfile: {
+        // Loading & Errors
+        loadingProfile: 'Chargement du profil...',
+        failedToLoadProfile: 'Impossible de charger le profil',
+        profileNotFound: 'Profil non trouvé',
+        backToHome: 'Retour à l\'accueil',
+        
+        // Profile info
+        professional: 'Professionnel',
+        memberSince: 'Membre depuis',
+        events: 'Événements',
+        profileOf: 'Profil de {{name}}',
+        
+        // Sections
+        about: 'À propos',
+        organizedEvents: 'Événements organisés ({{count}})',
+        seeAllEvents: 'Voir tous les événements →',
+        noEventsYet: 'Aucun événement organisé pour le moment',
+        
+        // Sidebar
+        contact: 'Contact',
+        information: 'Informations',
+        memberSinceLabel: 'Membre depuis',
+        status: 'Statut',
+        user: 'Utilisateur',
+        followYou: 'vous suivent',
+        followYou_singular: 'vous suit',
+      },
+
+      // ==========================================
+      // PROFESSIONALS PAGE
+      // ==========================================
+      professionalsPage: {
+        // Loading & Error
+        loadingProfessionals: 'Chargement des professionnels...',
+        loadError: 'Impossible de charger les professionnels',
+        retry: 'Réessayer',
+        
+        // Header
+        title: 'Nos Professionnels',
+        subtitle: 'Découvrez les professionnels qualifiés de notre plateforme',
+        
+        // Search
+        searchPlaceholder: 'Rechercher par nom ou ville...',
+        
+        // Stats
+        professionalsAvailable: 'professionnel disponible',
+        professionalsAvailable_other: 'professionnels disponibles',
+        resultsOutOf: 'résultat sur {{total}}',
+        resultsOutOf_other: 'résultats sur {{total}}',
+        
+        // Empty state
+        noProfessionalsFound: 'Aucun professionnel trouvé',
+        tryOtherKeywords: 'Essayez avec d\'autres mots-clés',
+        noProfessionalsAvailable: 'Aucun professionnel n\'est disponible pour le moment',
+      },
+
+      // ==========================================
       // LANGUAGE SWITCHER
       // ==========================================
       language: {
@@ -1018,6 +1211,14 @@ const resources = {
       // ==========================================
       formField: {
         forgotPassword: 'Mot de passe oublié ?',
+      },
+
+      // ==========================================
+      // FORGOT PASSWORD PAGE
+      // ==========================================
+      forgotPassword: {
+        resetLinkSent: 'Lien de réinitialisation envoyé à votre email',
+        resetLinkError: 'Une erreur est survenue. Veuillez réessayer.',
       },
 
       // ==========================================
@@ -1876,6 +2077,199 @@ const resources = {
       },
 
       // ==========================================
+      // PROFESSIONAL EVENT CARD
+      // ==========================================
+      professionalEventCard: {
+        // Image
+        noImage: 'No image',
+        
+        // Event info
+        level: 'Level',
+        dateRange: 'From {{start}} to {{end}}',
+        free: 'Free',
+        
+        // Status
+        eventCancelled: 'Event cancelled',
+        
+        // Buttons
+        viewDetails: 'View details',
+        edit: 'Edit',
+        editShort: 'Edit',
+        manage: 'Manage',
+        
+        // Manage popup
+        manageEvent: 'Manage Event',
+        downloadList: 'Download list',
+        participantsPdf: 'Participants PDF',
+        printList: 'Print list',
+        directPrint: 'Direct print',
+        cancelEvent: 'Cancel event',
+        hideAndRefund: 'Hide and refund participants',
+        
+        // Messages
+        downloadSuccess: 'Participants list downloaded successfully!',
+        downloadError: 'Error downloading the list',
+        printError: 'Error printing the list',
+        
+        // Cancel confirmation
+        cancelConfirmation: '⚠️ WARNING: This action will:\n\n1. Hide the event from new users\n2. Create refund requests for all participants\n3. You will need to manually refund each participant\n\nAre you sure you want to cancel this event?',
+        cancelSuccess: '✅ Event cancelled successfully!\n\n{{count}} refund request(s) created.\nYou will receive an email with the list of participants to refund.',
+        cancelError: 'Error cancelling the event',
+        
+        // Loading
+        cancelling: 'Cancelling...',
+        processing: 'Processing...',
+      },
+
+      // ==========================================
+      // EVENT DETAIL
+      // ==========================================
+      eventDetail: {
+        // Hero section
+        backToEvents: 'Back to events',
+        addressToCome: 'Address to come',
+        
+        // Organizer
+        organizer: 'Organizer',
+        photoOf: 'Photo of {{name}}',
+        organizedBy: 'Organized by',
+        anonymousOrganizer: 'Anonymous organizer',
+        
+        // Reservation
+        reserveYourSpot: 'Reserve your spot',
+        reserveNow: 'Reserve now',
+        total: 'Total',
+        paymentMethod: 'Payment method',
+        proceedToPayment: 'Proceed to payment',
+        mustBeLoggedIn: 'You must be logged in to reserve an event.',
+        mustBeLoggedInToReserve: 'You must be logged in to reserve this event.',
+        
+        // Event info
+        aboutEvent: 'About the event',
+        noDescriptionAvailable: 'No description available.',
+        category: 'Category',
+        noImagesAvailable: 'No images available',
+        
+        // Location
+        location: 'Location',
+        eventLocation: 'Event location',
+        addressNotAvailable: 'Address not available',
+        
+        // Loading & Errors
+        loadingEvent: 'Loading event...',
+        eventNotFound: 'Event not found',
+        backToList: 'Back to list',
+        paymentError: 'An error occurred during payment. Please try again.',
+      },
+
+      // ==========================================
+      // PUBLIC EVENTS
+      // ==========================================
+      publicEvents: {
+        // Search & Filters
+        searchPlaceholder: 'Search for an event...',
+        filters: 'Filters',
+        category: 'Category',
+        allCategories: 'All categories',
+        city: 'City',
+        allCities: 'All cities',
+        sortByPrice: 'Sort by price',
+        defaultSort: 'Default',
+        priceAscending: 'Price ascending',
+        priceDescending: 'Price descending',
+        date: 'Date',
+        dateAll: 'All',
+        dateToday: 'Today',
+        dateWeek: 'This week',
+        dateMonth: 'This month',
+        maxPrice: 'Max price: {{price}} $',
+        resetFilters: 'Reset filters',
+        
+        // Results
+        loading: 'Loading...',
+        eventsFound: '{{count}} event found',
+        eventsFound_other: '{{count}} events found',
+        loadingEvents: 'Loading events...',
+        noEventsFound: 'No events found',
+        tryModifyingFilters: 'Try modifying your search filters',
+        
+        // Event card
+        availablePlaces: '{{count}} place',
+        availablePlaces_other: '{{count}} places',
+        full: 'Full',
+        free: 'Free',
+        level: 'Level',
+        
+        // Map
+        dragToResize: '← Drag to resize →',
+        eventsMap: 'Events map',
+        eventsOnMap: '{{count}} event on the map',
+        eventsOnMap_other: '{{count}} events on the map',
+        noEventsToDisplay: 'No events to display',
+        eventsWillAppearHere: 'Events will appear here',
+      },
+
+      // ==========================================
+      // PRO PROFILE
+      // ==========================================
+      proProfile: {
+        // Loading & Errors
+        loadingProfile: 'Loading profile...',
+        failedToLoadProfile: 'Unable to load profile',
+        profileNotFound: 'Profile not found',
+        backToHome: 'Back to home',
+        
+        // Profile info
+        professional: 'Professional',
+        memberSince: 'Member since',
+        events: 'Events',
+        profileOf: 'Profile of {{name}}',
+        
+        // Sections
+        about: 'About',
+        organizedEvents: 'Organized events ({{count}})',
+        seeAllEvents: 'See all events →',
+        noEventsYet: 'No organized events yet',
+        
+        // Sidebar
+        contact: 'Contact',
+        information: 'Information',
+        memberSinceLabel: 'Member since',
+        status: 'Status',
+        user: 'User',
+        followYou: 'follow you',
+        followYou_singular: 'follows you',
+      },
+
+      // ==========================================
+      // PROFESSIONALS PAGE
+      // ==========================================
+      professionalsPage: {
+        // Loading & Error
+        loadingProfessionals: 'Loading professionals...',
+        loadError: 'Unable to load professionals',
+        retry: 'Retry',
+        
+        // Header
+        title: 'Our Professionals',
+        subtitle: 'Discover the qualified professionals on our platform',
+        
+        // Search
+        searchPlaceholder: 'Search by name or city...',
+        
+        // Stats
+        professionalsAvailable: 'professional available',
+        professionalsAvailable_other: 'professionals available',
+        resultsOutOf: 'result out of {{total}}',
+        resultsOutOf_other: 'results out of {{total}}',
+        
+        // Empty state
+        noProfessionalsFound: 'No professionals found',
+        tryOtherKeywords: 'Try with other keywords',
+        noProfessionalsAvailable: 'No professionals are available at the moment',
+      },
+
+      // ==========================================
       // LANGUAGE SWITCHER
       // ==========================================
       language: {
@@ -1897,6 +2291,14 @@ const resources = {
 
       formField: {
         forgotPassword: 'Forgot your password?',
+      },
+
+      // ==========================================
+      // FORGOT PASSWORD PAGE
+      // ==========================================
+      forgotPassword: {
+        resetLinkSent: 'Password reset link sent to your email',
+        resetLinkError: 'An error occurred. Please try again.',
       },
 
       errorFallback: {

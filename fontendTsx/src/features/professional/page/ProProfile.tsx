@@ -30,6 +30,7 @@ import { useAuth } from '@/context/AuthContext';
 
 
 export default function ProfessionalPublicProfile() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [user, setUser] = useState<User | undefined>();
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,6 @@ export default function ProfessionalPublicProfile() {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const { events } = useEvent();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function ProfessionalPublicProfile() {
         setUser(res.data.data);
       } catch (err: any) {
         console.error('Error fetching user:', err);
-        setError('Impossible de charger le profil');
+        setError(t('proProfile.failedToLoadProfile'));
       } finally {
         setLoading(false);
       }
@@ -57,7 +57,6 @@ export default function ProfessionalPublicProfile() {
     fetchUserById();
 
 
-    // Vérifier le statut de follow si l'utilisateur est connecté
     const checkFollowStatus = async () => {
       if (currentUser) {
         try {
@@ -66,10 +65,8 @@ export default function ProfessionalPublicProfile() {
           setFollowersCount(res.data.followers_count);
         } catch (err: any) {
           console.error('Error checking follow status:', err);
-          // Ignorer les erreurs 401 silencieusement (utilisateur non connecté)
         }
       } else {
-        // Si pas connecté, récupérer juste le nombre de followers
         try {
           const res = await publicApi.get(`/user/${id}/public-profile`);
           setFollowersCount(res.data.data.followers_count || 0);
@@ -82,7 +79,7 @@ export default function ProfessionalPublicProfile() {
     fetchUserById();
     checkFollowStatus();
 
-  }, [id, currentUser]);
+  }, [id, currentUser, t]);
 
   const userEvents = useMemo(() => 
     events.filter((event) => event.creator?.id === user?.id),
@@ -93,7 +90,7 @@ export default function ProfessionalPublicProfile() {
 
   const stats = useMemo(() => ({
     total_events: userEvents.length,
-    avg_rating: 4.5, // You might want to calculate this from actual event ratings
+    avg_rating: 4.5,
     reviews_count: userEvents.reduce((acc, event) => acc + (event.reviews_count || 0), 0),
     completion_rate: userEvents.length > 0 ? Math.round((userEvents.filter(e => e.status === 'completed').length / userEvents.length) * 100) : 0
   }), [userEvents]);
@@ -104,7 +101,7 @@ export default function ProfessionalPublicProfile() {
   const handleShareProfile = () => {
     if (navigator.share && user) {
       navigator.share({
-        title: `${t('common.profileOf')} ${user.profile.name} ${user.profile.last_name}`,
+        title: t('proProfile.profileOf', { name: `${user.profile.name} ${user.profile.last_name}` }),
         url: window.location.href,
       });
     } else {
@@ -118,14 +115,12 @@ export default function ProfessionalPublicProfile() {
   };
 
   const handleFollow = async () => {
-      // Vérifier si l'utilisateur est connecté
       if (!currentUser) {
         alert(t('following.mustBeLoggedIn'));
         navigate('/login');
         return;
       }
 
-      // Confirmation pour unfollow
       if (isFollowing) {
         if (!confirm(t('following.unfollowConfirm', { name: fullName }))) {
           return;
@@ -139,7 +134,6 @@ export default function ProfessionalPublicProfile() {
         setFollowersCount(res.data.followers_count);
       } catch (err: any) {
         console.error('Error toggling follow:', err);
-        // Si erreur 401, rediriger vers login
         if (err.response?.status === 401) {
           alert(t('auth.sessionExpired'));
           navigate('/login');
@@ -155,7 +149,7 @@ export default function ProfessionalPublicProfile() {
     return (
       <div className="min-h-screen flex items-center justify-center text-accent">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-        <span className="ml-3">Chargement du profil...</span>
+        <span className="ml-3">{t('proProfile.loadingProfile')}</span>
       </div>
     );
   }
@@ -163,12 +157,12 @@ export default function ProfessionalPublicProfile() {
   if (error || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-gray-600">
-        <h1 className="text-2xl font-semibold mb-4">Profil non trouvé</h1>
+        <h1 className="text-2xl font-semibold mb-4">{t('proProfile.profileNotFound')}</h1>
         <button 
           onClick={() => navigate("/")} 
           className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-blue-700 transition"
         >
-          Retour à l'accueil
+          {t('proProfile.backToHome')}
         </button>
       </div>
     );
@@ -188,7 +182,7 @@ export default function ProfessionalPublicProfile() {
          <button
                   onClick={() => navigate(-1)}
                   className="absolute top-4 left-4 bg-white/20 hover:bg-white/30 rounded-full p-2 z-50 text-white transition backdrop-blur-sm"
-                  aria-label="Retour aux événements"
+                  aria-label={t('common.back')}
                 >
                   <ArrowLeft size={20} />
         </button>
@@ -235,7 +229,7 @@ export default function ProfessionalPublicProfile() {
                 {isProfessional && (
                   <span className="bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 text-green-100">
                     <CheckCircle size={14} />
-                    Professionnel
+                    {t('proProfile.professional')}
                   </span>
                 )}
               </div>
@@ -250,7 +244,7 @@ export default function ProfessionalPublicProfile() {
               {memberSince && (
                 <div className="flex items-center gap-2 text-white/80">
                   <Calendar size={16} />
-                  <span>Membre depuis {memberSince}</span>
+                  <span>{t('proProfile.memberSince')} {memberSince}</span>
                 </div>
               )}
 
@@ -258,7 +252,7 @@ export default function ProfessionalPublicProfile() {
               <div className="flex gap-6 pt-2">
                 <div className="text-center">
                   <div className="text-2xl font-bold">{stats.total_events}</div>
-                  <div className="text-sm text-white/80">Événements</div>
+                  <div className="text-sm text-white/80">{t('proProfile.events')}</div>
                 </div>
               </div>
             </div>
@@ -273,7 +267,7 @@ export default function ProfessionalPublicProfile() {
             {/* Bio Section */}
             {user.profile.biography && (
               <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <h2 className="text-2xl font-semibold mb-4">À propos</h2>
+                <h2 className="text-2xl font-semibold mb-4">{t('proProfile.about')}</h2>
                 <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                   {user.profile.biography}
                 </p>
@@ -281,56 +275,10 @@ export default function ProfessionalPublicProfile() {
             )}
 
             {/* Events Section */}
-            {/*
-            <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-                <Calendar size={24} className="text-accent" />
-                Événements organisés ({userEvents.length})
-              </h2>
-              
-              {userEvents.length > 0 ? (
-                <Carousel
-                  opts={{
-                    align: "start",
-                  }}
-                  orientation="horizontal"
-                  className="w-full"
-                >
-                  <div className='flex items-center justify-between mb-4'>
-                    <button
-                      onClick={() => navigate('/events')}
-                      className='text-accent hover:underline cursor-pointer text-sm'
-                    >
-                      Voir tous les événements →
-                    </button>
-                    <div className='flex gap-x-[4px] items-center'>
-                      <CarouselPrevious />
-                      <CarouselNext />
-                    </div>
-                  </div>
-                  
-                  <CarouselContent className="-ml-2 md:-ml-4">
-                    {userEvents.map((event) => (
-                      <CarouselItem key={event.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                        <EventCard event={event} />
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                </Carousel>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Users size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>Aucun événement organisé pour le moment</p>
-                </div>
-              )}
-            </div>
-            */}
-
-            {/* Events Section */}
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
               <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                 <Calendar size={24} className="text-accent" />
-                Événements organisés ({userEvents.length})
+                {t('proProfile.organizedEvents', { count: userEvents.length })}
               </h2>
               
               {userEvents.length > 0 ? (
@@ -349,7 +297,7 @@ export default function ProfessionalPublicProfile() {
                           onClick={() => navigate('/events')}
                           className='text-accent hover:underline cursor-pointer text-sm'
                         >
-                          Voir tous les événements →
+                          {t('proProfile.seeAllEvents')}
                         </button>
                         <div className='flex gap-x-[4px] items-center'>
                           <CarouselPrevious />
@@ -374,7 +322,7 @@ export default function ProfessionalPublicProfile() {
                         onClick={() => navigate('/events')}
                         className='text-accent hover:underline cursor-pointer text-sm'
                       >
-                        Voir tous les événements →
+                        {t('proProfile.seeAllEvents')}
                       </button>
                     </div>
                     
@@ -393,7 +341,7 @@ export default function ProfessionalPublicProfile() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Users size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>Aucun événement organisé pour le moment</p>
+                  <p>{t('proProfile.noEventsYet')}</p>
                 </div>
               )}
             </div>
@@ -402,9 +350,8 @@ export default function ProfessionalPublicProfile() {
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
             {/* Action Buttons */}
-            {/* Action Buttons */}
             <div className="flex gap-3">
-              {/* Bouton Follow - Ne pas afficher si c'est le profil du user connecté */}
+              {/* Bouton Follow */}
               {currentUser?.id !== user?.id && (
                 <button
                   onClick={handleFollow}
@@ -440,17 +387,16 @@ export default function ProfessionalPublicProfile() {
               </button>
             </div>
 
-            {/* Followers Count - Ne pas afficher si c'est son propre profil */}
+            {/* Followers Count */}
             {currentUser?.id !== user?.id && followersCount > 0 && (
               <div className="text-center py-2 text-gray-600">
                 <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('common.followers') : t('common.follower')}
               </div>
             )}
 
-            {/* Afficher le compte de followers pour son propre profil */}
             {currentUser?.id === user?.id && followersCount > 0 && (
               <div className="text-center py-2 text-gray-600">
-                <span className="font-semibold">{followersCount}</span> {followersCount > 1 ? t('common.followers') : t('common.follower')} vous suivent
+                <span className="font-semibold">{followersCount}</span> {t('proProfile.followYou', { count: followersCount })}
               </div>
             )}
 
@@ -460,7 +406,7 @@ export default function ProfessionalPublicProfile() {
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <MessageCircle size={20} className="text-accent" />
-                Contact
+                {t('proProfile.contact')}
               </h3>
               
               <div className="space-y-3">
@@ -482,18 +428,18 @@ export default function ProfessionalPublicProfile() {
 
             {/* Member Since */}
             <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-              <h3 className="text-xl font-semibold mb-3">Informations</h3>
+              <h3 className="text-xl font-semibold mb-3">{t('proProfile.information')}</h3>
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex justify-between">
-                  <span>Membre depuis:</span>
+                  <span>{t('proProfile.memberSinceLabel')}:</span>
                   <span className="font-semibold">
                     {memberSince}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Statut:</span>
+                  <span>{t('proProfile.status')}:</span>
                   <span className="font-semibold text-green-600">
-                    {isProfessional ? 'Professionnel' : 'Utilisateur'}
+                    {isProfessional ? t('proProfile.professional') : t('proProfile.user')}
                   </span>
                 </div>
               </div>
