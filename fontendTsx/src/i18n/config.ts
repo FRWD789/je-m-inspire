@@ -1,6 +1,5 @@
 // fontendTsx/src/i18n/config.ts
 import i18n from 'i18next';
-//import { ref } from 'process';
 import { initReactI18next } from 'react-i18next';
 
 const resources = {
@@ -116,10 +115,16 @@ const resources = {
         registerButton: "S'inscrire",
         alreadyAccount: 'Déjà un compte ?',
         registerPro: 'Rejoignez-nous en tant que professionnel',
-        forgotPasswordDescription: "Enter your email and we'll send you a password reset link",
-        sendResetLink: "Send Reset Link",
-        sending: "Sending...",
-        backToLogin: "Back to Login",
+        
+        // Forgot Password
+        forgotPasswordDescription: "Entrez votre email et nous vous enverrons un lien de réinitialisation",
+        sendResetLink: "Envoyer le lien",
+        sending: "Envoi...",
+        backToLogin: "Retour à la connexion",
+        emailRequired: "L'email est requis",
+        resetLinkSent: "Lien de réinitialisation envoyé à votre email",
+        resetLinkError: "Une erreur s'est produite. Veuillez réessayer.",
+        
         // Register Professional
         registerProTitle: 'Rejoignez en tant que professionnel',
         registerProSubtitle: 'Soumettez votre inscription pour devenir un professionnel vérifié',
@@ -152,6 +157,7 @@ const resources = {
         welcome: 'Bienvenue',
         titleSideNav: 'Navigation',
         titleSmallSideNav: 'Nav',
+        back: 'Retour',
         
         // Menu items
         home: 'Accueil',
@@ -213,606 +219,54 @@ const resources = {
         // Messages
         viewMessage: 'Voir le message',
         professionalMessage: 'Message du professionnel',
-        noMessage: 'Aucun message',
+        confirmApprove: 'Êtes-vous sûr de vouloir approuver {{name}} ?',
+        confirmReject: 'Êtes-vous sûr de vouloir rejeter {{name}} ?',
+        confirmRevoke: 'Êtes-vous sûr de vouloir révoquer {{name}} ?',
+        approveSuccess: 'Professionnel approuvé avec succès',
+        rejectSuccess: 'Professionnel rejeté avec succès',
+        revokeSuccess: 'Professionnel révoqué avec succès',
+        actionError: "Erreur lors de l'opération",
         close: 'Fermer',
-        thisUser: 'Cet utilisateur',
-        
-        // Reject modal
-        rejectTitle: 'Rejeter',
-        rejectWarning: '⚠️ Attention : Le compte sera rejeté et l\'utilisateur sera informé.',
-        rejectPlaceholder: 'Raison du rejet (minimum 10 caractères)...',
-        rejectMinLength: 'La raison doit comporter au moins 10 caractères.',
-        cancel: 'Annuler',
-        confirm: 'Confirmer',
-        characters: 'caractères',
-        reason: 'Raison',
-        
-        // Status badges
-        statusApproved: 'Approuvé',
-        statusRejected: 'Rejeté',
-        statusPending: 'En attente'
       },
 
       // ==========================================
-      // EVENTS
+      // SUIVIS (FOLLOWING)
       // ==========================================
-      events: {
-        // Liste
-        title: 'Événements',
-        availableEvents: 'Événements disponibles',
-        availableEventsDesc: 'Parcourez tous les événements publics et réservez votre place',
-        myEventsTitle: 'Mes événements',
-        myEventsDesc: 'Événements que vous avez créés ou auxquels vous participez',
-        noEvents: 'Aucun événement disponible',
-        loading: 'Chargement des événements...',
-        
-        // Détails
-        eventDetails: "Détails de l'événement",
-        startDate: 'Date de début',
-        endDate: 'Date de fin',
-        location: 'Lieu',
-        price: 'Prix',
-        capacity: 'Capacité',
-        availablePlaces: 'Places disponibles',
-        level: 'Niveau',
-        category: 'Catégorie',
-        organizer: 'Organisateur',
-        
-        // Niveaux
-        beginner: 'Débutant',
-        intermediate: 'Intermédiaire',
-        advanced: 'Avancé',
-        
-        // Actions
-        reserve: 'Réserver',
-        reserved: 'Réservé',
-        cancelReservation: 'Annuler la réservation',
-        edit: 'Modifier',
-        delete: 'Supprimer',
-        requestRefund: 'Demander un remboursement',
-        fullEvent: 'Événement complet',
-        
-        // Création
-        createEvent: 'Créer un événement',
-        createNewEvent: 'Créer un nouvel événement',
-        cancel: 'Annuler',
-        eventName: "Nom de l'événement",
-        eventDescription: "Description de l'événement",
-        eventCategory: 'Catégorie',
-        eventLevel: 'Niveau',
-        eventPrice: 'Prix',
-        eventCapacity: 'Capacité maximale',
-        eventStartDate: 'Date de début',
-        eventEndDate: 'Date de fin',
-        eventLocation: 'Adresse',
-        thumbnail: 'Image miniature',
-        banner: 'Bannière',
-        save: 'Enregistrer',
-        creating: 'Création en cours...',
-        updating: 'Mise à jour en cours...',
-        
-        // Messages
-        reservationSuccess: 'Réservation confirmée !',
-        reservationError: 'Erreur lors de la réservation',
-        cancellationSuccess: 'Réservation annulée',
-        cancellationError: "Erreur lors de l'annulation",
-        createSuccess: 'Événement créé avec succès !',
-        createError: 'Erreur lors de la création',
-        updateSuccess: 'Événement mis à jour !',
-        updateError: 'Erreur lors de la mise à jour',
-        deleteSuccess: 'Événement supprimé',
-        deleteError: 'Erreur lors de la suppression',
-        deleteConfirm: 'Êtes-vous sûr de vouloir supprimer cet événement ?',
-        noPlaces: 'Plus de places disponibles',
-
-        // Formulaire
-        generalInfo: 'Informations générales',
-        enterEventName: 'Entrez le nom de votre événement',
-        describeEvent: 'Décrivez votre événement...',
-        localization: 'Localisation',
-        address: 'Adresse',
-        datesAndCapacity: 'Dates et capacité',
-        selectStartDate: 'Sélectionnez la date de début',
-        selectEndDate: 'Sélectionnez la date de fin',
-        pricePerParticipant: 'Prix par participant',
-        enterPrice: 'Entrez le prix par participant',
-        maxCapacity: 'Nombre de participants maximum',
-        maxCapacityPlaceholder: 'Nombre de participants maximum',
-        eventSettings: 'Paramètres de l\'événement',
-        eventImages: 'Images de l\'événement',
-        clickOrDragImage: 'Cliquez ou glissez pour ajouter une image',
-        clickOrDragImages: 'Cliquez ou glissez pour ajouter des images',
-        
-        // Actions événement
-        organizedBy: 'Organisé par',
-        reserveYourSpot: 'Réserver votre place',
-        reserveNow: 'Réserver maintenant',
-        aboutEvent: 'À propos de l\'événement',
-        backToEvents: 'Retour aux événements',
-        backToList: 'Retour à la liste',
-        addressNotAvailable: 'Adresse non disponible',
-        
-        // Gestion pro
-        manageEvent: 'Gérer l\'événement',
-        manage: 'Gérer',
-        downloadList: 'Télécharger la liste',
-        participantsPdf: 'PDF des participants',
-        printList: 'Imprimer la liste',
-        directPrint: 'Impression directe',
-        cancelEvent: 'Annuler l\'événement',
-        hideAndRefund: 'Masquer et rembourser participants',
-        listDownloaded: 'Liste des participants téléchargée avec succès !',
-        downloadError: 'Erreur téléchargement',
-        printError: 'Erreur impression',
-        eventCancelled: 'Événement annulé',
-        
-        // Filtres
-        filters: 'Filtres',
-        allCategories: 'Toutes les catégories',
-        city: 'Ville',
-        allCities: 'Toutes les villes',
-        sortByPrice: 'Tri par prix',
-        default: 'Par défaut',
-        priceAscending: 'Prix croissant',
-        priceDescending: 'Prix décroissant',
-        date: 'Date',
-        resetFilters: 'Réinitialiser les filtres',
-        
-        // États
-        loadingEvents: 'Chargement des événements...',
-        loadingEvent: 'Chargement de l\'événement...',
-        noEventsFound: 'Aucun événement trouvé',
-        tryModifyingFilters: 'Essayez de modifier vos filtres de recherche',
-        eventNotFound: 'Événement introuvable',
-        noEventsOrganized: 'Aucun événement organisé pour le moment',
-        
-        // Images
-        noImage: 'Aucune image',
-        
-        // Carte événement
-        quantity: 'Quantité :',
-        totalPaid: 'Total payé :',
-        viewDetails: 'Voir détails',
-        editShort: 'Éditer',
-        deleteShort: 'Sup.',
-        deleteEvent: 'Supprimer l\'événement',
-        irreversible: 'irréversible',
-        confirmDelete: 'Supprimer',
-        
-        // Statuts
-        allStatus: 'Touts les status',
-      },
-
-      // ==========================================
-      // RÉSERVATIONS
-      // ==========================================
-      reservations: {
-        title: 'Mes réservations',
-        myReservations: 'Mes réservations',
-        noReservations: "Vous n'avez aucune réservation",
-        event: 'Événement',
-        date: 'Date',
-        price: 'Prix',
-        status: 'Statut',
-        actions: 'Actions',
-        
-        // Status
-        confirmed: 'Confirmée',
-        cancelled: 'Annulée',
-        pending: 'En attente',
-        
-        // Actions
-        viewDetails: 'Voir les détails',
-        cancel: 'Annuler',
-        requestRefund: 'Demander un remboursement',
-        
-        // Messages
-        cancelConfirm: 'Êtes-vous sûr de vouloir annuler cette réservation ?',
-
-        noEventsFound: 'Aucun événement trouvé.',
-        searchPlaceholder: 'Rechercher un événement...',
-        allCategories: 'Toutes les catégories',
-        allStatus: 'Tous les statuts',
-        prev: 'Préc.',
-        next: 'Suiv.',
-      },
-
-      // ==========================================
-      // PAIEMENTS
-      // ==========================================
-      payment: {
-        title: 'Paiement',
-        chooseMethod: 'Choisissez votre méthode de paiement',
-        stripe: 'Carte bancaire (Stripe)',
-        paypal: 'PayPal',
-        total: 'Total',
-        quantity: 'Quantité',
-        unitPrice: 'Prix unitaire',
-        processing: 'Traitement en cours...',
-        success: 'Paiement réussi !',
-        error: 'Erreur lors du paiement',
-        cancelled: 'Paiement annulé',
-        goBack: 'Retour',
-        proceed: 'Procéder au paiement'
-      },
-
-      // ==========================================
-      // PROFIL
-      // ==========================================
-      profile: {
-        title: 'Mon profil',
-        editProfile: 'Modifier le profil',
-        saveChanges: 'Enregistrer les modifications',
-        cancel: 'Annuler',
-        saving: 'Enregistrement...',
-        
-        // Informations
-        personalInfo: 'Informations personnelles',
-        firstName: 'Prénom',
-        lastName: 'Nom',
-        email: 'Email',
-        dateOfBirth: 'Date de naissance',
-        city: 'Ville',
-        
-        // Photo
-        profilePicture: 'Photo de profil',
-        changePicture: 'Changer la photo',
-        removePicture: 'Supprimer la photo',
-        
-        // Comptes liés
-        linkedAccounts: 'Comptes liés',
-        stripeAccount: 'Compte Stripe',
-        paypalAccount: 'Compte PayPal',
-        linkAccount: 'Lier le compte',
-        unlinkAccount: 'Délier le compte',
-        accountLinked: 'Compte lié',
-        accountNotLinked: 'Compte non lié',
-        
-        // Mot de passe
-        changePassword: 'Changer le mot de passe',
-        currentPassword: 'Mot de passe actuel',
-        newPassword: 'Nouveau mot de passe',
-        confirmPassword: 'Confirmer le mot de passe',
-        
-        // Suppression
-        deleteAccount: 'Supprimer le compte',
-        deleteAccountWarning: 'Cette action est irréversible',
-        confirmDeletion: 'Confirmer la suppression',
-        typeDelete: 'Tapez SUPPRIMER pour confirmer',
-        
-        // Messages
-        updateSuccess: 'Profil mis à jour avec succès !',
-        updateError: 'Erreur lors de la mise à jour',
-        passwordUpdateSuccess: 'Mot de passe modifié avec succès',
-        passwordUpdateError: 'Erreur lors du changement de mot de passe',
-        accountDeleted: 'Compte supprimé avec succès',
-        accountDeleteError: 'Erreur lors de la suppression',
-        linkSuccess: 'Compte lié avec succès',
-        linkError: 'Erreur lors de la liaison',
-        unlinkSuccess: 'Compte délié avec succès',
-        unlinkError: 'Erreur lors de la déliaison',
-        unlinkConfirm: 'Êtes-vous sûr de vouloir délier ce compte ?',
-        imageTooBig: "L'image ne doit pas dépasser 2MB",
-        invalidImageType: "Le fichier doit être une image",
-        security: 'Sécurité',
-        plan: 'Plan',
-        biography: 'Biographie',
-        biographyPlaceholder: 'Parlez-nous de vous...',
-        accountPlan: 'Plan du compte',
-        accountSecurity: 'Sécurité du compte',
-        selectImage: 'Sélectionnez une image',
-        maxSize: 'Taille maximale: 2MB',
-        uploading: 'Téléchargement...'
-      },
-
-      // ==========================================
-      // ABONNEMENT
-      // ==========================================
-      subscription: {
-        title: 'Abonnement Pro Plus',
-        currentPlan: 'Abonnement actuel',
-        planName: 'Pro Plus',
-        features: 'Fonctionnalités',
-        feature1: 'Paiements directs avec commission réduite',
-        feature2: 'Tableau de bord des revenus',
-        feature3: 'Support prioritaire',
-        feature4: 'Outils marketing avancés',
-        subscribe: "S'abonner",
-        unsubscribe: 'Se désabonner',
-        manageSubscription: "Gérer l'abonnement",
-        active: 'Actif',
-        inactive: 'Inactif',
-        titleMyPro: 'Mon Abonnement Pro+',
-        mySubscription: 'Mon Abonnement',
-        loading: 'Chargement...',
-        loadingInfo: 'Chargement des informations...',
-        maximizeYourEarnings: 'Maximisez vos ventes avec Pro+',
-        limitedFunctions: 'Fonctionnalités limitées avec le compte gratuit',
-        advancedTools: 'Outils avancés',
-        
-        // Messages
-        subscribeSuccess: 'Abonnement activé avec succès !',
-        subscribeError: "Erreur lors de l'activation",
-        unsubscribeSuccess: 'Abonnement annulé',
-        unsubscribeError: "Erreur lors de l'annulation",
-        unsubscribeConfirm: 'Êtes-vous sûr de vouloir annuler votre abonnement ?',
-        subscriptionDataUnavailable: 'Données d\'abonnement non disponibles',
-        cannotLoadInfo: 'Impossible de charger vos informations d\'abonnement.',
-        paymentLinkNotFound: 'Lien de paiement introuvable',
-        subscriptionCreationError: 'Erreur lors de la création de l\'abonnement. Veuillez réessayer.',
-        cancelConfirmation: 'Voulez-vous vraiment annuler votre abonnement ? Cette action est irréversible.',
-        subscriptionWillCancel: 'Votre abonnement sera annulé à la fin de la période en cours.',
-        cancellationError: 'Erreur lors de l\'annulation de l\'abonnement. Veuillez réessayer.',
-        subscriptionActivated: 'Abonnement Activé avec Succès !',
-        subscriptionActivatedDesc: 'Merci de votre confiance. Vous pouvez maintenant profiter de toutes les fonctionnalités professionnelles.',
-        cancelScheduled: 'Annulation programmée',
-        cancelScheduledDesc: 'Votre abonnement Pro Plus sera annulé à la fin de la période en cours.',
-
-        // Abonnement actif
-        activeTitle: 'Abonnement Pro+ Actif',
-        activeSubtitle: 'Vous profitez de tous les avantages premium',
-        subscriptionType: 'Type d\'abonnement',
-        renewalDate: 'Renouvellement le',
-        
-        // Avantages
-        benefitsTitle: 'Vos avantages Pro+',
-        directPayments: 'Paiements directs',
-        directPaymentsDesc1: 'Recevez vos revenus ',
-        directPayementsDesc2: 'immédiatement ',
-        directPayementsDesc3: 'sur vos comptes liés',
-        reducedCommission: 'Commission réduite',
-        reducedCommissionDesc1: 'Taux préférentiel pour ',
-        reducedCommissionDesc2: 'maximiser vos revenus',
-        advancedToolsDesc: 'Accédez à des outils marketing et analytiques avancés pour développer votre activité',
-        whyPro: 'Pourquoi choisir Pro+ ?',
-        whyProDesc1Title: 'Revenus instantanés',
-        whyProDesc1: 'Plus besoin d\'attendre les transferts. Recevez vos paiements directement sur vos comptes liés dès qu\'une réservation est effectuée.',
-        whyProDesc2Title: 'Plus de profits',
-        whyProDesc2: 'Bénéficiez d\'un taux de commission réduit et gardez une plus grande partie de vos revenus.',
-        whyProDesc3Title: 'Croissance accélérée',
-        whyProDesc3: 'Accédez à des outils d\'analyse avancés pour optimiser vos événements et augmenter vos revenus.',
-
-        // Bannière promo
-        proOfferBadge: 'OFFRE PRO+',
-        proOfferText1: 'Recevez vos paiements ',
-        proOfferText2: 'directement ',
-        proOfferText3: 'et payez ',
-        proOfferText4: 'moins de commission',
-        
-        // Compte gratuit
-        freeAccountTitle: 'Compte Gratuit',
-        indirectPayments: 'Paiements indirects',
-        indirectPaymentsDesc: 'Vous devez attendre que nous vous transférions vos revenus',
-        standardCommission: 'Commission standard',
-        standardCommissionDesc: 'Taux de commission plus élevé sur chaque transaction',
-        restrictedAccess: 'Accès restreint aux outils premium',
-        
-        // Actions
-        cancelSubscription: 'Annuler l\'abonnement',
-        cancelling: 'Annulation...',
-        cancel: 'Annuler',
-        continue: 'Continuer',
-
-        // Étapes de préparation
-        initializingSubscription: 'Initialisation de votre abonnement...',
-        preparingFeatures: 'Préparation des fonctionnalités premium...',
-        configuringAccount: 'Configuration de votre compte...',
-        almostDone: 'Presque terminé...',
-        redirectingToPayment: 'Redirection vers le paiement...',
-        autoRedirect: 'Redirection automatique...',
-        finalizingInProgress: 'Finalisation en cours...',
-        
-        // Comptes liés
-        linkedAccounts: 'Comptes liés',
-        loadingLinkedAccounts: 'Chargement des comptes liés...',
-        featureReserved: 'Fonctionnalité réservée',
-        featureReservedDesc: 'Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l\'abonnement',
-        noLinkedAccount: 'Aucun compte lié',
-        accountLinked: 'Compte lié',
-        linkingError: 'Erreur lors de la liaison du compte.',
-        linkingErrorGeneric: 'Erreur de liaison',
-        unlinkingError: 'Erreur lors de la déliaison du compte.',
-        unlinkAccount: 'Délier',
-        linkStripe: 'Lier Stripe',
-        linkPaypal: 'Lier PayPal',
-        cancelWarning: 'Vous perdrez l\'accès aux fonctionnalités suivantes :\nVos comptes liés seront automatiquement dissociés.',
-        subscriptionCancelled: 'Abonnement annulé avec succès.',
-        goToProfile: 'Aller au profil maintenant',
-        backToProfile: 'Retour au profil',
+      following: {
+        title: 'Mes Suivis',
+        noFollowing: 'Vous ne suivez aucun professionnel pour le moment',
+        discover: 'Découvrir des professionnels',
+        loading: 'Chargement de vos suivis...',
+        error: 'Erreur lors du chargement',
         retry: 'Réessayer',
-        
-        // Providers
-        stripe: 'Stripe',
-        paypal: 'PayPal',
-        accountId: 'ID',
-
-        // Misc
-        month: 'mois',
-        forSeriousPros: 'Pour les professionnels sérieux',
-        cancelAnytime: 'Annulez à tout moment',
-        subStripe: 'Abonnement via Stripe',
-        subPaypal: 'Abonnement via PayPal',
+        follow: 'Suivre',
+        unfollow: 'Ne plus suivre',
+        followers: 'abonnés',
+        viewProfile: 'Voir le profil',
+        notifications: 'Notifications',
+        notificationsEnabled: 'Notifications activées',
+        notificationsDisabled: 'Notifications désactivées',
+        toggleNotifications: 'Activer/Désactiver les notifications',
+        unfollowSuccess: 'Vous ne suivez plus {{name}}',
+        followSuccess: 'Vous suivez maintenant {{name}}',
+        notificationToggleSuccess: 'Préférences de notification mises à jour',
       },
 
       // ==========================================
-      // ADMIN
+      // CALENDAR
       // ==========================================
-      admin: {
-        // Approbation
-        approvalTitle: 'Approbation des utilisateurs',
-        pendingApprovals: 'Demandes en attente',
-        approve: 'Approuver',
-        reject: 'Refuser',
-        approved: 'Approuvé',
-        rejected: 'Refusé',
-        pending: 'En attente',
-        
-        // Commissions
-        commissionsTitle: 'Gestion des commissions',
-        user: 'Utilisateur',
-        commissionRate: 'Taux de commission',
-        totalEarnings: 'Revenus totaux',
-        platformEarnings: 'Revenus plateforme',
-        vendorEarnings: 'Revenus vendeur',
-        updateCommission: 'Mettre à jour',
-        
-        // Remboursements
-        refundsTitle: 'Gestion des remboursements',
-        refundRequests: 'Demandes de remboursement',
-        requestDate: 'Date de demande',
-        amount: 'Montant',
-        reason: 'Raison',
-        status: 'Statut',
-        process: 'Traiter',
-
-        // Messages
-        approvalSuccess: 'Utilisateur approuvé',
-        approvalError: "Erreur lors de l'approbation",
-        rejectionSuccess: 'Utilisateur refusé',
-        rejectionError: 'Erreur lors du refus',
-        commissionUpdated: 'Commission mise à jour',
-        commissionError: 'Erreur lors de la mise à jour',
-        refundProcessed: 'Remboursement traité',
-        refundError: 'Erreur lors du traitement'
-      },
-
-      // ==========================================
-      // REFUNDS
-      // ==========================================
-      refunds: {
-        // Titres principaux
-        title: 'Mes Demandes de Remboursement',
-        newRequest: 'Nouvelle Demande',
-        myRequests: 'Mes Demandes',
-        myRequestShort: 'Demandes',
-        manage: 'Gestion des Remboursements',
-        manageShort: 'Gestion',
-        
-        // Titres de gestion
-        adminTitle: 'Remboursements à traiter (Paiements indirects)',
-        proTitle: 'Remboursements de mes événements (Paiements directs)',
-        
-        // Formulaire
-        selectReservation: 'Sélectionner une Réservation',
-        reason: 'Motif du remboursement',
-        reasonPlaceholder: 'Expliquez pourquoi vous demandez un remboursement',
-        submit: 'Soumettre',
-        submitting: 'Envoi en cours...',
-        
-        // Onglets de gestion
-        pending: 'En Attente',
-        approved: 'Approuvés',
-        refused: 'Refusés',
-        rejected: 'Rejetés',
-        all: 'Tous',
-        
-        // Messages
-        submitSuccess: 'Demande de remboursement soumise',
-        submitError: 'Erreur lors de l\'envoi',
-        noReservations: 'Aucune réservation éligible au remboursement',
-        pleaseCompleteRecaptcha: 'Veuillez compléter le captcha',
-        
-        // Page de gestion
-        noRequestsYet: 'Aucune demande de remboursement pour le moment',
-        noRequestsDesc: 'Les demandes apparaîtront ici dès qu\'elles seront soumises',
-        loading: 'Chargement...',
-        refresh: 'Rafraîchir',
-        
-        // Tableau
-        date: 'Date',
-        event: 'Événement',
-        client: 'Client',
-        vendor: 'Vendeur',
-        email: 'Courriel',
-        amount: 'Montant',
-        motive: 'Motif',
-        message: 'Message',
-        status: 'Statut',
-        actions: 'Actions',
-        
-        // Détails
-        refundReason: 'Motif de remboursement',
-        adminMessage: 'Message de l\'administrateur',
-        noReason: 'Aucun motif',
-        viewReason: 'Voir le motif',
-        viewMessage: 'Voir le message',
+      calendar: {
+        title: 'Calendrier des événements',
+        prev: 'Mois précédent',
+        next: 'Mois suivant',
+        eventsFor: 'Événements du',
         close: 'Fermer',
-        
-        // Actions
-        approve: 'Approuver',
-        refuse: 'Refuser',
-        approveRequest: 'Approuver la demande de',
-        refuseRequest: 'Refuser la demande de',
-        addMessage: 'Ajouter un message (minimum 5 caractères)...',
-        messageMinLength: 'Le message doit contenir au moins 5 caractères.',
-        cancel: 'Annuler',
-        confirm: 'Confirmer',
-        
-        // Statuts
-        statusPending: 'En attente',
-        statusApproved: 'Approuvé',
-        statusRefused: 'Refusé',
-        approvedOn: 'Approuvé le',
-        refusedOn: 'Refusé le',
-        
-        // Formulaire de nouvelle demande
-        selectReservationFirst: 'Veuillez sélectionner une réservation',
-        noEligibleReservations: 'Vous n\'avez aucune réservation éligible au remboursement',
-        eligibleReservationsDesc: 'Seules les réservations payées et annulables sans demande existante sont affichées',
-        
-        // Erreurs
-        errorLoading: 'Erreur lors du chargement',
-        errorProcessing: 'Erreur lors du traitement de la demande',
-        cannotLoadRequests: 'Impossible de récupérer les demandes de remboursement.'
+        noEventsThisMonth: 'Aucun événement ce mois-ci',
+        clickDate: 'Cliquez sur une date pour voir les événements',
       },
 
       // ==========================================
-      // REVENUS (VENDEUR)
-      // ==========================================
-      earnings: {
-        title: 'Tableau de bord vendeur',
-        subtitle: 'Gérez vos revenus et transactions',
-        totalEarnings: 'Revenus totaux',
-        platformCommission: 'Commission plateforme',
-        netEarnings: 'Revenus nets',
-        byEvent: 'Par événement',
-        eventName: 'Événement',
-        sales: 'Ventes',
-        revenue: 'Revenus',
-        commission: 'Commission',
-        transactions: 'Transactions',
-        net: 'Net',
-        period: 'Période',
-        thisMonth: 'Ce mois',
-        today: 'Aujourd\'hui',
-        thisWeek: 'Cette semaine',
-        allTime: 'Depuis le début',
-        exportCSV: 'Exporter CSV',
-        overview: 'Vue d\'ensemble',
-        statistics: 'Statistiques',
-        bestEvent: 'Événements les plus rentables',
-        paymentMethod: 'Méthodes de paiement',
-        client: 'Client',
-        amount: 'Montant',
-        method: 'Méthode',
-        last12Month: 'Revenus mensuels (12 derniers mois)',
-
-
-      },
-
-      // ==========================================
-      // CALENDRIER
-      // ==========================================
-     calendar: {
-        title: "Calendrier",
-        prev: "Mois précédent",
-        next: "Mois suivant",
-        eventsFor: "Événements du",
-        close: "Fermer",
-      },
-
-      // ==========================================
-      // MESSAGES COMMUNS
+      // COMMON ELEMENTS
       // ==========================================
       common: {
         // Actions
@@ -821,268 +275,558 @@ const resources = {
         delete: 'Supprimer',
         edit: 'Modifier',
         view: 'Voir',
+        close: 'Fermer',
         back: 'Retour',
         next: 'Suivant',
         previous: 'Précédent',
-        close: 'Fermer',
         confirm: 'Confirmer',
-        search: 'Rechercher',
-        filter: 'Filtrer',
-        sort: 'Trier',
         loading: 'Chargement...',
-        noResults: 'Aucun résultat',
         error: 'Erreur',
         success: 'Succès',
         warning: 'Attention',
         info: 'Information',
-        upgradeAccount: 'Mettre à niveau',
-        freeAccount: 'Gratuit',
-
-        // Profile & Follow
-        profileOf: 'Profil de',
-        linkCopied: 'Lien du profil copié !',
-        contactFeatureComingSoon: 'Fonction de contact à implémenter',
-        follow: 'Suivre',
-        following: 'Abonné',
-        share: 'Partager',
-        contact: 'Contacter',
-        followers: 'abonnés',
-        follower: 'abonné',
         
-        // Labels
-        name: 'Nom',
-        description: 'Description',
-        date: 'Date',
-        time: 'Heure',
-        price: 'Prix',
-        quantity: 'Quantité',
-        total: 'Total',
-        status: 'Statut',
-        actions: 'Actions',
-        details: 'Détails',
+        // Time
+        today: "Aujourd'hui",
+        yesterday: 'Hier',
+        tomorrow: 'Demain',
+        thisWeek: 'Cette semaine',
+        thisMonth: 'Ce mois-ci',
+        thisYear: 'Cette année',
+        
+        // Status
+        active: 'Actif',
+        inactive: 'Inactif',
+        pending: 'En attente',
+        completed: 'Terminé',
+        cancelled: 'Annulé',
+        
+        // Other
+        search: 'Rechercher',
+        filter: 'Filtrer',
+        sort: 'Trier',
+        noResults: 'Aucun résultat',
+        viewAll: 'Voir tout',
+        showMore: 'Voir plus',
+        showLess: 'Voir moins',
+        freeAccount: 'Compte gratuit',
+        upgradeAccount: 'Améliorer',
         required: 'Requis',
         optional: 'Optionnel',
-        chooseOption: 'Choisir une option',
-        
-        // Confirmations
-        confirmAction: 'Êtes-vous sûr ?',
-        cannotUndo: 'Cette action ne peut pas être annulée',
         yes: 'Oui',
         no: 'Non',
-        
-        // Erreurs
-        somethingWentWrong: "Une erreur s'est produite",
-        tryAgain: 'Réessayer',
-        contactSupport: 'Contactez le support',
-        captchaRequired: 'La vérification Captcha est requise',
-        
-        // Succès
-        operationSuccess: 'Opération réussie',
-        changesSaved: 'Modifications enregistrées',
-        
-        // Accès
-        accessDenied: 'Accès refusé',
-        noPermission: "Vous n'avez pas les permissions nécessaires",
-        returnHome: "Retour à l'accueil",
-        
-        // Pagination
-        page: 'Page',
-        of: 'de',
-        itemsPerPage: 'Éléments par page',
-        showing: 'Affichage',
-        to: 'à',
-        results: 'résultats',
-
-        today: "Aujourd'hui",
-        tomorrow: 'Demain',
-        days: 'jours',
-        pending: 'en attente',
-        upgradeToPro: "Passer à Pro Plus",
-        unlockFeatures: "Débloquez toutes les fonctionnalités premium",
-        upgradeNow: "Mettre à niveau maintenant",
       },
 
       // ==========================================
-      // VALIDATION
+      // EVENTS
       // ==========================================
-      validation: {
-        required: 'Ce champ est requis',
-        email: 'Email invalide',
-        minLength: 'Minimum {{count}} caractères',
-        maxLength: 'Maximum {{count}} caractères',
-        passwordMatch: 'Les mots de passe doivent correspondre',
-        invalidDate: 'Date invalide',
-        invalidNumber: 'Nombre invalide',
-        minValue: 'La valeur doit être au moins {{value}}',
-        maxValue: 'La valeur ne peut pas dépasser {{value}}',
-        invalidFormat: 'Format invalide',
-        fileTooBig: 'Fichier trop volumineux',
-        invalidFileType: 'Type de fichier invalide',
+      events: {
+        // List & Cards
+        title: 'Événements',
+        upcoming: 'Événements à venir',
+        past: 'Événements passés',
+        all: 'Tous les événements',
+        myEvents: 'Mes événements',
+        noEvents: 'Aucun événement trouvé',
+        createEvent: 'Créer un événement',
+        viewDetails: 'Voir les détails',
+        edit: 'Modifier',
+        delete: 'Supprimer',
+        share: 'Partager',
         
-        // Validation spécifiques
-        nameRequired: 'Le nom est requis',
-        nameMaxLength: 'Le nom ne doit pas dépasser 255 caractères',
-        lastNameRequired: 'Le nom de famille est requis',
-        lastNameMaxLength: 'Le nom de famille ne doit pas dépasser 255 caractères',
-        emailRequired: 'L\'email est requis',
-        emailInvalidFormat: 'Format d\'email invalide',
-        emailMaxLength: 'L\'email ne doit pas dépasser 255 caractères',
-        dobInvalid: 'La date de naissance doit être une date valide avant aujourd\'hui',
-        cityMaxLength: 'La ville ne doit pas dépasser 255 caractères',
-        passwordMinLength: 'Le mot de passe doit contenir au moins 6 caractères',
-        passwordConfirmMinLength: 'La confirmation doit contenir au moins 6 caractères',
-        motivationMinLength: 'La lettre de motivation doit contenir au moins 50 caractères',
-        motivationMaxLength: 'La lettre de motivation ne doit pas dépasser 2000 caractères',
-        profilePictureInvalid: 'La photo de profil doit être une image valide de moins de 2 Mo',
-        passwordsDontMatch: 'Les mots de passe ne correspondent pas',
-      },
-
-      // ==========================================
-      // FOLLOWING (ABONNEMENTS)
-      // ==========================================
-      following: {
-        title: 'Mes Abonnements',
-        myFollowing: 'Professionnels suivis',
-        noFollowing: 'Vous ne suivez aucun professionnel',
-        noFollowingDesc: 'Découvrez des professionnels et suivez-les pour rester informé de leurs événements',
-        noResults: 'Aucun professionnel trouvé',
-        searchPlaceholder: 'Rechercher un professionnel...',
-        discoverPros: 'Découvrir des pros',
-        browseEvents: 'Parcourir les événements',
-        professional: 'professionnel',
-        professionals: 'professionnels',
-        unfollow: 'Ne plus suivre',
-        unfollowConfirm: 'Voulez-vous vraiment ne plus suivre {{name}} ?',
-        unfollowSuccess: 'Vous ne suivez plus ce professionnel',
-        unfollowError: 'Erreur lors du désabonnement',
-        mustBeLoggedIn: 'Vous devez être connecté pour suivre un professionnel',
-        followError: 'Erreur lors du suivi',
-        enableNotifications: 'Activer les notifications',
-        disableNotifications: 'Désactiver les notifications',
-        notificationsMuted: 'Notifications désactivées',
-        notificationError: 'Erreur lors de la modification des notifications',
-        notificationsDisabled: 'Notifications désactivées',
-        notificationsDisabledSuccess: 'Vous ne recevrez plus de notifications pour ce professionnel',
-        notificationDisableError: 'Erreur lors de la désactivation',
-        invalidLink: 'Lien invalide ou expiré'
-      },
-
-      // ==========================================
-      // COOKIES
-      // ==========================================
-      cookies: {
-        message: 'Nous utilisons des cookies pour améliorer votre expérience. En continuant à naviguer sur ce site, vous acceptez notre utilisation des cookies.',
-        learnMore: 'En savoir plus sur notre politique de cookies',
-        reject: 'Refuser',
-        accept: 'Accepter',
-        close: 'Fermer',
-      },
-
-      // ==========================================
-      // ONBOARDING
-      // ==========================================
-      onboarding: {
-        choosePhoto: 'Choisir une photo',
-        bio: 'Bio',
-        skip: 'Passer',
-        preview: 'Aperçu',
-        skipError: 'Erreur lors du skip',
-      },
-
-      // ==========================================
-      // MAP
-      // ==========================================
-      map: {
-        apiKeyMissing: 'Ajoutez VITE_GOOGLE_MAPS_API_KEY dans votre fichier .env',
-        noCoordinates: 'Les événements sans coordonnées GPS ne peuvent pas être affichés',
-      },
-
-      // ==========================================
-      // PAYMENTS
-      // ==========================================
-      payments: {
-        // Titres et états
-        success: 'Paiement réussi',
-        successTitle: 'Paiement Réussi !',
-        error: 'Erreur de paiement',
-        failed: 'Paiement échoué',
-        pending: 'Paiement en cours',
-        processing: 'Traitement du paiement...',
-        verifying: 'Vérification en cours...',
-        verifyingStatus: 'Vérification du statut de votre paiement',
-        verificationError: 'Une erreur est survenue lors du paiement',
-        pendingDesc: 'Votre paiement est en cours de traitement. Vous recevrez un email de confirmation une fois le paiement validé.',
-        confirmationEmail: 'Vous recevrez un email de confirmation avec tous les détails',
+        // Filters
+        filterByCity: 'Filtrer par ville',
+        filterByDate: 'Filtrer par date',
+        filterByCategory: 'Filtrer par catégorie',
+        searchPlaceholder: 'Rechercher un événement...',
         
-        // Détails
-        paymentDetails: 'Détails du paiement',
-        totalAmount: 'Montant total :',
-        total: 'Total',
-        status: 'Statut :',
-        paid: 'Payé',
-        reservationNumber: 'Numéro de réservation :',
-        paymentMethod: 'Méthode de paiement',
+        // Details
+        description: 'Description',
+        location: 'Lieu',
+        date: 'Date',
+        startDate: 'Date de début',
+        endDate: 'Date de fin',
+        price: 'Prix',
+        capacity: 'Capacité',
+        spotsLeft: 'Places restantes',
+        organizer: 'Organisateur',
+        category: 'Catégorie',
+        
+        // Status
+        published: 'Publié',
+        draft: 'Brouillon',
+        archived: 'Archivé',
+        soldOut: 'Complet',
         
         // Actions
-        proceedToPayment: 'Procéder au paiement',
-        backToEvents: 'Retour aux événements',
-        viewMyReservations: 'Voir mes réservations',
-        retryPayment: 'Réessayer',
+        reserve: 'Réserver',
+        register: 'S\'inscrire',
+        cancel: 'Annuler',
         
         // Messages
-        mustBeLoggedIn: 'Vous devez être connecté pour réserver cet événement.',
+        createSuccess: 'Événement créé avec succès',
+        updateSuccess: 'Événement mis à jour',
+        deleteSuccess: 'Événement supprimé',
+        deleteConfirm: 'Êtes-vous sûr de vouloir supprimer cet événement ?',
+        reservationSuccess: 'Réservation effectuée avec succès',
+        reservationError: 'Erreur lors de la réservation',
         
-        // Google
-        googleConnectionInProgress: 'Connexion Google en cours...',
-        googleConnectionCancelled: 'Connexion Google annulée ou refusée',
-        googleConnectionError: 'Erreur lors de la connexion Google',
+        // Form labels
+        eventName: 'Nom de l\'événement',
+        eventDescription: 'Description',
+        eventLocation: 'Lieu',
+        eventAddress: 'Adresse',
+        eventCity: 'Ville',
+        eventStartDate: 'Date de début',
+        eventEndDate: 'Date de fin',
+        eventPrice: 'Prix',
+        eventCapacity: 'Capacité',
+        eventCategory: 'Catégorie',
+        eventImage: 'Image',
+        
+        // Placeholders
+        enterEventName: 'Entrez le nom de l\'événement',
+        enterDescription: 'Décrivez votre événement',
+        selectCategory: 'Sélectionnez une catégorie',
+        enterPrice: 'Entrez le prix',
+        enterCapacity: 'Nombre de places',
+        searchAddress: 'Rechercher une adresse',
+      },
+
+      // ==========================================
+      // RESERVATIONS
+      // ==========================================
+      reservations: {
+        title: 'Mes Réservations',
+        upcoming: 'À venir',
+        past: 'Passées',
+        cancelled: 'Annulées',
+        noReservations: 'Vous n\'avez aucune réservation',
+        viewEvent: 'Voir l\'événement',
+        cancelReservation: 'Annuler la réservation',
+        confirmCancel: 'Êtes-vous sûr de vouloir annuler cette réservation ?',
+        cancelSuccess: 'Réservation annulée',
+        reservationNumber: 'Numéro de réservation',
+        reservationDate: 'Date de réservation',
+        totalAmount: 'Montant total',
+        status: 'Statut',
+        refundAmount: 'Montant remboursé',
+        refundStatus: 'Statut du remboursement',
+      },
+
+      // ==========================================
+      // PAYMENT
+      // ==========================================
+      payment: {
+        title: 'Paiement',
+        selectMethod: 'Sélectionnez un mode de paiement',
+        creditCard: 'Carte bancaire',
+        paypal: 'PayPal',
+        orderSummary: 'Récapitulatif de la commande',
+        subtotal: 'Sous-total',
+        fees: 'Frais',
+        total: 'Total',
+        proceedToPayment: 'Procéder au paiement',
+        processing: 'Traitement en cours...',
+        success: 'Paiement réussi !',
+        error: 'Erreur de paiement',
+        cancelled: 'Paiement annulé',
+        retry: 'Réessayer',
+        backToEvents: 'Retour aux événements',
+        viewReservation: 'Voir ma réservation',
+        paymentMethod: 'Mode de paiement',
+        securePayment: 'Paiement sécurisé',
+        confirmPayment: 'Confirmer le paiement',
+      },
+
+      // ==========================================
+      // PROFILE & SETTINGS
+      // ==========================================
+      profile: {
+        title: 'Mon Profil',
+        editProfile: 'Modifier le profil',
+        personalInfo: 'Informations personnelles',
+        accountSettings: 'Paramètres du compte',
+        name: 'Nom',
+        email: 'Email',
+        phone: 'Téléphone',
+        bio: 'Biographie',
+        profilePicture: 'Photo de profil',
+        changePassword: 'Changer le mot de passe',
+        currentPassword: 'Mot de passe actuel',
+        newPassword: 'Nouveau mot de passe',
+        confirmPassword: 'Confirmer le mot de passe',
+        updateSuccess: 'Profil mis à jour',
+        passwordUpdateSuccess: 'Mot de passe mis à jour',
+        uploadPhoto: 'Télécharger une photo',
+        deleteAccount: 'Supprimer le compte',
+        deleteAccountConfirm: 'Êtes-vous sûr ? Cette action est irréversible.',
+        
+        // Professional settings
+        businessInfo: 'Informations professionnelles',
+        businessName: 'Nom de l\'entreprise',
+        businessDescription: 'Description',
+        website: 'Site web',
+        socialMedia: 'Réseaux sociaux',
+        
+        // Subscription
+        subscription: 'Abonnement',
+        currentPlan: 'Forfait actuel',
+        upgradePlan: 'Améliorer le forfait',
+        cancelSubscription: 'Annuler l\'abonnement',
+        renewalDate: 'Date de renouvellement',
+        
+        // Payment methods
+        paymentMethods: 'Modes de paiement',
+        addPaymentMethod: 'Ajouter un mode de paiement',
+        defaultPaymentMethod: 'Mode de paiement par défaut',
+        
+        // Linked accounts
+        linkedAccounts: 'Comptes liés',
+        linkStripe: 'Lier Stripe',
+        linkPayPal: 'Lier PayPal',
+        unlinkAccount: 'Délier le compte',
+        accountLinked: 'Compte lié',
+        accountNotLinked: 'Compte non lié',
+      },
+
+      // ==========================================
+      // SUBSCRIPTION & PLANS
+      // ==========================================
+      subscription: {
+        title: 'Abonnement',
+        choosePlan: 'Choisissez votre forfait',
+        currentPlan: 'Forfait actuel',
+        upgrade: 'Améliorer',
+        downgrade: 'Rétrograder',
+        cancel: 'Annuler',
+        
+        // Plans
+        free: 'Gratuit',
+        pro: 'Pro',
+        proPlus: 'Pro Plus',
+        
+        // Features
+        features: 'Fonctionnalités',
+        eventsPerMonth: 'événements par mois',
+        commission: 'commission',
+        support: 'Support',
+        analytics: 'Analytiques',
+        prioritySupport: 'Support prioritaire',
+        customBranding: 'Personnalisation',
+        
+        // Billing
+        monthly: 'Mensuel',
+        yearly: 'Annuel',
+        savePercent: 'Économisez {{percent}}%',
+        billingCycle: 'Cycle de facturation',
+        nextBilling: 'Prochaine facturation',
+        
+        // Messages
+        upgradeSuccess: 'Abonnement mis à jour',
+        cancelSuccess: 'Abonnement annulé',
+        cancelConfirm: 'Êtes-vous sûr de vouloir annuler votre abonnement ?',
+      },
+
+      // ==========================================
+      // NOTIFICATIONS
+      // ==========================================
+      notifications: {
+        title: 'Notifications',
+        markAllRead: 'Tout marquer comme lu',
+        noNotifications: 'Aucune notification',
+        newEvent: 'Nouvel événement',
+        newReservation: 'Nouvelle réservation',
+        eventUpdate: 'Mise à jour d\'événement',
+        eventCancelled: 'Événement annulé',
+        paymentReceived: 'Paiement reçu',
+        refundProcessed: 'Remboursement traité',
+        
+        // Settings
+        notificationSettings: 'Paramètres de notification',
+        emailNotifications: 'Notifications par email',
+        pushNotifications: 'Notifications push',
+        eventReminders: 'Rappels d\'événements',
+        reservationUpdates: 'Mises à jour de réservations',
+        paymentAlerts: 'Alertes de paiement',
+        marketingEmails: 'Emails marketing',
+      },
+
+      // ==========================================
+      // ANALYTICS (PRO)
+      // ==========================================
+      analytics: {
+        title: 'Analytiques',
+        overview: 'Vue d\'ensemble',
+        revenue: 'Revenus',
+        events: 'Événements',
+        reservations: 'Réservations',
+        visitors: 'Visiteurs',
+        
+        // Metrics
+        totalRevenue: 'Revenus totaux',
+        totalEvents: 'Total événements',
+        totalReservations: 'Total réservations',
+        averageTicketPrice: 'Prix moyen du billet',
+        conversionRate: 'Taux de conversion',
+        
+        // Time periods
+        last7Days: '7 derniers jours',
+        last30Days: '30 derniers jours',
+        last90Days: '90 derniers jours',
+        thisYear: 'Cette année',
+        custom: 'Personnalisé',
+        
+        // Charts
+        revenueChart: 'Graphique des revenus',
+        reservationsChart: 'Graphique des réservations',
+        popularEvents: 'Événements populaires',
+        
+        // Export
+        exportData: 'Exporter les données',
+        exportCSV: 'Exporter en CSV',
+        exportPDF: 'Exporter en PDF',
+      },
+
+      // ==========================================
+      // GOOGLE CALLBACK
+      // ==========================================
+      google: {
+        connectionInProgress: 'Connexion Google en cours...',
+        connectionCancelled: 'Connexion Google annulée ou refusée',
+        connectionError: 'Erreur lors de la connexion Google',
         authorizationCodeMissing: 'Code d\'autorisation manquant',
         redirectingToLogin: 'Redirection vers la page de connexion...',
+      },
+
+      // ==========================================
+      // LINKED ACCOUNTS
+      // ==========================================
+      linkedAccount: {
+        finalizingInProgress: 'Finalisation en cours...',
+        linkingAccount: 'Liaison de votre compte {{provider}} en cours',
+        linkingError: 'Erreur de liaison',
+        backToProfile: 'Retour au profil',
+        accountLinkedSuccess: 'Compte {{provider}} lié avec succès !',
+        canReceivePayments: 'Vous pouvez maintenant recevoir des paiements via {{provider}}',
+        automaticRedirection: 'Redirection automatique...',
+        goToProfileNow: 'Aller au profil maintenant',
+      },
+
+      // ==========================================
+      // SUBSCRIPTION SUCCESS
+      // ==========================================
+      subscriptionSuccess: {
+        title: 'Abonnement Activé avec Succès !',
+        message: 'Merci de votre confiance. Vous pouvez maintenant profiter de toutes les fonctionnalités professionnelles.',
+        continue: 'Continuer',
+      },
+
+      // ==========================================
+      // PAYMENT SUCCESS
+      // ==========================================
+      paymentSuccess: {
+        verificationInProgress: 'Vérification en cours...',
+        verifyingPaymentStatus: 'Vérification du statut de votre paiement',
+        paymentFailed: 'Paiement échoué',
+        paymentError: 'Une erreur est survenue lors du paiement',
+        backToEvents: 'Retour aux événements',
+        retry: 'Réessayer',
+        paymentPending: 'Paiement en cours',
+        paymentPendingMessage: 'Votre paiement est en cours de traitement. Vous recevrez un email de confirmation une fois le paiement validé.',
+        viewMyReservations: 'Voir mes réservations',
+        reservationConfirmed: 'Réservation confirmée !',
+        emailConfirmation: 'Vous recevrez un email de confirmation avec tous les détails',
+        paymentDetails: 'Détails du paiement',
+        totalAmount: 'Montant total',
+        status: 'Statut',
+        paid: 'Payé',
+        reservationNumber: 'Numéro de réservation',
+      },
+
+      // ==========================================
+      // ABONNEMENT (SUBSCRIPTION)
+      // ==========================================
+      abonnement: {
+        // Loading & Errors
+        subscriptionDataUnavailable: 'Données d\'abonnement indisponibles',
+        cannotLoadInfo: 'Impossible de charger les informations d\'abonnement',
+        
+        // Preparation steps
+        initializingSubscription: 'Initialisation de l\'abonnement...',
+        preparingFeatures: 'Préparation des fonctionnalités...',
+        configuringAccount: 'Configuration de votre compte...',
+        almostDone: 'Presque terminé...',
+        redirectingToPayment: 'Redirection vers le paiement...',
+        preparingYourSubscription: 'Préparation de votre abonnement',
+        
+        // Subscribe actions
+        paymentLinkNotFound: 'Lien de paiement introuvable',
+        subscriptionCreationError: 'Erreur lors de la création de l\'abonnement',
+        cancelConfirmation: 'Êtes-vous sûr de vouloir annuler votre abonnement Pro Plus ?',
+        subscriptionWillCancel: 'Votre abonnement sera annulé à la fin de la période en cours',
+        cancellationError: 'Erreur lors de l\'annulation',
+        
+        // Active subscription page
+        myProPlusSubscription: 'Mon Abonnement Pro Plus',
+        activeSubscription: 'Abonnement Actif',
+        unlimitedAccess: 'Accès illimité à toutes les fonctionnalités professionnelles',
+        subscriptionType: 'Type d\'abonnement',
+        renewalDate: 'Date de renouvellement',
+        cancelSubscription: 'Annuler l\'abonnement',
+        yourCurrentBenefits: 'Vos avantages actuels',
+        directPayments: 'Paiements directs',
+        directPaymentsDesc: 'Recevez les paiements instantanément sans délai',
+        reducedCommission: 'Commission réduite',
+        reducedCommissionDesc: 'Seulement 5% au lieu de 15%',
+        
+        // Subscription offer page
+        proOfferBadge: 'OFFRE PRO+',
+        maximizeYourEarnings: 'Maximisez vos revenus avec Pro Plus',
+        unlockProPlus: 'Débloquez Pro Plus et recevez vos paiements instantanément avec seulement 5% de commission',
+        
+        // Free plan
+        freeAccount: 'Compte Gratuit',
+        currentPlan: 'Votre plan actuel',
+        indirectPayments: 'Paiements indirects',
+        indirectPaymentsDesc: 'Délai de 7-14 jours pour recevoir vos paiements',
+        standardCommission: 'Commission standard',
+        standardCommissionDesc: '15% de commission sur chaque vente',
+        limitedFeatures: 'Fonctionnalités limitées',
+        restrictedAccess: 'Accès restreint aux outils avancés',
+        
+        // Pro Plus plan
+        recommended: 'RECOMMANDÉ',
+        forSeriousProfessionals: 'Pour les professionnels sérieux',
+        instantPayments: 'Paiements instantanés',
+        instantPaymentsDesc: 'Recevez vos paiements immédiatement après chaque vente',
+        reducedCommissionProDesc: 'Seulement 5% de commission au lieu de 15%',
+        advancedTools: 'Outils avancés',
+        advancedToolsDesc: 'Statistiques détaillées et gestion complète',
+        month: 'mois',
+        cancelAnytime: 'Annuler à tout moment',
+        subscribeWithStripe: 'S\'abonner avec Stripe',
+        subscribeWithPayPal: 'S\'abonner avec PayPal',
+        
+        // Why Pro Plus section
+        whyChooseProPlus: 'Pourquoi choisir Pro Plus ?',
+        instantAccess: 'Accès Instantané',
+        instantAccessDesc: 'Recevez vos paiements immédiatement sans attendre',
+        moreEarnings: 'Plus de Revenus',
+        moreEarningsDesc: 'Économisez 10% sur chaque transaction avec notre commission réduite',
+        growYourBusiness: 'Développez votre Activité',
+        growYourBusinessDesc: 'Accédez à des outils professionnels pour optimiser vos performances',
+      },
+
+      // ==========================================
+      // LINKED ACCOUNTS SECTION
+      // ==========================================
+      linkedAccounts: {
+        loadingInfo: 'Chargement des informations...',
+        loadingLinkedAccounts: 'Chargement des comptes liés...',
+        
+        // Feature reserved
+        featureReserved: 'Fonctionnalité réservée',
+        featureReservedDesc: 'Le lien vers Stripe et PayPal est réservé aux utilisateurs avec l\'abonnement Pro Plus.',
+        upgradeToProPlus: 'Passer à Pro Plus',
+        
+        // Account status
+        accountLinked: 'Compte lié',
+        noAccountLinked: 'Aucun compte lié',
+        
+        // Actions
+        linkStripe: 'Lier Stripe',
+        linkPayPal: 'Lier PayPal',
+        unlink: 'Délier',
+        linkingError: 'Erreur lors de la liaison du compte.',
+        unlinkingError: 'Erreur lors de la déliaison du compte.',
+        accountUnlinkedSuccess: 'Compte {{provider}} délié avec succès.',
+        
+        // Cancel subscription
+        cancelConfirmation: 'Êtes-vous sûr de vouloir annuler votre abonnement Pro Plus ?\n\nVous perdrez l\'accès aux fonctionnalités suivantes :\n• Liaison de comptes Stripe et PayPal\n• Réception directe des paiements\nVos comptes liés seront automatiquement dissociés.',
+        subscriptionCancelledSuccess: 'Abonnement annulé avec succès.',
+        cancellationError: 'Erreur lors de l\'annulation de l\'abonnement.',
+        
+        // Status messages
+        scheduledCancellation: 'Annulation programmée',
+        scheduledCancellationDesc: 'Votre abonnement Pro Plus sera annulé à la fin de la période en cours.',
+        endDate: 'Date de fin',
+        activeProPlusSubscription: 'Abonnement Pro Plus actif',
+        canCancelAnytime: 'Vous pouvez annuler votre abonnement à tout moment. Les comptes liés seront dissociés automatiquement.',
+        cancelSubscription: 'Annuler l\'abonnement',
+        cancel: 'Annuler',
+        cancelling: 'Annulation...',
+        processing: 'Traitement en cours...',
       },
 
       // ==========================================
       // COMMISSIONS (ADMIN)
       // ==========================================
       commissions: {
-        // Titres
+        // Titles
         title: 'Gestion des Commissions',
         subtitle: 'Gérez les paiements à transférer et les taux de commission',
         loading: 'Chargement...',
         refresh: 'Rafraîchir',
         back: 'Retour',
         
-        // Onglets
-        paymentsToTransfer: 'Paiements à transférer',
+        // Tabs
+        paymentsToTransfer: 'Paiements à Transférer',
         paymentsShort: 'Paiements',
-        commissionRates: 'Taux de commission',
+        commissionRates: 'Taux de Commission',
         commissionRatesShort: 'Taux',
         
-        // Statistiques
+        // Statistics
         totalToTransfer: 'Total à transférer',
         numberOfPayments: 'Nombre de paiements',
         commissionsCollected: 'Commissions prélevées',
         
         // Messages
         noPaymentsToTransfer: 'Aucun paiement à transférer',
-        noPaymentsDesc: 'Tous les professionnels avec Pro Plus et comptes liés reçoivent déjà les paiements directement.',
+        proPlusDirectPayments: 'Tous les professionnels avec Pro Plus et comptes liés reçoivent déjà les paiements directement.',
+        noProfessionalsFound: 'Aucun professionnel trouvé',
+        noProfessionalsRegistered: 'Il n\'y a actuellement aucun professionnel enregistré.',
         
-        // Tableau
+        // Table headers
         date: 'Date',
         event: 'Événement',
-        client: 'Client',
+        customer: 'Client',
         vendor: 'Vendeur',
         email: 'Courriel',
         totalAmount: 'Montant total',
         commission: 'Commission',
-        netAmount: 'Montant net',
+        toTransfer: 'À transférer',
         actions: 'Actions',
+        name: 'Nom',
+        currentRate: 'Taux actuel',
+        status: 'Statut',
+        accounts: 'Comptes',
         
         // Actions
-        copyId: 'Copier l\'ID',
         copied: 'Copié !',
         clickToCopy: 'Cliquer pour copier',
-        transfer: 'Transférer',
-        viewDetails: 'Voir détails',
+        markAsPaid: 'Marquer comme payé',
+        processing: 'Traitement...',
+        edit: 'Modifier',
+        editRate: 'Modifier le taux',
+        save: 'Enregistrer',
+        newCommissionRate: 'Nouveau taux de commission',
+        
+        // Status badges
+        proPlus: 'Pro Plus',
+        notApproved: 'Non approuvé',
+        none: 'Aucun',
+        noLinkedAccount: 'Aucun compte lié',
+        
+        // Alerts & Errors
+        confirmTransfer: 'Confirmer que vous avez transféré ce paiement au vendeur ?',
+        markedAsPaidSuccess: 'Commission marquée comme payée avec succès',
+        markingError: 'Erreur lors du marquage de la commission',
+        rateUpdatedSuccess: 'Taux de commission mis à jour avec succès',
+        rateUpdateError: 'Erreur lors de la mise à jour du taux',
+        loadingError: 'Erreur lors du chargement des commissions',
+        professionalsLoadingError: 'Erreur lors du chargement des professionnels',
+        copyError: 'Erreur lors de la copie du courriel',
       },
 
       // ==========================================
@@ -1090,25 +834,25 @@ const resources = {
       // ==========================================
       professionals: {
         title: 'Nos Professionnels',
-        subtitle: 'Découvrez les professionnels qualifiés de notre plateforme',
+        subtitle: 'Découvrez les professionnels qualifiés sur notre plateforme',
         loadingProfessionals: 'Chargement des professionnels...',
         noProfessionalsFound: 'Aucun professionnel trouvé',
         searchPlaceholder: 'Rechercher par nom ou ville...',
         retry: 'Réessayer',
         
-        // Profil
+        // Profile
         loadingProfile: 'Chargement du profil...',
-        profileNotFound: 'Profil non trouvé',
-        backToHome: 'Retour à l\'accueil',
+        profileNotFound: 'Profil Non Trouvé',
+        backToHome: 'Retour à l\'Accueil',
         professional: 'Professionnel',
         events: 'Événements',
         about: 'À propos',
         noEventsOrganized: 'Aucun événement organisé pour le moment',
         contact: 'Contact',
         information: 'Informations',
-        memberSince: 'Membre depuis:',
-        status: 'Statut:',
-        backToEvents: 'Retour aux événements',
+        memberSince: 'Membre depuis :',
+        status: 'Statut :',
+        backToEvents: 'Retour aux Événements',
       },
 
       // ==========================================
@@ -1118,34 +862,46 @@ const resources = {
         title: 'À propos de Je m\'inspire',
         subtitle: 'La plateforme qui connecte les passionnés aux événements qui les inspirent',
         
+        // Stats
+        eventsCreated: 'Événements créés',
+        activeUsers: 'Utilisateurs actifs',
+        customerSatisfaction: 'Satisfaction client',
+        supportAvailable: 'Support disponible',
+        
+        // Values
+        valuesTitle: 'Nos Valeurs',
+        passionTitle: 'Passion',
+        passionDescription: 'Nous croyons que chaque événement est une opportunité de créer des souvenirs inoubliables.',
+        communityTitle: 'Communauté',
+        communityDescription: 'Connecter les organisateurs avec leur public est au cœur de notre mission.',
+        trustTitle: 'Confiance',
+        trustDescription: 'Sécurité des paiements et protection des données sont nos priorités absolues.',
+        innovationTitle: 'Innovation',
+        innovationDescription: 'Nous améliorons constamment notre plateforme pour vous offrir la meilleure expérience.',
+        
         // Mission
+        ourMission: 'Notre mission',
         missionTitle: 'Notre Mission',
-        missionText1: 'Je m\'inspire est née d\'une vision simple : rendre la découverte et l\'organisation d\'événements accessible à tous. Que vous soyez un organisateur passionné cherchant à partager votre expertise, ou un participant en quête de nouvelles expériences, notre plateforme vous accompagne à chaque étape.',
+        missionText1: 'Je m\'inspire est né d\'une vision simple : rendre la découverte et l\'organisation d\'événements accessible à tous. Que vous soyez un organisateur passionné cherchant à partager votre expertise, ou un participant en quête de nouvelles expériences, notre plateforme vous accompagne à chaque étape.',
         missionText2: 'Nous croyons que les événements ont le pouvoir de transformer les vies, de créer des connexions authentiques et d\'inspirer le changement. C\'est pourquoi nous mettons tout en œuvre pour offrir une expérience fluide, sécurisée et enrichissante.',
         
-        // Valeurs
-        valuesTitle: 'Nos Valeurs',
-        
-        // Histoire
+        // History
         historyTitle: 'Notre Histoire',
         historyText1: 'Fondée par des passionnés d\'événementiel, Je m\'inspire est le fruit de plusieurs années d\'expérience dans l\'organisation et la gestion d\'événements. Face aux défis rencontrés par les organisateurs indépendants, nous avons créé une solution qui simplifie la billetterie, sécurise les paiements et favorise la visibilité.',
         historyText2: 'Aujourd\'hui, nous sommes fiers d\'accompagner des milliers d\'organisateurs et de participants dans leurs aventures événementielles.',
         
-        // Pourquoi nous choisir
+        // Why choose us
         whyChooseUsTitle: 'Pourquoi nous choisir ?',
         securePayments: 'Paiements sécurisés via Stripe et PayPal',
         intuitiveInterface: 'Interface intuitive pour organisateurs et participants',
         affiliateProgram: 'Programme d\'affiliation pour gagner des commissions',
         reactiveSupport: 'Support réactif et accompagnement personnalisé',
         completeDashboard: 'Tableau de bord complet pour suivre vos performances',
-        communityEngaged: 'Communauté engagée et passionnée',
         
-        // CTA
-        joinUsTitle: 'Rejoignez-nous dès aujourd\'hui',
-        joinUsText: 'Que vous soyez organisateur ou participant, découvrez comment Je m\'inspire peut transformer votre expérience événementielle.',
-        startNow: 'Commencer maintenant',
-        explorePlatform: 'Explorer la plateforme',
-        back: 'Retour',
+        // Contact
+        contactTitle: 'Une question ? Contactez-nous',
+        contactDescription: 'Notre équipe est disponible pour répondre à toutes vos questions et vous accompagner dans votre utilisation de la plateforme.',
+        discoverEvents: 'Découvrir les événements',
       },
 
       // ==========================================
@@ -1156,15 +912,128 @@ const resources = {
         date: 'Date',
         commission: 'Commission',
         net: 'Net',
-        loadingError: 'Erreur lors du chargement des données',
-        exportError: 'Erreur lors de l\'export',
+        loadingError: 'Erreur de chargement des données',
+        exportError: 'Erreur d\'exportation',
+      },
+
+      // ==========================================
+      // EVENT FORM
+      // ==========================================
+      eventForm: {
+        // Buttons
+        createEvent: 'Créer l\'événement',
+        editEvent: 'Modifier l\'événement',
+        
+        // Sections
+        generalInfo: 'Informations générales',
+        location: 'Localisation',
+        datesCapacity: 'Dates et capacité',
+        eventSettings: 'Paramètres de l\'événement',
+        eventImages: 'Images de l\'événement',
+        
+        // General Info
+        eventName: 'Nom de l\'événement *',
+        eventNamePlaceholder: 'Ex: Retraite de méditation en montagne',
+        description: 'Description *',
+        descriptionPlaceholder: 'Décrivez votre événement en détails...',
+        
+        // Location
+        eventAddress: 'Adresse de l\'événement *',
+        
+        // Dates & Capacity
+        startDate: 'Date de début *',
+        endDate: 'Date de fin *',
+        price: 'Prix (CAD) *',
+        totalCapacity: 'Capacité totale *',
+        availablePlaces: 'Places disponibles *',
+        
+        // Settings
+        requiredLevel: 'Niveau requis *',
+        selectLevel: 'Sélectionnez le niveau',
+        category: 'Catégorie *',
+        selectCategory: 'Sélectionnez une catégorie',
+        
+        // Levels
+        levelBeginner: 'Débutant',
+        levelIntermediate: 'Intermédiaire',
+        levelAdvanced: 'Avancé',
+        levelExpert: 'Expert',
+        
+        // Categories
+        categoryMeditation: 'Méditation',
+        categoryYoga: 'Yoga',
+        categoryMentalHealth: 'Santé Mentale',
+        categoryRetreat: 'Retraite',
+        
+        // Images
+        thumbnailLabel: 'Image principale (Thumbnail) *',
+        clickToAddImage: 'Cliquez pour ajouter une image',
+        imageFormat: 'PNG, JPG jusqu\'à 10MB',
+        bannerLabel: 'Bannière de l\'événement *',
+        clickToAddBanner: 'Cliquez pour ajouter une bannière',
+        bannerFormat: 'Format 16:9 recommandé',
+        galleryLabel: 'Galerie d\'images (max 5)',
+        galleryLimitReached: 'Limite de 5 images atteinte',
+        addImagesToGallery: 'Ajouter des images à la galerie',
+        imagesCount: '{{count}}/5 images',
+        deleteImage: 'Supprimer',
+        
+        // Status messages
+        loadingExistingImages: 'Chargement des images existantes...',
+        existingImagesLoaded: 'Images existantes chargées !',
+        loadingError: 'Erreur chargement images',
+        compressing: 'Compression en cours...',
+        compressionError: 'Erreur lors de la compression',
+        compressingProgress: 'Compression {{current}}/{{total}}...',
+      },
+
+      // ==========================================
+      // LANGUAGE SWITCHER
+      // ==========================================
+      language: {
+        switchToEnglish: 'Switch to English',
+        switchToFrench: 'Passer en français',
+        changeLanguage: 'Changer de langue',
+        currentFrench: 'Français',
+        currentEnglish: 'Anglais',
+      },
+
+      // ==========================================
+      // AUTOCOMPLETE
+      // ==========================================
+      autocomplete: {
+        searchAddress: 'Rechercher une adresse...',
+        clear: 'Effacer',
+      },
+
+      // ==========================================
+      // CAROUSEL
+      // ==========================================
+      carousel: {
+        errorMessage: 'useCarousel must be used within a <Carousel />',
+      },
+
+      // ==========================================
+      // FORM
+      // ==========================================
+      formField: {
+        forgotPassword: 'Mot de passe oublié ?',
+      },
+
+      // ==========================================
+      // ERROR FALLBACK
+      // ==========================================
+      errorFallback: {
+        title: 'Une erreur est survenue',
+        description: 'L\'équipe technique a été notifiée.',
+        reloadPage: 'Recharger la page',
       },
 
       // ==========================================
       // ERRORS & MESSAGES
       // ==========================================
       errors: {
-        somethingWentWrong: 'Une erreur est survenue',
+        somethingWentWrong: 'Quelque chose s\'est mal passé',
         technicalTeamNotified: 'L\'équipe technique a été notifiée.',
         reloadPage: 'Recharger la page',
         tryAgain: 'Réessayer',
@@ -1173,27 +1042,16 @@ const resources = {
       },
 
       // ==========================================
-      // FORM ELEMENTS
-      // ==========================================
-      form: {
-        forgotPassword: 'Mot de passe oublié ?',
-        placeholder: {
-          email: 'example@email.com',
-          password: '********',
-        },
-      },
-
-      // ==========================================
       // ACCESSIBILITY
       // ==========================================
       accessibility: {
-        toggleMenu: 'Ouvrir/Fermer le menu',
+        toggleMenu: 'Basculer le menu',
         logout: 'Déconnexion',
         back: 'Retour',
         changeLanguage: 'Changer de langue',
         logo: 'Logo',
-        heroBackground: 'Image de fond héro',
-        ourMission: 'Notre mission',
+        heroBackground: 'Arrière-plan héro',
+        ourMission: 'Notre Mission',
         avatar: 'Avatar',
         preview: 'Aperçu',
       },
@@ -1207,36 +1065,31 @@ const resources = {
         twitter: 'Twitter',
         linkedin: 'LinkedIn',
       },
-
-      
     }
   },
-
   en: {
     translation: {
       home: {
         heroTitle: "Explore holistic events near you",
-        heroSubtitle: "Discover, create, and book wellness experiences, retreats, and workshops that nourish body, mind, and soul.",
+        heroSubtitle: "Discover, create and book wellness experiences, retreats and workshops that nourish body, mind and soul.",
         searchPlaceholder: "Search by name...",
         allCities: "All cities",
-        viewAllWithCount: "See all {{count}} events...",
-        viewAll: "See all events...",
+        viewAllWithCount: "View all {{count}} events...",
+        viewAll: "View all events...",
         upcomingEvents: "Upcoming Events",
         cards: {
-          title: "Showcase your workshops",
-          description: "Join us and share your holistic events easily."
+          title: "Shine your workshops",
+          description: "Join, share your holistic events easily."
         },
         newsletter: {
           title: "Join over 2,000 subscribers",
-          subtitle: "Stay up to date with everything you need to know.",
+          subtitle: "Stay informed about everything you need to know.",
           placeholder: "Enter your email",
           button: "Subscribe",
-          privacy: "We take care of your data in our privacy policy"
+          privacy: "We care for your data in our privacy policy"
         }
       },
-      // ==========================================
-      // NAVIGATION
-      // ==========================================
+
       nav: {
         home: 'Home',
         events: 'Events',
@@ -1247,15 +1100,12 @@ const resources = {
         account: 'Account',
         logout: 'Logout',
         login: 'Login',
-        register: 'Sign up',
+        register: 'Register',
         profile: 'Profile',
         connection: 'Connection',
-        inscription: 'Sign up'
+        inscription: 'Registration'
       },
 
-      // ==========================================
-      // EXPERIENCES
-      // ==========================================
       experiences: {
         meditation: 'Meditation',
         yoga: 'Yoga & Movement',
@@ -1263,9 +1113,6 @@ const resources = {
         circles: 'Sharing Circles'
       },
 
-      // ==========================================
-      // FOOTER
-      // ==========================================
       footer: {
         navigation: 'Navigation',
         followUs: 'Follow Us',
@@ -1273,31 +1120,34 @@ const resources = {
         description: 'The best holistic sanctuary for meditation, yoga and wellness.',
         emailAutomatic: 'This email was sent automatically, please do not reply directly.',
         questions: 'Questions?',
-        contactUs: 'Contact us',
+        contactUs: 'Contact Us',
         unsubscribe: 'Unsubscribe'
       },
 
-      // ==========================================
-      // AUTHENTICATION
-      // ==========================================
       auth: {
-        // Login
         loginTitle: 'Welcome Back',
         loginSubtitle: 'Sign in to your Je m\'inspire account',
         email: 'Email',
         emailPlaceholder: 'Enter your email',
         password: 'Password',
         passwordPlaceholder: 'Enter your password',
-        loginButton: 'Login',
+        loginButton: 'Sign In',
         noAccount: "Don't have an account?",
-        createAccount: 'Create account',
+        createAccount: 'Create Account',
         forgotPassword: 'Forgot password?',
-        middleText: 'Or with you email',
-        googleButton: 'Sign in with google',
-        googleLoading: 'Connection in progress...',
-        
-        // Register User
-        registerUserTitle: 'Create your account',
+        middleText: 'Or with your email',
+        googleButton: 'Continue with Google',
+        googleLoading: 'Signing in...',
+        resetPassword: "Reset Password",
+        resetPasswordDescription: "Enter your new password below",
+        newPassword: "New Password",
+        enterNewPassword: "Enter your new password",
+        confirmPassword: "Confirm Password",
+        confirmNewPassword: "Confirm your new password",
+        resetting: "Resetting...",
+        invalidResetLink: "Invalid reset link. Please request a new password reset.",
+        requestNewReset: "Request new password reset",
+        registerUserTitle: 'Create Your Account',
         registerUserSubtitle: 'Sign up to join Je m\'inspire',
         firstName: 'First Name',
         firstNamePlaceholder: 'Enter your first name',
@@ -1308,23 +1158,29 @@ const resources = {
         cityPlaceholder: 'Enter your city',
         passwordConfirmation: 'Password Confirmation',
         passwordConfirmationPlaceholder: 'Confirm your password',
-        registerButton: 'Sign up',
+        registerButton: "Sign Up",
         alreadyAccount: 'Already have an account?',
         registerPro: 'Join us as a professional',
         
+        // Forgot Password
+        forgotPasswordDescription: "Enter your email and we'll send you a password reset link",
+        sendResetLink: "Send Reset Link",
+        sending: "Sending...",
+        backToLogin: "Back to Login",
+        emailRequired: "Email is required",
+        resetLinkSent: "Password reset link sent to your email",
+        resetLinkError: "An error occurred. Please try again.",
+        
         // Register Professional
-        registerProTitle: 'Professional Registration',
-        registerProSubtitle: 'Create your professional account',
+        registerProSubtitle: 'Submit your application to become a verified professional',
         businessName: 'Business Name',
         businessNamePlaceholder: 'Enter your business name',
         motivationLetter: 'Motivation Letter',
         descriptionPlaceholder: 'Describe your activity',
-        
-        // Messages
         loginSuccess: 'Login successful!',
-        loginError: 'Invalid email or password',
+        loginError: 'Incorrect email or password',
         registerSuccess: 'Registration successful!',
-        registerError: 'Registration error',
+        registerError: "Registration error",
         logoutSuccess: 'Logout successful',
         emailTaken: 'This email is already in use',
         invalidEmail: 'Invalid email',
@@ -1332,19 +1188,16 @@ const resources = {
         passwordMismatch: 'Passwords do not match',
         requiredField: 'This field is required',
         invalidDate: 'Invalid date',
-        sessionExpired: 'Your session has expired, please log in again',
+        sessionExpired: 'Your session has expired, please log in again'
       },
 
-      // ==========================================
-      // DASHBOARD
-      // ==========================================
       dashboard: {
         nextEvent: "Next Event",
         title: 'Dashboard',
         welcome: 'Welcome',
         titleSideNav: 'Navigation',
         titleSmallSideNav: 'Nav',
-        // Menu items
+        back: 'Back',
         home: 'Home',
         earnings: 'Earnings',
         users: 'Users',
@@ -1361,927 +1214,519 @@ const resources = {
         goodAfternoon: "Good afternoon",
         goodEvening: "Good evening",
         welcomeBack: "Welcome to your dashboard",
-        quickAccess: "Quick access",
+        quickAccess: "Quick Access",
         manageYourEvents: "Manage your events",
         viewReservations: "View your reservations",
         trackEarnings: "Track your earnings",
         manageUsers: "Manage users"
       },
 
-      // ==========================================
-      // APPROVAL (ADMIN)
-      // ==========================================
       approval: {
-        title: 'Professional Approvals',
+        title: 'Professional Approval',
         loading: 'Loading...',
-        
-        // Stats
         pending: 'Pending',
         approved: 'Approved',
         rejected: 'Rejected',
         all: 'All',
-        
-        // Actions
         refresh: 'Refresh',
         back: 'Back',
         approve: 'Approve',
         reject: 'Reject',
         revoke: 'Revoke',
         reApprove: 'Re-approve',
-        
-        // Table headers
         name: 'Name',
         email: 'Email',
         city: 'City',
         registration: 'Registration',
         message: 'Message',
         actions: 'Actions',
-        
-        // Empty state
         noRequestsFound: 'No requests found',
         noMatchingProfessional: 'No professional matching this filter',
-        
-        // Messages
         viewMessage: 'View message',
-        professionalMessage: 'Professional\'s message',
-        noMessage: 'No message',
+        professionalMessage: 'Professional message',
+        confirmApprove: 'Are you sure you want to approve {{name}}?',
+        confirmReject: 'Are you sure you want to reject {{name}}?',
+        confirmRevoke: 'Are you sure you want to revoke {{name}}?',
+        approveSuccess: 'Professional approved successfully',
+        rejectSuccess: 'Professional rejected successfully',
+        revokeSuccess: 'Professional revoked successfully',
+        actionError: "Operation error",
         close: 'Close',
-        thisUser: 'This user',
-        
-        // Reject modal
-        rejectTitle: 'Reject',
-        rejectWarning: '⚠️ Warning: The account will be rejected and the user will be notified.',
-        rejectPlaceholder: 'Reason for rejection (minimum 10 characters)...',
-        rejectMinLength: 'The reason must be at least 10 characters long.',
-        cancel: 'Cancel',
-        confirm: 'Confirm',
-        characters: 'characters',
-        reason: 'Reason',
-        
-        // Status badges
-        statusApproved: 'Approved',
-        statusRejected: 'Rejected',
-        statusPending: 'Pending'
       },
 
-      // ==========================================
-      // EVENTS
-      // ==========================================
-      events: {
-        // List
-        title: 'Events',
-        availableEvents: 'Available Events',
-        availableEventsDesc: 'Browse all public events and reserve your spot',
-        myEventsTitle: 'My Events',
-        myEventsDesc: 'Events you created or are participating in',
-        noEvents: 'No events available',
-        loading: 'Loading events...',
-        
-        // Details
-        eventDetails: 'Event Details',
-        startDate: 'Start Date',
-        endDate: 'End Date',
-        location: 'Location',
-        price: 'Price',
-        capacity: 'Capacity',
-        availablePlaces: 'Available Places',
-        level: 'Level',
-        category: 'Category',
-        organizer: 'Organizer',
-        
-        // Levels
-        beginner: 'Beginner',
-        intermediate: 'Intermediate',
-        advanced: 'Advanced',
-        
-        // Actions
-        reserve: 'Reserve',
-        reserved: 'Reserved',
-        cancelReservation: 'Cancel Reservation',
-        edit: 'Edit',
-        delete: 'Delete',
-        requestRefund: 'Request Refund',
-        fullEvent: 'Event Full',
-        
-        // Creation
-        createEvent: 'Create Event',
-        createNewEvent: 'Create a New Event',
-        cancel: 'Cancel',
-        eventName: 'Event Name',
-        eventDescription: 'Event Description',
-        eventCategory: 'Category',
-        eventLevel: 'Level',
-        eventPrice: 'Price',
-        eventCapacity: 'Maximum Capacity',
-        eventStartDate: 'Start Date',
-        eventEndDate: 'End Date',
-        eventLocation: 'Address',
-        thumbnail: 'Thumbnail',
-        banner: 'Banner',
-        save: 'Save',
-        creating: 'Creating...',
-        updating: 'Updating...',
-        
-        // Messages
-        reservationSuccess: 'Reservation confirmed!',
-        reservationError: 'Reservation error',
-        cancellationSuccess: 'Reservation cancelled',
-        cancellationError: 'Cancellation error',
-        createSuccess: 'Event created successfully!',
-        createError: 'Creation error',
-        updateSuccess: 'Event updated!',
-        updateError: 'Update error',
-        deleteSuccess: 'Event deleted',
-        deleteError: 'Deletion error',
-        deleteConfirm: 'Are you sure you want to delete this event?',
-        noPlaces: 'No places available',
-
-        // Form
-        generalInfo: 'General Information',
-        enterEventName: 'Enter your event name',
-        describeEvent: 'Describe your event...',
-        localization: 'Location',
-        address: 'Address',
-        datesAndCapacity: 'Dates and Capacity',
-        selectStartDate: 'Select start date',
-        selectEndDate: 'Select end date',
-        pricePerParticipant: 'Price per participant',
-        enterPrice: 'Enter price per participant',
-        maxCapacity: 'Maximum number of participants',
-        maxCapacityPlaceholder: 'Maximum number of participants',
-        eventSettings: 'Event Settings',
-        eventImages: 'Event Images',
-        clickOrDragImage: 'Click or drag to add an image',
-        clickOrDragImages: 'Click or drag to add images',
-        
-        // Event actions
-        organizedBy: 'Organized by',
-        reserveYourSpot: 'Reserve Your Spot',
-        reserveNow: 'Reserve Now',
-        aboutEvent: 'About the Event',
-        backToEvents: 'Back to Events',
-        backToList: 'Back to List',
-        addressNotAvailable: 'Address not available',
-        
-        // Pro management
-        manageEvent: 'Manage Event',
-        manage: 'Manage',
-        downloadList: 'Download List',
-        participantsPdf: 'Participants PDF',
-        printList: 'Print List',
-        directPrint: 'Direct Print',
-        cancelEvent: 'Cancel Event',
-        hideAndRefund: 'Hide and Refund Participants',
-        listDownloaded: 'Participant list downloaded successfully!',
-        downloadError: 'Download error',
-        printError: 'Print error',
-        eventCancelled: 'Event Cancelled',
-        
-        // Filters
-        filters: 'Filters',
-        allCategories: 'All Categories',
-        city: 'City',
-        allCities: 'All Cities',
-        sortByPrice: 'Sort by Price',
-        default: 'Default',
-        priceAscending: 'Price Ascending',
-        priceDescending: 'Price Descending',
-        date: 'Date',
-        resetFilters: 'Reset Filters',
-        
-        // States
-        loadingEvents: 'Loading events...',
-        loadingEvent: 'Loading event...',
-        noEventsFound: 'No Events Found',
-        tryModifyingFilters: 'Try modifying your search filters',
-        eventNotFound: 'Event Not Found',
-        noEventsOrganized: 'No events organized yet',
-        
-        // Images
-        noImage: 'No Image',
-        
-        // Event card
-        quantity: 'Quantity:',
-        totalPaid: 'Total Paid:',
-        viewDetails: 'View Details',
-        editShort: 'Edit',
-        deleteShort: 'Del.',
-        deleteEvent: 'Delete Event',
-        irreversible: 'irreversible',
-        confirmDelete: 'Delete',
-        
-        // Status
-        allStatus: 'All Status',
-      },
-
-      // ==========================================
-      // RESERVATIONS
-      // ==========================================
-      reservations: {
-        title: 'My Reservations',
-        myReservations: 'My Reservations',
-        noReservations: 'You have no reservations',
-        event: 'Event',
-        date: 'Date',
-        price: 'Price',
-        status: 'Status',
-        actions: 'Actions',
-        
-        // Status
-        confirmed: 'Confirmed',
-        cancelled: 'Cancelled',
-        pending: 'Pending',
-        
-        // Actions
-        viewDetails: 'View Details',
-        cancel: 'Cancel',
-        requestRefund: 'Request Refund',
-        
-        // Messages
-        cancelConfirm: 'Are you sure you want to cancel this reservation?',
-
-        noEventsFound: 'No events found.',
-        searchPlaceholder: 'Search for an event...',
-        allCategories: 'All Categories',
-        allStatus: 'All Status',
-        prev: 'Prev',
-        next: 'Next',
-      },
-
-      // ==========================================
-      // PAYMENT
-      // ==========================================
-      payment: {
-        title: 'Payment',
-        chooseMethod: 'Choose your payment method',
-        stripe: 'Credit Card (Stripe)',
-        paypal: 'PayPal',
-        total: 'Total',
-        quantity: 'Quantity',
-        unitPrice: 'Unit Price',
-        processing: 'Processing...',
-        success: 'Payment successful!',
-        error: 'Payment error',
-        cancelled: 'Payment cancelled',
-        goBack: 'Go Back',
-        proceed: 'Proceed to Payment'
-      },
-
-      // ==========================================
-      // PROFILE
-      // ==========================================
-      profile: {
-        title: 'My Profile',
-        editProfile: 'Edit Profile',
-        saveChanges: 'Save Changes',
-        cancel: 'Cancel',
-        saving: 'Saving...',
-        
-        // Information
-        personalInfo: 'Personal Information',
-        firstName: 'First Name',
-        lastName: 'Last Name',
-        email: 'Email',
-        dateOfBirth: 'Date of Birth',
-        city: 'City',
-        
-        // Photo
-        profilePicture: 'Profile Picture',
-        changePicture: 'Change Picture',
-        removePicture: 'Remove Picture',
-        
-        // Linked Accounts
-        linkedAccounts: 'Linked Accounts',
-        stripeAccount: 'Stripe Account',
-        paypalAccount: 'PayPal Account',
-        linkAccount: 'Link Account',
-        unlinkAccount: 'Unlink Account',
-        accountLinked: 'Account Linked',
-        accountNotLinked: 'Account Not Linked',
-        
-        // Password
-        changePassword: 'Change Password',
-        currentPassword: 'Current Password',
-        newPassword: 'New Password',
-        confirmPassword: 'Confirm Password',
-        
-        // Deletion
-        deleteAccount: 'Delete Account',
-        deleteAccountWarning: 'This action is irreversible',
-        confirmDeletion: 'Confirm Deletion',
-        typeDelete: 'Type DELETE to confirm',
-        
-        // Messages
-        updateSuccess: 'Profile updated successfully!',
-        updateError: 'Update error',
-        passwordUpdateSuccess: 'Password changed successfully',
-        passwordUpdateError: 'Password change error',
-        accountDeleted: 'Account deleted successfully',
-        accountDeleteError: 'Account deletion error',
-        linkSuccess: 'Account linked successfully',
-        linkError: 'Linking error',
-        unlinkSuccess: 'Account unlinked successfully',
-        unlinkError: 'Unlinking error',
-        unlinkConfirm: 'Are you sure you want to unlink this account?',
-        imageTooBig: 'Image must not exceed 2MB',
-        invalidImageType: 'File must be an image',
-        security: 'Security',
-        plan: 'Plan',
-        biography: 'Biography',
-        biographyPlaceholder: 'Tell us about yourself...',
-        accountPlan: 'Account Plan',
-        accountSecurity: 'Account Security',
-        selectImage: 'Select an image',
-        maxSize: 'Maximum size: 2MB',
-        uploading: 'Uploading...'
-      },
-
-      // ==========================================
-      // SUBSCRIPTION
-      // ==========================================
-      subscription: {
-        title: 'Pro Plus Subscription',
-        currentPlan: 'Current Subscription',
-        planName: 'Pro Plus',
-        features: 'Features',
-        feature1: 'Direct payments with reduced commission',
-        feature2: 'Earnings dashboard',
-        feature3: 'Priority support',
-        feature4: 'Advanced marketing tools',
-        subscribe: 'Subscribe',
-        unsubscribe: 'Unsubscribe',
-        manageSubscription: 'Manage Subscription',
-        active: 'Active',
-        inactive: 'Inactive',
-        titleMyPro: 'My Pro+ Subscription',
-        mySubscription: 'My Subscription',
-        loading: 'Loading...',
-        loadingInfo: 'Loading information...',
-        maximizeYourEarnings: 'Maximize your earnings with Pro+',
-        limitedFunctions: 'Your free ccount has limited functions',
-        advancedTools: 'Advanced tools',
-        
-        // Messages
-
-        
-        // Active subscription
-        activeTitle: 'Pro+ Subscription Active',
-        activeSubtitle: 'You enjoy all premium benefits',
-        subscriptionType: 'Subscription type',
-        renewalDate: 'Renewal on',
-        
-        // Benefits
-        benefitsTitle: 'Your Pro+ Benefits',
-        directPayments: 'Direct Payments',
-        directPaymentsDesc1: 'Receive your earnings ',
-        directPayementsDesc2: 'right away ',
-        directPayementsDesc3: 'on your linked accounts',
-        reducedCommission: 'Reduced Commission',
-        reducedCommissionDesc1: 'Better rates to ',
-        reducedCommissionDesc2: 'maximize your earnings',
-        advancedToolsDesc: 'Access advanced marketing and management tools to grow your business',
-        whyPro: 'Why choose Pro+?',
-        whyProDesc1Title: 'Instant payments',
-        whyProDesc1Text: 'No more waiting for transfers. Get paid directly when participants book your events.',
-        whyProDesc2Title: 'More earnings',
-        whyProDesc2: 'Get better commission rates and keep more of your revenue.',
-        whyProDesc3Title: 'Faster growth',
-        whyProDesc3: 'Access tools designed to help you attract more participants and grow your business faster.',
-
-        // Promo banner
-        proOfferBadge: 'PRO+ OFFER',
-        proOfferText1: 'Receive payments',
-        proOfferText2: 'directly',
-        proOfferText3: 'and pay',
-        proOfferText4: 'less commission',
-        
-        // Free account
-        freeAccountTitle: 'Free Account',
-        indirectPayments: 'Indirect Payments',
-        indirectPaymentsDesc: 'You must wait for us to transfer your revenue',
-        standardCommission: 'Standard Commission',
-        standardCommissionDesc: 'Higher commission rate on each transaction',
-        restrictedAccess: 'Restricted Access to premium features',
-        
-        // Actions
-        cancelSubscription: 'Cancel Subscription',
-        cancelling: 'Cancelling...',
-        cancel: 'Cancel',
-        continue: 'Continue',
-        
-        // Messages
-        subscriptionDataUnavailable: 'Subscription data unavailable',
-        cannotLoadInfo: 'Unable to load your subscription information.',
-        paymentLinkNotFound: 'Payment link not found',
-        subscriptionCreationError: 'Error creating subscription. Please try again.',
-        cancelConfirmation: 'Do you really want to cancel your subscription? This action is irreversible.',
-        subscriptionWillCancel: 'Your subscription will be cancelled at the end of the current period.',
-        cancellationError: 'Error cancelling subscription. Please try again.',
-        subscriptionActivated: 'Subscription Activated Successfully!',
-        subscriptionActivatedDesc: 'Thank you for your trust. You can now enjoy all professional features.',
-        cancelScheduled: 'Cancellation scheduled',
-        cancelScheduledDesc: 'Your Pro Plus subscription will be cancelled at the end of the current period.',
-        subscribeSuccess: 'Subscription activated successfully!',
-        subscribeError: 'Activation error',
-        unsubscribeSuccess: 'Subscription cancelled',
-        unsubscribeError: 'Cancellation error',
-        unsubscribeConfirm: 'Are you sure you want to cancel your subscription?',
-
-
-        // Preparation steps
-        initializingSubscription: 'Initializing your subscription...',
-        preparingFeatures: 'Preparing premium features...',
-        configuringAccount: 'Configuring your account...',
-        almostDone: 'Almost done...',
-        redirectingToPayment: 'Redirecting to payment...',
-        autoRedirect: 'Automatic redirect...',
-        finalizingInProgress: 'Finalization in progress...',
-        
-        // Linked accounts
-        linkedAccounts: 'Linked Accounts',
-        loadingLinkedAccounts: 'Loading linked accounts...',
-        featureReserved: 'Reserved Feature',
-        featureReservedDesc: 'Linking to Stripe and PayPal is reserved for users with',
-        noLinkedAccount: 'No linked account',
-        accountLinked: 'Account linked',
-        linkingError: 'Error linking account.',
-        linkingErrorGeneric: 'Linking error',
-        unlinkingError: 'Error unlinking account.',
-        unlinkAccount: 'Unlink',
-        linkStripe: 'Link Stripe',
-        linkPaypal: 'Link PayPal',
-        cancelWarning: 'You will lose access to the following features:\nYour linked accounts will be automatically disconnected.',
-        subscriptionCancelled: 'Subscription cancelled successfully.',
-        goToProfile: 'Go to profile now',
-        backToProfile: 'Back to profile',
+      following: {
+        title: 'My Following',
+        noFollowing: 'You are not following any professionals yet',
+        discover: 'Discover professionals',
+        loading: 'Loading your following...',
+        error: 'Loading error',
         retry: 'Retry',
-        
-        // Providers
-        stripe: 'Stripe',
-        paypal: 'PayPal',
-        accountId: 'ID',
-
-        // Misc
-        month: 'month',
-        forSeriousPros: 'For serious professionals',
-        cancelAnytime: 'Cancel anytime',
-        subStripe: 'Subscribe with Stripe',
-        subPaypal: 'Subscribe with PayPal',
-
+        follow: 'Follow',
+        unfollow: 'Unfollow',
+        followers: 'followers',
+        viewProfile: 'View profile',
+        notifications: 'Notifications',
+        notificationsEnabled: 'Notifications enabled',
+        notificationsDisabled: 'Notifications disabled',
+        toggleNotifications: 'Toggle notifications',
+        unfollowSuccess: 'You are no longer following {{name}}',
+        followSuccess: 'You are now following {{name}}',
+        notificationToggleSuccess: 'Notification preferences updated',
       },
 
-      // ==========================================
-      // ADMIN
-      // ==========================================
-      admin: {
-        // Approval
-        approvalTitle: 'User Approval',
-        pendingApprovals: 'Pending Requests',
-        approve: 'Approve',
-        reject: 'Reject',
-        approved: 'Approved',
-        rejected: 'Rejected',
-        pending: 'Pending',
-        
-        // Commissions
-        commissionsTitle: 'Commission Management',
-        user: 'User',
-        commissionRate: 'Commission Rate',
-        totalEarnings: 'Total Earnings',
-        platformEarnings: 'Platform Earnings',
-        vendorEarnings: 'Vendor Earnings',
-        updateCommission: 'Update',
-        
-        // Refunds
-        refundsTitle: 'Refund Management',
-        refundRequests: 'Refund Requests',
-        requestDate: 'Request Date',
-        amount: 'Amount',
-        reason: 'Reason',
-        status: 'Status',
-        process: 'Process',
-
-        // Messages
-        approvalSuccess: 'User approved',
-        approvalError: 'Approval error',
-        rejectionSuccess: 'User rejected',
-        rejectionError: 'Rejection error',
-        commissionUpdated: 'Commission updated',
-        commissionError: 'Update error',
-        refundProcessed: 'Refund processed',
-        refundError: 'Processing error'
-      },
-
-      // ==========================================
-      // REFUNDS
-      // ==========================================
-      refunds: {
-        // Main titles
-        title: 'My Refund Requests',
-        newRequest: 'New Request',
-        myRequests: 'My Requests',
-        myRequestShort: 'Requests',
-        manage: 'Refund Management',
-        manageShort: 'Management',
-        
-        // Management titles
-        adminTitle: 'Refunds to Process (Indirect Payments)',
-        proTitle: 'Refunds for My Events (Direct Payments)',
-        
-        // Form
-        selectReservation: 'Select a Reservation',
-        reason: 'Refund Reason',
-        reasonPlaceholder: 'Explain why you are requesting a refund',
-        submit: 'Submit',
-        submitting: 'Submitting...',
-        
-        // Management tabs
-        pending: 'Pending',
-        approved: 'Approved',
-        refused: 'Refused',
-        rejected: 'Rejected',
-        all: 'All',
-        
-        // Messages
-        submitSuccess: 'Refund request submitted',
-        submitError: 'Submission error',
-        noReservations: 'No reservations eligible for refund',
-        pleaseCompleteRecaptcha: 'Please complete the captcha',
-        
-        // Management page
-        noRequestsYet: 'No refund requests yet',
-        noRequestsDesc: 'Requests will appear here once submitted',
-        loading: 'Loading...',
-        refresh: 'Refresh',
-        
-        // Table
-        date: 'Date',
-        event: 'Event',
-        client: 'Customer',
-        vendor: 'Vendor',
-        email: 'Email',
-        amount: 'Amount',
-        motive: 'Reason',
-        message: 'Message',
-        status: 'Status',
-        actions: 'Actions',
-        
-        // Details
-        refundReason: 'Refund Reason',
-        adminMessage: 'Administrator Message',
-        noReason: 'No reason',
-        viewReason: 'View reason',
-        viewMessage: 'View message',
-        close: 'Close',
-        
-        // Actions
-        approve: 'Approve',
-        refuse: 'Refuse',
-        approveRequest: 'Approve request from',
-        refuseRequest: 'Refuse request from',
-        addMessage: 'Add a message (minimum 5 characters)...',
-        messageMinLength: 'Message must be at least 5 characters long.',
-        cancel: 'Cancel',
-        confirm: 'Confirm',
-        
-        // Statuses
-        statusPending: 'Pending',
-        statusApproved: 'Approved',
-        statusRefused: 'Refused',
-        approvedOn: 'Approved on',
-        refusedOn: 'Refused on',
-        
-        // New request form
-        selectReservationFirst: 'Please select a reservation',
-        noEligibleReservations: 'You have no reservations eligible for refund',
-        eligibleReservationsDesc: 'Only paid and cancellable reservations without existing requests are shown',
-        
-        // Errors
-        errorLoading: 'Error loading',
-        errorProcessing: 'Error processing request',
-        cannotLoadRequests: 'Unable to retrieve refund requests.'
-      },
-      // ==========================================
-      // EARNINGS (VENDOR)
-      // ==========================================
-      earnings: {
-        title: 'Seller dashboard',
-        subtitle: 'Manage your income and transactions',
-        totalEarnings: 'Total Earnings',
-        platformCommission: 'Platform Commission',
-        netEarnings: 'Net Earnings',
-        byEvent: 'By Event',
-        eventName: 'Event',
-        sales: 'Sales',
-        revenue: 'Revenue',
-        commission: 'Commission',
-        transactions: 'Transactions',
-        net: 'Net',
-        period: 'Period',
-        thisMonth: 'This Month',
-        today: 'Today',
-        thisWeek: 'This Week',
-        allTime: 'All Time',
-        exportCSV: 'Export CSV',
-        overview: 'Overview',
-        statistics: 'Statistics',
-        bestEvent: 'Most profitable events',
-        paymentMethod: 'Payment methods',
-        client: 'Customer',
-        amount: 'Amount',
-        method: 'Method',
-        last12Month: 'Monthly income (last 12 months)',
-
-
-      },
-
-      // ==========================================
-      // CALENDAR
-      // ==========================================
       calendar: {
-        title: "Calendar",
-        prev: "Previous month",
-        next: "Next month",
-        eventsFor: "Events for",
-        close: "Close",
+        title: 'Events Calendar',
+        prev: 'Previous month',
+        next: 'Next month',
+        eventsFor: 'Events for',
+        close: 'Close',
+        noEventsThisMonth: 'No events this month',
+        clickDate: 'Click on a date to see events',
       },
 
-      // ==========================================
-      // COMMON MESSAGES
-      // ==========================================
       common: {
-        // Actions
         save: 'Save',
         cancel: 'Cancel',
         delete: 'Delete',
         edit: 'Edit',
         view: 'View',
+        close: 'Close',
         back: 'Back',
         next: 'Next',
         previous: 'Previous',
-        close: 'Close',
         confirm: 'Confirm',
-        search: 'Search',
-        filter: 'Filter',
-        sort: 'Sort',
         loading: 'Loading...',
-        noResults: 'No results',
         error: 'Error',
         success: 'Success',
         warning: 'Warning',
         info: 'Information',
+        today: "Today",
+        yesterday: 'Yesterday',
+        tomorrow: 'Tomorrow',
+        thisWeek: 'This Week',
+        thisMonth: 'This Month',
+        thisYear: 'This Year',
+        active: 'Active',
+        inactive: 'Inactive',
+        pending: 'Pending',
+        completed: 'Completed',
+        cancelled: 'Cancelled',
+        search: 'Search',
+        filter: 'Filter',
+        sort: 'Sort',
+        noResults: 'No results',
+        viewAll: 'View All',
+        showMore: 'Show More',
+        showLess: 'Show Less',
+        freeAccount: 'Free Account',
         upgradeAccount: 'Upgrade',
-        freeAccount: 'Free',
-
-        // Profile & Follow
-        profileOf: 'Profile of',
-        linkCopied: 'Profile link copied!',
-        contactFeatureComingSoon: 'Contact feature to be implemented',
-        follow: 'Follow',
-        following: 'Following',
-        share: 'Share',
-        contact: 'Contact',
-        followers: 'followers',
-        follower: 'follower',
-
-        // Labels
-        name: 'Name',
-        description: 'Description',
-        date: 'Date',
-        time: 'Time',
-        price: 'Price',
-        quantity: 'Quantity',
-        total: 'Total',
-        status: 'Status',
-        actions: 'Actions',
-        details: 'Details',
         required: 'Required',
         optional: 'Optional',
-        chooseOption: 'Choose an option',
-        
-        // Confirmations
-        confirmAction: 'Are you sure?',
-        cannotUndo: 'This action cannot be undone',
         yes: 'Yes',
         no: 'No',
-        
-        // Errors
-        somethingWentWrong: 'Something went wrong',
-        tryAgain: 'Try Again',
-        contactSupport: 'Contact Support',
-        captchaRequired: 'Captcha verification is required',
-        
-        // Success
-        operationSuccess: 'Operation successful',
-        changesSaved: 'Changes saved',
-        
-        // Access
-        accessDenied: 'Access Denied',
-        noPermission: 'You do not have the necessary permissions',
-        returnHome: 'Return Home',
-        
-        // Pagination
-        page: 'Page',
-        of: 'of',
-        itemsPerPage: 'Items per page',
-        showing: 'Showing',
-        to: 'to',
-        results: 'results',
-
-        today: 'Today',
-        tomorrow: 'Tomorrow',
-        days: 'days',
-        pending: 'pending',
-        upgradeToPro: "Upgrade to Pro Plus",
-        unlockFeatures: "Unlock all premium features",
-        upgradeNow: "Upgrade now"
       },
 
-      // ==========================================
-      // VALIDATION
-      // ==========================================
-      validation: {
-        required: 'This field is required',
-        email: 'Invalid email',
-        minLength: 'Minimum {{count}} characters',
-        maxLength: 'Maximum {{count}} characters',
-        passwordMatch: 'Passwords must match',
-        invalidDate: 'Invalid date',
-        invalidNumber: 'Invalid number',
-        minValue: 'Value must be at least {{value}}',
-        maxValue: 'Value cannot exceed {{value}}',
-        invalidFormat: 'Invalid format',
-        fileTooBig: 'File too large',
-        invalidFileType: 'Invalid file type',
-        
-        // Specific validations
-        nameRequired: 'Name is required',
-        nameMaxLength: 'Name must not exceed 255 characters',
-        lastNameRequired: 'Last name is required',
-        lastNameMaxLength: 'Last name must not exceed 255 characters',
-        emailRequired: 'Email is required',
-        emailInvalidFormat: 'Invalid email format',
-        emailMaxLength: 'Email must not exceed 255 characters',
-        dobInvalid: 'Date of birth must be a valid date before today',
-        cityMaxLength: 'City must not exceed 255 characters',
-        passwordMinLength: 'Password must be at least 6 characters long',
-        passwordConfirmMinLength: 'Password confirmation must be at least 6 characters long',
-        motivationMinLength: 'Motivation letter must be at least 50 characters',
-        motivationMaxLength: 'Motivation letter must not exceed 2000 characters',
-        profilePictureInvalid: 'Profile picture must be a valid image under 2MB',
-        passwordsDontMatch: 'Passwords don\'t match',
-      },
-      // ==========================================
-      // FOLLOWING (SUBSCRIPTIONS)
-      // ==========================================
-      following: {
-        title: 'My Subscriptions',
-        myFollowing: 'Following Professionals',
-        noFollowing: 'You are not following any professionals',
-        noFollowingDesc: 'Discover professionals and follow them to stay updated on their events',
-        noResults: 'No professionals found',
-        searchPlaceholder: 'Search for a professional...',
-        discoverPros: 'Discover Pros',
-        browseEvents: 'Browse Events',
-        professional: 'professional',
-        professionals: 'professionals',
-        unfollow: 'Unfollow',
-        unfollowConfirm: 'Do you really want to unfollow {{name}}?',
-        unfollowSuccess: 'You are no longer following this professional',
-        unfollowError: 'Error while unfollowing',
-        mustBeLoggedIn: 'You must be logged in to follow a professional',
-        followError: 'Error while following',
-        enableNotifications: 'Enable notifications',
-        disableNotifications: 'Disable notifications',
-        notificationsMuted: 'Notifications disabled',
-        notificationError: 'Error updating notification settings',
-        notificationsDisabled: 'Notifications Disabled',
-        notificationsDisabledSuccess: 'You will no longer receive notifications from this professional',
-        notificationDisableError: 'Error disabling notifications',
-        invalidLink: 'Invalid or expired link'
+      events: {
+        title: 'Events',
+        upcoming: 'Upcoming Events',
+        past: 'Past Events',
+        all: 'All Events',
+        myEvents: 'My Events',
+        noEvents: 'No events found',
+        createEvent: 'Create Event',
+        viewDetails: 'View Details',
+        edit: 'Edit',
+        delete: 'Delete',
+        share: 'Share',
+        filterByCity: 'Filter by city',
+        filterByDate: 'Filter by date',
+        filterByCategory: 'Filter by category',
+        searchPlaceholder: 'Search an event...',
+        description: 'Description',
+        location: 'Location',
+        date: 'Date',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        price: 'Price',
+        capacity: 'Capacity',
+        spotsLeft: 'Spots Left',
+        organizer: 'Organizer',
+        category: 'Category',
+        published: 'Published',
+        draft: 'Draft',
+        archived: 'Archived',
+        soldOut: 'Sold Out',
+        reserve: 'Reserve',
+        register: 'Register',
+        cancel: 'Cancel',
+        createSuccess: 'Event created successfully',
+        updateSuccess: 'Event updated',
+        deleteSuccess: 'Event deleted',
+        deleteConfirm: 'Are you sure you want to delete this event?',
+        reservationSuccess: 'Reservation successful',
+        reservationError: 'Reservation error',
+        eventName: 'Event Name',
+        eventDescription: 'Description',
+        eventLocation: 'Location',
+        eventAddress: 'Address',
+        eventCity: 'City',
+        eventStartDate: 'Start Date',
+        eventEndDate: 'End Date',
+        eventPrice: 'Price',
+        eventCapacity: 'Capacity',
+        eventCategory: 'Category',
+        eventImage: 'Image',
+        enterEventName: 'Enter event name',
+        enterDescription: 'Describe your event',
+        selectCategory: 'Select a category',
+        enterPrice: 'Enter price',
+        enterCapacity: 'Number of spots',
+        searchAddress: 'Search an address',
       },
 
-      // ==========================================
-      // COOKIES
-      // ==========================================
-      cookies: {
-        message: 'We use cookies to enhance your experience. By continuing to browse this site you agree to our use of cookies.',
-        learnMore: 'Learn more about our cookie policy',
-        reject: 'Reject',
-        accept: 'Accept',
-        close: 'Close',
+      reservations: {
+        title: 'My Reservations',
+        upcoming: 'Upcoming',
+        past: 'Past',
+        cancelled: 'Cancelled',
+        noReservations: 'You have no reservations',
+        viewEvent: 'View event',
+        cancelReservation: 'Cancel reservation',
+        confirmCancel: 'Are you sure you want to cancel this reservation?',
+        cancelSuccess: 'Reservation cancelled',
+        reservationNumber: 'Reservation number',
+        reservationDate: 'Reservation date',
+        totalAmount: 'Total amount',
+        status: 'Status',
+        refundAmount: 'Refund amount',
+        refundStatus: 'Refund status',
       },
 
-      // ==========================================
-      // ONBOARDING
-      // ==========================================
-      onboarding: {
-        choosePhoto: 'Choose a photo',
-        bio: 'Bio',
-        skip: 'Skip',
-        preview: 'Preview',
-        skipError: 'Error during skip',
-      },
-
-      // ==========================================
-      // MAP
-      // ==========================================
-      map: {
-        apiKeyMissing: 'Add VITE_GOOGLE_MAPS_API_KEY to your .env file',
-        noCoordinates: 'Events without GPS coordinates cannot be displayed',
-      },
-
-      // ==========================================
-      // PAYMENTS
-      // ==========================================
-      payments: {
-        // Titles and states
-        success: 'Payment Successful',
-        successTitle: 'Payment Successful!',
-        error: 'Payment Error',
-        failed: 'Payment Failed',
-        pending: 'Payment Pending',
-        processing: 'Processing payment...',
-        verifying: 'Verifying...',
-        verifyingStatus: 'Verifying your payment status',
-        verificationError: 'An error occurred during payment',
-        pendingDesc: 'Your payment is being processed. You will receive a confirmation email once the payment is validated.',
-        confirmationEmail: 'You will receive a confirmation email with all details',
-        
-        // Details
-        paymentDetails: 'Payment Details',
-        totalAmount: 'Total amount:',
+      payment: {
+        title: 'Payment',
+        selectMethod: 'Select a payment method',
+        creditCard: 'Credit Card',
+        paypal: 'PayPal',
+        orderSummary: 'Order Summary',
+        subtotal: 'Subtotal',
+        fees: 'Fees',
         total: 'Total',
-        status: 'Status:',
-        paid: 'Paid',
-        reservationNumber: 'Reservation number:',
-        paymentMethod: 'Payment method',
-        
-        // Actions
         proceedToPayment: 'Proceed to Payment',
+        processing: 'Processing...',
+        success: 'Payment successful!',
+        error: 'Payment error',
+        cancelled: 'Payment cancelled',
+        retry: 'Retry',
         backToEvents: 'Back to Events',
-        viewMyReservations: 'View My Reservations',
-        retryPayment: 'Retry',
-        
-        // Messages
-        mustBeLoggedIn: 'You must be logged in to reserve this event.',
-        
-        // Google
-        googleConnectionInProgress: 'Google connection in progress...',
-        googleConnectionCancelled: 'Google connection cancelled or refused',
-        googleConnectionError: 'Error during Google connection',
+        viewReservation: 'View my reservation',
+        paymentMethod: 'Payment method',
+        securePayment: 'Secure payment',
+        confirmPayment: 'Confirm payment',
+      },
+
+      profile: {
+        title: 'My Profile',
+        editProfile: 'Edit Profile',
+        personalInfo: 'Personal Information',
+        accountSettings: 'Account Settings',
+        name: 'Name',
+        email: 'Email',
+        phone: 'Phone',
+        bio: 'Biography',
+        profilePicture: 'Profile Picture',
+        changePassword: 'Change Password',
+        currentPassword: 'Current Password',
+        newPassword: 'New Password',
+        confirmPassword: 'Confirm Password',
+        updateSuccess: 'Profile updated',
+        passwordUpdateSuccess: 'Password updated',
+        uploadPhoto: 'Upload Photo',
+        deleteAccount: 'Delete Account',
+        deleteAccountConfirm: 'Are you sure? This action is irreversible.',
+        businessInfo: 'Business Information',
+        businessName: 'Business Name',
+        businessDescription: 'Description',
+        website: 'Website',
+        socialMedia: 'Social Media',
+        subscription: 'Subscription',
+        currentPlan: 'Current Plan',
+        upgradePlan: 'Upgrade Plan',
+        cancelSubscription: 'Cancel Subscription',
+        renewalDate: 'Renewal Date',
+        paymentMethods: 'Payment Methods',
+        addPaymentMethod: 'Add Payment Method',
+        defaultPaymentMethod: 'Default Payment Method',
+        linkedAccounts: 'Linked Accounts',
+        linkStripe: 'Link Stripe',
+        linkPayPal: 'Link PayPal',
+        unlinkAccount: 'Unlink Account',
+        accountLinked: 'Account Linked',
+        accountNotLinked: 'Account Not Linked',
+      },
+
+      subscription: {
+        title: 'Subscription',
+        choosePlan: 'Choose your plan',
+        currentPlan: 'Current Plan',
+        upgrade: 'Upgrade',
+        downgrade: 'Downgrade',
+        cancel: 'Cancel',
+        free: 'Free',
+        pro: 'Pro',
+        proPlus: 'Pro Plus',
+        features: 'Features',
+        eventsPerMonth: 'events per month',
+        commission: 'commission',
+        support: 'Support',
+        analytics: 'Analytics',
+        prioritySupport: 'Priority Support',
+        customBranding: 'Custom Branding',
+        monthly: 'Monthly',
+        yearly: 'Yearly',
+        savePercent: 'Save {{percent}}%',
+        billingCycle: 'Billing Cycle',
+        nextBilling: 'Next Billing',
+        upgradeSuccess: 'Subscription updated',
+        cancelSuccess: 'Subscription cancelled',
+        cancelConfirm: 'Are you sure you want to cancel your subscription?',
+      },
+
+      notifications: {
+        title: 'Notifications',
+        markAllRead: 'Mark all as read',
+        noNotifications: 'No notifications',
+        newEvent: 'New Event',
+        newReservation: 'New Reservation',
+        eventUpdate: 'Event Update',
+        eventCancelled: 'Event Cancelled',
+        paymentReceived: 'Payment Received',
+        refundProcessed: 'Refund Processed',
+        notificationSettings: 'Notification Settings',
+        emailNotifications: 'Email Notifications',
+        pushNotifications: 'Push Notifications',
+        eventReminders: 'Event Reminders',
+        reservationUpdates: 'Reservation Updates',
+        paymentAlerts: 'Payment Alerts',
+        marketingEmails: 'Marketing Emails',
+      },
+
+      analytics: {
+        title: 'Analytics',
+        overview: 'Overview',
+        revenue: 'Revenue',
+        events: 'Events',
+        reservations: 'Reservations',
+        visitors: 'Visitors',
+        totalRevenue: 'Total Revenue',
+        totalEvents: 'Total Events',
+        totalReservations: 'Total Reservations',
+        averageTicketPrice: 'Average Ticket Price',
+        conversionRate: 'Conversion Rate',
+        last7Days: 'Last 7 Days',
+        last30Days: 'Last 30 Days',
+        last90Days: 'Last 90 Days',
+        thisYear: 'This Year',
+        custom: 'Custom',
+        revenueChart: 'Revenue Chart',
+        reservationsChart: 'Reservations Chart',
+        popularEvents: 'Popular Events',
+        exportData: 'Export Data',
+        exportCSV: 'Export CSV',
+        exportPDF: 'Export PDF',
+      },
+
+      google: {
+        connectionInProgress: 'Google connection in progress...',
+        connectionCancelled: 'Google connection cancelled or refused',
+        connectionError: 'Error during Google connection',
         authorizationCodeMissing: 'Authorization code missing',
         redirectingToLogin: 'Redirecting to login page...',
       },
 
-      // ==========================================
-      // COMMISSIONS (ADMIN)
-      // ==========================================
+      linkedAccount: {
+        finalizingInProgress: 'Finalizing...',
+        linkingAccount: 'Linking your {{provider}} account',
+        linkingError: 'Linking Error',
+        backToProfile: 'Back to Profile',
+        accountLinkedSuccess: '{{provider}} Account Successfully Linked!',
+        canReceivePayments: 'You can now receive payments via {{provider}}',
+        automaticRedirection: 'Automatic redirection...',
+        goToProfileNow: 'Go to Profile Now',
+      },
+
+      subscriptionSuccess: {
+        title: 'Subscription Successfully Activated!',
+        message: 'Thank you for your trust. You can now enjoy all professional features.',
+        continue: 'Continue',
+      },
+
+      paymentSuccess: {
+        verificationInProgress: 'Verification in progress...',
+        verifyingPaymentStatus: 'Verifying your payment status',
+        paymentFailed: 'Payment Failed',
+        paymentError: 'An error occurred during payment',
+        backToEvents: 'Back to Events',
+        retry: 'Retry',
+        paymentPending: 'Payment Pending',
+        paymentPendingMessage: 'Your payment is being processed. You will receive a confirmation email once the payment is validated.',
+        viewMyReservations: 'View My Reservations',
+        reservationConfirmed: 'Reservation Confirmed!',
+        emailConfirmation: 'You will receive a confirmation email with all the details',
+        paymentDetails: 'Payment Details',
+        totalAmount: 'Total Amount',
+        status: 'Status',
+        paid: 'Paid',
+        reservationNumber: 'Reservation Number',
+      },
+
+      abonnement: {
+        subscriptionDataUnavailable: 'Subscription data unavailable',
+        cannotLoadInfo: 'Unable to load subscription information',
+        
+        initializingSubscription: 'Initializing subscription...',
+        preparingFeatures: 'Preparing features...',
+        configuringAccount: 'Configuring your account...',
+        almostDone: 'Almost done...',
+        redirectingToPayment: 'Redirecting to payment...',
+        preparingYourSubscription: 'Preparing your subscription',
+        
+        paymentLinkNotFound: 'Payment link not found',
+        subscriptionCreationError: 'Error creating subscription',
+        cancelConfirmation: 'Are you sure you want to cancel your Pro Plus subscription?',
+        subscriptionWillCancel: 'Your subscription will be cancelled at the end of the current period',
+        cancellationError: 'Cancellation error',
+        
+        myProPlusSubscription: 'My Pro Plus Subscription',
+        activeSubscription: 'Active Subscription',
+        unlimitedAccess: 'Unlimited access to all professional features',
+        subscriptionType: 'Subscription Type',
+        renewalDate: 'Renewal Date',
+        cancelSubscription: 'Cancel Subscription',
+        yourCurrentBenefits: 'Your Current Benefits',
+        directPayments: 'Direct Payments',
+        directPaymentsDesc: 'Receive payments instantly without delay',
+        reducedCommission: 'Reduced Commission',
+        reducedCommissionDesc: 'Only 5% instead of 15%',
+        
+        proOfferBadge: 'PRO+ OFFER',
+        maximizeYourEarnings: 'Maximize Your Earnings with Pro Plus',
+        unlockProPlus: 'Unlock Pro Plus and receive your payments instantly with only 5% commission',
+        
+        freeAccount: 'Free Account',
+        currentPlan: 'Your current plan',
+        indirectPayments: 'Indirect Payments',
+        indirectPaymentsDesc: '7-14 days delay to receive your payments',
+        standardCommission: 'Standard Commission',
+        standardCommissionDesc: '15% commission on each sale',
+        limitedFeatures: 'Limited Features',
+        restrictedAccess: 'Restricted access to advanced tools',
+        
+        recommended: 'RECOMMENDED',
+        forSeriousProfessionals: 'For serious professionals',
+        instantPayments: 'Instant Payments',
+        instantPaymentsDesc: 'Receive your payments immediately after each sale',
+        reducedCommissionProDesc: 'Only 5% commission instead of 15%',
+        advancedTools: 'Advanced Tools',
+        advancedToolsDesc: 'Detailed statistics and complete management',
+        month: 'month',
+        cancelAnytime: 'Cancel anytime',
+        subscribeWithStripe: 'Subscribe with Stripe',
+        subscribeWithPayPal: 'Subscribe with PayPal',
+        
+        whyChooseProPlus: 'Why Choose Pro Plus?',
+        instantAccess: 'Instant Access',
+        instantAccessDesc: 'Receive your payments immediately without waiting',
+        moreEarnings: 'More Earnings',
+        moreEarningsDesc: 'Save 10% on each transaction with our reduced commission',
+        growYourBusiness: 'Grow Your Business',
+        growYourBusinessDesc: 'Access professional tools to optimize your performance',
+      },
+
+      linkedAccounts: {
+        loadingInfo: 'Loading information...',
+        loadingLinkedAccounts: 'Loading linked accounts...',
+        
+        featureReserved: 'Reserved Feature',
+        featureReservedDesc: 'Linking to Stripe and PayPal is reserved for users with Pro Plus subscription.',
+        upgradeToProPlus: 'Upgrade to Pro Plus',
+        
+        accountLinked: 'Account linked',
+        noAccountLinked: 'No account linked',
+        
+        linkStripe: 'Link Stripe',
+        linkPayPal: 'Link PayPal',
+        unlink: 'Unlink',
+        linkingError: 'Error linking account.',
+        unlinkingError: 'Error unlinking account.',
+        accountUnlinkedSuccess: '{{provider}} account successfully unlinked.',
+        
+        cancelConfirmation: 'Are you sure you want to cancel your Pro Plus subscription?\n\nYou will lose access to the following features:\n• Stripe and PayPal account linking\n• Direct payment reception\nYour linked accounts will be automatically disconnected.',
+        subscriptionCancelledSuccess: 'Subscription cancelled successfully.',
+        cancellationError: 'Error cancelling subscription.',
+        
+        scheduledCancellation: 'Scheduled Cancellation',
+        scheduledCancellationDesc: 'Your Pro Plus subscription will be cancelled at the end of the current period.',
+        endDate: 'End date',
+        activeProPlusSubscription: 'Active Pro Plus Subscription',
+        canCancelAnytime: 'You can cancel your subscription at any time. Linked accounts will be automatically disconnected.',
+        cancelSubscription: 'Cancel Subscription',
+        cancel: 'Cancel',
+        cancelling: 'Cancelling...',
+        processing: 'Processing...',
+      },
+
       commissions: {
-        // Titles
         title: 'Commission Management',
         subtitle: 'Manage payments to transfer and commission rates',
         loading: 'Loading...',
         refresh: 'Refresh',
         back: 'Back',
-        
-        // Tabs
         paymentsToTransfer: 'Payments to Transfer',
         paymentsShort: 'Payments',
         commissionRates: 'Commission Rates',
         commissionRatesShort: 'Rates',
-        
-        // Statistics
         totalToTransfer: 'Total to transfer',
         numberOfPayments: 'Number of payments',
         commissionsCollected: 'Commissions collected',
-        
-        // Messages
         noPaymentsToTransfer: 'No payments to transfer',
-        noPaymentsDesc: 'All professionals with Pro Plus and linked accounts already receive payments directly.',
-        
-        // Table
+        proPlusDirectPayments: 'All professionals with Pro Plus and linked accounts already receive payments directly.',
+        noProfessionalsFound: 'No professionals found',
+        noProfessionalsRegistered: 'There are currently no registered professionals.',
         date: 'Date',
         event: 'Event',
-        client: 'Customer',
+        customer: 'Customer',
         vendor: 'Vendor',
         email: 'Email',
         totalAmount: 'Total amount',
         commission: 'Commission',
-        netAmount: 'Net amount',
+        toTransfer: 'To transfer',
         actions: 'Actions',
-        
-        // Actions
-        copyId: 'Copy ID',
+        name: 'Name',
+        currentRate: 'Current rate',
+        status: 'Status',
+        accounts: 'Accounts',
         copied: 'Copied!',
         clickToCopy: 'Click to copy',
-        transfer: 'Transfer',
-        viewDetails: 'View Details',
+        markAsPaid: 'Mark as paid',
+        processing: 'Processing...',
+        edit: 'Edit',
+        editRate: 'Edit rate',
+        save: 'Save',
+        newCommissionRate: 'New commission rate',
+        proPlus: 'Pro Plus',
+        notApproved: 'Not approved',
+        none: 'None',
+        noLinkedAccount: 'No linked account',
+        confirmTransfer: 'Confirm that you have transferred this payment to the vendor?',
+        markedAsPaidSuccess: 'Commission marked as paid successfully',
+        markingError: 'Error marking commission',
+        rateUpdatedSuccess: 'Commission rate updated successfully',
+        rateUpdateError: 'Error updating rate',
+        loadingError: 'Error loading commissions',
+        professionalsLoadingError: 'Error loading professionals',
+        copyError: 'Error copying email',
       },
 
-      // ==========================================
-      // PROFESSIONALS
-      // ==========================================
       professionals: {
         title: 'Our Professionals',
         subtitle: 'Discover the qualified professionals on our platform',
@@ -2289,8 +1734,6 @@ const resources = {
         noProfessionalsFound: 'No professionals found',
         searchPlaceholder: 'Search by name or city...',
         retry: 'Retry',
-        
-        // Profile
         loadingProfile: 'Loading profile...',
         profileNotFound: 'Profile Not Found',
         backToHome: 'Back to Home',
@@ -2305,20 +1748,32 @@ const resources = {
         backToEvents: 'Back to Events',
       },
 
-      // ==========================================
-      // ABOUT PAGE
-      // ==========================================
       about: {
         title: 'About Je m\'inspire',
         subtitle: 'The platform that connects enthusiasts to events that inspire them',
         
-        // Mission
-        missionTitle: 'Our Mission',
-        missionText1: 'Je m\'inspire was born from a simple vision: to make the discovery and organization of events accessible to all. Whether you are a passionate organizer looking to share your expertise, or a participant seeking new experiences, our platform supports you every step of the way.',
-        missionText2: 'We believe that events have the power to transform lives, create authentic connections and inspire change. That\'s why we strive to offer a smooth, secure and enriching experience.',
+        // Stats
+        eventsCreated: 'Events created',
+        activeUsers: 'Active users',
+        customerSatisfaction: 'Customer satisfaction',
+        supportAvailable: 'Support available',
         
         // Values
         valuesTitle: 'Our Values',
+        passionTitle: 'Passion',
+        passionDescription: 'We believe that each event is an opportunity to create unforgettable memories.',
+        communityTitle: 'Community',
+        communityDescription: 'Connecting organizers with their audience is at the heart of our mission.',
+        trustTitle: 'Trust',
+        trustDescription: 'Payment security and data protection are our absolute priorities.',
+        innovationTitle: 'Innovation',
+        innovationDescription: 'We constantly improve our platform to offer you the best experience.',
+        
+        // Mission
+        ourMission: 'Our mission',
+        missionTitle: 'Our Mission',
+        missionText1: 'Je m\'inspire was born from a simple vision: to make the discovery and organization of events accessible to all. Whether you are a passionate organizer looking to share your expertise, or a participant seeking new experiences, our platform supports you every step of the way.',
+        missionText2: 'We believe that events have the power to transform lives, create authentic connections and inspire change. That\'s why we strive to offer a smooth, secure and enriching experience.',
         
         // History
         historyTitle: 'Our Story',
@@ -2332,19 +1787,14 @@ const resources = {
         affiliateProgram: 'Affiliate program to earn commissions',
         reactiveSupport: 'Responsive support and personalized assistance',
         completeDashboard: 'Complete dashboard to track your performance',
-        communityEngaged: 'Engaged and passionate community',
         
-        // CTA
-        joinUsTitle: 'Join Us Today',
-        joinUsText: 'Whether you are an organizer or participant, discover how Je m\'inspire can transform your event experience.',
-        startNow: 'Start Now',
-        explorePlatform: 'Explore Platform',
+        // Contact
+        contactTitle: 'Have a question? Contact us',
+        contactDescription: 'Our team is available to answer all your questions and support you in using the platform.',
+        discoverEvents: 'Discover events',
         back: 'Back',
       },
 
-      // ==========================================
-      // VENDOR DASHBOARD
-      // ==========================================
       vendorDashboard: {
         export: 'Export',
         date: 'Date',
@@ -2355,8 +1805,106 @@ const resources = {
       },
 
       // ==========================================
-      // ERRORS & MESSAGES
+      // EVENT FORM
       // ==========================================
+      eventForm: {
+        // Buttons
+        createEvent: 'Create Event',
+        editEvent: 'Edit Event',
+        
+        // Sections
+        generalInfo: 'General Information',
+        location: 'Location',
+        datesCapacity: 'Dates & Capacity',
+        eventSettings: 'Event Settings',
+        eventImages: 'Event Images',
+        
+        // General Info
+        eventName: 'Event Name *',
+        eventNamePlaceholder: 'E.g.: Mountain Meditation Retreat',
+        description: 'Description *',
+        descriptionPlaceholder: 'Describe your event in detail...',
+        
+        // Location
+        eventAddress: 'Event Address *',
+        
+        // Dates & Capacity
+        startDate: 'Start Date *',
+        endDate: 'End Date *',
+        price: 'Price (CAD) *',
+        totalCapacity: 'Total Capacity *',
+        availablePlaces: 'Available Places *',
+        
+        // Settings
+        requiredLevel: 'Required Level *',
+        selectLevel: 'Select level',
+        category: 'Category *',
+        selectCategory: 'Select a category',
+        
+        // Levels
+        levelBeginner: 'Beginner',
+        levelIntermediate: 'Intermediate',
+        levelAdvanced: 'Advanced',
+        levelExpert: 'Expert',
+        
+        // Categories
+        categoryMeditation: 'Meditation',
+        categoryYoga: 'Yoga',
+        categoryMentalHealth: 'Mental Health',
+        categoryRetreat: 'Retreat',
+        
+        // Images
+        thumbnailLabel: 'Main Image (Thumbnail) *',
+        clickToAddImage: 'Click to add an image',
+        imageFormat: 'PNG, JPG up to 10MB',
+        bannerLabel: 'Event Banner *',
+        clickToAddBanner: 'Click to add a banner',
+        bannerFormat: '16:9 format recommended',
+        galleryLabel: 'Image Gallery (max 5)',
+        galleryLimitReached: '5 images limit reached',
+        addImagesToGallery: 'Add images to gallery',
+        imagesCount: '{{count}}/5 images',
+        deleteImage: 'Delete',
+        
+        // Status messages
+        loadingExistingImages: 'Loading existing images...',
+        existingImagesLoaded: 'Existing images loaded!',
+        loadingError: 'Error loading images',
+        compressing: 'Compressing...',
+        compressionError: 'Error during compression',
+        compressingProgress: 'Compressing {{current}}/{{total}}...',
+      },
+
+      // ==========================================
+      // LANGUAGE SWITCHER
+      // ==========================================
+      language: {
+        switchToEnglish: 'Switch to English',
+        switchToFrench: 'Passer en français',
+        changeLanguage: 'Change Language',
+        currentFrench: 'French',
+        currentEnglish: 'English',
+      },
+
+      autocomplete: {
+        searchAddress: 'Search an address...',
+        clear: 'Clear',
+      },
+
+      carousel: {
+        errorMessage: 'useCarousel must be used within a <Carousel />',
+      },
+
+      formField: {
+        forgotPassword: 'Forgot your password?',
+      },
+
+      errorFallback: {
+        title: 'An error occurred',
+        description: 'The technical team has been notified.',
+        reloadPage: 'Reload Page',
+      },
+
       errors: {
         somethingWentWrong: 'Something Went Wrong',
         technicalTeamNotified: 'The technical team has been notified.',
@@ -2366,20 +1914,6 @@ const resources = {
         invalidResetLink: 'Invalid reset link. Please request a new password reset.',
       },
 
-      // ==========================================
-      // FORM ELEMENTS
-      // ==========================================
-      form: {
-        forgotPassword: 'Forgot your password?',
-        placeholder: {
-          email: 'example@email.com',
-          password: '********',
-        },
-      },
-
-      // ==========================================
-      // ACCESSIBILITY
-      // ==========================================
       accessibility: {
         toggleMenu: 'Toggle Menu',
         logout: 'Logout',
@@ -2392,9 +1926,6 @@ const resources = {
         preview: 'Preview',
       },
 
-      // ==========================================
-      // SOCIAL MEDIA
-      // ==========================================
       socialMedia: {
         facebook: 'Facebook',
         instagram: 'Instagram',

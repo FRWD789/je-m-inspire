@@ -43,13 +43,13 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       if (data.data) {
         setSubInfo(data.data);
       } else {
-        throw new Error(t('subscription.subscriptionDataUnavailable'));
+        throw new Error(t('abonnement.subscriptionDataUnavailable'));
       }
     } catch (err) {
       console.error("Erreur abonnement:", err);
       setMessage({
         type: "error",
-        text: t('subscription.cannotLoadInfo')
+        text: t('abonnement.cannotLoadInfo')
       });
     } finally {
       setLoading(false);
@@ -65,10 +65,10 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
     setPreparationStep(0);
     
     const steps = [
-      t('subscription.initializingSubscription'),
-      t('subscription.preparingFeatures'),
-      t('subscription.configuringAccount'),
-      t('subscription.almostDone')
+      t('abonnement.initializingSubscription'),
+      t('abonnement.preparingFeatures'),
+      t('abonnement.configuringAccount'),
+      t('abonnement.almostDone')
     ];
 
     steps.forEach((_, index) => {
@@ -97,7 +97,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
         } else if (provider === "paypal" && data.data?.approval_url) {
           window.location.href = data.data.approval_url;
         } else {
-          throw new Error(t('subscription.paymentLinkNotFound'));
+          throw new Error(t('abonnement.paymentLinkNotFound'));
         }
       }, 3500);
 
@@ -106,14 +106,14 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       setShowPreparation(false);
       setMessage({
         type: "error",
-        text: t('subscription.subscriptionCreationError')
+        text: t('abonnement.subscriptionCreationError')
       });
       setActionLoading(null);
     }
   };
 
   const handleCancel = async () => {
-    if (!confirm(t('subscription.cancelConfirmation'))) {
+    if (!confirm(t('abonnement.cancelConfirmation'))) {
       return;
     }
     
@@ -124,14 +124,14 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       await privateApi.post("/abonnement/cancel");
       setMessage({
         type: "success",
-        text: t('subscription.subscriptionWillCancel')
+        text: t('abonnement.subscriptionWillCancel')
       });
       await fetchSubscriptionInfo();
     } catch (err) {
       console.error(err);
       setMessage({
         type: "error",
-        text: t('subscription.cancellationError')
+        text: t('abonnement.cancellationError')
       });
     } finally {
       setActionLoading(null);
@@ -147,20 +147,19 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-center p-12">
           <Loader2 className="animate-spin mr-2" size={32} />
-          <span className="text-lg">{t('subscription.loading')}</span>
+          <span className="text-lg">{t('common.loading')}</span>
         </div>
       </div>
     );
   }
 
-  // Preparation Animation Overlay
   if (showPreparation) {
     const steps = [
-      t('subscription.initializingSubscription'),
-      t('subscription.preparingFeatures'),
-      t('subscription.configuringAccount'),
-      t('subscription.almostDone'),
-      t('subscription.redirectingToPayment')
+      t('abonnement.initializingSubscription'),
+      t('abonnement.preparingFeatures'),
+      t('abonnement.configuringAccount'),
+      t('abonnement.almostDone'),
+      t('abonnement.redirectingToPayment')
     ];
 
     return (
@@ -175,7 +174,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
           </div>
           
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {t('subscription.preparingFeatures')}
+            {t('abonnement.preparingYourSubscription')}
           </h3>
           
           <div className="space-y-3 mb-6">
@@ -208,12 +207,11 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
     );
   }
 
-  // Si l'utilisateur a déjà Pro Plus
   if (subInfo?.has_pro_plus) {
     return (
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">{t('subscription.titleMyPro')}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('abonnement.myProPlusSubscription')}</h1>
           {handelClose && (
             <button onClick={handelClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X size={24} className="text-gray-600" />
@@ -249,21 +247,21 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
                 <Star className="text-white" size={32} fill="white" />
               </div>
               <div>
-              <h2 className="text-2xl font-bold text-gray-900">{t('subscription.activeTitle')}</h2>
-              <p className="text-gray-600">{t('subscription.activeSubtitle')}</p>
+                <h2 className="text-2xl font-bold text-gray-900">{t('abonnement.activeSubscription')}</h2>
+                <p className="text-gray-600">{t('abonnement.unlimitedAccess')}</p>
               </div>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             <div className="bg-white rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-1">{t('subscription.subscriptionType')}</p>
+              <p className="text-sm text-gray-600 mb-1">{t('abonnement.subscriptionType')}</p>
               <p className="text-lg font-semibold text-gray-900">{subInfo.subscription_type || "Pro Plus"}</p>
             </div>
             
             {subInfo.end_date && (
               <div className="bg-white rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">{t('subscription.renewalDate')}</p>
+                <p className="text-sm text-gray-600 mb-1">{t('abonnement.renewalDate')}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {new Date(subInfo.end_date).toLocaleDateString("fr-FR", {
                     year: "numeric",
@@ -282,27 +280,27 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
               className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors font-medium"
             >
               {actionLoading === "cancel" && <Loader2 className="animate-spin" size={16} />}
-              {t('subscription.cancelSubscription')}
+              {t('abonnement.cancelSubscription')}
             </button>
           </div>
         </div>
 
-        {/* Avantages actuels */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">{t('subscription.benefitsTitle')}</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">{t('abonnement.yourCurrentBenefits')}</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
               <CheckCircle className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-              <h4 className="font-semibold text-gray-900">{t('subscription.directPayments')}</h4>
-              <p className="text-sm text-gray-600">{t('subscription.directPaymentsDesc')}</p>              </div>
+                <h4 className="font-semibold text-gray-900">{t('abonnement.directPayments')}</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.directPaymentsDesc')}</p>
+              </div>
             </div>
             
             <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
               <CheckCircle className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-              <h4 className="font-semibold text-gray-900">{t('subscription.reducedCommission')}</h4>
-              <p className="text-sm text-gray-600">{t('subscription.reducedCommissionDesc')}</p>
+                <h4 className="font-semibold text-gray-900">{t('abonnement.reducedCommission')}</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.reducedCommissionDesc')}</p>
               </div>
             </div>
           </div>
@@ -311,10 +309,8 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
     );
   }
 
-  // Page de présentation pour les non-abonnés
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-12">
-      {/* Header */}
       <div className="text-center relative">
         {handelClose && (
           <button 
@@ -327,19 +323,17 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
         
         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4">
           <Star size={16} fill="white" />
-          <span>{t('subscription.proOfferBadge')}</span>
+          <span>{t('abonnement.proOfferBadge')}</span>
         </div>
         
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-          {t('subscription.maximizeYourEarnings')}
+          {t('abonnement.maximizeYourEarnings')}
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          {t('subscription.proOfferText1')} <span className="font-bold text-blue-600">{t('subscription.proOfferText2')}</span> {t('subscription.proOfferText3')}
-           <span className="font-bold text-blue-600">{t('subscription.proOfferText4')}</span>
+          {t('abonnement.unlockProPlus')}
         </p>
       </div>
 
-      {/* Message d'erreur */}
       {message && (
         <div 
           className={`p-4 rounded-lg flex items-start gap-3 max-w-2xl mx-auto ${
@@ -361,91 +355,87 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
         </div>
       )}
 
-      {/* Comparaison Gratuit vs Pro+ */}
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-        {/* Plan Gratuit */}
         <div className="bg-white rounded-2xl border-2 border-gray-200 p-8">
           <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('subscription.freeAccountTitle')}</h3>
-            <p className="text-gray-600">{t('subscription.currentPlan')}</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('abonnement.freeAccount')}</h3>
+            <p className="text-gray-600">{t('abonnement.currentPlan')}</p>
           </div>
 
           <div className="space-y-4 mb-8">
             <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
               <Clock className="text-red-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.indirectPayments')}</h4>
-                <p className="text-sm text-gray-600">{t('subscription.indirectPaymentsDesc')}</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('abonnement.indirectPayments')}</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.indirectPaymentsDesc')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
               <TrendingUp className="text-red-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.standardCommission')}</h4>
-                <p className="text-sm text-gray-600">{t('subscription.standardCommissionDesc')}</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('abonnement.standardCommission')}</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.standardCommissionDesc')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <Ban className="text-gray-400 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.limitedFunctions')}</h4>
-                <p className="text-sm text-gray-600">{t('subscription.restrictedAccess')}</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('abonnement.limitedFeatures')}</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.restrictedAccess')}</p>
               </div>
             </div>
           </div>
 
           <div className="text-center pt-6 border-t">
             <div className="text-3xl font-bold text-gray-900 mb-1">0$</div>
-            <p className="text-gray-600">/{t('subscription.month')}</p>
+            <p className="text-gray-600">/{t('abonnement.month')}</p>
           </div>
         </div>
 
-        {/* Plan Pro+ */}
         <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border-2 border-blue-300 p-8 relative shadow-xl transform scale-105">
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-1 rounded-full text-sm font-bold">
-            RECOMMANDÉ
+            {t('abonnement.recommended')}
           </div>
 
           <div className="text-center mb-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Pro+</h3>
-            <p className="text-gray-600">{t('subscription.forSeriousPros')}</p>
+            <p className="text-gray-600">{t('abonnement.forSeriousProfessionals')}</p>
           </div>
 
           <div className="space-y-4 mb-8">
             <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-green-200 shadow-sm">
               <Zap className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.directPayements')} ⚡</h4>
-                <p className="text-sm text-gray-600">{t('directPayementsDesc1')}<span className="font-bold">{t('directPayementsDesc2')}</span>{t('directPayementsDesc3')}</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('abonnement.instantPayments')} ⚡</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.instantPaymentsDesc')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-green-200 shadow-sm">
               <DollarSign className="text-green-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{t('subscription.reducedCommission')} 💰</h4>
-                <p className="text-sm text-gray-600">{t('subscription.reducedCommissionDesc1')}<span className="font-bold">{t('subscription.reducedCommissionDesc2')}</span></p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('abonnement.reducedCommission')} 💰</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.reducedCommissionProDesc')}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-blue-200 shadow-sm">
               <CheckCircle className="text-blue-600 mt-1 flex-shrink-0" size={20} />
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">{t('subcription.advancedTools')}</h4>
-                <p className="text-sm text-gray-600">{t('subscription.advancedToolsDesc')}</p>
+                <h4 className="font-semibold text-gray-900 mb-1">{t('abonnement.advancedTools')}</h4>
+                <p className="text-sm text-gray-600">{t('abonnement.advancedToolsDesc')}</p>
               </div>
             </div>
           </div>
 
           <div className="text-center pt-6 border-t border-blue-200 mb-6">
             <div className="text-4xl font-bold text-gray-900 mb-1">14,99$</div>
-            <p className="text-gray-600 mb-1">CAD /{t('subscription.month')}</p>
-            <p className="text-sm text-gray-500">{t('subcription.cancelAnytime')}</p>
+            <p className="text-gray-600 mb-1">CAD /{t('abonnement.month')}</p>
+            <p className="text-sm text-gray-500">{t('abonnement.cancelAnytime')}</p>
           </div>
 
-          {/* Boutons d'abonnement */}
           <div className="space-y-3">
             <button
               onClick={() => handleSubscribe("stripe")}
@@ -457,7 +447,7 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
               ) : (
                 <CreditCard size={20} />
               )}
-              {t('subscription.subStripe')}
+              {t('abonnement.subscribeWithStripe')}
             </button>
             
             <button
@@ -470,16 +460,15 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
               ) : (
                 <CreditCard size={20} />
               )}
-              {t('subscription.subPaypal')}
+              {t('abonnement.subscribeWithPayPal')}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Points clés avec icônes */}
       <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          {t('subscription.whyPro')}
+          {t('abonnement.whyChooseProPlus')}
         </h2>
         
         <div className="grid md:grid-cols-3 gap-8">
@@ -487,9 +476,9 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl mb-4">
               <Zap className="text-white" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('subscription.whyProDesc1Title')}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('abonnement.instantAccess')}</h3>
             <p className="text-gray-600">
-            {t('subscription.whyProDesc1')}
+              {t('abonnement.instantAccessDesc')}
             </p>
           </div>
 
@@ -497,9 +486,9 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl mb-4">
               <DollarSign className="text-white" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('subscription.whyProDesc2Title')}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('abonnement.moreEarnings')}</h3>
             <p className="text-gray-600">
-            {t('subscription.whyProDesc2')}
+              {t('abonnement.moreEarningsDesc')}
             </p>
           </div>
 
@@ -507,9 +496,9 @@ export default function Abonnement({ handelClose }: SubscriptionInfo) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl mb-4">
               <TrendingUp className="text-white" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('subscription.whyProDesc3Title')}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('abonnement.growYourBusiness')}</h3>
             <p className="text-gray-600">
-            {t('subscription.whyProDesc3')}
+              {t('abonnement.growYourBusinessDesc')}
             </p>
           </div>
         </div>

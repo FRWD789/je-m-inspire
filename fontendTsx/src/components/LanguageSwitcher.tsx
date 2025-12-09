@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
  * - Accessible (aria-label)
  */
 export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'fr' ? 'en' : 'fr';
@@ -28,15 +28,15 @@ export default function LanguageSwitcher() {
 
   const currentLang = i18n.language.toUpperCase();
   const tooltipText = i18n.language === 'fr' 
-    ? 'Switch to English' 
-    : 'Passer en français';
+    ? t('language.switchToEnglish')
+    : t('language.switchToFrench');
 
   return (
     <button
       onClick={toggleLanguage}
       className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary hover:text-accent transition-all rounded border border-secondary/30 hover:border-accent/50 hover:bg-accent/5"
       title={tooltipText}
-      aria-label={`Change language. Current: ${currentLang === 'FR' ? 'French' : 'English'}`}
+      aria-label={`${t('language.changeLanguage')}. ${i18n.language === 'fr' ? t('language.currentFrench') : t('language.currentEnglish')}`}
     >
       <Globe className="w-4 h-4" />
       <span className="font-semibold">{currentLang}</span>
@@ -53,7 +53,7 @@ export default function LanguageSwitcher() {
  * Variante minimaliste (icône uniquement)
  */
 export function LanguageSwitcherMini() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'fr' ? 'en' : 'fr';
@@ -64,8 +64,8 @@ export function LanguageSwitcherMini() {
     <button
       onClick={toggleLanguage}
       className="p-2 text-primary hover:text-accent transition-all rounded-full hover:bg-accent/10"
-      title={i18n.language === 'fr' ? 'Switch to English' : 'Passer en français'}
-      aria-label="Change language"
+      title={i18n.language === 'fr' ? t('language.switchToEnglish') : t('language.switchToFrench')}
+      aria-label={t('language.changeLanguage')}
     >
       <Globe className="w-5 h-5" />
     </button>
@@ -76,12 +76,12 @@ export function LanguageSwitcherMini() {
  * Variante dropdown (si plus de 2 langues à l'avenir)
  */
 export function LanguageSwitcherDropdown() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const languages = [
-    { code: 'fr', name: 'Français', flag: '🇫🇷' },
-    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'fr', name: t('language.currentFrench'), flag: '🇫🇷' },
+    { code: 'en', name: t('language.currentEnglish'), flag: '🇬🇧' },
   ];
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
@@ -96,7 +96,7 @@ export function LanguageSwitcherDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:text-accent transition-all rounded border border-secondary/30 hover:border-accent/50"
-        aria-label="Change language"
+        aria-label={t('language.changeLanguage')}
       >
         <span>{currentLanguage.flag}</span>
         <span>{currentLanguage.code.toUpperCase()}</span>

@@ -33,7 +33,7 @@ export default function GoogleLoginButton({ className = '', onError }: GoogleLog
       } else {
         // Message d'erreur par défaut
         const errorMessage = error?.response?.data?.message || 
-          'Erreur lors de la connexion Google. Veuillez réessayer.';
+          t('auth.googleErrorGeneric');
         alert(errorMessage);
       }
       

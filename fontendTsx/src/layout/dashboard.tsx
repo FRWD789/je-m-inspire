@@ -90,7 +90,6 @@ export default function Dashboard() {
   );
 
    useEffect(() => {
-  // Ouvrir automatiquement le dropdown si on est sur une route enfant
   const eventsItem = menuItems.find(item => item.children);
   if (eventsItem && eventsItem.children.some(child => location.pathname === child.path)) {
     setEventsOpen(true);
@@ -100,7 +99,6 @@ export default function Dashboard() {
   const handleEventsToggle = (e, item) => {
     e.preventDefault();
     if (item.children && item.children.length > 0) {
-      // Rediriger vers le premier enfant
       navigate(item.children[0].path);
       if (isMobile) setMobileMenuOpen(false);
     }
@@ -109,7 +107,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-[100svh] bg-gray-100">
-      {/* Overlay for mobile */}
       {mobileMenuOpen && isMobile && (
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -117,7 +114,6 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed md:relative top-16 md:top-0 left-0 bottom-0 md:bottom-auto bg-white border-r border-gray-200 shadow-sm transition-all duration-300 z-50 overflow-y-auto flex flex-col ${
           sidebarOpen && !isMobile ? 'w-64' : 'md:w-20 w-0'
@@ -131,7 +127,7 @@ export default function Dashboard() {
               className={`font-bold text-center transition-all flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 ${sidebarOpen ? 'text-base' : 'text-xs'}`}
             >
               <ArrowLeft size={sidebarOpen ? 18 : 18} />
-              {sidebarOpen && <span>Retour</span>}
+              {sidebarOpen && <span>{t('dashboard.back')}</span>}
             </NavLink>
           </div>
           <ul className="space-y-1">
@@ -180,13 +176,10 @@ export default function Dashboard() {
           </ul>
         </div>
 
-        {/* User Profile Section - Bottom of Sidebar */}
        {user && (
           <div className="border-t border-gray-200 p-3 md:p-4">
-            {/* Container flex horizontal - les deux éléments côte à côte */}
             <div className="flex items-center gap-2">
               
-              {/* User Info Button - Partie gauche */}
               <button
                 className="flex items-center gap-2 flex-1 hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
                 onClick={() => {
@@ -215,13 +208,12 @@ export default function Dashboard() {
                 </div>
               </button>
 
-              {/* Pro+ Badge or Upgrade Button - MAINTENANT à côté (sibling) */}
               {user.roles[0].role === 'professionnel' && (
                 <div className={`flex-shrink-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
                   {!hasProPlus ? (
                     <button
                       onClick={(e) => {
-                        e.stopPropagation(); // Sécurité supplémentaire
+                        e.stopPropagation();
                         navigate("/dashboard/profile-settings?tab=plan");
                         if (isMobile) setMobileMenuOpen(false);
                       }}
@@ -241,9 +233,7 @@ export default function Dashboard() {
         )}
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col w-full overflow-hidden">
-        {/* Header */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 gap-2 md:gap-4">
             <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
@@ -285,7 +275,6 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-6">
           <div className="bg-white rounded-lg md:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-full">
             <Outlet />

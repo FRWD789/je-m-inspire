@@ -1,5 +1,6 @@
 // src/features/events/components/EventForm.tsx
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { 
   ImageUp, 
@@ -105,23 +106,26 @@ interface FormEventsProps {
   onSuccess?: () => void
 }
 
-// Constants
-const LEVEL_OPTIONS = [
-  { description: 'Débutant', value: 'débutant' },
-  { description: 'Intermédiaire', value: 'intermédiaire' },
-  { description: 'Avancé', value: 'avancé' },
-  { description: 'Expert', value: 'expert' },
-]
 
-const CATEGORY_OPTIONS = [
-  { value: 1, description: 'Méditation' },
-  { value: 2, description: 'Yoga' },
-  { value: 3, description: 'Santé Mentale' },
-  { value: 4, description: 'Retraite' },
-]
 
 export default function EventForm({ type, eventId, defaultValues, onSuccess }: FormEventsProps) {
+  const { t } = useTranslation()
   const { handleSubmit } = useEventForm({ type, eventId, onSuccess })
+
+  // ← DÉPLACER les constantes ici pour accéder à t()
+  const LEVEL_OPTIONS = [
+    { description: t('eventForm.levelBeginner'), value: 'débutant' },
+    { description: t('eventForm.levelIntermediate'), value: 'intermédiaire' },
+    { description: t('eventForm.levelAdvanced'), value: 'avancé' },
+    { description: t('eventForm.levelExpert'), value: 'expert' },
+  ]
+
+  const CATEGORY_OPTIONS = [
+    { value: 1, description: t('eventForm.categoryMeditation') },
+    { value: 2, description: t('eventForm.categoryYoga') },
+    { value: 3, description: t('eventForm.categorySanté') },
+    { value: 4, description: t('eventForm.categoryRetraite') },
+  ]
 
   const formattedDefaults = defaultValues
     ? {
@@ -144,29 +148,28 @@ export default function EventForm({ type, eventId, defaultValues, onSuccess }: F
         defaultValues={formattedDefaults}
         onSubmit={handleSubmit}
       >
-        <GeneralInfoSection />
-        <SectionDivider />
-        <LocationSection type={type} defaultValues={formattedDefaults} />
-        <SectionDivider />
-        <DatesCapacitySection type={type} />
-        <SectionDivider />
-        <EventSettingsSection />
-        <SectionDivider />
-        <ImagesSection type={type} defaultValues={defaultValues} />
+      <GeneralInfoSection t={t} />
+      <SectionDivider />
+      <LocationSection type={type} defaultValues={formattedDefaults} t={t} />
+      <SectionDivider />
+      <DatesCapacitySection type={type} t={t} />
+      <SectionDivider />
+      <EventSettingsSection levelOptions={LEVEL_OPTIONS} categoryOptions={CATEGORY_OPTIONS} t={t} />
+      <SectionDivider />
+      <ImagesSection type={type} defaultValues={defaultValues} t={t} />
         
         <div className="mt-8 flex gap-4">
           <Button 
             type="submit" 
             className="flex-1"
           >
-            {type === 'create' ? 'Créer l\'événement' : 'Modifier l\'événement'}
+            {type === 'create' ? t('eventForm.createEvent') : t('eventForm.editEvent')}
           </Button>
         </div>
       </Form>
     </div>
   )
 }
-
 // Divider amélioré
 const SectionDivider = () => (
   <div className="my-8">
@@ -175,21 +178,21 @@ const SectionDivider = () => (
 )
 
 // General Info Section - Style amélioré
-const GeneralInfoSection = () => (
+const GeneralInfoSection = ({ t }: { t: any }) => (
   <div className="space-y-6">
-    <SectionHeader icon={<TextAlignStart />} title="Informations générales" />
+    <SectionHeader icon={<TextAlignStart />} title={t('eventForm.generalInfo')} />
     <div className="space-y-5">
-      <FormFiled htmlFor='name' label="Nom de l'événement *">
+      <FormFiled htmlFor='name' label={t('eventForm.eventName')}>
         <Input 
           name="name" 
-          placeholder="Ex: Retraite de méditation en montagne" 
+          placeholder={t('eventForm.eventNamePlaceholder')}
           enhanced={true}
         />
       </FormFiled>
-      <FormFiled htmlFor='description' label="Description *">
+      <FormFiled htmlFor='description' label={t('eventForm.description')}>
         <TextArea 
           name="description" 
-          placeholder="Décrivez votre événement en détails..."
+          placeholder={t('eventForm.descriptionPlaceholder')}
           enhanced={true}
         />
       </FormFiled>
@@ -197,12 +200,12 @@ const GeneralInfoSection = () => (
   </div>
 )
 
-const LocationSection = ({ type, defaultValues }: any) => (
+const LocationSection = ({ type, defaultValues, t }: any) => (
   <div className="space-y-6">
-    <SectionHeader icon={<MapPinned />} title="Localisation" />
+    <SectionHeader icon={<MapPinned />} title={t('eventForm.location')} />
     <div className="space-y-2">
       <label className="block text-sm font-medium text-primary">
-        Adresse de l'événement *
+        {t('eventForm.eventAddress')}
       </label>
       <APIProvider apiKey="AIzaSyCLD-sPCtHIZVGtpp8K-ok97RR26UStQqM" libraries={['places']}>
         <AutocompleteInputV2 name={'localisation_address'} value={defaultValues?.localisation_address} />
@@ -215,25 +218,25 @@ const LocationSection = ({ type, defaultValues }: any) => (
 )
 
 // Dates & Capacity Section - Style amélioré avec grid responsive
-const DatesCapacitySection = ({ type }: any) => (
+const DatesCapacitySection = ({ type, t }: any) => (
   <div className="space-y-6">
-    <SectionHeader icon={<Users />} title="Dates et capacité" />
+    <SectionHeader icon={<Users />} title={t('eventForm.datesCapacity')} />
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      <FormFiled htmlFor='start_date' label="Date de début *">
+      <FormFiled htmlFor='start_date' label={t('eventForm.startDate')}>
         <Input 
           type="datetime-local" 
           name="start_date" 
           enhanced={true}
         />
       </FormFiled>
-      <FormFiled htmlFor='end_date' label="Date de fin *">
+      <FormFiled htmlFor='end_date' label={t('eventForm.endDate')}>
         <Input 
           type="datetime-local" 
           name="end_date"
           enhanced={true}
         />
       </FormFiled>
-      <FormFiled htmlFor='base_price' label="Prix (CAD) *">
+      <FormFiled htmlFor='base_price' label={t('eventForm.price')}>
         <Input 
           type="number" 
           name="base_price" 
@@ -242,7 +245,7 @@ const DatesCapacitySection = ({ type }: any) => (
           step="0.01"
         />
       </FormFiled>
-      <FormFiled htmlFor='capacity' label="Capacité totale *">
+      <FormFiled htmlFor='capacity' label={t('eventForm.totalCapacity')}>
         <Input 
           type="number" 
           name="capacity" 
@@ -250,7 +253,7 @@ const DatesCapacitySection = ({ type }: any) => (
           enhanced={true}
         />
       </FormFiled>
-      <FormFiled htmlFor='max_places' label="Places disponibles *">
+      <FormFiled htmlFor='max_places' label={t('eventForm.availablePlaces')}>
         <Input 
           type="number" 
           name="max_places" 
@@ -263,23 +266,23 @@ const DatesCapacitySection = ({ type }: any) => (
 )
 
 // Event Settings Section - Style amélioré
-const EventSettingsSection = () => (
+const EventSettingsSection = ({ levelOptions, categoryOptions, t }: any) => (
   <div className="space-y-6">
-    <SectionHeader icon={<Settings />} title="Paramètres de l'événement" />
+    <SectionHeader icon={<Settings />} title={t('eventForm.eventSettings')} />
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <FormFiled htmlFor='level' label="Niveau requis *">
+      <FormFiled htmlFor='level' label={t('eventForm.requiredLevel')}>
         <Select 
-          options={LEVEL_OPTIONS} 
+          options={levelOptions} 
           name="level" 
-          placeholder="Sélectionnez le niveau"
+          placeholder={t('eventForm.selectLevel')}
           enhanced={true}
         />
       </FormFiled>
-      <FormFiled htmlFor="categorie_event_id" label="Catégorie *">
+      <FormFiled htmlFor="categorie_event_id" label={t('eventForm.category')}>
         <Select 
-          options={CATEGORY_OPTIONS} 
+          options={categoryOptions} 
           name="categorie_event_id" 
-          placeholder="Sélectionnez une catégorie"
+          placeholder={t('eventForm.selectCategory')}
           enhanced={true}
         />
       </FormFiled>
@@ -288,7 +291,7 @@ const EventSettingsSection = () => (
 )
 
 // 🚀 ULTRA-OPTIMISÉ : Gestionnaire d'images avec drag & drop ultra-fluide
-const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defaultValues?: any }) => {
+const ImagesSection = ({ type, defaultValues, t }: { type?: 'create' | 'edit'; defaultValues?: any; t: any }) => {
   // ✅ Utiliser les setters du contexte (avec deleteThumbnail et deleteBanner)
   const { 
     setThumbnailFile, 
@@ -352,7 +355,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
   // ✅ CORRIGÉ : Utiliser directement les URLs backend au lieu de Blob URLs
   const loadExistingImages = async () => {
     setIsLoadingExisting(true)
-    setCompressionStatus('Chargement des images existantes...')
+    setCompressionStatus(t('eventForm.loadingExistingImages'))
     
     try {
       // 1. Charger thumbnail - Utiliser directement l'URL du backend
@@ -433,11 +436,11 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
         // ❌ NE PAS charger les fichiers dans le contexte
       }
       
-      setCompressionStatus('Images existantes chargées !')
+      setCompressionStatus(t('eventForm.existingImagesLoaded'))
       setTimeout(() => setCompressionStatus(''), 2000)
     } catch (error) {
       console.error('❌ [ImagesSection] Erreur chargement images existantes:', error)
-      setCompressionStatus('Erreur chargement images')
+      setCompressionStatus(t('eventForm.loadingError'))
     } finally {
       setIsLoadingExisting(false)
     }
@@ -454,7 +457,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
     if (!file) return
 
     setIsCompressing(true)
-    setCompressionStatus('Compression en cours...')
+    setCompressionStatus(t('eventForm.compressing'))
 
     try {
       // ✅ Compression avec dimensions spécifiques selon le type
@@ -470,7 +473,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       console.log(`✅ [ImagesSection] ${imageType} compressé et prêt`)
     } catch (error) {
       console.error('❌ [ImagesSection] Erreur compression:', error)
-      setCompressionStatus('Erreur lors de la compression')
+      setCompressionStatus(t('eventForm.compressionError'))
     } finally {
       setIsCompressing(false)
       setTimeout(() => setCompressionStatus(''), 2000)
@@ -492,7 +495,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       const newPreviews: { id: string; url: string; isExisting?: boolean }[] = []
 
       for (let i = 0; i < filesArray.length; i++) {
-        setCompressionStatus(`Compression ${i + 1}/${filesArray.length}...`)
+        setCompressionStatus(t('eventForm.compressingProgress', { current: i + 1, total: filesArray.length }))
         
         // ✅ Compression galerie (1200px, 85%)
         const compressed = await compressImage(filesArray[i], 'gallery')
@@ -516,7 +519,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       console.error('❌ [ImagesSection] Erreur compression:', error)
     } finally {
       setIsCompressing(false)
-      setCompressionStatus('')
+      setCompressionStatus(t('eventForm.compressionError'))
     }
   }
 
@@ -661,7 +664,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon={<ImageUp />} title="Images de l'événement" />
+      <SectionHeader icon={<ImageUp />} title={t('eventForm.eventImages')} />
 
       {/* Status de compression */}
       {(isCompressing || isLoadingExisting) && (
@@ -673,9 +676,9 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
 
       {/* Thumbnail */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-primary">
-          Image principale (Thumbnail) *
-        </label>
+      <label className="block text-sm font-medium text-primary">
+        {t('eventForm.thumbnailLabel')}
+      </label>
         <div className="relative">
           <input
             type="file"
@@ -721,9 +724,9 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
               <div className="text-center">
                 <ImageUp className="w-12 h-12 mx-auto mb-3 text-secondary" />
                 <p className="text-sm font-medium text-primary mb-1">
-                  Cliquez pour ajouter une image
+                  {t('eventForm.clickToAddImage')}
                 </p>
-                <p className="text-xs text-secondary">PNG, JPG jusqu'à 10MB</p>
+                <p className="text-xs text-secondary">{t('eventForm.imageFormat')}</p>
               </div>
             )}
           </label>
@@ -732,9 +735,9 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
 
       {/* Banner */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-primary">
-          Bannière de l'événement *
-        </label>
+      <label className="block text-sm font-medium text-primary">
+        {t('eventForm.bannerLabel')}
+      </label>
         <div className="relative">
           <input
             type="file"
@@ -780,9 +783,9 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
               <div className="text-center">
                 <ImageUp className="w-12 h-12 mx-auto mb-3 text-secondary" />
                 <p className="text-sm font-medium text-primary mb-1">
-                  Cliquez pour ajouter une bannière
+                  {t('eventForm.clickToAddBanner')}
                 </p>
-                <p className="text-xs text-secondary">Format 16:9 recommandé</p>
+                <p className="text-xs text-secondary">{t('eventForm.bannerFormat')}</p>
               </div>
             )}
           </label>
@@ -792,7 +795,7 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
       {/* Galerie d'images avec drag & drop */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-primary">
-          Galerie d'images (max 5)
+          {t('eventForm.galleryLabel')}
         </label>
         
         {/* Zone d'ajout */}
@@ -818,12 +821,12 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
             <Plus className="w-8 h-8 mb-2 text-secondary" />
             <p className="text-sm font-medium text-primary">
               {imagesPreview.length >= 5 
-                ? 'Limite de 5 images atteinte' 
-                : 'Ajouter des images à la galerie'
+                ? t('eventForm.galleryLimitReached')
+                : t('eventForm.addImagesToGallery')
               }
             </p>
             <p className="text-xs text-secondary mt-1">
-              {imagesPreview.length}/5 images
+              {t('eventForm.imagesCount', { count: imagesPreview.length })}
             </p>
           </label>
         </div>
@@ -862,8 +865,8 @@ const ImagesSection = ({ type, defaultValues }: { type?: 'create' | 'edit'; defa
                       removeImage(index)
                     }}
                     className="delete-image-btn"
-                    title="Supprimer"
-                  >
+                    title={t('eventForm.deleteImage')}
+                    >
                     <X className="w-4 h-4" />
                   </button>
                   <div className="drag-handle">

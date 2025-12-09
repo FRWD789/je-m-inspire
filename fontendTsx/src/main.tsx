@@ -15,7 +15,6 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
       .then((registration) => {
         console.log('✅ Service Worker enregistré:', registration.scope);
         
-        // Vérifier les mises à jour toutes les heures
         setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
@@ -37,14 +36,12 @@ if (import.meta.env.PROD) {
         blockAllMedia: false,
       }),
     ],
-    tracesSampleRate: 0.2, // 20% des transactions
-    replaysSessionSampleRate: 0.1, // 10% des sessions
-    replaysOnErrorSampleRate: 1.0, // 100% si erreur
+    tracesSampleRate: 0.2,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
     beforeSend(event) {
-      // Filtrer les erreurs non pertinentes
       if (event.exception) {
         const error = event.exception.values?.[0];
-        // Ignorer les erreurs réseau connues
         if (error?.type === 'NetworkError') {
           return null;
         }

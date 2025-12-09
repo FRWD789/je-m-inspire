@@ -1,20 +1,23 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useFormContext } from "react-hook-form";
 import { Loader2, X } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 type AutocompleteInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   name: string;
   placeholder?: string;
 };
-export default function AutocompleteInput({ name, placeholder = "Rechercher une adresse...", ...rest }: AutocompleteInputProps) {
+export default function AutocompleteInput({ name, placeholder, ...rest }: AutocompleteInputProps) {
   const { register, setValue, watch } = useFormContext();
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const inputValue = watch(name);
   const sessionTokenRef = useRef<any>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Init session token
+  const defaultPlaceholder = placeholder || t('autocomplete.searchAddress');
+
   useEffect(() => {
     const initToken = async () => {
       const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
@@ -67,7 +70,6 @@ export default function AutocompleteInput({ name, placeholder = "Rechercher une 
       }
       setSuggestions([]);
 
-      // New token for next autocomplete
       const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
       sessionTokenRef.current = new AutocompleteSessionToken();
     } catch (err) {
@@ -90,7 +92,7 @@ export default function AutocompleteInput({ name, placeholder = "Rechercher une 
           {...rest}
           type="text"
           value={inputValue || ""}
-          placeholder={placeholder}
+          placeholder={defaultPlaceholder}
           autoComplete="off"
           className="w-full outline-none"
           onChange={(e) => {

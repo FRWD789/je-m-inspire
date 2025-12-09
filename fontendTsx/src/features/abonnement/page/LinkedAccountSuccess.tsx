@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "@/features/auth/service/authService";
 import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 interface LinkedAccountSuccessProps {
   provider: "stripe" | "paypal";
@@ -12,6 +13,7 @@ type LinkingState = "loading" | "success" | "error";
 export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   const [state, setState] = useState<LinkingState>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,6 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
 
         setState("success");
 
-        // Redirection automatique après 2 secondes
         setTimeout(() => {
           navigate("/dashboard/profile-settings");
         }, 2000);
@@ -56,9 +57,6 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
     finalizeLinking();
   }, [provider, providerName, searchParams, navigate]);
 
-  // ==============================
-  //       LOADING STATE
-  // ==============================
   if (state === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
@@ -68,20 +66,17 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
           </div>
           
           <h2 className="text-2xl font-bold text-gray-800 mb-3">
-            Finalisation en cours...
+            {t('linkedAccount.finalizingInProgress')}
           </h2>
           
           <p className="text-gray-600">
-            Liaison de votre compte {providerName} en cours
+            {t('linkedAccount.linkingAccount', { provider: providerName })}
           </p>
         </div>
       </div>
     );
   }
 
-  // ==============================
-  //       ERROR STATE
-  // ==============================
   if (state === "error") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-100 px-4">
@@ -93,7 +88,7 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
           </div>
           
           <h1 className="text-2xl font-bold text-gray-800 text-center mb-3">
-            Erreur de liaison
+            {t('linkedAccount.linkingError')}
           </h1>
           
           <p className="text-gray-600 text-center mb-6">
@@ -106,14 +101,14 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
               className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
             >
               <ArrowLeft className="w-4 h-4" />
-              Retour au profil
+              {t('linkedAccount.backToProfile')}
             </button>
 
             <button
               onClick={() => window.location.reload()}
               className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
             >
-              Réessayer
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>
@@ -121,9 +116,6 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
     );
   }
 
-  // ==============================
-  //       SUCCESS STATE
-  // ==============================
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full">
@@ -134,23 +126,23 @@ export default function LinkedAccountSuccess({ provider }: LinkedAccountSuccessP
         </div>
         
         <h1 className="text-2xl font-bold text-gray-800 text-center mb-3">
-          Compte {providerName} lié avec succès !
+          {t('linkedAccount.accountLinkedSuccess', { provider: providerName })}
         </h1>
         
         <p className="text-gray-600 text-center mb-6">
-          Vous pouvez maintenant recevoir des paiements via {providerName}
+          {t('linkedAccount.canReceivePayments', { provider: providerName })}
         </p>
 
         <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-6">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Redirection automatique...</span>
+          <span>{t('linkedAccount.automaticRedirection')}</span>
         </div>
 
         <button
           onClick={() => navigate("/dashboard/profile-settings")}
           className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
-          Aller au profil maintenant
+          {t('linkedAccount.goToProfileNow')}
         </button>
       </div>
     </div>

@@ -18,7 +18,7 @@ export default function Footer() {
     t('experiences.circles'),
   ];
 
-  const communitySize = 5; // Number of avatars in “joined our community”
+  const communitySize = 5; // Number of avatars in "joined our community"
 
   // Function to generate random colors for avatars
   const getRandomColor = () =>

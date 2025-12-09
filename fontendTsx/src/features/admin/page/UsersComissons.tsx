@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 interface Commission {
   id: number
@@ -55,34 +56,30 @@ interface Stats {
   total_commissions: number
 }
 
-// Helper pour convertir en nombre de manière sûre
 const toNumber = (value: any): number => {
   if (typeof value === 'number') return value
   if (typeof value === 'string') return parseFloat(value) || 0
   return 0
 }
 
-// Helper pour formater les montants
 const formatMontant = (value: any): string => {
   return toNumber(value).toFixed(2)
 }
 
 export default function AdminCommissionPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
-  // États pour les commissions
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
   
-  // États pour les professionnels
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState<number>(0)
   const [saving, setSaving] = useState(false)
   
-  // États généraux
   const [loading, setLoading] = useState(true)
   const [currentTab, setCurrentTab] = useState<'transfers' | 'rates'>('transfers')
 
@@ -121,7 +118,7 @@ export default function AdminCommissionPage() {
       setStats(normalizedStats)
     } catch (err: any) {
       console.error('Erreur lors du chargement des commissions:', err)
-      alert('Erreur lors du chargement des commissions')
+      alert(t('commissions.loadingError'))
     } finally {
       setLoading(false)
     }
@@ -143,7 +140,7 @@ export default function AdminCommissionPage() {
       setProfessionals(normalizedProfessionals)
     } catch (err: any) {
       console.error('Erreur lors du chargement des professionnels:', err)
-      alert('Erreur lors du chargement des professionnels')
+      alert(t('commissions.professionalsLoadingError'))
     } finally {
       setLoading(false)
     }
@@ -156,12 +153,12 @@ export default function AdminCommissionPage() {
       setTimeout(() => setCopiedEmail(null), 2000)
     } catch (err) {
       console.error('Erreur lors de la copie:', err)
-      alert('Erreur lors de la copie du courriel')
+      alert(t('commissions.copyError'))
     }
   }
 
   const markCommissionAsPaid = async (id: number) => {
-    if (!confirm('Confirmer que vous avez transféré ce paiement au vendeur ?')) {
+    if (!confirm(t('commissions.confirmTransfer'))) {
       return
     }
 
@@ -182,10 +179,10 @@ export default function AdminCommissionPage() {
         }
       }
       
-      alert('Commission marquée comme payée avec succès')
+      alert(t('commissions.markedAsPaidSuccess'))
     } catch (err: any) {
       console.error('Erreur lors du marquage:', err)
-      alert(`Erreur : ${err.response?.data?.message || 'Erreur lors du marquage de la commission'}`)
+      alert(`${t('common.error')}: ${err.response?.data?.message || t('commissions.markingError')}`)
     } finally {
       setProcessingId(null)
     }
@@ -213,10 +210,10 @@ export default function AdminCommissionPage() {
       )
       
       setEditingId(null)
-      alert('Taux de commission mis à jour avec succès')
+      alert(t('commissions.rateUpdatedSuccess'))
     } catch (err: any) {
       console.error('Erreur lors de la mise à jour:', err)
-      alert(`Erreur : ${err.response?.data?.message || 'Erreur lors de la mise à jour du taux'}`)
+      alert(`${t('common.error')}: ${err.response?.data?.message || t('commissions.rateUpdateError')}`)
     } finally {
       setSaving(false)
     }
@@ -234,7 +231,7 @@ export default function AdminCommissionPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-gray-600">
         <LoaderCircle className="animate-spin text-accent" size={30} />
-        <p className="mt-4 text-xl font-medium">Chargement...</p>
+        <p className="mt-4 text-xl font-medium">{t('common.loading')}</p>
       </div>
     )
   }
@@ -242,15 +239,14 @@ export default function AdminCommissionPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
-                <DollarSign className="hidden sm:block" /> Gestion des Commissions
+                <DollarSign className="hidden sm:block" /> {t('commissions.title')}
               </h1>
               <p className="text-gray-600 text-sm mt-1">
-                Gérez les paiements à transférer et les taux de commission
+                {t('commissions.subtitle')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -259,20 +255,19 @@ export default function AdminCommissionPage() {
                 className="flex-1 sm:flex-none px-3 py-2 rounded-md bg-primary/70 text-white hover:bg-primary/90 flex items-center justify-center gap-2 text-sm"
               >
                 <RefreshCcw size={15} />
-                <span className="hidden sm:inline">Rafraîchir</span>
+                <span className="hidden sm:inline">{t('commissions.refresh')}</span>
               </button>
               <button
                 onClick={() => navigate(-1)}
                 className="flex-1 sm:flex-none px-3 py-2 rounded-md bg-accent/70 text-white hover:bg-accent/90 flex items-center justify-center gap-2 text-sm"
               >
                 <ArrowLeft size={15} />
-                <span className="hidden sm:inline">Retour</span>
+                <span className="hidden sm:inline">{t('commissions.back')}</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button
             className={`px-3 sm:px-6 py-3 rounded-md font-medium flex items-center justify-center gap-2 text-sm sm:text-base transition-colors ${
@@ -283,8 +278,8 @@ export default function AdminCommissionPage() {
             onClick={() => setCurrentTab('transfers')}
           >
             <TrendingUp size={18} className="hidden sm:block" />
-            <span className="sm:hidden">Paiements</span>
-            <span className="hidden sm:inline">Paiements à transférer</span>
+            <span className="sm:hidden">{t('commissions.paymentsShort')}</span>
+            <span className="hidden sm:inline">{t('commissions.paymentsToTransfer')}</span>
           </button>
           <button
             className={`px-3 sm:px-6 py-3 rounded-md font-medium flex items-center justify-center gap-2 text-sm sm:text-base transition-colors ${
@@ -295,67 +290,63 @@ export default function AdminCommissionPage() {
             onClick={() => setCurrentTab('rates')}
           >
             <Users size={18} className="hidden sm:block" />
-            <span className="sm:hidden">Taux</span>
-            <span className="hidden sm:inline">Taux de commission</span>
+            <span className="sm:hidden">{t('commissions.commissionRatesShort')}</span>
+            <span className="hidden sm:inline">{t('commissions.commissionRates')}</span>
           </button>
         </div>
 
-        {/* Onglet 1: Paiements à transférer */}
         {currentTab === 'transfers' && (
           <>
-            {/* Stats */}
             {stats && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-3">
                   <DollarSign className="text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-500">Total à transférer</p>
+                    <p className="text-sm text-gray-500">{t('commissions.totalToTransfer')}</p>
                     <h3 className="text-lg font-semibold truncate">{formatMontant(stats.total_a_transferer)} $</h3>
                   </div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-3">
                   <TrendingUp className="text-green-600 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-500">Nombre de paiements</p>
+                    <p className="text-sm text-gray-500">{t('commissions.numberOfPayments')}</p>
                     <h3 className="text-lg font-semibold">{stats.nombre_paiements}</h3>
                   </div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-3">
                   <DollarSign className="text-accent flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-500">Commissions prélevées</p>
+                    <p className="text-sm text-gray-500">{t('commissions.commissionsCollected')}</p>
                     <h3 className="text-lg font-semibold truncate">{formatMontant(stats.total_commissions)} $</h3>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Empty state */}
             {commissions.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-200 py-12 text-center">
                 <CheckCircle size={40} className="mx-auto text-green-600 mb-4" />
-                <h2 className="text-lg font-semibold mb-2">Aucun paiement à transférer</h2>
+                <h2 className="text-lg font-semibold mb-2">{t('commissions.noPaymentsToTransfer')}</h2>
                 <p className="text-gray-500 px-4">
-                  Tous les professionnels avec Pro Plus et comptes liés reçoivent déjà les paiements directement.
+                  {t('commissions.proPlus DirectPayments')}
                 </p>
               </div>
             ) : (
               <>
-                {/* Desktop Table */}
                 <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="bg-gray-100 text-gray-700 text-left">
                         <tr>
-                          <th className="py-3 px-4 font-semibold">Date</th>
-                          <th className="py-3 px-4 font-semibold">Événement</th>
-                          <th className="py-3 px-4 font-semibold">Client</th>
-                          <th className="py-3 px-4 font-semibold">Vendeur</th>
-                          <th className="py-3 px-4 font-semibold">Courriel</th>
-                          <th className="py-3 px-4 font-semibold">Montant total</th>
-                          <th className="py-3 px-4 font-semibold">Commission</th>
-                          <th className="py-3 px-4 font-semibold">À transférer</th>
-                          <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">Actions</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.date')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.event')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.customer')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.vendor')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.email')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.totalAmount')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.commission')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.toTransfer')}</th>
+                          <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">{t('commissions.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -369,12 +360,12 @@ export default function AdminCommissionPage() {
                               <button
                                 onClick={() => copyEmailToClipboard(c.vendor_email)}
                                 className="flex items-center gap-1.5 text-primary hover:text-primary/80 cursor-pointer transition-colors"
-                                title="Cliquer pour copier"
+                                title={t('commissions.clickToCopy')}
                               >
                                 {copiedEmail === c.vendor_email ? (
                                   <>
                                     <Check size={14} className="text-green-600" />
-                                    <span className="text-green-600 font-medium">Copié !</span>
+                                    <span className="text-green-600 font-medium">{t('commissions.copied')}</span>
                                   </>
                                 ) : (
                                   <>
@@ -400,12 +391,12 @@ export default function AdminCommissionPage() {
                                 {processingId === c.id ? (
                                   <>
                                     <LoaderCircle size={14} className="animate-spin" />
-                                    Traitement...
+                                    {t('commissions.processing')}
                                   </>
                                 ) : (
                                   <>
                                     <CheckCircle size={14} />
-                                    Marquer comme payé
+                                    {t('commissions.markAsPaid')}
                                   </>
                                 )}
                               </button>
@@ -417,7 +408,6 @@ export default function AdminCommissionPage() {
                   </div>
                 </div>
 
-                {/* Mobile Cards */}
                 <div className="lg:hidden space-y-4">
                   {commissions.map(c => (
                     <div key={c.id} className="bg-white rounded-lg shadow-sm p-4 space-y-3">
@@ -433,15 +423,15 @@ export default function AdminCommissionPage() {
 
                       <div className="space-y-2 text-sm border-t border-gray-100 pt-3">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Client:</span>
+                          <span className="text-gray-500">{t('commissions.customer')}:</span>
                           <span className="text-gray-900 text-right">{c.customer_name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Vendeur:</span>
+                          <span className="text-gray-500">{t('commissions.vendor')}:</span>
                           <span className="text-gray-900 text-right">{c.vendor_name}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-500">Courriel:</span>
+                          <span className="text-gray-500">{t('commissions.email')}:</span>
                           <button
                             onClick={() => copyEmailToClipboard(c.vendor_email)}
                             className="flex items-center gap-1 text-primary hover:text-primary/80 text-right"
@@ -449,7 +439,7 @@ export default function AdminCommissionPage() {
                             {copiedEmail === c.vendor_email ? (
                               <>
                                 <Check size={12} className="text-green-600" />
-                                <span className="text-green-600 text-xs font-medium">Copié</span>
+                                <span className="text-green-600 text-xs font-medium">{t('commissions.copied')}</span>
                               </>
                             ) : (
                               <>
@@ -460,11 +450,11 @@ export default function AdminCommissionPage() {
                           </button>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Montant total:</span>
+                          <span className="text-gray-500">{t('commissions.totalAmount')}:</span>
                           <span className="text-gray-900">{formatMontant(c.montant_total)} $</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Commission:</span>
+                          <span className="text-gray-500">{t('commissions.commission')}:</span>
                           <span className="text-gray-900">
                             {formatMontant(c.montant_commission)} $ ({formatMontant(c.taux_commission)}%)
                           </span>
@@ -479,12 +469,12 @@ export default function AdminCommissionPage() {
                         {processingId === c.id ? (
                           <>
                             <LoaderCircle size={16} className="animate-spin" />
-                            Traitement...
+                            {t('commissions.processing')}
                           </>
                         ) : (
                           <>
                             <CheckCircle size={16} />
-                            Marquer comme payé
+                            {t('commissions.markAsPaid')}
                           </>
                         )}
                       </button>
@@ -496,29 +486,27 @@ export default function AdminCommissionPage() {
           </>
         )}
 
-        {/* Onglet 2: Taux de commission */}
         {currentTab === 'rates' && (
           <>
             {professionals.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-200 py-12 text-center">
                 <Users size={40} className="mx-auto text-gray-400 mb-4" />
-                <h2 className="text-lg font-semibold mb-2">Aucun professionnel trouvé</h2>
-                <p className="text-gray-500">Il n'y a actuellement aucun professionnel enregistré.</p>
+                <h2 className="text-lg font-semibold mb-2">{t('commissions.noProfessionalsFound')}</h2>
+                <p className="text-gray-500">{t('commissions.noProfessionalsRegistered')}</p>
               </div>
             ) : (
               <>
-                {/* Desktop Table */}
                 <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="bg-gray-100 text-gray-700 text-left">
                         <tr>
-                          <th className="py-3 px-4 font-semibold">Nom</th>
-                          <th className="py-3 px-4 font-semibold">Email</th>
-                          <th className="py-3 px-4 font-semibold">Taux actuel</th>
-                          <th className="py-3 px-4 font-semibold">Statut</th>
-                          <th className="py-3 px-4 font-semibold">Comptes</th>
-                          <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">Actions</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.name')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.email')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.currentRate')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.status')}</th>
+                          <th className="py-3 px-4 font-semibold">{t('commissions.accounts')}</th>
+                          <th className="py-3 px-4 font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.1)]">{t('commissions.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -548,12 +536,12 @@ export default function AdminCommissionPage() {
                               <div className="flex gap-1 flex-wrap">
                                 {pro.has_pro_plus && (
                                   <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">
-                                    Pro Plus
+                                    {t('commissions.proPlus')}
                                   </span>
                                 )}
                                 {!pro.is_approved && (
                                   <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs">
-                                    Non approuvé
+                                    {t('commissions.notApproved')}
                                   </span>
                                 )}
                               </div>
@@ -572,7 +560,7 @@ export default function AdminCommissionPage() {
                                 )}
                                 {!pro.has_stripe && !pro.has_paypal && (
                                   <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                                    Aucun
+                                    {t('commissions.none')}
                                   </span>
                                 )}
                               </div>
@@ -585,14 +573,14 @@ export default function AdminCommissionPage() {
                                     disabled={saving}
                                     className="px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 flex items-center gap-1 text-xs disabled:opacity-50"
                                   >
-                                    <Save size={14} /> Enregistrer
+                                    <Save size={14} /> {t('commissions.save')}
                                   </button>
                                   <button
                                     onClick={cancelEdit}
                                     disabled={saving}
                                     className="px-3 py-1.5 rounded-md bg-gray-400 text-white hover:bg-gray-500 flex items-center gap-1 text-xs disabled:opacity-50"
                                   >
-                                    <X size={14} /> Annuler
+                                    <X size={14} /> {t('common.cancel')}
                                   </button>
                                 </div>
                               ) : (
@@ -600,7 +588,7 @@ export default function AdminCommissionPage() {
                                   onClick={() => startEdit(pro.id, pro.commission_rate)}
                                   className="px-3 py-1.5 rounded-md bg-primary text-white hover:bg-primary/90 flex items-center gap-1 text-xs"
                                 >
-                                  <Edit2 size={14} /> Modifier
+                                  <Edit2 size={14} /> {t('commissions.edit')}
                                 </button>
                               )}
                             </td>
@@ -611,7 +599,6 @@ export default function AdminCommissionPage() {
                   </div>
                 </div>
 
-                {/* Mobile Cards */}
                 <div className="lg:hidden space-y-4">
                   {professionals.map(pro => (
                     <div key={pro.id} className="bg-white rounded-lg shadow-sm p-4 space-y-3">
@@ -630,7 +617,7 @@ export default function AdminCommissionPage() {
                       {editingId === pro.id && (
                         <div className="bg-blue-50 p-3 rounded-lg">
                           <label className="text-sm text-gray-700 font-medium mb-2 block">
-                            Nouveau taux de commission
+                            {t('commissions.newCommissionRate')}
                           </label>
                           <div className="flex items-center gap-2">
                             <input
@@ -650,12 +637,12 @@ export default function AdminCommissionPage() {
                       <div className="flex flex-wrap gap-2">
                         {pro.has_pro_plus && (
                           <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
-                            Pro Plus
+                            {t('commissions.proPlus')}
                           </span>
                         )}
                         {!pro.is_approved && (
                           <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
-                            Non approuvé
+                            {t('commissions.notApproved')}
                           </span>
                         )}
                         {pro.has_stripe && (
@@ -670,7 +657,7 @@ export default function AdminCommissionPage() {
                         )}
                         {!pro.has_stripe && !pro.has_paypal && (
                           <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
-                            Aucun compte lié
+                            {t('commissions.noLinkedAccount')}
                           </span>
                         )}
                       </div>
@@ -682,14 +669,14 @@ export default function AdminCommissionPage() {
                             disabled={saving}
                             className="flex-1 px-4 py-2.5 rounded-md bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-50"
                           >
-                            <Save size={16} /> Enregistrer
+                            <Save size={16} /> {t('commissions.save')}
                           </button>
                           <button
                             onClick={cancelEdit}
                             disabled={saving}
                             className="flex-1 px-4 py-2.5 rounded-md bg-gray-400 text-white hover:bg-gray-500 flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-50"
                           >
-                            <X size={16} /> Annuler
+                            <X size={16} /> {t('common.cancel')}
                           </button>
                         </div>
                       ) : (
@@ -697,7 +684,7 @@ export default function AdminCommissionPage() {
                           onClick={() => startEdit(pro.id, pro.commission_rate)}
                           className="w-full px-4 py-2.5 rounded-md bg-primary text-white hover:bg-primary/90 flex items-center justify-center gap-2 text-sm font-medium"
                         >
-                          <Edit2 size={16} /> Modifier le taux
+                          <Edit2 size={16} /> {t('commissions.editRate')}
                         </button>
                       )}
                     </div>
