@@ -1,286 +1,200 @@
-import React, { useEffect, useState } from 'react';
-import { Home, Settings, PanelRight, PanelLeft, Users, ChevronDown, ChevronUp, DollarSign, Ticket, TicketCheck, TicketPlus, CalendarDays, LogOut, Percent, BarChart3, Menu, X, Star, ArrowLeft, ChartNoAxesCombined, UserPlus, HandCoins, BanknoteArrowDown, } from 'lucide-react';
-import { Outlet, useLocation, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, X, Calendar } from 'lucide-react';
+import type { Event } from '@/types/events';
+import EventCard from '@/features/events/components/EventCard';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 
-export default function Dashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [eventsOpen, setEventsOpen] = useState(false);
+const EventsCalendar = ({ events }: { events: Event[] }) => {
+  const { t, i18n } = useTranslation();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const { user, logout, hasProPlus } = useAuth();
-  const { t } = useTranslation();
-  
-  const navigate = useNavigate();
 
-
-  useEffect(() => {
+  React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    if (isMobile) setSidebarOpen(false);
-  }, [isMobile]);
-
- 
-
-  const refundIcon = user?.roles[0]?.role === 'admin' ? (
-    <DollarSign className="w-5 h-5" />
-  ) : (
-    <DollarSign className="w-5 h-5" />
+  const monthNames = [...Array(12).keys()].map((m) =>
+    new Date(2000, m, 1).toLocaleDateString(i18n.language, { month: 'long' })
   );
 
+  const dayNames = [...Array(7).keys()].map((d) =>
+    new Date(2000, 0, d + 2).toLocaleDateString(i18n.language, { weekday: 'short' })
+  );
 
-  const menuItems = [
-    { icon: <Home className="w-5 h-5" />, label: t('dashboard.home'), path: '/dashboard' , exact: true},
-    ...(user?.roles[0]?.role === 'professionnel'
-      ? [{ icon: <BarChart3 className="w-5 h-5" />, label: t('dashboard.earnings'), path: '/dashboard/vendor' }]
-      : []),
-    ...(user?.roles[0]?.role === 'admin'
-      ? [
-          { icon: <Users className="w-5 h-5" />, label: t('dashboard.users'), path: '/dashboard/approbation' },
-          { icon: <Percent className="w-5 h-5" />, label: t('dashboard.commissions'), path: '/dashboard/commissions' },
-        ]
-      : []),
-    { icon: <UserPlus className="w-5 h-5" />, label: t('following.title'), path: "/dashboard/my-following" },
-    { icon: refundIcon, label: t('dashboard.refunds'), path: 'refunds' },
-    { icon: <CalendarDays className="w-5 h-5" />, label: t('dashboard.calendar'), path: '/dashboard/event-calender' },
-    {
-      icon: <Ticket className="w-5 h-5" />,
-      label: t('dashboard.events'),
-      path: '/dashboard/my-events',
-      children: [
-        ...(user?.roles[0]?.role === 'professionnel'
-      ? [{ label: t('dashboard.myEvents'), path: '/dashboard/my-events', icon: <TicketPlus className="w-4 h-4" /> }]
-      : []),
-        
-        { label: t('dashboard.myReservations'), path: '/dashboard/my-reservations', icon: <TicketCheck className="w-4 h-4" /> },
-      ],
-    },
-  ];
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+  const startingDayOfWeek = firstDayOfMonth.getDay();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const goToPreviousMonth = () =>
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+
+  const goToNextMonth = () =>
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+
+  const getEventsForDate = (day: number) => {
+    const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return events.filter((event) => {
+      const start = new Date(event.start_date);
+      const end = new Date(event.end_date);
+      return (
+        checkDate >= new Date(start.toDateString()) &&
+        checkDate <= new Date(end.toDateString())
+      );
+    });
   };
 
-  const NavLinkItem = ({ item, isChild = false }) => (
-    <NavLink
-      to={item.path}
-      end={item.exact || false}
-      onClick={() => {
-        if (isMobile) setMobileMenuOpen(false);
-        if (!isChild) setEventsOpen(false);
-      }}
-      className={({ isActive }) =>
-        `w-full flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors text-left ${
-          isActive ? 'bg-blue-100 text-blue-600 font-semibold' : ''
-        } ${isChild ? 'text-sm' : ''} ${!isMobile && sidebarOpen ? '' : 'whitespace-nowrap'}`
-      }
-    >
-      <span className="flex-shrink-0">{item.icon}</span>
-      <span className={`ml-3 font-medium flex-1 ${isMobile || sidebarOpen ? 'block' : 'hidden'} truncate`}>
-        {item.label}
-      </span>
-    </NavLink>
-  );
+  const handleDateClick = (day: number) => {
+    const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dayEvents = getEventsForDate(day);
 
-   useEffect(() => {
-  const eventsItem = menuItems.find(item => item.children);
-  if (eventsItem && eventsItem.children.some(child => location.pathname === child.path)) {
-    setEventsOpen(true);
-  }
-}, [location.pathname]);
-
-  const handleEventsToggle = (e, item) => {
-    e.preventDefault();
-    if (item.children && item.children.length > 0) {
-      navigate(item.children[0].path);
-      if (isMobile) setMobileMenuOpen(false);
+    if (dayEvents.length > 0) {
+      setSelectedDate({ date: clickedDate, events: dayEvents });
+      setShowModal(true);
     }
-    setEventsOpen(!eventsOpen);
   };
 
-  return (
-    <div className="flex h-[100svh] bg-gray-100">
-      {mobileMenuOpen && isMobile && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+  const calendarDays: React.ReactNode[] = [];
 
-      <aside
-        className={`fixed md:relative top-16 md:top-0 left-0 bottom-0 md:bottom-auto bg-white border-r border-gray-200 shadow-sm transition-all duration-300 z-50 overflow-y-auto flex flex-col ${
-          sidebarOpen && !isMobile ? 'w-64' : 'md:w-20 w-0'
-        } ${mobileMenuOpen ? 'translate-x-0 w-64 sm:w-72' : '-translate-x-full md:translate-x-0'}`}
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(<div key={`empty-${i}`} className="hidden sm:block h-16 md:h-24 bg-gray-50" />);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayEvents = getEventsForDate(day);
+    const hasEvents = dayEvents.length > 0;
+    const today = new Date();
+    const isToday =
+      day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear();
+
+    calendarDays.push(
+      <div
+        key={day}
+        onClick={() => handleDateClick(day)}
+        className={`h-16 sm:h-20 md:h-24 border border-gray-200 p-1 sm:p-2 overflow-hidden flex flex-col transition-all
+          ${hasEvents ? 'cursor-pointer hover:bg-blue-50 bg-white' : 'bg-white'}
+          ${isToday ? 'ring-2 ring-accent' : ''}`}
       >
-        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-         <div className="hidden md:block">
-           <NavLink 
-              to="/" 
-              onClick={() => setEventsOpen(false)}
-              className={`font-bold text-center transition-all flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 ${sidebarOpen ? 'text-base' : 'text-xs'}`}
-            >
-              <ArrowLeft size={sidebarOpen ? 18 : 18} />
-              {sidebarOpen && <span>{t('dashboard.back')}</span>}
-            </NavLink>
-          </div>
-          <ul className="space-y-1">
-            {menuItems.map((item, index) => (
-              <React.Fragment key={index}>
-                {!item.children ? (
-                  <NavLinkItem item={item} />
-                ) : (
-                  <div onClick={() => setSidebarOpen(true)} className="space-y-1">
-                    <button
-                      onClick={(e) => handleEventsToggle(e, item)}
-                      className={`w-full flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${
-                        eventsOpen ? 'bg-blue-50 text-blue-600' : ''
-                      }`}
-                    >
-                      <span className="flex-shrink-0">{item.icon}</span>
-                      <span className={`ml-3 font-medium flex-1 text-left ${
-                        isMobile || sidebarOpen ? 'block' : 'hidden'
-                      }`}>
-                        {item.label}
-                      </span>
-                      {isMobile || sidebarOpen ? (
-                        eventsOpen ? (
-                          <ChevronUp className="w-4 h-4 flex-shrink-0" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 flex-shrink-0" />
-                        )
-                      ) : null}
-                    </button>
-                    {eventsOpen && (
-                      <ul className="space-y-1 ml-4">
-                        {item.children.map((child, cIndex) => (
-                          <div key={cIndex}>
-                            <NavLinkItem item={child} isChild />
-                          </div>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-            <div className="pt-4 border-t border-gray-200">
-              <NavLinkItem item={{ icon: <Settings className="w-5 h-5" />, label: t('dashboard.settings'), path: '/dashboard/profile-settings' }} />
-            </div>
-          </ul>
+        <div className={`text-xs sm:text-sm font-semibold mb-1 ${isToday ? 'text-accent' : 'text-gray-700'}`}>
+          {day}
         </div>
 
-       {user && (
-          <div className="border-t border-gray-200 p-3 md:p-4">
-            <div className="flex items-center gap-2">
-              
-              <button
-                className="flex items-center gap-2 flex-1 hover:bg-gray-100 px-2 py-2 rounded-lg transition group"
-                onClick={() => {
-                  navigate("/dashboard/profile-settings");
-                  if (isMobile) setMobileMenuOpen(false);
-                }}
-                title={t('dashboard.profileSettings')}
+        {hasEvents && (
+          <div className="space-y-0.5 overflow-hidden flex-1">
+            {dayEvents.slice(0, isMobile ? 1 : 2).map((event) => (
+              <div
+                key={event.id}
+                className="text-xs bg-primary text-white px-2 py-1 rounded truncate"
+                title={event.name}
               >
-                <div className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-gray-300 hover:scale-110 transition flex items-center justify-center bg-primary text-white flex-shrink-0 overflow-hidden text-xs md:text-sm font-bold">
-                  {user.profile.profile_picture ? (
-                    <img src={user.profile.profile_picture} alt={user.profile.name} className="w-full h-full object-cover" />
-                  ) : (
-                    user.profile.name?.charAt(0).toUpperCase() || 'U'
-                  )}
-                </div>
-                
-                <div className={`flex flex-col text-left flex-1 min-w-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
-                  <span className="font-medium text-sm truncate">{user.profile.name}</span>
-                  {user.roles[0].role === "professionnel" ? (
-                    <span className="text-xs text-gray-500 truncate">
-                      {hasProPlus ? 'Pro+' : t('common.freeAccount')}
-                    </span>
-                  ) : (
-                    <span></span>
-                  )}
-                </div>
-              </button>
+                {event.name}
+              </div>
+            ))}
 
-              {user.roles[0].role === 'professionnel' && (
-                <div className={`flex-shrink-0 ${isMobile || sidebarOpen ? 'block' : 'hidden'}`}>
-                  {!hasProPlus ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/dashboard/profile-settings?tab=plan");
-                        if (isMobile) setMobileMenuOpen(false);
-                      }}
-                      className="text-xs font-medium py-1.5 px-3 rounded-lg border border-amber-400 text-amber-600 hover:bg-amber-50 transition whitespace-nowrap"
-                    >
-                      {t('common.upgradeAccount')}
-                    </button>
-                  ) : (
-                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition">
-                      <Star size={16} fill="currentColor" />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {dayEvents.length > (isMobile ? 1 : 2) && (
+              <div className="text-xs text-primary font-semibold truncate">
+                +{dayEvents.length - (isMobile ? 1 : 2)}
+              </div>
+            )}
           </div>
         )}
-      </aside>
+      </div>
+    );
+  }
 
-      <main className="flex-1 flex flex-col w-full overflow-hidden">
-        <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 gap-2 md:gap-4">
-            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-              <button
-                onClick={() => {
-                  if (isMobile) {
-                    setMobileMenuOpen(!mobileMenuOpen);
-                  } else {
-                    setSidebarOpen(!sidebarOpen);
-                  }
-                }}
-                className="p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
-                aria-label="Toggle menu"
-              >
-                {isMobile ? (
-                  mobileMenuOpen ? (
-                    <X size={20} />
-                  ) : (
-                    <Menu size={20} />
-                  )
-                ) : sidebarOpen ? (
-                  <PanelLeft size={20} />
-                ) : (
-                  <PanelRight size={20} />
-                )}
-              </button>
-              <h2 className="text-base md:text-lg lg:text-xl font-semibold whitespace-nowrap truncate">
-                {t('dashboard.title')}
-              </h2>
-            </div>
-            <LanguageSwitcher/>
-            <button
-              onClick={handleLogout}
-              className="p-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
-              title={t('nav.logout')}
-              aria-label="Logout"
-            >
-              <LogOut size={20} />
-            </button>
+  return (
+    <div className="w-full max-w-6xl mx-auto p-3 sm:p-4 md:p-6">
+
+      <div className="flex gap-2 items-center mb-3 md:mb-6">
+        <Calendar className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+        <h1 className="text-lg md:text-2xl font-semibold">{t("calendar.title")}</h1>
+      </div>
+
+      <div className="flex items-center justify-between mb-4 md:mb-6 gap-2">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 truncate">
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+        </h2>
+
+        <div className="flex gap-1 sm:gap-2">
+          <button
+            onClick={goToPreviousMonth}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+            aria-label={t("calendar.prev")}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={goToNextMonth}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+            aria-label={t("calendar.next")}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="hidden sm:grid grid-cols-7 mb-2">
+        {dayNames.map((d) => (
+          <div key={d} className="text-center font-semibold text-gray-600 py-2 text-sm">
+            {d}
           </div>
-        </header>
-        <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-6">
-          <div className="bg-white rounded-lg md:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-full">
-            <Outlet />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 mb-2 sm:hidden">
+        {dayNames.map((d) => (
+          <div key={d} className="text-center font-semibold text-gray-600 py-1 text-xs">
+            {d.charAt(0)}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+        {calendarDays}
+      </div>
+
+      {showModal && selectedDate && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-3xl flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-t-lg sm:rounded-lg w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+
+            <div className="sticky top-0 bg-white border-b p-4 flex justify-between shadow-sm">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800">
+                {t("calendar.eventsFor")}{" "}
+                {selectedDate.date.toLocaleDateString(i18n.language, {
+                  weekday: 'short',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </h3>
+
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                aria-label={t("calendar.close")}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {selectedDate.events.map((event:any) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
-}
+};
+
+export default EventsCalendar;

@@ -149,6 +149,18 @@ const resources = {
       },
 
       // ==========================================
+      // VALIDATION MESSAGES
+      // ==========================================
+      validation: {
+        email: 'Veuillez entrer une adresse email valide',
+        minLength: 'Doit contenir au moins {{count}} caractères',
+        maxLength: 'Ne doit pas dépasser {{count}} caractères',
+        required: 'Ce champ est requis',
+        passwordMismatch: 'Les mots de passe ne correspondent pas',
+        invalidDate: 'Date invalide',
+      },
+
+      // ==========================================
       // DASHBOARD
       // ==========================================
       dashboard: {
@@ -250,6 +262,11 @@ const resources = {
         unfollowSuccess: 'Vous ne suivez plus {{name}}',
         followSuccess: 'Vous suivez maintenant {{name}}',
         notificationToggleSuccess: 'Préférences de notification mises à jour',
+        searchPlaceholder: 'Rechercher des professionnels...',
+        browseEvents: 'Parcourir les événements',
+        discoverPros: 'Découvrir des professionnels',
+        noFollowingDesc: 'Suivez des professionnels pour recevoir des mises à jour sur leurs nouveaux événements et offres.',
+
       },
 
       // ==========================================
@@ -1260,11 +1277,101 @@ const resources = {
       // ==========================================
       // SOCIAL MEDIA
       // ==========================================
-      socialMedia: {
+      socialMedia: {  
         facebook: 'Facebook',
         instagram: 'Instagram',
         twitter: 'Twitter',
         linkedin: 'LinkedIn',
+      },
+
+      // ==========================================
+      // REFUNDS
+      // ==========================================
+      refunds: {
+        // Titres principaux
+        title: 'Mes Demandes de Remboursement',
+        newRequest: 'Nouvelle Demande',
+        myRequests: 'Mes Demandes',
+        myRequestShort: 'Demandes',
+        manage: 'Gestion des Remboursements',
+        manageShort: 'Gestion',
+        
+        // Titres de gestion
+        adminTitle: 'Remboursements à traiter (Paiements indirects)',
+        proTitle: 'Remboursements de mes événements (Paiements directs)',
+        
+        // Formulaire
+        selectReservation: 'Sélectionner une Réservation',
+        reason: 'Motif du remboursement',
+        reasonPlaceholder: 'Expliquez pourquoi vous demandez un remboursement',
+        submit: 'Soumettre',
+        submitting: 'Envoi en cours...',
+        
+        // Onglets de gestion
+        pending: 'En Attente',
+        approved: 'Approuvés',
+        refused: 'Refusés',
+        rejected: 'Rejetés',
+        all: 'Tous',
+        
+        // Messages
+        submitSuccess: 'Demande de remboursement soumise',
+        submitError: 'Erreur lors de l\'envoi',
+        noReservations: 'Aucune réservation éligible au remboursement',
+        pleaseCompleteRecaptcha: 'Veuillez compléter le captcha',
+        
+        // Page de gestion
+        noRequestsYet: 'Aucune demande de remboursement pour le moment',
+        noRequestsDesc: 'Les demandes apparaîtront ici dès qu\'elles seront soumises',
+        loading: 'Chargement...',
+        refresh: 'Rafraîchir',
+        
+        // Tableau
+        date: 'Date',
+        event: 'Événement',
+        client: 'Client',
+        vendor: 'Vendeur',
+        email: 'Courriel',
+        amount: 'Montant',
+        motive: 'Motif',
+        message: 'Message',
+        status: 'Statut',
+        actions: 'Actions',
+        
+        // Détails
+        refundReason: 'Motif de remboursement',
+        adminMessage: 'Message de l\'administrateur',
+        noReason: 'Aucun motif',
+        viewReason: 'Voir le motif',
+        viewMessage: 'Voir le message',
+        close: 'Fermer',
+        
+        // Actions
+        approve: 'Approuver',
+        refuse: 'Refuser',
+        approveRequest: 'Approuver la demande de',
+        refuseRequest: 'Refuser la demande de',
+        addMessage: 'Ajouter un message (minimum 5 caractères)...',
+        messageMinLength: 'Le message doit contenir au moins 5 caractères.',
+        cancel: 'Annuler',
+        confirm: 'Confirmer',
+        
+        // Statuts
+        statusPending: 'En attente',
+        statusApproved: 'Approuvé',
+        statusRefused: 'Refusé',
+        approvedOn: 'Approuvé le',
+        refusedOn: 'Refusé le',
+        
+        // Formulaire de nouvelle demande
+        selectReservationFirst: 'Veuillez sélectionner une réservation',
+        noEligibleReservations: 'Vous n\'avez aucune réservation éligible au remboursement',
+        eligibleReservationsDesc: 'Seules les réservations payées et annulables sans demande existante sont affichées',
+        
+        // Erreurs
+        errorLoading: 'Erreur lors du chargement',
+        errorProcessing: 'Erreur lors du traitement de la demande',
+        cannotLoadRequests: 'Impossible de récupérer les demandes de remboursement.'
       },
     }
   },
@@ -1392,6 +1499,18 @@ const resources = {
         sessionExpired: 'Your session has expired, please log in again'
       },
 
+      // =========================================
+      // VALIDATION MESSAGES
+      // =========================================
+      validation: {
+        email: 'Please enter a valid email address',
+        minLength: 'Must contain at least {{count}} characters',
+        maxLength: 'Must contain no more than {{count}} characters',
+        required: 'This field is required',
+        passwordMismatch: 'Passwords do not match',
+        invalidDate: 'Invalid date',
+      },
+
       dashboard: {
         nextEvent: "Next Event",
         title: 'Dashboard',
@@ -1473,6 +1592,11 @@ const resources = {
         unfollowSuccess: 'You are no longer following {{name}}',
         followSuccess: 'You are now following {{name}}',
         notificationToggleSuccess: 'Notification preferences updated',
+        searchPlaceholder: 'Search professionals...',
+        browseEvents: 'Browse events',
+        discoverPros: 'Discover professionals',
+        noFollowingDesc: 'Follow professionals to stay updated on their latest events and activities.',
+
       },
 
       calendar: {
@@ -2333,6 +2457,96 @@ const resources = {
         instagram: 'Instagram',
         twitter: 'Twitter',
         linkedin: 'LinkedIn',
+      },
+
+      // ==========================================
+      // REFUNDS
+      // ==========================================
+      refunds: {
+        // Main titles
+        title: 'My Refund Requests',
+        newRequest: 'New Request',
+        myRequests: 'My Requests',
+        myRequestShort: 'Requests',
+        manage: 'Refund Management',
+        manageShort: 'Management',
+        
+        // Management titles
+        adminTitle: 'Refunds to Process (Indirect Payments)',
+        proTitle: 'Refunds for My Events (Direct Payments)',
+        
+        // Form
+        selectReservation: 'Select a Reservation',
+        reason: 'Refund Reason',
+        reasonPlaceholder: 'Explain why you are requesting a refund',
+        submit: 'Submit',
+        submitting: 'Submitting...',
+        
+        // Management tabs
+        pending: 'Pending',
+        approved: 'Approved',
+        refused: 'Refused',
+        rejected: 'Rejected',
+        all: 'All',
+        
+        // Messages
+        submitSuccess: 'Refund request submitted',
+        submitError: 'Submission error',
+        noReservations: 'No reservations eligible for refund',
+        pleaseCompleteRecaptcha: 'Please complete the captcha',
+        
+        // Management page
+        noRequestsYet: 'No refund requests yet',
+        noRequestsDesc: 'Requests will appear here once submitted',
+        loading: 'Loading...',
+        refresh: 'Refresh',
+        
+        // Table
+        date: 'Date',
+        event: 'Event',
+        client: 'Customer',
+        vendor: 'Vendor',
+        email: 'Email',
+        amount: 'Amount',
+        motive: 'Reason',
+        message: 'Message',
+        status: 'Status',
+        actions: 'Actions',
+        
+        // Details
+        refundReason: 'Refund Reason',
+        adminMessage: 'Administrator Message',
+        noReason: 'No reason',
+        viewReason: 'View reason',
+        viewMessage: 'View message',
+        close: 'Close',
+        
+        // Actions
+        approve: 'Approve',
+        refuse: 'Refuse',
+        approveRequest: 'Approve request from',
+        refuseRequest: 'Refuse request from',
+        addMessage: 'Add a message (minimum 5 characters)...',
+        messageMinLength: 'Message must be at least 5 characters long.',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        
+        // Statuses
+        statusPending: 'Pending',
+        statusApproved: 'Approved',
+        statusRefused: 'Refused',
+        approvedOn: 'Approved on',
+        refusedOn: 'Refused on',
+        
+        // New request form
+        selectReservationFirst: 'Please select a reservation',
+        noEligibleReservations: 'You have no reservations eligible for refund',
+        eligibleReservationsDesc: 'Only paid and cancellable reservations without existing requests are shown',
+        
+        // Errors
+        errorLoading: 'Error loading',
+        errorProcessing: 'Error processing request',
+        cannotLoadRequests: 'Unable to retrieve refund requests.'
       },
     }
   }
