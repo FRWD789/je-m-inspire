@@ -43,6 +43,16 @@ return [
             'root' => storage_path('app/public'),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
+            'permissions' => [
+                'file' => [
+                    'public' => 0664,  // rw-rw-r-- (groupe peut écrire)
+                    'private' => 0600,
+                ],
+                'dir' => [
+                    'public' => 0775,  // rwxrwxr-x (groupe peut écrire)
+                    'private' => 0700,
+                ],
+            ],
             'throw' => false,
             'report' => false,
         ],
