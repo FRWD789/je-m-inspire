@@ -70,7 +70,7 @@ export default function NavBar() {
               onBlur={() => setTimeout(() => setOpenDropdown(false), 200)}
               className="flex items-center gap-1 text-xs xl:text-sm font-medium text-primary hover:text-accent transition-all"
             >
-              Expériences
+              {t('nav.experiences')}
               <ChevronDown
                 className={`w-3 h-3 xl:w-4 xl:h-4 transition-transform ${
                   openDropdown === "experiences" ? "rotate-180 text-accent" : ""

@@ -65,8 +65,8 @@ export default function VendorDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-6 md:mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('earnings.title')}</h1>
-            <p className="text-sm md:text-base text-gray-600 mt-1">{t('earnings.subtitle')}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('vendorDashboard.title')}</h1>
+            <p className="text-sm md:text-base text-gray-600 mt-1">{t('vendorDashboard.subtitle')}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
             <select
@@ -74,18 +74,18 @@ export default function VendorDashboard() {
               onChange={(e) => setPeriod(e.target.value)}
               className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
             >
-              <option value="today">{t('earnings.today')}</option>
-              <option value="week">{t('earnings.thisWeek')}</option>
-              <option value="month">{t('earnings.thisMonth')}</option>
-              <option value="all">{t('earnings.allTime')}</option>
+              <option value="today">{t('vendorDashboard.today')}</option>
+              <option value="week">{t('vendorDashboard.week')}</option>
+              <option value="month">{t('vendorDashboard.month')}</option>
+              <option value="all">{t('vendorDashboard.all')}</option>
             </select>
             <button
               onClick={handleExport}
               className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-accent text-white rounded-lg hover:bg-primary transition-colors text-sm md:text-base font-medium"
             >
               <Download className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">{t('earnings.exportCSV')}</span>
-              <span className="sm:hidden">Exporter</span>
+              <span className="hidden sm:inline">{t('vendorDashboard.export')}</span>
+              <span className="sm:hidden">{t('vendorDashboard.exportShort')}</span>
             </button>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function VendorDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
           {[
             {
-              title: t('earnings.netEarnings'),
+              title: t('vendorDashboard.netEarnings'),
               value: summary.net_earnings.toFixed(2),
               unit: '$',
               icon: DollarSign,
@@ -103,7 +103,7 @@ export default function VendorDashboard() {
               showChange: true
             },
             {
-              title: t('earnings.totalEarnings'),
+              title: t('vendorDashboard.totalSales'),
               value: summary.total_sales.toFixed(2),
               unit: '$',
               icon: TrendingUp,
@@ -111,7 +111,7 @@ export default function VendorDashboard() {
               iconColor: 'text-blue-600'
             },
             {
-              title:   `${t('earnings.commission')} (${summary.commission_rate}%)`,
+              title: t('vendorDashboard.commissions', { rate: summary.commission_rate }),
               value: summary.total_commission.toFixed(2),
               unit: '$',
               icon: CreditCard,
@@ -119,7 +119,7 @@ export default function VendorDashboard() {
               iconColor: 'text-orange-600'
             },
             {
-              title:`Transaction${summary.transaction_count > 1 ? 's' : ''}`,
+              title: t('vendorDashboard.transactions'),
               value: summary.transaction_count,
               unit: '',
               icon: Calendar,
@@ -165,9 +165,9 @@ export default function VendorDashboard() {
                       : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  {tab === 'overview' && t('earnings.overview')}
-                  {tab === 'transactions' && t('earnings.transactions')}
-                  {tab === 'statistics' && t('earnings.statistics')}
+                  {tab === 'overview' && t('vendorDashboard.overview')}
+                  {tab === 'transactions' && t('vendorDashboard.transactionsTab')}
+                  {tab === 'statistics' && t('vendorDashboard.statistics')}
                 </button>
               ))}
             </nav>
@@ -179,17 +179,21 @@ export default function VendorDashboard() {
               <div className="space-y-6 md:space-y-8">
                 {/* Top Events */}
                 <div>
-                  <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('earnings.bestEvent')}</h3>
+                  <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('vendorDashboard.topEvents')}</h3>
                   <div className="space-y-2 md:space-y-3">
                     {statistics.top_events.map((event) => (
                       <div key={event.event_id} className="flex flex-col md:flex-row md:items-center md:justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 text-sm md:text-base truncate">{event.event_name}</p>
-                          <p className="text-xs md:text-sm text-gray-600">{event.transaction_count} Transaction{event.transaction_count > 1 ? 's' : ''}</p>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {t('vendorDashboard.transactionsCount', { count: event.transaction_count })}
+                          </p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-gray-900 text-sm md:text-base">{event.net_revenue.toFixed(2)} $</p>
-                          <p className="text-xs md:text-sm text-gray-600">Commission: {event.total_commission.toFixed(2)} $</p>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {t('vendorDashboard.commissionLabel', { amount: event.total_commission.toFixed(2) })}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -198,14 +202,14 @@ export default function VendorDashboard() {
 
                 {/* Payment Methods */}
                 <div>
-                  <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('earnings.paymentMethod')}</h3>
+                  <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('vendorDashboard.paymentMethods')}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                     {statistics.payment_methods.map((method) => (
                       <div key={method.method} className="p-3 md:p-4 bg-gray-50 rounded-lg">
                         <p className="text-xs md:text-sm text-gray-600">{method.method}</p>
                         <p className="text-lg md:text-xl font-bold text-gray-900 mt-1">{method.total.toFixed(2)} $</p>
                         <p className="text-xs md:text-sm text-gray-600 mt-1">
-                          {method.count} transaction{method.count > 1 ? 's' : ''}
+                          {t('vendorDashboard.transactionsCount', { count: method.count })}
                         </p>
                       </div>
                     ))}
@@ -221,13 +225,13 @@ export default function VendorDashboard() {
                   <table className="w-full text-xs md:text-sm">
                     <thead>
                       <tr className="border-b border-gray-200 text-left">
-                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">Date</th>
-                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('earnings.eventName')}</th>
-                        <th className="hidden md:table-cell py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('earnings.client')}</th>
-                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600 text-right">{t('earnings.amount')}</th>
-                        <th className="hidden sm:table-cell py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600 text-right">Commission</th>
-                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600 text-right">Net</th>
-                        <th className="hidden lg:table-cell py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('earnings.method')}</th>
+                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('vendorDashboard.date')}</th>
+                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('vendorDashboard.event')}</th>
+                        <th className="hidden md:table-cell py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('vendorDashboard.customer')}</th>
+                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600 text-right">{t('vendorDashboard.amount')}</th>
+                        <th className="hidden sm:table-cell py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600 text-right">{t('vendorDashboard.commission')}</th>
+                        <th className="py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600 text-right">{t('vendorDashboard.net')}</th>
+                        <th className="hidden lg:table-cell py-2 md:py-3 px-2 md:px-4 font-medium text-gray-600">{t('vendorDashboard.method')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -265,14 +269,14 @@ export default function VendorDashboard() {
             {/* Statistics Tab */}
             {activeTab === 'statistics' && (
               <div>
-                <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('earnings.last12Month')}</h3>
+                <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('vendorDashboard.monthlyEarnings')}</h3>
                 <div className="space-y-3 md:space-y-4">
                   {statistics.monthly_earnings.map((month, index) => (
                     <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-4 p-3 md:p-4 bg-gray-50 rounded-lg">
                       <div className="w-20 md:w-24 text-xs md:text-sm font-medium text-gray-600">{month.period}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1 gap-2">
-                          <span className="text-xs md:text-sm text-gray-600">{t('earnings.totalEarnings')}</span>
+                          <span className="text-xs md:text-sm text-gray-600">{t('vendorDashboard.totalSalesLabel')}</span>
                           <span className="text-xs md:text-sm font-medium text-gray-900">{month.total_sales.toFixed(2)} $</span>
                         </div>
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -282,7 +286,9 @@ export default function VendorDashboard() {
                           ></div>
                         </div>
                         <div className="flex items-center justify-between mt-1 gap-2">
-                          <span className="text-xs text-gray-500">Commission: {month.total_commission.toFixed(2)} $</span>
+                          <span className="text-xs text-gray-500">
+                            {t('vendorDashboard.commissionLabel', { amount: month.total_commission.toFixed(2) })}
+                          </span>
                           <span className="text-xs md:text-sm font-semibold text-accent whitespace-nowrap">{month.net_earnings.toFixed(2)} $</span>
                         </div>
                       </div>

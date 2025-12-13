@@ -925,10 +925,53 @@ const resources = {
       // VENDOR DASHBOARD
       // ==========================================
       vendorDashboard: {
-        export: 'Exporter',
+        // Header
+        title: 'Tableau de bord vendeur',
+        subtitle: 'Gérez vos revenus et transactions',
+        
+        // Period selector
+        today: 'Aujourd\'hui',
+        week: 'Cette semaine',
+        month: 'Ce mois',
+        all: 'Tout',
+        
+        // Actions
+        export: 'Exporter CSV',
+        exportShort: 'Exporter',
+        
+        // Stats cards
+        netEarnings: 'Revenus nets',
+        totalSales: 'Ventes totales',
+        commissions: 'Commissions ({{rate}}%)',
+        transactions: 'Transactions',
+        
+        // Tabs
+        overview: 'Vue d\'ensemble',
+        transactionsTab: 'Transactions',
+        statistics: 'Statistiques',
+        
+        // Overview
+        topEvents: 'Événements les plus rentables',
+        transactionsCount: '{{count}} transaction',
+        transactionsCount_other: '{{count}} transactions',
+        paymentMethods: 'Méthodes de paiement',
+        
+        // Transaction table
         date: 'Date',
+        event: 'Événement',
+        customer: 'Client',
+        amount: 'Montant',
         commission: 'Commission',
         net: 'Net',
+        method: 'Méthode',
+        
+        // Statistics
+        monthlyEarnings: 'Revenus mensuels (12 derniers mois)',
+        totalSalesLabel: 'Ventes totales',
+        commissionLabel: 'Commission: {{amount}} $',
+        
+        // Loading & Errors
+        loading: 'Chargement...',
         loadingError: 'Erreur de chargement des données',
         exportError: 'Erreur d\'exportation',
       },
@@ -2121,10 +2164,53 @@ const resources = {
       },
 
       vendorDashboard: {
-        export: 'Export',
+        // Header
+        title: 'Vendor Dashboard',
+        subtitle: 'Manage your earnings and transactions',
+        
+        // Period selector
+        today: 'Today',
+        week: 'This week',
+        month: 'This month',
+        all: 'All',
+        
+        // Actions
+        export: 'Export CSV',
+        exportShort: 'Export',
+        
+        // Stats cards
+        netEarnings: 'Net earnings',
+        totalSales: 'Total sales',
+        commissions: 'Commissions ({{rate}}%)',
+        transactions: 'Transactions',
+        
+        // Tabs
+        overview: 'Overview',
+        transactionsTab: 'Transactions',
+        statistics: 'Statistics',
+        
+        // Overview
+        topEvents: 'Top performing events',
+        transactionsCount: '{{count}} transaction',
+        transactionsCount_other: '{{count}} transactions',
+        paymentMethods: 'Payment methods',
+        
+        // Transaction table
         date: 'Date',
+        event: 'Event',
+        customer: 'Customer',
+        amount: 'Amount',
         commission: 'Commission',
         net: 'Net',
+        method: 'Method',
+        
+        // Statistics
+        monthlyEarnings: 'Monthly earnings (Last 12 months)',
+        totalSalesLabel: 'Total sales',
+        commissionLabel: 'Commission: {{amount}} $',
+        
+        // Loading & Errors
+        loading: 'Loading...',
         loadingError: 'Error loading data',
         exportError: 'Export error',
       },
