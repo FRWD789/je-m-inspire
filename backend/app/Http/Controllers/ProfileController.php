@@ -331,6 +331,12 @@ class ProfileController extends Controller
                     'linked' => !empty($user->paypalAccount_id),
                     'account_id' => $user->paypalAccount_id,
                     'email' => $user->paypalEmail,
+                ],
+                'facebook' => [
+                    'linked' => false,
+                    // Prêt pour l'implémentation future
+                    'page_name' => null,
+                    'page_id' => null,
                 ]
             ], 'Comptes liés récupérés');
 
