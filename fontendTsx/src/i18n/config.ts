@@ -505,6 +505,17 @@ const resources = {
         unlinkAccount: 'Délier le compte',
         accountLinked: 'Compte lié',
         accountNotLinked: 'Compte non lié',
+        linkFacebook: 'Lier Facebook',
+        linking: 'Liaison...',
+        unlinking: 'Déliaison...',
+        unlinkConfirm: 'Êtes-vous sûr de vouloir délier votre compte',
+        socialSyncInfo: {
+          title: 'Synchronisation automatique',
+          step1: 'Liez votre page Facebook professionnelle',
+          step2: 'Lors de la création d\'événements, activez la synchronisation',
+          step3: 'Vos événements seront publiés automatiquement',
+          step4: 'Modifications et suppressions synchronisées en temps réel',
+        }
       },
 
       // ==========================================
@@ -1045,6 +1056,15 @@ const resources = {
         compressing: 'Compression en cours...',
         compressionError: 'Erreur lors de la compression',
         compressingProgress: 'Compression {{current}}/{{total}}...',
+        socialSync: {
+          title: 'Synchronisation réseaux sociaux',
+          publishToSocial: 'Publier automatiquement sur les réseaux sociaux',
+          selectPlatforms: 'Sélectionnez les plateformes :',
+          loading: 'Chargement des connexions...',
+          noConnections: 'Aucun compte social connecté.',
+          connectAccounts: 'Connecter vos comptes',
+          info: 'Cet événement sera automatiquement publié sur {{platforms}}.',
+        }
       },
 
       // ==========================================
@@ -2041,6 +2061,19 @@ const resources = {
         cancel: 'Cancel',
         cancelling: 'Cancelling...',
         processing: 'Processing...',
+        linkFacebook: 'Link Facebook',
+        linking: 'Linking...',
+        unlinking: 'Unlinking...',
+        unlinkConfirm: 'Are you sure you want to unlink your account',
+        
+        // ✅ NEW: Social sync info
+        socialSyncInfo: {
+          title: 'Automatic Synchronization',
+          step1: 'Link your professional Facebook page',
+          step2: 'When creating events, enable synchronization',
+          step3: 'Your events will be published automatically',
+          step4: 'Updates and deletions synchronized in real-time',
+        }
       },
 
       commissions: {
@@ -2284,6 +2317,15 @@ const resources = {
         compressing: 'Compressing...',
         compressionError: 'Error during compression',
         compressingProgress: 'Compressing {{current}}/{{total}}...',
+        socialSync: {
+          title: 'Social Media Synchronization',
+          publishToSocial: 'Automatically publish to social media',
+          selectPlatforms: 'Select platforms:',
+          loading: 'Loading connections...',
+          noConnections: 'No social accounts connected.',
+          connectAccounts: 'Connect your accounts',
+          info: 'This event will be automatically published to {{platforms}}.',
+        }
       },
 
       // ==========================================
