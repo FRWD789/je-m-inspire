@@ -26,6 +26,21 @@ return new class extends Migration
             $table->string('level');
             $table->integer('priority');
 
+            // ✅ CORRECTION : Retirer tous les ->after() pour CREATE TABLE
+            // ID de l'event sur les différentes plateformes (JSON pour supporter plusieurs)
+            $table->json('social_platform_ids')->nullable();
+            // Ex: {"facebook": "123456", "instagram": "789012"}
+
+            // Statut de synchronisation global
+            $table->enum('sync_status', ['pending', 'synced', 'failed', 'disabled'])
+                ->default('disabled');
+
+            // Dernière tentative de sync
+            $table->timestamp('last_synced_at')->nullable();
+
+            // Erreurs de sync (JSON pour tracker les erreurs par plateforme)
+            $table->json('sync_errors')->nullable();
+            // Ex: {"facebook": "Invalid token", "instagram": null}
 
             // FK localisation
             $table->foreignId('localisation_id')->constrained('localisations')->onDelete('cascade');
@@ -35,8 +50,6 @@ return new class extends Migration
 
             $table->timestamps();
         });
-
-
     }
 
     /**

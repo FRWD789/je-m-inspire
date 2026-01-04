@@ -6,13 +6,10 @@ import PrivateRoute from "./components/privateRoute";
 import OnboardingGuard from "./components/OnboardingGuard";
 import EventProvider from "./context/EventContext";
 import CookieBar from "./components/CookieBar";
-
-// =========================================
-// ✅ COMPOSANTS CRITIQUES (chargés immédiatement)
-// =========================================
 import Home from "./features/home-about/page/home";
 import PublicEvents from "./features/events/page/publicEvents";
 import Login from "./features/auth/page/login";
+import ProfileFacebookCallback from '@/features/profile/pages/ProfileFacebookCallback'
 
 
 import Register from "./features/auth/page/register";
@@ -78,6 +75,7 @@ export default function App() {
               <Route path="register-pro" element={<RegisterPro />} />
               <Route path="forgot-password" element={<ForgotPasswordPage />} />
               <Route path="reset-password" element={<ResetPasswordPage />} />
+              <Route path="/profile/facebook/callback" element={<ProfileFacebookCallback />} />
               
               {/* Events publics */}
               <Route path="events" element={<PublicEvents />} />

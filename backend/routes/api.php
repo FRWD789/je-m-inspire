@@ -16,6 +16,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\ProfessionalProfileController;
 use App\Http\Controllers\VendorEarningsController;
+use App\Http\Controllers\SocialConnectionController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -179,6 +180,47 @@ Route::post('/abonnementPaypal/webhook', [AbonnementController::class, 'abonneme
 
 // Désactivation notifications via email (public)
 Route::post('/follow/notifications/disable', [\App\Http\Controllers\FollowProController::class, 'disableNotificationsByToken']);
+
+Route::middleware(['auth:api'])->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Social Media Connections Routes
+    |--------------------------------------------------------------------------
+    | Gestion des connexions aux réseaux sociaux (Facebook, Instagram, etc.)
+    |
+    */
+
+    Route::prefix('social')->group(function () {
+        // Liste des connexions
+        Route::get('/connections', [SocialConnectionController::class, 'index']);
+
+        // Vérifier le statut d'une connexion
+        Route::get('/connections/{platform}/status', [SocialConnectionController::class, 'checkConnection']);
+
+        // Activer/désactiver une connexion
+        Route::patch('/connections/{platform}/toggle', [SocialConnectionController::class, 'toggleConnection']);
+
+        // Délier une connexion
+        Route::delete('/connections/{platform}', [SocialConnectionController::class, 'unlink']);
+
+        // ===== FACEBOOK =====
+        Route::prefix('facebook')->group(function () {
+            // Initier OAuth
+            Route::get('/link', [SocialConnectionController::class, 'linkFacebook']);
+
+            // Callback OAuth (peut être appelé sans auth car vient de Facebook)
+            Route::get('/callback', [SocialConnectionController::class, 'facebookCallback'])
+                ->withoutMiddleware('auth:api');
+        });
+
+        // ===== INSTAGRAM (pour plus tard) =====
+        // Route::prefix('instagram')->group(function () {
+        //     Route::get('/link', [SocialConnectionController::class, 'linkInstagram']);
+        //     Route::get('/callback', [SocialConnectionController::class, 'instagramCallback'])
+        //         ->withoutMiddleware('auth:api');
+        // });
+    });
+});
 
 // ==========================================
 // ROUTES PROTÉGÉES

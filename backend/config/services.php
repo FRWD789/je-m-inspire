@@ -56,9 +56,39 @@ return [
         'api_url' => env('PAYPAL_API_URL', 'https://api-m.sandbox.paypal.com'),
     ],
     'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect' => env('GOOGLE_REDIRECT_URI'),
-],
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Social Media Platforms
+    |--------------------------------------------------------------------------
+    | Configuration pour Facebook, Instagram et autres réseaux sociaux
+    |
+    | Note: Instagram utilise la même Graph API que Facebook
+    | Un compte Facebook Business est requis pour gérer Instagram
+    |
+    */
+
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'graph_version' => env('FACEBOOK_GRAPH_VERSION', 'v24.0'),
+        'default_permissions' => [
+            'pages_show_list',
+            'pages_manage_metadata',
+            'pages_manage_posts',
+            'pages_read_engagement',
+        ],
+    ],
+
+    'instagram' => [
+        // Instagram utilise les mêmes credentials que Facebook
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'graph_version' => env('FACEBOOK_GRAPH_VERSION', 'v19.0'),
+        // Instagram Business Account requis (lié à une Page Facebook)
+    ],
 ];

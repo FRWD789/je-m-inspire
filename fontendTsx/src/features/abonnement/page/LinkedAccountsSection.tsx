@@ -1,141 +1,156 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { Loader2, Link as LinkIcon, Unlink, CreditCard, Lock, XCircle, CheckCircle } from "lucide-react";
-import { privateApi } from "@/api/api";
-import Abonnement from "@/features/abonnement/page/Abonnement";
+// fontendTsx/src/features/abonnement/page/LinkedAccountsSection.tsx
+import { useState, useEffect } from 'react';
+import { CreditCard, Unlink, LinkIcon, Facebook } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { publicApi, privateApi } from '@/api/api';
+import toast from 'react-hot-toast';
 
-function LinkedAccountsSection() {
-  const [subscription, setSubscription] = useState<any>(null);
-  const [accounts, setAccounts] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [openSubSection, setOpenSubSection] = useState(false);
+interface LinkedAccount {
+  linked: boolean;
+  account_id?: string;
+  email?: string;
+  page_name?: string;
+  page_id?: string;
+}
+
+interface LinkedAccountsData {
+  stripe: LinkedAccount;
+  paypal: LinkedAccount;
+  facebook: LinkedAccount;
+}
+
+export default function LinkedAccountsSection() {
   const { t } = useTranslation();
+  const [accounts, setAccounts] = useState<LinkedAccountsData>({
+    stripe: { linked: false },
+    paypal: { linked: false },
+    facebook: { linked: false }
+  });
+  const [loading, setLoading] = useState(true);
+  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
 
-  const fetchSubscription = async () => {
-    try {
-      const data = await privateApi.get("/abonnement/info");
-      setSubscription(data.data);
-      if (data.data.has_pro_plus) fetchLinkedAccounts();
-    } catch (err) {
-      console.error("Erreur abonnement:", err);
-    }
-  };
+  useEffect(() => {
+    fetchLinkedAccounts();
+  }, []);
 
   const fetchLinkedAccounts = async () => {
     try {
-      const data = await privateApi.get("/profile/linked-accounts");
-      setAccounts(data.data);
-    } catch (err) {
-      console.error("Erreur comptes liés:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchSubscription();
-  }, []);
-
-  const handleLink = async (provider: "stripe" | "paypal") => {
-    setLoading(true);
-    setMessage(null);
-    try {
-      const data = await privateApi.get(`/profile/${provider}/link`);
-      window.location.href = data.data.url;
-    } catch (err) {
-      console.error(err);
-      setMessage(t('linkedAccounts.linkingError'));
+      const response = await privateApi.get('/profile/linked-accounts');
+      setAccounts(response.data);
+    } catch (error) {
+      console.error('Error fetching linked accounts:', error);
+      toast.error(t('linkedAccounts.linkingError'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUnlink = async (provider: "stripe" | "paypal") => {
-    setLoading(true);
-    setMessage(null);
+  const fetchSocialConnections = async () => {
     try {
-      await privateApi.delete(`/profile/${provider}/unlink`);
-      setMessage(t('linkedAccounts.accountUnlinkedSuccess', { provider: provider.charAt(0).toUpperCase() + provider.slice(1) }));
-      fetchLinkedAccounts();
-    } catch (err) {
-      console.error(err);
-      setMessage(t('linkedAccounts.unlinkingError'));
-    } finally {
-      setLoading(false);
+      const response = await privateApi.get('/social/connections');
+      const facebookConnection = response.data.connections?.find(
+        (c: any) => c.platform === 'facebook' && c.is_active
+      );
+      
+      return {
+        facebook: {
+          linked: !!facebookConnection,
+          page_name: facebookConnection?.metadata?.page_name,
+          page_id: facebookConnection?.platform_page_id
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching social connections:', error);
+      return { facebook: { linked: false } };
     }
   };
 
-  const handleCancelSubscription = async () => {
-    const confirmed = window.confirm(t('linkedAccounts.cancelConfirmation'));
-
-    if (!confirmed) return;
-
-    setCancelLoading(true);
-    setMessage(null);
+  const handleLink = async (provider: 'stripe' | 'paypal' | 'facebook') => {
+    setLinkingProvider(provider);
     
     try {
-      const data = await privateApi.post("/abonnement/cancel");
-      setMessage(data.data.message || t('linkedAccounts.subscriptionCancelledSuccess'));
+      let endpoint = '';
       
-      await fetchSubscription();
-      setAccounts(null);
+      if (provider === 'facebook') {
+        endpoint = '/social/facebook/link';
+      } else {
+        endpoint = `/profile/${provider}/link`;
+      }
       
-    } catch (err: any) {
-      console.error("Erreur annulation:", err);
-      setMessage(
-        err.response?.data?.message || 
-        t('linkedAccounts.cancellationError')
-      );
+      const response = await privateApi.get(endpoint);
+      
+      if (response.data.success && response.data.url) {
+        window.location.href = response.data.url;
+      } else if (response.data.already_linked) {
+        toast.success(t('linkedAccounts.accountLinked'));
+        fetchLinkedAccounts();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('linkedAccounts.linkingError'));
     } finally {
-      setCancelLoading(false);
+      setLinkingProvider(null);
     }
   };
 
-  if (!subscription)
-    return (
-      <div className="flex items-center gap-2 text-gray-500">
-        <Loader2 className="animate-spin" size={18} />
-        {t('linkedAccounts.loadingInfo')}
-      </div>
-    );
+  const handleUnlink = async (provider: 'stripe' | 'paypal' | 'facebook') => {
+    const providerNames: Record<string, string> = {
+      stripe: 'Stripe',
+      paypal: 'PayPal',
+      facebook: 'Facebook'
+    };
+    
+    if (!window.confirm(`${t('linkedAccounts.unlinkConfirm')} ${providerNames[provider]} ?`)) {
+      return;
+    }
 
-  if (!subscription.has_pro_plus) {
+    setLinkingProvider(provider);
+    
+    try {
+      let endpoint = '';
+      
+      if (provider === 'facebook') {
+        const pageId = accounts.facebook.page_id;
+        endpoint = `/social/connections/facebook${pageId ? `?page_id=${pageId}` : ''}`;
+      } else {
+        endpoint = `/profile/${provider}/unlink`;
+      }
+      
+      const response = await privateApi.delete(endpoint);
+      
+      if (response.data.success) {
+        toast.success(t('linkedAccounts.accountUnlinkedSuccess', { provider: providerNames[provider] }));
+        
+        // Refresh accounts
+        await fetchLinkedAccounts();
+        
+        // Re-fetch social connections for Facebook
+        if (provider === 'facebook') {
+          const socialData = await fetchSocialConnections();
+          setAccounts(prev => ({
+            ...prev,
+            ...socialData
+          }));
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('linkedAccounts.unlinkingError'));
+    } finally {
+      setLinkingProvider(null);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="p-4 sm:p-6 border rounded-lg bg-gray-50 text-center shadow-sm">
-        <Lock size={32} className="mx-auto mb-3 text-gray-500" />
-        <h3 className="text-base sm:text-lg font-semibold mb-2">{t('linkedAccounts.featureReserved')}</h3>
-        <p className="text-sm sm:text-base text-gray-600 mb-4">
-          {t('linkedAccounts.featureReservedDesc')}
-        </p>
-        <button
-          onClick={() => setOpenSubSection(true)}
-          className="inline-block bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary/90 transition cursor-pointer text-sm sm:text-base"
-        >
-          {t('linkedAccounts.upgradeToProPlus')}
-        </button>
-        {openSubSection && (
-          <div className="fixed z-999 w-full inset-0 min-h-screen bg-black/5 backdrop-blur-3xl overflow-y-auto">
-            <Abonnement handelClose={() => setOpenSubSection(false)} />
-          </div>
-        )}
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  if (!accounts) {
-    return (
-      <div className="flex items-center gap-2 text-gray-500">
-        <Loader2 className="animate-spin" size={18} />
-        {t('linkedAccounts.loadingLinkedAccounts')}
-      </div>
-    );
-  }
-
-  const isCancelPending = subscription.details?.cancel_at_period_end === true;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold mb-4">{t('linkedAccounts.title')}</h3>
+      
       {/* Stripe */}
       <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -155,20 +170,20 @@ function LinkedAccountsSection() {
           {accounts.stripe.linked ? (
             <button
               onClick={() => handleUnlink("stripe")}
-              disabled={loading}
+              disabled={loading || linkingProvider === 'stripe'}
               className="flex items-center justify-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
             >
               <Unlink size={18} />
-              {t('linkedAccounts.unlink')}
+              {linkingProvider === 'stripe' ? t('linkedAccounts.unlinking') : t('linkedAccounts.unlink')}
             </button>
           ) : (
             <button
               onClick={() => handleLink("stripe")}
-              disabled={loading}
+              disabled={loading || linkingProvider === 'stripe'}
               className="flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
             >
               <LinkIcon size={18} />
-              {t('linkedAccounts.linkStripe')}
+              {linkingProvider === 'stripe' ? t('linkedAccounts.linking') : t('linkedAccounts.linkStripe')}
             </button>
           )}
         </div>
@@ -193,91 +208,73 @@ function LinkedAccountsSection() {
           {accounts.paypal.linked ? (
             <button
               onClick={() => handleUnlink("paypal")}
-              disabled={loading}
+              disabled={loading || linkingProvider === 'paypal'}
               className="flex items-center justify-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
             >
               <Unlink size={18} />
-              {t('linkedAccounts.unlink')}
+              {linkingProvider === 'paypal' ? t('linkedAccounts.unlinking') : t('linkedAccounts.unlink')}
             </button>
           ) : (
             <button
               onClick={() => handleLink("paypal")}
-              disabled={loading}
+              disabled={loading || linkingProvider === 'paypal'}
               className="flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
             >
               <LinkIcon size={18} />
-              {t('linkedAccounts.linkPayPal')}
+              {linkingProvider === 'paypal' ? t('linkedAccounts.linking') : t('linkedAccounts.linkPayPal')}
             </button>
           )}
         </div>
       </div>
 
-      {isCancelPending ? (
-        <div className="p-3 sm:p-4 border border-orange-200 rounded-lg bg-orange-50 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-            <CheckCircle size={22} className="text-orange-600 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-orange-900 mb-1 text-sm sm:text-base">
-                {t('linkedAccounts.scheduledCancellation')}
-              </h3>
-              <p className="text-xs sm:text-sm text-orange-700 mb-2">
-                {t('linkedAccounts.scheduledCancellationDesc')}
-              </p>
-              {subscription.end_date && (
-                <p className="text-xs sm:text-sm text-orange-600">
-                  {t('linkedAccounts.endDate')} : {new Date(subscription.end_date).toLocaleDateString('fr-CA')}
+      {/* Facebook */}
+      <div className="p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Facebook size={22} className="text-blue-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base">Facebook</h3>
+              {accounts.facebook.linked ? (
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                  {accounts.facebook.page_name || t('linkedAccounts.accountLinked')}
                 </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-3 sm:p-4 border border-red-200 rounded-lg bg-red-50 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-            <div className="flex-1">
-              <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">
-                {t('linkedAccounts.activeProPlusSubscription')}
-              </h3>
-              <p className="text-xs sm:text-sm text-red-700">
-                {t('linkedAccounts.canCancelAnytime')}
-              </p>
-            </div>
-            <button
-              onClick={handleCancelSubscription}
-              disabled={cancelLoading}
-              className="flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition w-full sm:w-auto whitespace-nowrap text-sm sm:text-base"
-            >
-              {cancelLoading ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  <span className="hidden xs:inline">{t('linkedAccounts.cancelling')}</span>
-                  <span className="xs:hidden">...</span>
-                </>
               ) : (
-                <>
-                  <XCircle size={18} />
-                  <span className="hidden xs:inline">{t('linkedAccounts.cancelSubscription')}</span>
-                  <span className="xs:hidden">{t('linkedAccounts.cancel')}</span>
-                </>
+                <p className="text-xs sm:text-sm text-gray-500">{t('linkedAccounts.noAccountLinked')}</p>
               )}
-            </button>
+            </div>
           </div>
+          {accounts.facebook.linked ? (
+            <button
+              onClick={() => handleUnlink("facebook")}
+              disabled={loading || linkingProvider === 'facebook'}
+              className="flex items-center justify-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
+            >
+              <Unlink size={18} />
+              {linkingProvider === 'facebook' ? t('linkedAccounts.unlinking') : t('linkedAccounts.unlink')}
+            </button>
+          ) : (
+            <button
+              onClick={() => handleLink("facebook")}
+              disabled={loading || linkingProvider === 'facebook'}
+              className="flex items-center justify-center gap-2 bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 transition w-full sm:w-auto text-sm sm:text-base"
+            >
+              <Facebook size={18} />
+              {linkingProvider === 'facebook' ? t('linkedAccounts.linking') : t('linkedAccounts.linkFacebook')}
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
-      {loading && (
-        <div className="flex items-center text-xs sm:text-sm text-gray-600">
-          <Loader2 className="animate-spin mr-2" size={16} />
-          {t('linkedAccounts.processing')}
-        </div>
-      )}
-      {message && (
-        <p className={`text-xs sm:text-sm ${message.includes('Erreur') || message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
-          {message}
-        </p>
-      )}
+      {/* Info box */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+        <h4 className="font-medium text-blue-900 mb-2">ℹ️ {t('linkedAccounts.socialSyncInfo.title')}</h4>
+        <ul className="text-sm text-blue-800 space-y-1">
+          <li>• {t('linkedAccounts.socialSyncInfo.step1')}</li>
+          <li>• {t('linkedAccounts.socialSyncInfo.step2')}</li>
+          <li>• {t('linkedAccounts.socialSyncInfo.step3')}</li>
+          <li>• {t('linkedAccounts.socialSyncInfo.step4')}</li>
+        </ul>
+      </div>
     </div>
   );
 }
-
-export default LinkedAccountsSection;
